@@ -3,6 +3,7 @@
 import React, { useState, useRef } from "react";
 import {
   SquarePen,
+  Search,
   BookOpen,
   Zap,
   Sparkles,
@@ -11,6 +12,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { DeepResearchPopover } from "./deep-research-popover";
+import { SearchHistoryPopover } from "./search-history-popover";
 
 interface SidebarNavProps {
   onNewChat?: () => void;
@@ -25,10 +27,17 @@ export function SidebarNav({
   onOpenLogin,
   isMobile,
 }: SidebarNavProps) {
+  // Deep research popover state
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
   const deepResearchRef = useRef<HTMLButtonElement>(null);
   const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Search chats popover state
+  const [isSearchPopoverOpen, setIsSearchPopoverOpen] = useState(false);
+  const [searchAnchorRect, setSearchAnchorRect] = useState<DOMRect | null>(null);
+  const searchChatsRef = useRef<HTMLButtonElement>(null);
+  const searchHideTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const clearHideTimer = () => {
     if (hideTimerRef.current) {
@@ -63,6 +72,40 @@ export function SidebarNav({
     }, 180);
   };
 
+  // Search popover timer handlers
+  const clearSearchHideTimer = () => {
+    if (searchHideTimerRef.current) {
+      clearTimeout(searchHideTimerRef.current);
+      searchHideTimerRef.current = null;
+    }
+  };
+
+  const handleMouseEnterSearch = () => {
+    clearSearchHideTimer();
+    if (searchChatsRef.current) {
+      setSearchAnchorRect(searchChatsRef.current.getBoundingClientRect());
+    }
+    setIsSearchPopoverOpen(true);
+  };
+
+  const handleMouseLeaveSearch = () => {
+    clearSearchHideTimer();
+    searchHideTimerRef.current = setTimeout(() => {
+      setIsSearchPopoverOpen(false);
+    }, 180);
+  };
+
+  const handleMouseEnterSearchPopover = () => {
+    clearSearchHideTimer();
+  };
+
+  const handleMouseLeaveSearchPopover = () => {
+    clearSearchHideTimer();
+    searchHideTimerRef.current = setTimeout(() => {
+      setIsSearchPopoverOpen(false);
+    }, 180);
+  };
+
   return (
     <nav className="flex flex-col gap-1 px-2 py-1">
       {/* New chat button */}
@@ -76,6 +119,40 @@ export function SidebarNav({
           <span>New chat</span>
         </div>
       </button>
+
+      {/* Search chats with hover popover */}
+      <div className="relative">
+        <button
+          ref={searchChatsRef}
+          type="button"
+          onClick={onOpenLogin}
+          onMouseEnter={handleMouseEnterSearch}
+          onMouseLeave={handleMouseLeaveSearch}
+          aria-haspopup="dialog"
+          aria-expanded={isSearchPopoverOpen}
+          className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
+        >
+          <Search className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors" />
+          <span>Search chats</span>
+        </button>
+
+        {!isMobile && (
+          <SearchHistoryPopover
+            isOpen={isSearchPopoverOpen}
+            anchorRect={searchAnchorRect}
+            onMouseEnter={handleMouseEnterSearchPopover}
+            onMouseLeave={handleMouseLeaveSearchPopover}
+            onLoginClick={() => {
+              setIsSearchPopoverOpen(false);
+              onOpenLogin?.();
+            }}
+            onSignupClick={() => {
+              setIsSearchPopoverOpen(false);
+              onOpenLogin?.();
+            }}
+          />
+        )}
+      </div>
 
       {/* Courses */}
       <button
