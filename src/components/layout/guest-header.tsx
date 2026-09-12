@@ -2,12 +2,14 @@
 
 import { PanelLeft, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { MobileMenuIcon } from "@/components/ui/mobile-menu-icon";
 
 interface GuestHeaderProps {
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
   onOpenLogin: () => void;
   modelName?: string;
+  isMobile?: boolean;
 }
 
 export function GuestHeader({
@@ -15,6 +17,7 @@ export function GuestHeader({
   onToggleSidebar,
   onOpenLogin,
   modelName = "Jarvis AI Academy",
+  isMobile,
 }: GuestHeaderProps) {
   return (
     <header className="relative flex items-center justify-between px-4 py-3 h-14 bg-transparent z-20">
@@ -30,9 +33,14 @@ export function GuestHeader({
               exit={{ opacity: 0, scale: 0.85 }}
               transition={{ duration: 0.15 }}
               aria-label="Open sidebar"
-              className="p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10 transition-colors"
+              className="flex items-center justify-center transition-colors cursor-pointer w-9 h-9 rounded-full bg-neutral-200/80 dark:bg-[#262626] text-neutral-800 dark:text-neutral-100 hover:bg-neutral-300 dark:hover:bg-[#323232] md:w-auto md:h-auto md:p-2 md:rounded-lg md:bg-transparent md:dark:bg-transparent md:text-neutral-400 md:hover:text-white md:hover:bg-white/10 shadow-xs md:shadow-none"
             >
-              <PanelLeft className="w-4 h-4" />
+              <span className="md:hidden flex items-center justify-center">
+                <MobileMenuIcon className="w-4 h-4" />
+              </span>
+              <span className="hidden md:flex items-center justify-center">
+                <PanelLeft className="w-4 h-4" />
+              </span>
             </motion.button>
           )}
         </AnimatePresence>

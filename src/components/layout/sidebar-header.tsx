@@ -3,6 +3,7 @@
 import React, { useState, useRef } from "react";
 import { PanelLeft, Search } from "lucide-react";
 import { SearchHistoryPopover } from "./search-history-popover";
+import { MobileMenuIcon } from "@/components/ui/mobile-menu-icon";
 
 interface SidebarHeaderProps {
   onToggle: () => void;
@@ -109,7 +110,11 @@ export function SidebarHeader({
           title="Close sidebar (Cmd+B)"
           className="p-1.5 rounded-lg text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/10 transition-colors cursor-pointer"
         >
-          <PanelLeft className="w-4 h-4" />
+          {isMobile ? (
+            <MobileMenuIcon className="w-4 h-4" />
+          ) : (
+            <PanelLeft className="w-4 h-4" />
+          )}
         </button>
       </div>
     </div>

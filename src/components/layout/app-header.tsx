@@ -2,6 +2,7 @@
 
 import { PanelLeft, Sparkles, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { MobileMenuIcon } from "@/components/ui/mobile-menu-icon";
 
 interface AppHeaderProps {
   sidebarOpen: boolean;
@@ -34,9 +35,14 @@ export function AppHeader({
                 onClick={onToggleSidebar}
                 aria-label="Open sidebar"
                 title="Open sidebar (Cmd+B)"
-                className="p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10 transition-colors"
+                className="flex items-center justify-center transition-colors cursor-pointer w-9 h-9 rounded-full bg-neutral-200/80 dark:bg-[#262626] text-neutral-800 dark:text-neutral-100 hover:bg-neutral-300 dark:hover:bg-[#323232] md:w-auto md:h-auto md:p-2 md:rounded-lg md:bg-transparent md:dark:bg-transparent md:text-neutral-400 md:hover:text-white md:hover:bg-white/10 shadow-xs md:shadow-none"
               >
-                <PanelLeft className="w-4 h-4" />
+                <span className="md:hidden flex items-center justify-center">
+                  <MobileMenuIcon className="w-4 h-4" />
+                </span>
+                <span className="hidden md:flex items-center justify-center">
+                  <PanelLeft className="w-4 h-4" />
+                </span>
               </button>
               <span className="font-semibold text-sm tracking-tight text-white select-none hidden sm:inline">
                 Jarvis AI Academy

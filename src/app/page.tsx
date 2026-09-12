@@ -51,6 +51,7 @@ export default function Home() {
                 sidebarOpen={isOpen}
                 onToggleSidebar={toggle}
                 onOpenLogin={handleOpenLogin}
+                isMobile={isMobile}
               />
 
               <ChatCanvas
