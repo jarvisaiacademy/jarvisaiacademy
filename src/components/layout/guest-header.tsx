@@ -14,7 +14,6 @@ interface GuestHeaderProps {
   modelName?: string;
   isMobile?: boolean;
   user?: User | null;
-  onLogout?: () => void;
 }
 
 export function GuestHeader({
@@ -23,7 +22,6 @@ export function GuestHeader({
   onOpenLogin,
   modelName = siteConfig.name,
   user,
-  onLogout,
 }: GuestHeaderProps) {
   return (
     <header className="relative flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 h-14 bg-transparent z-20 shrink-0 w-full select-none">
@@ -66,57 +64,26 @@ export function GuestHeader({
         </AnimatePresence>
       </div>
 
-      {/* Right controls: Login and Sign up buttons or User Avatar */}
-      <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-        {user ? (
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-neutral-200/60 dark:bg-neutral-800/60 border border-neutral-300/40 dark:border-white/10 text-xs">
-              {user.picture ? (
-                <img
-                  src={user.picture}
-                  alt={user.name}
-                  className="w-5 h-5 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-5 h-5 rounded-full bg-neutral-700 text-white text-[10px] font-semibold flex items-center justify-center">
-                  {user.name.slice(0, 2).toUpperCase()}
-                </div>
-              )}
-              <span className="font-medium text-foreground max-w-[110px] truncate hidden sm:inline">
-                {user.name}
-              </span>
-            </div>
+      {/* Right controls: Login and Sign up buttons (only when guest) */}
+      {!user && (
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          <button
+            type="button"
+            onClick={onOpenLogin}
+            className="px-3.5 py-1.5 rounded-full bg-foreground hover:opacity-90 text-background text-xs sm:text-sm font-semibold transition-colors shadow-xs whitespace-nowrap shrink-0 cursor-pointer active:scale-95"
+          >
+            Log in
+          </button>
 
-            {onLogout && (
-              <button
-                type="button"
-                onClick={onLogout}
-                className="px-3 py-1.5 rounded-full bg-muted hover:bg-muted/80 text-foreground text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer active:scale-95"
-              >
-                Log out
-              </button>
-            )}
-          </div>
-        ) : (
-          <>
-            <button
-              type="button"
-              onClick={onOpenLogin}
-              className="px-3.5 py-1.5 rounded-full bg-foreground hover:opacity-90 text-background text-xs sm:text-sm font-semibold transition-colors shadow-xs whitespace-nowrap shrink-0 cursor-pointer active:scale-95"
-            >
-              Log in
-            </button>
-
-            <button
-              type="button"
-              onClick={onOpenLogin}
-              className="hidden sm:inline-flex px-4 py-1.5 rounded-full bg-muted hover:bg-muted/80 border border-border text-foreground text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer active:scale-95"
-            >
-              Sign up for free
-            </button>
-          </>
-        )}
-      </div>
+          <button
+            type="button"
+            onClick={onOpenLogin}
+            className="hidden sm:inline-flex px-4 py-1.5 rounded-full bg-muted hover:bg-muted/80 border border-border text-foreground text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer active:scale-95"
+          >
+            Sign up for free
+          </button>
+        </div>
+      )}
     </header>
   );
 }

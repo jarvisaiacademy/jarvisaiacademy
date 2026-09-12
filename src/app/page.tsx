@@ -59,7 +59,6 @@ export default function Home() {
                 onOpenLogin={handleOpenLogin}
                 isMobile={isMobile}
                 user={user}
-                onLogout={logout}
               />
 
               <ChatCanvas
