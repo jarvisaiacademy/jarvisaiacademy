@@ -201,6 +201,190 @@ Log in to run multi-step research and save comprehensive reports to revisit late
       },
     ],
   },
+  terms: {
+    text: `# Terms & Conditions — Jarvis AI Academy
+
+**Effective Date:** January 1, 2025  
+**Entity:** Jarvis AI Academy (Pune, Maharashtra, India)
+
+Welcome to **Jarvis AI Academy**! By enrolling in any cohort, accessing our engineering portals, or utilizing our curriculum resources, you agree to comply with and be bound by the following Terms & Conditions:
+
+---
+
+### 1. Admissions, Enrollment & Cohort Structure
+* **Prerequisites & Screening:** Admission into specialized cohorts—specifically our **Super10 Elite Batch**—requires successful completion of our baseline programming assessment and technical screening interview.
+* **Enrollment License:** Enrollment is strictly personal to the registered candidate. Credentials, private repository invitations, and portal access keys may not be shared, transferred, or sublicensed.
+* **Attendance & Milestone Delivery:** Our programs rely on a build-first methodology. Candidates are expected to maintain at least **85% live attendance** and complete scheduled capstone milestones to remain eligible for placement drives.
+
+---
+
+### 2. Intellectual Property Rights
+* **Academy Course Materials:** All proprietary lectures, architectural blueprints, curated roadmaps, video guides, coding challenge solutions, and course frameworks are the exclusive intellectual property of Jarvis AI Academy.
+* **Learner Projects & Repositories:** Any software, application, model, or capstone built individually by the learner during the cohort remains **100% the learner's intellectual property**. You retain full commercial ownership of the code you author.
+
+---
+
+### 3. Academic Integrity & Code of Conduct
+* **Academic Honesty:** While we teach and encourage the use of modern developer AI assistants, all capstone deliverables must demonstrate individual code understanding. Passing off existing commercial templates or unauthorized code without attribution constitutes grounds for review.
+* **Collaborative Culture:** Learners must maintain professional, respectful communication in peer code reviews, Discord/Slack discussions, and live architecture critiques. Harassment or discriminatory conduct results in immediate termination without refund.
+
+---
+
+### 4. Super10 Placement Assurance Terms
+The signature **Super10 Elite Batch** includes our 100% job placement guarantee under the following conditions:
+* Consistent submission and passing of all **4 commercial capstone projects**.
+* Completion of at least **6 scheduled mock technical interviews** with lead engineers.
+* Active application and attendance for interviews scheduled with hiring partners across Pune, Bangalore, and remote software hubs.
+* Maintenance of a verified GitHub portfolio displaying genuine commit histories.
+
+---
+
+### 5. Limitation of Liability & Termination
+* Jarvis AI Academy is not liable for indirect, incidental, or consequential damages resulting from third-party service outages or cloud lab interruptions.
+* The Academy reserves the right to suspend or terminate access for any learner violating intellectual property or code of conduct agreements.
+
+---
+
+### 6. Governing Law & Jurisdiction
+These Terms are governed and construed in accordance with the **laws of India**. Any disputes arising shall be subject to the exclusive jurisdiction of the competent courts in **Pune, Maharashtra**.
+
+For legal inquiries: \`legal@jarvisaiacademy.com\``,
+    citations: [
+      {
+        id: "c-terms-1",
+        number: 1,
+        title: "Jarvis AI Academy Academic Charter & Student Agreement",
+        source: "Legal & Academic Advisory Board",
+        snippet: "Comprehensive terms covering enrollment eligibility, intellectual property ownership, and Super10 placement assurance conditions.",
+        url: "https://jarvisaiacademy.com/terms",
+      },
+    ],
+  },
+  privacy: {
+    text: `# Privacy Policy — Jarvis AI Academy
+
+**Last Updated:** January 1, 2025  
+**Compliance Standards:** Digital Personal Data Protection (DPDP) Act 2023 & GDPR Principles
+
+At **Jarvis AI Academy**, we respect your personal data and are committed to transparency in how your information is collected, processed, and protected.
+
+---
+
+### 1. Information We Collect
+We collect only the information necessary to provide software training, personalized mentorship, and placement acceleration:
+* **Identity Information:** Full name, email address, phone/WhatsApp number, current educational background, and residential city.
+* **Professional Profiles:** Resume/CV, GitHub profile URL, LinkedIn profile, portfolio projects, and technical assessment scores.
+* **Academic Records:** Cohort attendance, code review feedback, assignment submissions, mentor evaluations, and certificate issuance records.
+* **Billing Details:** Transaction IDs, payment mode, and tax invoice information. *(Note: All debit/credit card and UPI transactions are processed through PCI-DSS Level 1 compliant payment gateways; we never store raw card numbers or banking passwords).*
+* **Technical Logs:** Device type, browser user agent, IP address, and platform usage metrics to ensure security and prevent unauthorized account access.
+
+---
+
+### 2. How We Use Your Data
+Your information is utilized strictly for educational and career acceleration purposes:
+* Delivering live classes, scheduling 1-on-1 code reviews, and tracking curriculum progress.
+* Presenting verified learner dossiers and portfolio capstones to vetted enterprise hiring partners during placement drives.
+* Generating cryptographically verifiable credentials on the Jarvis Academic Registry.
+* Sending transactional updates, batch schedules, and curriculum updates.
+
+---
+
+### 3. Data Protection & Security Controls
+* **Encryption:** All data in transit is protected using modern **TLS 1.3** encryption. Sensitive learner records at rest are secured with **AES-256** encryption.
+* **Access Control:** Student records are restricted strictly to authorized mentors and career placement coordinators on a need-to-know basis.
+* **Zero Data Selling:** Jarvis AI Academy never sells, rents, or monetizes student personal data to third-party advertisers or lead brokers.
+
+---
+
+### 4. Third-Party Service Providers
+We partner exclusively with trusted, industry-standard service providers:
+* **Cloud Infrastructure:** Secure hosting on ISO 27001 and SOC 2 certified data centers (AWS & Google Cloud).
+* **Payment Gateways:** Razorpay & Stripe for secure payment processing.
+* **Communication:** Official WhatsApp business channels and transactional email providers for admissions updates.
+
+---
+
+### 5. Your Rights & Data Control
+Under applicable data protection laws, you retain the following rights:
+* **Access & Export:** Request a copy of all personal records and evaluation metrics stored with the Academy.
+* **Rectification:** Update or correct any incomplete or outdated personal information.
+* **Deletion ("Right to be Forgotten"):** Request permanent deletion of non-essential records upon cohort completion (subject to statutory tax record retention).
+
+To exercise your privacy rights or file an inquiry, contact our Data Privacy Officer at:  
+📧 **\`privacy@jarvisaiacademy.com\`**`,
+    citations: [
+      {
+        id: "c-privacy-1",
+        number: 1,
+        title: "Jarvis AI Academy Privacy Policy & DPDP Compliance",
+        source: "Data Protection Office",
+        snippet: "Data protection standards, student records encryption, zero data selling guarantee, and GDPR/DPDP learner rights.",
+        url: "https://jarvisaiacademy.com/privacy",
+      },
+    ],
+  },
+  payment_terms: {
+    text: `# Payment Terms & Refund Policy — Jarvis AI Academy
+
+**Effective Date:** January 1, 2025  
+**Applies to:** Full-Stack AI & Web Engineering Cohort and Super10 Elite Batch
+
+At **Jarvis AI Academy**, we maintain transparent, straightforward pricing with no hidden fees. Below are the complete payment terms, installment schedules, and refund policies.
+
+---
+
+### 1. Transparent Fee Structure
+* **Program Tuition:** Tuition covers complete live cohort access, mentor code reviews, production cloud lab credits, and placement support.
+* **No Hidden Costs:** We do not charge examination fees, lab setup fees, or certification charges.
+* **Taxes & Invoicing:** In accordance with Indian taxation laws, all program fees are subject to statutory **18% GST**. A GST-compliant tax invoice is automatically generated and emailed immediately upon transaction completion.
+
+---
+
+### 2. Accepted Payment Methods
+We support secure, flexible digital payment channels:
+* **UPI & Net Banking:** Google Pay, PhonePe, Paytm, and all major Indian banking portals.
+* **Credit & Debit Cards:** Visa, Mastercard, RuPay, and American Express.
+* **Zero-Cost EMI Financing:** Flexible 3, 6, 9, and 12-month installment plans via our education financing partners (subject to standard partner credit approval).
+
+---
+
+### 3. 7-Day Money-Back Guarantee (Trial Period)
+We stand behind the quality of our mentorship and curriculum:
+* **Full Refund Window:** If within the first **7 days** from your batch commencement date you decide the program is not the right fit, you are entitled to a **100% full refund** of the tuition paid—no questions asked.
+* **Process:** Submit a written refund request to \`admissions@jarvisaiacademy.com\` before 11:59 PM IST on the 7th day of the cohort. Approved refunds are credited to the original payment source within **5–7 business days**.
+
+---
+
+### 4. Super10 Cohort Reservation Terms
+* Because the **Super10 Elite Batch** is strictly capped at **10 students per cohort**, an initial seat reservation deposit is required upon passing the screening interview.
+* Reservation deposits hold your seat exclusively and prevent allocation to waitlisted candidates.
+* Once the 7-day trial period concludes, tuition fees become non-refundable as cohort seats cannot be reallocated mid-term.
+
+---
+
+### 5. Installment & EMI Obligations
+* For students opting for milestone installment payments, installment dues must be cleared on or before the agreed milestone dates.
+* A **5-day grace period** is provided for unforeseen bank processing delays. Continued non-payment after the grace period may result in temporary suspension of repository access and live lab environments until dues are cleared.
+
+---
+
+### 6. Scholarships & Merit Waivers
+* Top performers in our quarterly entrance coding challenge may receive up to a **25% merit fee waiver**.
+* Merit scholarships apply directly to total tuition and are non-transferable and non-convertible to cash.
+
+For billing assistance or corporate sponsorship inquiries:  
+📧 **\`finance@jarvisaiacademy.com\`** | 📞 **+91 91729 11988**`,
+    citations: [
+      {
+        id: "c-pay-1",
+        number: 1,
+        title: "Jarvis AI Academy Tuition Policy & 7-Day Money-Back Guarantee",
+        source: "Admissions & Finance Registry",
+        snippet: "Clear fee structure, 18% GST invoicing, zero-cost EMI plans, and 100% money-back guarantee policy details.",
+        url: "https://jarvisaiacademy.com/payment-terms",
+      },
+    ],
+  },
 };
 
 interface ChatCanvasProps {
@@ -407,6 +591,9 @@ export function ChatCanvas({
         testimonials: "Show me student reviews and placement testimonials",
         certificate: "How do I verify a certificate issued by Jarvis AI Academy?",
         enquiry: "I'd like to get in touch with an admissions counselor",
+        terms: "Can you provide the Terms & Conditions of Jarvis AI Academy?",
+        privacy: "What is the Privacy Policy of Jarvis AI Academy?",
+        payment_terms: "What are the Payment Terms, fee structure, and refund policy at Jarvis AI Academy?",
       };
 
       const userText = topicPrompts[activeTopic] || `Tell me about ${activeTopic}`;

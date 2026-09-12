@@ -64,6 +64,40 @@ export function Sidebar({
             ) : (
               <SidebarLoginCTA onLoginClick={onOpenLogin} />
             )}
+            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 px-3 pt-0.5 pb-2.5 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
+              <button
+                type="button"
+                onClick={() => {
+                  onSelectSection?.("terms");
+                  onToggle();
+                }}
+                className="hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
+              >
+                Terms & Cond.
+              </button>
+              <span className="text-neutral-300 dark:text-neutral-700 select-none">·</span>
+              <button
+                type="button"
+                onClick={() => {
+                  onSelectSection?.("privacy");
+                  onToggle();
+                }}
+                className="hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
+              >
+                Privacy Policy
+              </button>
+              <span className="text-neutral-300 dark:text-neutral-700 select-none">·</span>
+              <button
+                type="button"
+                onClick={() => {
+                  onSelectSection?.("payment_terms");
+                  onToggle();
+                }}
+                className="hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
+              >
+                Payment Terms
+              </button>
+            </div>
           </div>
         </motion.aside>
       </>
@@ -101,6 +135,31 @@ export function Sidebar({
         ) : (
           <SidebarLoginCTA onLoginClick={onOpenLogin} />
         )}
+        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 px-3 pt-0.5 pb-2.5 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
+          <button
+            type="button"
+            onClick={() => onSelectSection?.("terms")}
+            className="hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
+          >
+            Terms & Cond.
+          </button>
+          <span className="text-neutral-300 dark:text-neutral-700 select-none">·</span>
+          <button
+            type="button"
+            onClick={() => onSelectSection?.("privacy")}
+            className="hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
+          >
+            Privacy Policy
+          </button>
+          <span className="text-neutral-300 dark:text-neutral-700 select-none">·</span>
+          <button
+            type="button"
+            onClick={() => onSelectSection?.("payment_terms")}
+            className="hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
+          >
+            Payment Terms
+          </button>
+        </div>
       </div>
     </motion.aside>
   );
