@@ -497,7 +497,7 @@ export function ChatCanvas({
       </div>
 
       {/* Floating Transparent Sticky Composer */}
-      <div className="absolute bottom-0 left-0 right-0 pointer-events-none bg-gradient-to-t from-black via-black/85 to-transparent pt-10 pb-3 px-4 flex flex-col items-center">
+      <div className="absolute bottom-0 left-0 right-0 pointer-events-none bg-gradient-to-t from-background via-background/85 to-transparent pt-10 pb-3 px-4 flex flex-col items-center transition-colors">
         <div className="w-full max-w-3xl pointer-events-auto">
           <ChatComposer
             onSend={({ text, activeTool, attachments }) => {

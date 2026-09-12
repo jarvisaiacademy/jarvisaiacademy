@@ -12,37 +12,37 @@ interface MarkdownRendererProps {
 
 export function MarkdownRenderer({ content, onCitationClick }: MarkdownRendererProps) {
   return (
-    <div className="prose prose-invert max-w-none text-neutral-200 text-[15px] leading-relaxed break-words space-y-3">
+    <div className="prose dark:prose-invert max-w-none text-neutral-800 dark:text-neutral-200 text-[15px] leading-relaxed break-words space-y-3">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
           p: ({ children }) => <p className="mb-3 last:mb-0 leading-7">{children}</p>,
           h1: ({ children }) => (
-            <h1 className="text-xl font-semibold text-white mt-4 mb-2 first:mt-0">{children}</h1>
+            <h1 className="text-xl font-semibold text-neutral-900 dark:text-white mt-4 mb-2 first:mt-0">{children}</h1>
           ),
           h2: ({ children }) => (
-            <h2 className="text-lg font-semibold text-white mt-4 mb-2 first:mt-0">{children}</h2>
+            <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mt-4 mb-2 first:mt-0">{children}</h2>
           ),
           h3: ({ children }) => (
-            <h3 className="text-base font-semibold text-neutral-100 mt-3 mb-1.5 first:mt-0">
+            <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100 mt-3 mb-1.5 first:mt-0">
               {children}
             </h3>
           ),
           ul: ({ children }) => (
-            <ul className="list-disc list-outside pl-5 space-y-1.5 my-2.5 text-neutral-300">
+            <ul className="list-disc list-outside pl-5 space-y-1.5 my-2.5 text-neutral-700 dark:text-neutral-300">
               {children}
             </ul>
           ),
           ol: ({ children }) => (
-            <ol className="list-decimal list-outside pl-5 space-y-1.5 my-2.5 text-neutral-300">
+            <ol className="list-decimal list-outside pl-5 space-y-1.5 my-2.5 text-neutral-700 dark:text-neutral-300">
               {children}
             </ol>
           ),
           li: ({ children }) => <li className="leading-relaxed pl-1">{children}</li>,
-          strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
-          em: ({ children }) => <em className="italic text-neutral-200">{children}</em>,
+          strong: ({ children }) => <strong className="font-semibold text-neutral-900 dark:text-white">{children}</strong>,
+          em: ({ children }) => <em className="italic text-neutral-800 dark:text-neutral-200">{children}</em>,
           blockquote: ({ children }) => (
-            <blockquote className="border-l-2 border-[#9d5932] pl-4 italic text-neutral-400 my-2.5">
+            <blockquote className="border-l-2 border-[#9d5932] pl-4 italic text-neutral-600 dark:text-neutral-400 my-2.5">
               {children}
             </blockquote>
           ),

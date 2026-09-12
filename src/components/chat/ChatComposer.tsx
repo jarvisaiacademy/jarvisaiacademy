@@ -277,10 +277,10 @@ export function ChatComposer({
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      className={`relative w-full max-w-3xl mx-auto rounded-[28px] bg-[#212121] border transition-all duration-200 ${
+      className={`relative w-full max-w-3xl mx-auto rounded-[28px] bg-neutral-100 dark:bg-[#212121] border transition-all duration-200 ${
         isFocused
-          ? "border-neutral-500 shadow-xl shadow-black/50"
-          : "border-white/10 hover:border-white/20 shadow-lg shadow-black/40"
+          ? "border-neutral-400 dark:border-neutral-500 shadow-xl shadow-neutral-300/30 dark:shadow-black/50"
+          : "border-neutral-300 dark:border-white/10 hover:border-neutral-400 dark:hover:border-white/20 shadow-md shadow-neutral-200/40 dark:shadow-black/40"
       } ${className}`}
     >
       {/* Hidden File Inputs */}
@@ -405,8 +405,8 @@ export function ChatComposer({
             aria-expanded={isMenuOpen}
             className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
               isMenuOpen
-                ? "bg-white/20 text-white"
-                : "text-neutral-400 hover:text-white hover:bg-white/10"
+                ? "bg-neutral-200 dark:bg-white/20 text-neutral-900 dark:text-white"
+                : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/10"
             }`}
           >
             <Plus className="w-5 h-5" />
@@ -422,15 +422,15 @@ export function ChatComposer({
                 transition={{ duration: 0.15 }}
                 role="menu"
                 aria-label="Add files and options"
-                className="absolute bottom-11 left-0 z-50 w-52 p-1.5 bg-[#262626] border border-white/15 rounded-2xl shadow-2xl text-neutral-200 text-xs sm:text-sm select-none"
+                className="absolute bottom-11 left-0 z-50 w-52 p-1.5 bg-card border border-border rounded-2xl shadow-2xl text-foreground text-xs sm:text-sm select-none"
               >
                 <button
                   type="button"
                   role="menuitem"
                   onClick={() => cameraInputRef.current?.click()}
-                  className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl hover:bg-white/10 text-left transition-colors"
+                  className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl hover:bg-muted text-left transition-colors"
                 >
-                  <Camera className="w-4 h-4 text-neutral-400" />
+                  <Camera className="w-4 h-4 text-muted-foreground" />
                   <span>Camera</span>
                 </button>
                 <button
@@ -524,7 +524,7 @@ export function ChatComposer({
           spellCheck
           autoCorrect="on"
           aria-label="Chat with ChatGPT"
-          className="flex-1 bg-transparent text-white placeholder:text-neutral-500 text-sm sm:text-base font-normal border-none outline-none focus:outline-none focus:ring-0 resize-none min-w-0 py-0.5 leading-6 max-h-[220px] overflow-y-auto no-scrollbar"
+          className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground text-sm sm:text-base font-normal border-none outline-none focus:outline-none focus:ring-0 resize-none min-w-0 py-0.5 leading-6 max-h-[220px] overflow-y-auto no-scrollbar"
         />
 
         {/* Right Controls: Microphone & Send/Stop Button */}
@@ -537,12 +537,12 @@ export function ChatComposer({
             title="Start dictation"
             className={`p-1.5 rounded-full transition-all ${
               isDictating
-                ? "bg-rose-500/20 text-rose-400 animate-pulse"
-                : "text-neutral-400 hover:text-white hover:bg-white/10"
+                ? "bg-rose-500/20 text-rose-500 animate-pulse"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
             }`}
           >
             {isDictating ? (
-              <MicOff className="w-4 h-4 text-rose-400" />
+              <MicOff className="w-4 h-4 text-rose-500" />
             ) : (
               <Mic className="w-4 h-4" />
             )}
@@ -562,9 +562,9 @@ export function ChatComposer({
                 transition={{ duration: 0.15 }}
                 aria-label="Stop generating"
                 title="Stop generating"
-                className="w-8 h-8 rounded-full bg-white hover:bg-neutral-200 text-black flex items-center justify-center transition-transform active:scale-95 shadow-md shrink-0"
+                className="w-8 h-8 rounded-full bg-foreground text-background flex items-center justify-center transition-transform active:scale-95 shadow-md shrink-0"
               >
-                <Square className="w-3.5 h-3.5 fill-black" />
+                <Square className="w-3.5 h-3.5 fill-current" />
               </motion.button>
             ) : hasContent ? (
               /* Active Send Button */
@@ -578,7 +578,7 @@ export function ChatComposer({
                 transition={{ duration: 0.15 }}
                 aria-label="Send message"
                 title="Send message"
-                className="w-8 h-8 rounded-full bg-white hover:bg-neutral-200 text-black flex items-center justify-center transition-transform active:scale-95 shadow-md shrink-0"
+                className="w-8 h-8 rounded-full bg-foreground text-background flex items-center justify-center transition-transform active:scale-95 shadow-md shrink-0 hover:opacity-90"
               >
                 <ArrowUp className="w-4 h-4 stroke-[2.5]" />
               </motion.button>
@@ -588,12 +588,8 @@ export function ChatComposer({
                 key="send-disabled"
                 type="button"
                 disabled
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                aria-label="Send message disabled"
-                className="w-8 h-8 rounded-full bg-[#2f2f2f] text-neutral-500 flex items-center justify-center cursor-not-allowed shrink-0"
+                aria-label="Send message (disabled)"
+                className="w-8 h-8 rounded-full bg-muted text-muted-foreground/60 flex items-center justify-center cursor-not-allowed shrink-0"
               >
                 <ArrowUp className="w-4 h-4 stroke-[2.5]" />
               </motion.button>

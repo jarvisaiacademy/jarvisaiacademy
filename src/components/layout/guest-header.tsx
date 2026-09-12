@@ -40,10 +40,10 @@ export function GuestHeader({
         {/* Model dropdown pill */}
         <button
           type="button"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-neutral-300 hover:text-white hover:bg-white/5 font-semibold text-base transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-foreground/90 hover:text-foreground hover:bg-muted font-semibold text-base transition-colors"
         >
           <span>{modelName}</span>
-          <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />
+          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
         </button>
       </div>
 
@@ -52,7 +52,7 @@ export function GuestHeader({
         <button
           type="button"
           onClick={onOpenLogin}
-          className="px-4 py-1.5 rounded-full bg-white hover:bg-neutral-200 text-black text-xs sm:text-sm font-semibold transition-colors shadow-sm"
+          className="px-4 py-1.5 rounded-full bg-foreground hover:opacity-90 text-background text-xs sm:text-sm font-semibold transition-colors shadow-sm"
         >
           Log in
         </button>
@@ -60,7 +60,7 @@ export function GuestHeader({
         <button
           type="button"
           onClick={onOpenLogin}
-          className="px-4 py-1.5 rounded-full bg-[#212121] hover:bg-[#2c2c2c] border border-white/10 text-white text-xs sm:text-sm font-medium transition-colors"
+          className="px-4 py-1.5 rounded-full bg-muted hover:bg-muted/80 border border-border text-foreground text-xs sm:text-sm font-medium transition-colors"
         >
           Sign up for free
         </button>

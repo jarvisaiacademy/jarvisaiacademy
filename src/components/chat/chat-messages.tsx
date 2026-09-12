@@ -138,14 +138,14 @@ export function ChatMessages({
                   </div>
 
                   {/* Message Bubble */}
-                  <div className="bg-[#212121] text-neutral-100 px-4 py-2.5 rounded-3xl text-sm leading-relaxed shadow-sm break-words">
+                  <div className="bg-neutral-100 dark:bg-[#212121] text-neutral-900 dark:text-neutral-100 border border-neutral-200/80 dark:border-transparent px-4 py-2.5 rounded-3xl text-sm leading-relaxed shadow-xs break-words">
                     {msg.content}
                   </div>
                 </div>
               )
             ) : (
               /* Assistant Response */
-              <div className="w-full flex flex-col gap-2 max-w-full text-neutral-200">
+              <div className="w-full flex flex-col gap-2 max-w-full text-foreground">
                 {/* Assistant Message Content with Markdown & Streaming indicator */}
                 <div className="relative">
                   {msg.content ? (
@@ -153,15 +153,15 @@ export function ChatMessages({
                   ) : msg.isStreaming ? (
                     /* Loading/Thinking Skeleton dots before first token */
                     <div className="flex items-center gap-1.5 py-2">
-                      <div className="w-2 h-2 rounded-full bg-neutral-400 animate-pulse" />
-                      <div className="w-2 h-2 rounded-full bg-neutral-400 animate-pulse [animation-delay:200ms]" />
-                      <div className="w-2 h-2 rounded-full bg-neutral-400 animate-pulse [animation-delay:400ms]" />
+                      <div className="w-2 h-2 rounded-full bg-muted-foreground animate-pulse" />
+                      <div className="w-2 h-2 rounded-full bg-muted-foreground animate-pulse [animation-delay:200ms]" />
+                      <div className="w-2 h-2 rounded-full bg-muted-foreground animate-pulse [animation-delay:400ms]" />
                     </div>
                   ) : null}
 
                   {/* Pulsing streaming cursor */}
                   {msg.isStreaming && (
-                    <span className="inline-block w-2 h-4 ml-1 bg-white align-middle animate-pulse" />
+                    <span className="inline-block w-2 h-4 ml-1 bg-foreground align-middle animate-pulse" />
                   )}
                 </div>
 
