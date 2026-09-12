@@ -35,16 +35,28 @@ export function SidebarHoverCard({
 }: SidebarHoverCardProps) {
   const [mounted, setMounted] = useState(false);
 
+  // Cache last active content so the exit animation doesn't abruptly collapse or flash empty
+  const [cachedContent, setCachedContent] = useState({
+    title,
+    description,
+    gradientClass,
+  });
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!mounted || !isOpen || !anchorRect) return null;
+  useEffect(() => {
+    if (title && description) {
+      setCachedContent({ title, description, gradientClass });
+    }
+  }, [title, description, gradientClass]);
+
+  if (!mounted || !anchorRect) return null;
 
   // Position floating card to the right of the sidebar, vertically aligned with the trigger
   const top = Math.max(12, Math.min(window.innerHeight - 340, anchorRect.top - 16));
-  const effectiveLeft = (sidebarRight ?? anchorRect.right) + 10;
-  const bridgeWidth = Math.max(16, effectiveLeft - anchorRect.left);
+  const effectiveLeft = (sidebarRight ?? anchorRect.right) + 8;
 
   const content = (
     <AnimatePresence>
@@ -55,11 +67,8 @@ export function SidebarHoverCard({
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
         >
-          {/* Invisible hover bridge between trigger and card to prevent flicker */}
-          <div
-            style={{ width: `${bridgeWidth}px`, left: `-${bridgeWidth}px` }}
-            className="absolute top-0 h-full pointer-events-auto"
-          />
+          {/* Narrow hover bridge ONLY spanning the 8px gap between sidebar border and card - never overlaps sidebar */}
+          <div className="absolute top-0 -left-2 w-2 h-full pointer-events-auto" />
 
           <motion.div
             initial={{ opacity: 0, x: -6 }}
@@ -74,21 +83,21 @@ export function SidebarHoverCard({
               transition: { duration: 0.14, ease: "easeIn" },
             }}
             role="dialog"
-            aria-label={title}
+            aria-label={cachedContent.title}
             data-placement="right-of-sidebar"
-            className="w-[316px] sm:w-[328px] bg-[#212121] border border-white/10 rounded-[22px] shadow-2xl shadow-black/70 overflow-hidden flex flex-col"
+            className="w-[316px] sm:w-[328px] bg-[#212121] border border-white/10 rounded-[22px] shadow-2xl shadow-black/70 overflow-hidden flex flex-col pointer-events-auto"
           >
             {/* Top: Vibrant pastel/hero gradient block */}
-            <div className={`h-36 w-full ${gradientClass} rounded-t-[22px]`} />
+            <div className={`h-36 w-full ${cachedContent.gradientClass} rounded-t-[22px]`} />
 
             {/* Bottom: Dark charcoal content area */}
             <div className="p-5 flex flex-col gap-2.5 bg-[#212121] rounded-b-[22px]">
               <h3 className="text-[16px] font-semibold text-white leading-snug tracking-tight">
-                {title}
+                {cachedContent.title}
               </h3>
 
               <p className="text-[13px] text-neutral-400 leading-relaxed font-normal">
-                {description}
+                {cachedContent.description}
               </p>
 
               {/* Action Buttons */}

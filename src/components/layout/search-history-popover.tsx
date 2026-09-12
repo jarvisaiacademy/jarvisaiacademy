@@ -46,10 +46,7 @@ export function SearchHistoryPopover({
           onMouseLeave={onMouseLeave}
         >
           {/* Invisible hover bridge between trigger and card to prevent flicker */}
-          <div
-            style={{ width: `${bridgeWidth}px`, left: `-${bridgeWidth}px` }}
-            className="absolute top-0 h-full pointer-events-auto"
-          />
+          <div className="absolute top-0 -left-2 w-2 h-full pointer-events-auto" />
 
           <motion.div
             initial={{ opacity: 0, x: -6 }}

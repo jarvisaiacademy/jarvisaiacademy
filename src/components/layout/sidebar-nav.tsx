@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   SquarePen,
   Search,
@@ -98,11 +98,15 @@ export function SidebarNav({
     setActiveHoverItem(itemId);
   };
 
-  const handleMouseLeave = () => {
+  const scheduleHide = () => {
     clearHideTimer();
     hideTimerRef.current = setTimeout(() => {
       setActiveHoverItem(null);
     }, 130);
+  };
+
+  const handleMouseLeave = () => {
+    scheduleHide();
   };
 
   const handlePopoverMouseEnter = () => {
@@ -110,14 +114,41 @@ export function SidebarNav({
   };
 
   const handlePopoverMouseLeave = () => {
-    clearHideTimer();
-    hideTimerRef.current = setTimeout(() => {
-      setActiveHoverItem(null);
-    }, 130);
+    scheduleHide();
   };
 
+  // Clean up timer and add outside click & escape handlers
+  useEffect(() => {
+    const handleDismiss = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('[role="dialog"]') || target?.closest("nav")) {
+        return;
+      }
+      clearHideTimer();
+      setActiveHoverItem(null);
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        clearHideTimer();
+        setActiveHoverItem(null);
+      }
+    };
+
+    window.addEventListener("mousedown", handleDismiss);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      clearHideTimer();
+      window.removeEventListener("mousedown", handleDismiss);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   return (
-    <nav className="flex flex-col gap-1 px-2 py-1 relative">
+    <nav
+      onMouseLeave={handleMouseLeave}
+      className="flex flex-col gap-1 px-2 py-1 relative"
+    >
       {/* New chat button */}
       <button
         type="button"
@@ -238,14 +269,14 @@ export function SidebarNav({
       </button>
 
       {/* Reusable Floating Hover Card for Desktop */}
-      {!isMobile && activeHoverItem && navHoverData[activeHoverItem] && (
+      {!isMobile && anchorRect && (
         <SidebarHoverCard
           isOpen={Boolean(activeHoverItem)}
           anchorRect={anchorRect}
           sidebarRight={sidebarRight}
-          title={navHoverData[activeHoverItem].title}
-          description={navHoverData[activeHoverItem].description}
-          gradientClass={navHoverData[activeHoverItem].gradientClass}
+          title={activeHoverItem ? navHoverData[activeHoverItem]?.title ?? "" : ""}
+          description={activeHoverItem ? navHoverData[activeHoverItem]?.description ?? "" : ""}
+          gradientClass={activeHoverItem ? navHoverData[activeHoverItem]?.gradientClass ?? "" : ""}
           onMouseEnter={handlePopoverMouseEnter}
           onMouseLeave={handlePopoverMouseLeave}
           onLoginClick={() => {
