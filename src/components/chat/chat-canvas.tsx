@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { ChatMessages, ChatMessage } from "./chat-messages";
-import { PromptCapsule } from "./prompt-capsule";
+import { ChatComposer, AttachmentItem, ActiveToolType } from "./ChatComposer";
 import { CitationItem } from "./citations-view";
 
 const initialConversation: ChatMessage[] = [
@@ -499,14 +499,20 @@ export function ChatCanvas({
       {/* Floating Transparent Sticky Composer */}
       <div className="absolute bottom-0 left-0 right-0 pointer-events-none bg-gradient-to-t from-black via-black/85 to-transparent pt-10 pb-3 px-4 flex flex-col items-center">
         <div className="w-full max-w-3xl pointer-events-auto">
-          <PromptCapsule
-            onSubmit={handlePromptSubmit}
-            onAttach={onAttach}
-            onVoiceStart={onVoiceStart}
+          <ChatComposer
+            onSend={({ text, activeTool, attachments }) => {
+              let prompt = text;
+              if (activeTool === "web_search") prompt = `[Web Search] ${text}`;
+              if (activeTool === "create_image") prompt = `[Create Image] ${text}`;
+              if (activeTool === "deep_research") prompt = `[Deep Research] ${text}`;
+              if (attachments.length > 0) {
+                prompt = `${prompt ? prompt + "\n" : ""}[Attached ${attachments.length} file(s): ${attachments.map(a => a.name).join(", ")}]`;
+              }
+              handlePromptSubmit(prompt);
+            }}
             onStop={handleStop}
             isGenerating={isGenerating}
             placeholder="Ask anything"
-            showThink={true}
           />
         </div>
         {/* Subtle Disclaimer Footer */}
