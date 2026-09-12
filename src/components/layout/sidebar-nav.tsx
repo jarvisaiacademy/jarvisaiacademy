@@ -2,17 +2,19 @@
 
 import {
   SquarePen,
-  Library,
-  Clock,
-  Compass,
-  MoreHorizontal,
+  BookOpen,
+  Zap,
+  MessageSquareQuote,
+  Award,
+  HelpCircle,
 } from "lucide-react";
 
 interface SidebarNavProps {
   onNewChat?: () => void;
+  onSelectSection?: (section: string) => void;
 }
 
-export function SidebarNav({ onNewChat }: SidebarNavProps) {
+export function SidebarNav({ onNewChat, onSelectSection }: SidebarNavProps) {
   return (
     <nav className="flex flex-col gap-1 px-2 py-1">
       {/* New chat button */}
@@ -27,40 +29,59 @@ export function SidebarNav({ onNewChat }: SidebarNavProps) {
         </div>
       </button>
 
-      {/* Library */}
+      {/* Courses */}
       <button
         type="button"
-        className="flex items-center gap-2.5 w-full px-3 py-2 text-sm font-medium text-neutral-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors text-left"
+        onClick={() => onSelectSection?.("courses")}
+        className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm font-normal text-neutral-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors text-left"
       >
-        <Library className="w-4 h-4 text-neutral-400" />
-        <span>Library</span>
+        <BookOpen className="w-4 h-4 text-neutral-400 group-hover:text-neutral-200 transition-colors" />
+        <span>Courses</span>
       </button>
 
-      {/* Scheduled */}
+      {/* Super10 */}
       <button
         type="button"
-        className="flex items-center gap-2.5 w-full px-3 py-2 text-sm font-medium text-neutral-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors text-left"
+        onClick={() => onSelectSection?.("super10")}
+        className="group flex items-center justify-between w-full px-3 py-2 text-sm font-normal text-neutral-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors text-left"
       >
-        <Clock className="w-4 h-4 text-neutral-400" />
-        <span>Scheduled</span>
+        <div className="flex items-center gap-2.5">
+          <Zap className="w-4 h-4 text-amber-400/90 group-hover:text-amber-400 transition-colors" />
+          <span>Super10</span>
+        </div>
+        <span className="text-[10px] font-medium tracking-wide uppercase px-1.5 py-0.5 rounded bg-white/10 text-neutral-300 group-hover:text-white transition-colors">
+          Elite
+        </span>
       </button>
 
-      {/* Plugins */}
+      {/* Testimonials */}
       <button
         type="button"
-        className="flex items-center gap-2.5 w-full px-3 py-2 text-sm font-medium text-neutral-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors text-left"
+        onClick={() => onSelectSection?.("testimonials")}
+        className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm font-normal text-neutral-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors text-left"
       >
-        <Compass className="w-4 h-4 text-neutral-400" />
-        <span>Plugins</span>
+        <MessageSquareQuote className="w-4 h-4 text-neutral-400 group-hover:text-neutral-200 transition-colors" />
+        <span>Testimonials</span>
       </button>
 
-      {/* More */}
+      {/* Certificate */}
       <button
         type="button"
-        className="flex items-center gap-2.5 w-full px-3 py-2 text-sm font-medium text-neutral-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors text-left"
+        onClick={() => onSelectSection?.("certificate")}
+        className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm font-normal text-neutral-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors text-left"
       >
-        <MoreHorizontal className="w-4 h-4 text-neutral-400" />
-        <span>More</span>
+        <Award className="w-4 h-4 text-neutral-400 group-hover:text-neutral-200 transition-colors" />
+        <span>Certificate</span>
+      </button>
+
+      {/* Enquiry */}
+      <button
+        type="button"
+        onClick={() => onSelectSection?.("enquiry")}
+        className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm font-normal text-neutral-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors text-left"
+      >
+        <HelpCircle className="w-4 h-4 text-neutral-400 group-hover:text-neutral-200 transition-colors" />
+        <span>Enquiry</span>
       </button>
     </nav>
   );

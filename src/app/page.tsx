@@ -10,6 +10,8 @@ import { useSidebar } from "@/hooks/use-sidebar";
 export default function Home() {
   const { isOpen, toggle, isMobile } = useSidebar(true);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [activeTopic, setActiveTopic] = useState<string | null>(null);
+  const [resetSignal, setResetSignal] = useState(0);
 
   const handleOpenLogin = () => setIsLoginOpen(true);
   const handleCloseLogin = () => setIsLoginOpen(false);
@@ -21,8 +23,9 @@ export default function Home() {
         isOpen={isOpen}
         onToggle={toggle}
         isMobile={isMobile}
+        onSelectSection={(topic) => setActiveTopic(topic)}
+        onNewChat={() => setResetSignal((prev) => prev + 1)}
       />
-
 
       {/* Main Canvas Area */}
       <main className="flex-1 flex flex-col h-screen min-w-0 bg-black relative">
@@ -32,7 +35,11 @@ export default function Home() {
           onOpenLogin={handleOpenLogin}
         />
 
-        <ChatCanvas />
+        <ChatCanvas
+          activeTopic={activeTopic}
+          onTopicHandled={() => setActiveTopic(null)}
+          resetSignal={resetSignal}
+        />
       </main>
 
       {/* Reusable Login / Signup Modal */}

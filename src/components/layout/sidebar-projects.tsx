@@ -27,30 +27,6 @@ const initialProjects: ProjectItem[] = [
     iconName: "ShoppingBag",
     color: "text-amber-500",
   },
-  {
-    id: "proj-2",
-    name: "Rokonet",
-    iconName: "Radio",
-    color: "text-rose-400",
-  },
-  {
-    id: "proj-3",
-    name: "Device Profiles",
-    iconName: "Smartphone",
-    color: "text-purple-400",
-  },
-  {
-    id: "proj-4",
-    name: "Astrology App",
-    iconName: "Sparkles",
-    color: "text-neutral-200",
-  },
-  {
-    id: "proj-5",
-    name: "MenuMitra",
-    iconName: "ShoppingBag",
-    color: "text-amber-500",
-  },
 ];
 
 const extraProjects: ProjectItem[] = [

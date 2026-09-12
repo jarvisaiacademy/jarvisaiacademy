@@ -10,10 +10,18 @@ import { UserProfile } from "./user-profile";
 interface SidebarProps {
   isOpen: boolean;
   onToggle: () => void;
+  onSelectSection?: (section: string) => void;
+  onNewChat?: () => void;
   isMobile?: boolean;
 }
 
-export function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
+export function Sidebar({
+  isOpen,
+  onToggle,
+  onSelectSection,
+  onNewChat,
+  isMobile,
+}: SidebarProps) {
   if (isMobile) {
     return (
       <>
@@ -34,7 +42,7 @@ export function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
         >
           <div className="flex flex-col flex-1 overflow-y-auto no-scrollbar">
             <SidebarHeader onToggle={onToggle} />
-            <SidebarNav />
+            <SidebarNav onNewChat={onNewChat} onSelectSection={onSelectSection} />
             <div className="h-px bg-white/5 mx-2 my-1" />
             <SidebarPinned />
             <div className="h-px bg-white/5 mx-2 my-1" />
@@ -60,7 +68,7 @@ export function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
     >
       <div className="w-[260px] flex flex-col flex-1 overflow-y-auto overflow-x-hidden no-scrollbar">
         <SidebarHeader onToggle={onToggle} />
-        <SidebarNav />
+        <SidebarNav onNewChat={onNewChat} onSelectSection={onSelectSection} />
         <div className="h-px bg-white/5 mx-2 my-1" />
         <SidebarPinned />
         <div className="h-px bg-white/5 mx-2 my-1" />
@@ -69,7 +77,6 @@ export function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
       <div className="w-[260px]">
         <UserProfile />
       </div>
-
     </motion.aside>
   );
 }

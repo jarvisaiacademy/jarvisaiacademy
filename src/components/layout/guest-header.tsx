@@ -14,7 +14,7 @@ export function GuestHeader({
   sidebarOpen,
   onToggleSidebar,
   onOpenLogin,
-  modelName = "ChatGPT",
+  modelName = "Jarvis AI Academy",
 }: GuestHeaderProps) {
   return (
     <header className="relative flex items-center justify-between px-4 py-3 h-14 bg-transparent z-20">
