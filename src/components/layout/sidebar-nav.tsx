@@ -11,8 +11,56 @@ import {
   Award,
   HelpCircle,
 } from "lucide-react";
-import { DeepResearchPopover } from "./deep-research-popover";
-import { SearchHistoryPopover } from "./search-history-popover";
+import { SidebarHoverCard } from "./sidebar-hover-card";
+
+interface NavHoverItemData {
+  title: string;
+  description: string;
+  gradientClass: string;
+}
+
+const navHoverData: Record<string, NavHoverItemData> = {
+  new_chat: {
+    title: "Start a fresh chat",
+    description: "Log in to save your conversation history, organize chats, and pick up right where you left off.",
+    gradientClass: "bg-gradient-to-br from-[#748ffc] via-[#9775fa] to-[#63e6be]",
+  },
+  search: {
+    title: "Search your chat history",
+    description: "Log in to save conversations, search past answers, and pick up where you left off.",
+    gradientClass: "bg-gradient-to-br from-[#8ba7f9] via-[#aca5fb] to-[#8db7fd]",
+  },
+  courses: {
+    title: "Explore Academy Courses",
+    description: "Log in to enroll in Full-Stack AI & Web Engineering, view curriculum roadmaps, and track learning progress.",
+    gradientClass: "bg-gradient-to-br from-[#38d9a9] via-[#20c997] to-[#12b886]",
+  },
+  super10: {
+    title: "Super10 Elite Cohort",
+    description: "Log in to apply for the selective 10-student cohort, view live projects, and access placement details.",
+    gradientClass: "bg-gradient-to-br from-[#fcc419] via-[#ff922b] to-[#f76707]",
+  },
+  deep_research: {
+    title: "Turn questions into research",
+    description: "Log in to run multi-step research, compare sources, and save cited reports to revisit later.",
+    gradientClass: "bg-gradient-to-br from-[#4facfe] via-[#6a11cb] to-[#2575fc]",
+  },
+  testimonials: {
+    title: "Student Success & Reviews",
+    description: "Log in to read verified reviews, explore portfolio projects, and view compensation packages of our alumni.",
+    gradientClass: "bg-gradient-to-br from-[#f06595] via-[#cc5de8] to-[#845ef7]",
+  },
+  certificate: {
+    title: "Verify Credentials",
+    description: "Log in to view tamper-proof cryptographic certificates, verify graduate credentials, and share on LinkedIn.",
+    gradientClass: "bg-gradient-to-br from-[#4dabf7] via-[#339af0] to-[#1c7ed6]",
+  },
+  enquiry: {
+    title: "Connect with Admissions",
+    description: "Log in to book a 1-on-1 counseling session, get syllabus advice, and reserve batch seating.",
+    gradientClass: "bg-gradient-to-br from-[#20c997] via-[#1098ad] to-[#0ca678]",
+  },
+};
 
 interface SidebarNavProps {
   onNewChat?: () => void;
@@ -27,17 +75,10 @@ export function SidebarNav({
   onOpenLogin,
   isMobile,
 }: SidebarNavProps) {
-  // Deep research popover state
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [activeHoverItem, setActiveHoverItem] = useState<string | null>(null);
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
-  const deepResearchRef = useRef<HTMLButtonElement>(null);
+  const [sidebarRight, setSidebarRight] = useState<number | undefined>(undefined);
   const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Search chats popover state
-  const [isSearchPopoverOpen, setIsSearchPopoverOpen] = useState(false);
-  const [searchAnchorRect, setSearchAnchorRect] = useState<DOMRect | null>(null);
-  const searchChatsRef = useRef<HTMLButtonElement>(null);
-  const searchHideTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const clearHideTimer = () => {
     if (hideTimerRef.current) {
@@ -46,72 +87,43 @@ export function SidebarNav({
     }
   };
 
-  const handleMouseEnterTrigger = () => {
+  const handleMouseEnter = (itemId: string, e: React.MouseEvent<HTMLElement>) => {
     clearHideTimer();
-    if (deepResearchRef.current) {
-      setAnchorRect(deepResearchRef.current.getBoundingClientRect());
+    const target = e.currentTarget;
+    setAnchorRect(target.getBoundingClientRect());
+    const aside = target.closest("aside");
+    if (aside) {
+      setSidebarRight(aside.getBoundingClientRect().right);
     }
-    setIsPopoverOpen(true);
+    setActiveHoverItem(itemId);
   };
 
-  const handleMouseLeaveTrigger = () => {
+  const handleMouseLeave = () => {
     clearHideTimer();
     hideTimerRef.current = setTimeout(() => {
-      setIsPopoverOpen(false);
+      setActiveHoverItem(null);
     }, 130);
   };
 
-  const handleMouseEnterPopover = () => {
+  const handlePopoverMouseEnter = () => {
     clearHideTimer();
   };
 
-  const handleMouseLeavePopover = () => {
+  const handlePopoverMouseLeave = () => {
     clearHideTimer();
     hideTimerRef.current = setTimeout(() => {
-      setIsPopoverOpen(false);
-    }, 130);
-  };
-
-  // Search popover timer handlers
-  const clearSearchHideTimer = () => {
-    if (searchHideTimerRef.current) {
-      clearTimeout(searchHideTimerRef.current);
-      searchHideTimerRef.current = null;
-    }
-  };
-
-  const handleMouseEnterSearch = () => {
-    clearSearchHideTimer();
-    if (searchChatsRef.current) {
-      setSearchAnchorRect(searchChatsRef.current.getBoundingClientRect());
-    }
-    setIsSearchPopoverOpen(true);
-  };
-
-  const handleMouseLeaveSearch = () => {
-    clearSearchHideTimer();
-    searchHideTimerRef.current = setTimeout(() => {
-      setIsSearchPopoverOpen(false);
-    }, 130);
-  };
-
-  const handleMouseEnterSearchPopover = () => {
-    clearSearchHideTimer();
-  };
-
-  const handleMouseLeaveSearchPopover = () => {
-    clearSearchHideTimer();
-    searchHideTimerRef.current = setTimeout(() => {
-      setIsSearchPopoverOpen(false);
+      setActiveHoverItem(null);
     }, 130);
   };
 
   return (
-    <nav className="flex flex-col gap-1 px-2 py-1">
+    <nav className="flex flex-col gap-1 px-2 py-1 relative">
       {/* New chat button */}
       <button
         type="button"
         onClick={onNewChat}
+        onMouseEnter={(e) => handleMouseEnter("new_chat", e)}
+        onMouseLeave={handleMouseLeave}
         className="group flex items-center justify-between w-full px-3 py-2 text-sm font-medium text-neutral-900 dark:text-white bg-neutral-200/80 dark:bg-[#212121] hover:bg-neutral-300/80 dark:hover:bg-[#2c2c2c] rounded-lg transition-all text-left shadow-xs cursor-pointer"
       >
         <div className="flex items-center gap-2.5">
@@ -120,44 +132,28 @@ export function SidebarNav({
         </div>
       </button>
 
-      {/* Search chats with hover popover */}
-      <div className="relative">
-        <button
-          ref={searchChatsRef}
-          type="button"
-          onClick={onOpenLogin}
-          onMouseEnter={handleMouseEnterSearch}
-          onMouseLeave={handleMouseLeaveSearch}
-          aria-haspopup="dialog"
-          aria-expanded={isSearchPopoverOpen}
-          className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
-        >
-          <Search className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors" />
-          <span>Search chats</span>
-        </button>
-
-        {!isMobile && (
-          <SearchHistoryPopover
-            isOpen={isSearchPopoverOpen}
-            anchorRect={searchAnchorRect}
-            onMouseEnter={handleMouseEnterSearchPopover}
-            onMouseLeave={handleMouseLeaveSearchPopover}
-            onLoginClick={() => {
-              setIsSearchPopoverOpen(false);
-              onOpenLogin?.();
-            }}
-            onSignupClick={() => {
-              setIsSearchPopoverOpen(false);
-              onOpenLogin?.();
-            }}
-          />
-        )}
-      </div>
+      {/* Search chats */}
+      <button
+        type="button"
+        onClick={onOpenLogin}
+        onMouseEnter={(e) => handleMouseEnter("search", e)}
+        onMouseLeave={handleMouseLeave}
+        aria-haspopup="dialog"
+        aria-expanded={activeHoverItem === "search"}
+        className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
+      >
+        <Search className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors" />
+        <span>Search chats</span>
+      </button>
 
       {/* Courses */}
       <button
         type="button"
         onClick={() => onSelectSection?.("courses")}
+        onMouseEnter={(e) => handleMouseEnter("courses", e)}
+        onMouseLeave={handleMouseLeave}
+        aria-haspopup="dialog"
+        aria-expanded={activeHoverItem === "courses"}
         className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
       >
         <BookOpen className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors" />
@@ -168,6 +164,10 @@ export function SidebarNav({
       <button
         type="button"
         onClick={() => onSelectSection?.("super10")}
+        onMouseEnter={(e) => handleMouseEnter("super10", e)}
+        onMouseLeave={handleMouseLeave}
+        aria-haspopup="dialog"
+        aria-expanded={activeHoverItem === "super10"}
         className="group flex items-center justify-between w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
       >
         <div className="flex items-center gap-2.5">
@@ -179,46 +179,30 @@ export function SidebarNav({
         </span>
       </button>
 
-      {/* Deep research with hover popover */}
-      <div className="relative">
-        <button
-          ref={deepResearchRef}
-          type="button"
-          onClick={() => onSelectSection?.("deep_research")}
-          onMouseEnter={handleMouseEnterTrigger}
-          onMouseLeave={handleMouseLeaveTrigger}
-          aria-haspopup="dialog"
-          aria-expanded={isPopoverOpen}
-          className="group flex items-center justify-between w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
-        >
-          <div className="flex items-center gap-2.5">
-            <Sparkles className="w-4 h-4 text-indigo-500 dark:text-indigo-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors" />
-            <span>Deep research</span>
-          </div>
-        </button>
-
-        {!isMobile && (
-          <DeepResearchPopover
-            isOpen={isPopoverOpen}
-            anchorRect={anchorRect}
-            onMouseEnter={handleMouseEnterPopover}
-            onMouseLeave={handleMouseLeavePopover}
-            onLoginClick={() => {
-              setIsPopoverOpen(false);
-              onOpenLogin?.();
-            }}
-            onSignupClick={() => {
-              setIsPopoverOpen(false);
-              onOpenLogin?.();
-            }}
-          />
-        )}
-      </div>
+      {/* Deep research */}
+      <button
+        type="button"
+        onClick={() => onSelectSection?.("deep_research")}
+        onMouseEnter={(e) => handleMouseEnter("deep_research", e)}
+        onMouseLeave={handleMouseLeave}
+        aria-haspopup="dialog"
+        aria-expanded={activeHoverItem === "deep_research"}
+        className="group flex items-center justify-between w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
+      >
+        <div className="flex items-center gap-2.5">
+          <Sparkles className="w-4 h-4 text-indigo-500 dark:text-indigo-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors" />
+          <span>Deep research</span>
+        </div>
+      </button>
 
       {/* Testimonials */}
       <button
         type="button"
         onClick={() => onSelectSection?.("testimonials")}
+        onMouseEnter={(e) => handleMouseEnter("testimonials", e)}
+        onMouseLeave={handleMouseLeave}
+        aria-haspopup="dialog"
+        aria-expanded={activeHoverItem === "testimonials"}
         className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
       >
         <MessageSquareQuote className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors" />
@@ -229,6 +213,10 @@ export function SidebarNav({
       <button
         type="button"
         onClick={() => onSelectSection?.("certificate")}
+        onMouseEnter={(e) => handleMouseEnter("certificate", e)}
+        onMouseLeave={handleMouseLeave}
+        aria-haspopup="dialog"
+        aria-expanded={activeHoverItem === "certificate"}
         className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
       >
         <Award className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors" />
@@ -239,11 +227,39 @@ export function SidebarNav({
       <button
         type="button"
         onClick={() => onSelectSection?.("enquiry")}
+        onMouseEnter={(e) => handleMouseEnter("enquiry", e)}
+        onMouseLeave={handleMouseLeave}
+        aria-haspopup="dialog"
+        aria-expanded={activeHoverItem === "enquiry"}
         className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
       >
         <HelpCircle className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors" />
         <span>Enquiry</span>
       </button>
+
+      {/* Reusable Floating Hover Card for Desktop */}
+      {!isMobile && activeHoverItem && navHoverData[activeHoverItem] && (
+        <SidebarHoverCard
+          isOpen={Boolean(activeHoverItem)}
+          anchorRect={anchorRect}
+          sidebarRight={sidebarRight}
+          title={navHoverData[activeHoverItem].title}
+          description={navHoverData[activeHoverItem].description}
+          gradientClass={navHoverData[activeHoverItem].gradientClass}
+          onMouseEnter={handlePopoverMouseEnter}
+          onMouseLeave={handlePopoverMouseLeave}
+          onLoginClick={() => {
+            setActiveHoverItem(null);
+            onOpenLogin?.();
+          }}
+          onSignupClick={() => {
+            setActiveHoverItem(null);
+            onOpenLogin?.();
+          }}
+        />
+      )}
     </nav>
   );
 }
+
+export default SidebarNav;
