@@ -50,7 +50,12 @@ export function Sidebar({
         >
           <div className="flex flex-col flex-1 overflow-y-auto no-scrollbar">
             <SidebarHeader onToggle={onToggle} />
-            <SidebarNav onNewChat={onNewChat} onSelectSection={onSelectSection} />
+            <SidebarNav
+              onNewChat={onNewChat}
+              onSelectSection={onSelectSection}
+              onOpenLogin={onOpenLogin}
+              isMobile={true}
+            />
             <div className="h-px bg-neutral-200 dark:bg-white/5 mx-2 my-1" />
             <SidebarPinned />
             <div className="h-px bg-neutral-200 dark:bg-white/5 mx-2 my-1" />
@@ -92,7 +97,12 @@ export function Sidebar({
     >
       <div className="w-[260px] flex flex-col flex-1 overflow-y-auto overflow-x-hidden no-scrollbar">
         <SidebarHeader onToggle={onToggle} />
-        <SidebarNav onNewChat={onNewChat} onSelectSection={onSelectSection} />
+        <SidebarNav
+          onNewChat={onNewChat}
+          onSelectSection={onSelectSection}
+          onOpenLogin={onOpenLogin}
+          isMobile={false}
+        />
         <div className="h-px bg-neutral-200 dark:bg-white/5 mx-2 my-1" />
         <SidebarPinned />
         <div className="h-px bg-neutral-200 dark:bg-white/5 mx-2 my-1" />

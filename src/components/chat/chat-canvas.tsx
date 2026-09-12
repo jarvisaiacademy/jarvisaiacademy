@@ -159,24 +159,45 @@ Do you have a certificate ID you would like to verify right now?`,
     ],
   },
   enquiry: {
-    text: `📞 **Admissions & Counselor Connect**:
+    text: `📞 **Get in Touch with Admissions**:
 
-We are here to help you navigate your tech learning journey:
+Ready to accelerate your tech career? Our admissions counselors and mentors are available for guidance:
 
-* **Direct Phone / WhatsApp**: +91 84828 31723
-* **Campus & Hub**: Pune, Maharashtra, India
-* **Counseling Hours**: Monday to Saturday, 9:00 AM – 7:30 PM IST
-* **Email Support**: admissions@jarvisaiacademy.com
+* **Phone / WhatsApp**: +91 91729 11988
+* **Office & Lab**: Pune, Maharashtra
+* **Email**: admissions@jarvisaiacademy.com
+* **Walk-In Hours**: Monday – Saturday, 10:00 AM – 7:00 PM IST
 
-Feel free to share your current educational or career background, and I can tailor a custom learning roadmap for you right now!`,
+Drop your contact number or question here and an engineering advisor will get in touch with you directly!`,
     citations: [
       {
         id: "c-enq-1",
         number: 1,
-        title: "Admissions Office & Student Support Desk",
-        source: "Student Relations Team",
-        snippet: "Dedicated student success counselors available for free career consultations.",
+        title: "Jarvis AI Academy Admissions & Counseling",
+        source: "Student Advisory Desk",
+        snippet: "Counselors available for career transition guidance, syllabus evaluation, and batch scheduling.",
         url: "https://jarvisaiacademy.com/contact",
+      },
+    ],
+  },
+  deep_research: {
+    text: `🔬 **Jarvis Autonomous Deep Research**:
+
+Our autonomous research pipeline synthesizes comprehensive technical analyses:
+
+* **Curriculum & Tech Comparison**: Multi-step deep synthesis across market trends, enterprise tech stacks, and modern software architectures.
+* **Placement & Salary Benchmarks**: In-depth analysis of compensation benchmarks and hiring partner criteria.
+* **Cited Engineering Reports**: Generates structured markdown dossiers with verified sources and code snippets.
+
+Log in to run multi-step research and save comprehensive reports to revisit later!`,
+    citations: [
+      {
+        id: "c-deep-1",
+        number: 1,
+        title: "Jarvis Autonomous Synthesis Pipeline",
+        source: "Jarvis Research Lab",
+        snippet: "Autonomous agent synthesizing multi-source technical documentation and curriculum benchmarks.",
+        url: "https://jarvisaiacademy.com/research",
       },
     ],
   },
