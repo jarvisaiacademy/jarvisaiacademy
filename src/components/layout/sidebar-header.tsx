@@ -47,7 +47,7 @@ export function SidebarHeader({
     clearHideTimer();
     hideTimerRef.current = setTimeout(() => {
       setIsPopoverOpen(false);
-    }, 180);
+    }, 130);
   };
 
   const handleMouseEnterPopover = () => {
@@ -58,7 +58,7 @@ export function SidebarHeader({
     clearHideTimer();
     hideTimerRef.current = setTimeout(() => {
       setIsPopoverOpen(false);
-    }, 180);
+    }, 130);
   };
 
   return (

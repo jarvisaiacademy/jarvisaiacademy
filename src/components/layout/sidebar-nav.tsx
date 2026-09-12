@@ -58,7 +58,7 @@ export function SidebarNav({
     clearHideTimer();
     hideTimerRef.current = setTimeout(() => {
       setIsPopoverOpen(false);
-    }, 180);
+    }, 130);
   };
 
   const handleMouseEnterPopover = () => {
@@ -69,7 +69,7 @@ export function SidebarNav({
     clearHideTimer();
     hideTimerRef.current = setTimeout(() => {
       setIsPopoverOpen(false);
-    }, 180);
+    }, 130);
   };
 
   // Search popover timer handlers
@@ -92,7 +92,7 @@ export function SidebarNav({
     clearSearchHideTimer();
     searchHideTimerRef.current = setTimeout(() => {
       setIsSearchPopoverOpen(false);
-    }, 180);
+    }, 130);
   };
 
   const handleMouseEnterSearchPopover = () => {
@@ -103,7 +103,7 @@ export function SidebarNav({
     clearSearchHideTimer();
     searchHideTimerRef.current = setTimeout(() => {
       setIsSearchPopoverOpen(false);
-    }, 180);
+    }, 130);
   };
 
   return (

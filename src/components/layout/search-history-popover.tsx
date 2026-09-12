@@ -52,10 +52,17 @@ export function SearchHistoryPopover({
           />
 
           <motion.div
-            initial={{ opacity: 0, x: -8, scale: 0.98 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: -6, scale: 0.98 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
+            initial={{ opacity: 0, x: -6 }}
+            animate={{
+              opacity: 1,
+              x: 0,
+              transition: { duration: 0.2, ease: "easeOut" },
+            }}
+            exit={{
+              opacity: 0,
+              x: -4,
+              transition: { duration: 0.14, ease: "easeIn" },
+            }}
             role="dialog"
             aria-labelledby="search-history-title"
             aria-describedby="search-history-desc"
