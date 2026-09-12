@@ -75,10 +75,7 @@ export function PromptCapsule({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
+    <div
       className={`relative w-full max-w-3xl mx-auto rounded-[26px] bg-[#212121] border transition-all duration-200 ${
         isFocused
           ? "border-neutral-500 shadow-xl shadow-black/60"
@@ -260,6 +257,6 @@ export function PromptCapsule({
           </AnimatePresence>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

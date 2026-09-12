@@ -491,9 +491,9 @@ export function ChatCanvas({
           />
         </div>
         {/* Subtle Disclaimer Footer */}
-        <p className="text-[11px] text-neutral-500 mt-2 text-center select-none">
+        {/* <p className="text-[11px] text-neutral-500 mt-2 text-center select-none">
           ChatGPT can make mistakes. Check important info.
-        </p>
+        </p> */}
       </div>
     </div>
   );

@@ -75,11 +75,8 @@ export function ChatMessages({
         const isEditing = editingId === msg.id;
 
         return (
-          <motion.div
+          <div
             key={msg.id || idx}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
             className={`group relative flex flex-col ${
               isUser ? "items-end" : "items-start"
             }`}
@@ -262,7 +259,7 @@ export function ChatMessages({
                 )}
               </div>
             )}
-          </motion.div>
+          </div>
         );
       })}
     </div>
