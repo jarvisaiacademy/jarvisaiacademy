@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { MarkdownRenderer } from "./markdown-renderer";
 import { CitationsView, CitationItem } from "./citations-view";
+import { EnrollmentCard, EnrollmentData } from "./enrollment-card";
 import { useToast } from "@/components/ui/toast";
 
 export interface ChatMessage {
@@ -22,6 +23,7 @@ export interface ChatMessage {
   citations?: CitationItem[];
   feedback?: "like" | "dislike" | null;
   timestamp?: string;
+  enrollment?: EnrollmentData;
 }
 
 interface ChatMessagesProps {
@@ -29,6 +31,9 @@ interface ChatMessagesProps {
   onRegenerate?: (messageId: string) => void;
   onEditSubmit?: (messageId: string, newContent: string) => void;
   onFeedback?: (messageId: string, type: "like" | "dislike") => void;
+  onUpdateEnrollment?: (messageId: string, data: EnrollmentData) => void;
+  onActionPrompt?: (prompt: string) => void;
+  currentUser?: { name?: string; email?: string } | null;
 }
 
 export function ChatMessages({
@@ -36,6 +41,9 @@ export function ChatMessages({
   onRegenerate,
   onEditSubmit,
   onFeedback,
+  onUpdateEnrollment,
+  onActionPrompt,
+  currentUser,
 }: ChatMessagesProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -168,6 +176,40 @@ export function ChatMessages({
                 {msg.citations && msg.citations.length > 0 && (
                   <CitationsView citations={msg.citations} />
                 )}
+
+                {/* Quick Action Pill for Courses / Super10 */}
+                {!msg.isStreaming &&
+                  (msg.content.includes("Full-Stack AI & Web Engineering") ||
+                    msg.content.includes("Super10 Elite Batch") ||
+                    msg.content.includes("Super10 Elite Cohort")) &&
+                  !msg.content.includes("Admissions & Enrollment Portal") && (
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onActionPrompt?.(
+                            "I want to enroll in the upcoming cohort and proceed with payment"
+                          )
+                        }
+                        className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/30 text-blue-400 hover:text-blue-300 text-xs font-semibold transition-all cursor-pointer shadow-xs active:scale-95"
+                      >
+                        <span>⚡ Enroll Now in Upcoming Batch</span>
+                      </button>
+                    </div>
+                  )}
+
+                {/* Interactive Enrollment & Payment Module */}
+                {(msg.enrollment ||
+                  msg.content.includes("Admissions & Enrollment Portal") ||
+                  msg.content.includes("Enrollment Checkout")) &&
+                  !msg.isStreaming && (
+                    <EnrollmentCard
+                      messageId={msg.id}
+                      initialData={msg.enrollment}
+                      currentUser={currentUser}
+                      onUpdate={(data) => onUpdateEnrollment?.(msg.id, data)}
+                    />
+                  )}
 
                 {/* Assistant Action Bar */}
                 {!msg.isStreaming && msg.content && (

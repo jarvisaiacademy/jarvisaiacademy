@@ -2,16 +2,16 @@
 
 import React, { createContext, useContext, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { CheckCircle2, Info, X } from "lucide-react";
+import { CheckCircle2, Info, X, AlertCircle } from "lucide-react";
 
 interface Toast {
   id: string;
   message: string;
-  type?: "success" | "info";
+  type?: "success" | "info" | "error";
 }
 
 interface ToastContextValue {
-  showToast: (message: string, type?: "success" | "info") => void;
+  showToast: (message: string, type?: "success" | "info" | "error") => void;
 }
 
 const ToastContext = createContext<ToastContextValue>({
@@ -25,7 +25,8 @@ export function useToast() {
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const showToast = useCallback((message: string, type: "success" | "info" = "success") => {
+  const showToast = useCallback(
+    (message: string, type: "success" | "info" | "error" = "success") => {
     const id = `${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
     setToasts((prev) => [...prev, { id, message, type }]);
 
@@ -55,6 +56,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             >
               {toast.type === "success" ? (
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              ) : toast.type === "error" ? (
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
               ) : (
                 <Info className="w-4 h-4 text-blue-400 shrink-0" />
               )}

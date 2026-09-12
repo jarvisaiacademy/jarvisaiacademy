@@ -4,6 +4,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { ChatMessages, ChatMessage } from "./chat-messages";
 import { ChatComposer } from "./ChatComposer";
 import { CitationItem } from "./citations-view";
+import { EnrollmentData } from "./enrollment-card";
+import { useAuth } from "@/providers/auth-provider";
 import { siteConfig } from "@/config/site";
 
 const SAMPLE_STARTER_QUESTION = `Hi! I want to transition into AI & Full-Stack software engineering. How does ${siteConfig.name} help learners reach production-ready skills?`;
@@ -393,6 +395,27 @@ For billing assistance or corporate sponsorship inquiries:
       },
     ],
   },
+  enroll: {
+    text: `# Admissions & Enrollment Portal — ${siteConfig.name}
+
+Welcome to the direct admissions and enrollment portal. You can confirm your seat for the upcoming cohort with our transparent pricing and **7-day 100% money-back guarantee**.
+
+### Available Cohort Tracks:
+* **Full-Stack AI & Web Engineering** (16 Weeks Live) — ₹45,000 + 18% GST (₹53,100 total)
+* **Super10 Elite Cohort** (24 Weeks, 100% Placement Assurance) — ₹75,000 + 18% GST (₹88,500 total)
+
+Please select your program below and proceed with the secure checkout. Your verified Tax Invoice & Receipt will be available for download immediately upon confirmation.`,
+    citations: [
+      {
+        id: "c-enroll-1",
+        number: 1,
+        title: `${siteConfig.name} Admissions & Enrollment Registry`,
+        source: "Admissions Directorate",
+        snippet: "Direct cohort seat reservation, fee schedules, statutory 18% GST tax invoices, and 7-day money-back guarantee.",
+        url: "https://jarvisaiacademy.com/admissions",
+      },
+    ],
+  },
 };
 
 interface ChatCanvasProps {
@@ -540,7 +563,19 @@ export function ChatCanvas({
   // Generate reply content based on query text
   const determineReply = useCallback((prompt: string): TopicResponseData => {
     const lower = prompt.toLowerCase();
-    if (lower.includes("super10") || lower.includes("batch") || lower.includes("elite")) {
+    if (
+      lower.includes("enroll") ||
+      lower.includes("admission") ||
+      lower.includes("checkout") ||
+      lower.includes("pay") ||
+      lower.includes("payment") ||
+      lower.includes("register") ||
+      lower.includes("book seat") ||
+      lower.includes("join batch") ||
+      lower.includes("join cohort")
+    ) {
+      return academyKnowledge.enroll;
+    } else if (lower.includes("super10") || lower.includes("batch") || lower.includes("elite")) {
       return academyKnowledge.super10;
     } else if (
       lower.includes("course") ||
@@ -613,6 +648,7 @@ export function ChatCanvas({
         testimonials: "Show me student reviews and placement testimonials",
         certificate: "How do I verify a certificate issued by Jarvis AI Academy?",
         enquiry: "I'd like to get in touch with an admissions counselor",
+        enroll: "I want to enroll in the upcoming cohort and proceed with payment",
         terms: "Can you provide the Terms & Conditions of Jarvis AI Academy?",
         privacy: "What is the Privacy Policy of Jarvis AI Academy?",
         payment_terms: "What are the Payment Terms, fee structure, and refund policy at Jarvis AI Academy?",
@@ -709,6 +745,26 @@ export function ChatCanvas({
     );
   }, []);
 
+  const { user } = useAuth();
+
+  const handleUpdateEnrollment = useCallback(
+    (messageId: string, data: EnrollmentData) => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === messageId ? { ...msg, enrollment: data } : msg
+        )
+      );
+    },
+    []
+  );
+
+  const handleActionPrompt = useCallback(
+    (prompt: string) => {
+      handlePromptSubmit(prompt);
+    },
+    [handlePromptSubmit]
+  );
+
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
       {/* Scrollable Conversation Stream */}
@@ -721,6 +777,9 @@ export function ChatCanvas({
           onRegenerate={handleRegenerate}
           onEditSubmit={handleEditSubmit}
           onFeedback={handleFeedback}
+          onUpdateEnrollment={handleUpdateEnrollment}
+          onActionPrompt={handleActionPrompt}
+          currentUser={user}
         />
       </div>
 
