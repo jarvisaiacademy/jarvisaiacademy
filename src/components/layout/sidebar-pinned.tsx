@@ -23,31 +23,31 @@ const defaultPinned: PinnedItem[] = [
     id: "pin-1",
     title: "Resume/Confidence Builder",
     iconName: "GraduationCap",
-    color: "text-emerald-400",
+    color: "text-emerald-600 dark:text-emerald-400",
   },
   {
     id: "pin-2",
     title: "Zexy.Live",
     iconName: "Shield",
-    color: "text-sky-400",
+    color: "text-sky-600 dark:text-sky-400",
   },
   {
     id: "pin-3",
     title: "Buddha and Ambedkar Unders...",
     iconName: "Heart",
-    color: "text-cyan-400",
+    color: "text-cyan-600 dark:text-cyan-400",
   },
   {
     id: "pin-4",
     title: "Learn GenAI/AI/ML/Tools/Pyth...",
     iconName: "Brain",
-    color: "text-emerald-400",
+    color: "text-emerald-600 dark:text-emerald-400",
   },
   {
     id: "pin-5",
     title: "Personal Development",
     iconName: "Heart",
-    color: "text-rose-400",
+    color: "text-rose-600 dark:text-rose-400",
   },
 ];
 
@@ -62,7 +62,7 @@ export function SidebarPinned({
 }: SidebarPinnedProps) {
   return (
     <div className="flex flex-col px-2 py-2">
-      <span className="px-3 pb-1 text-xs font-semibold text-neutral-400 select-none">
+      <span className="px-3 pb-1 text-xs font-semibold text-neutral-500 dark:text-neutral-400 select-none">
         Pinned
       </span>
 
@@ -74,7 +74,7 @@ export function SidebarPinned({
               key={item.id}
               type="button"
               onClick={() => onSelect?.(item.id)}
-              className="group flex items-center gap-2.5 w-full px-3 py-1.5 text-xs text-neutral-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors text-left"
+              className="group flex items-center gap-2.5 w-full px-3 py-1.5 text-xs text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
             >
               <Icon className={`w-3.5 h-3.5 shrink-0 ${item.color}`} />
               <span className="truncate">{item.title}</span>
