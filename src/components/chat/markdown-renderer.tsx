@@ -51,10 +51,10 @@ export function MarkdownRenderer({ content, onCitationClick }: MarkdownRendererP
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#ea580c] hover:text-[#f97316] underline underline-offset-2 inline-flex items-center gap-0.5"
+              className="text-[#ea580c] hover:text-[#f97316] underline underline-offset-2 inline-flex items-center gap-0.5 break-all"
             >
-              {children}
-              <ExternalLink className="w-3 h-3 inline" />
+              <span>{children}</span>
+              <ExternalLink className="w-3 h-3 inline shrink-0" />
             </a>
           ),
           table: ({ children }) => (

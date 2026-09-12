@@ -507,7 +507,7 @@ export function ChatCanvas({
       {/* Scrollable Conversation Stream */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto no-scrollbar pb-36 pt-4"
+        className="flex-1 overflow-y-auto no-scrollbar pb-44 sm:pb-36 pt-2 sm:pt-4"
       >
         <ChatMessages
           messages={messages}
