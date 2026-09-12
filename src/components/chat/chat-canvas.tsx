@@ -9,13 +9,32 @@ const initialConversation: ChatMessage[] = [
   {
     id: "msg-init-user",
     role: "user",
-    content: "hii am new here my age is 90yo",
+    content: "Hi! I want to transition into AI & Full-Stack software engineering. How does Jarvis AI Academy help learners reach production-ready skills?",
   },
   {
     id: "msg-init-ai",
     role: "assistant",
-    content:
-      "Hi! 😊 It’s lovely to meet you. Welcome!\n\nWhether you’re 90 or simply having a little fun with me, you’re very welcome here. I can help with things like answering questions, explaining technology, writing code, telling stories, learning new skills, or just having an engaging conversation.\n\nWhat would you like to explore today? 🌷",
+    content: `Welcome to **Jarvis AI Academy**! 🚀
+
+We specialize in high-impact software engineering programs engineered to take you from core programming to building and deploying production-ready AI systems:
+
+* **Practical, Build-First Learning**: 70% hands-on commercial project development rather than passive lectures.
+* **Flagship Programs**: Comprehensive **Full-Stack AI & Web Engineering** and our signature **Super10 Elite Cohort** with 100% placement assurance.
+* **1-on-1 Mentorship**: Direct weekly architecture reviews, mock technical interviews, and resume coaching with lead software engineers.
+
+Whether you're starting with zero tech experience or looking to upskill into generative AI applications, I can tailor a personalized learning roadmap for you.
+
+What area would you like to explore first — our **Course Curriculum**, the **Super10 Batch**, or **Student Placements**?`,
+    citations: [
+      {
+        id: "c-init-1",
+        number: 1,
+        title: "Jarvis AI Academy Overview & Charter",
+        source: "Jarvis Academic Advisory Board",
+        snippet: "Hands-on engineering cohorts focusing on Next.js, Python architectures, and production GenAI pipelines.",
+        url: "https://jarvisaiacademy.com",
+      },
+    ],
   },
 ];
 
