@@ -6,7 +6,6 @@ import {
   Search,
   BookOpen,
   Zap,
-  Sparkles,
   MessageSquareQuote,
   Award,
   HelpCircle,
@@ -39,11 +38,6 @@ const navHoverData: Record<string, NavHoverItemData> = {
     title: "Super10 Elite Cohort",
     description: "Log in to apply for the selective 10-student cohort, view live projects, and access placement details.",
     gradientClass: "bg-gradient-to-br from-[#fcc419] via-[#ff922b] to-[#f76707]",
-  },
-  deep_research: {
-    title: "Turn questions into research",
-    description: "Log in to run multi-step research, compare sources, and save cited reports to revisit later.",
-    gradientClass: "bg-gradient-to-br from-[#4facfe] via-[#6a11cb] to-[#2575fc]",
   },
   testimonials: {
     title: "Student Success & Reviews",
@@ -208,22 +202,6 @@ export function SidebarNav({
         <span className="text-[10px] font-medium tracking-wide uppercase px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-white/10 text-neutral-700 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
           Elite
         </span>
-      </button>
-
-      {/* Deep research */}
-      <button
-        type="button"
-        onClick={() => onSelectSection?.("deep_research")}
-        onMouseEnter={(e) => handleMouseEnter("deep_research", e)}
-        onMouseLeave={handleMouseLeave}
-        aria-haspopup="dialog"
-        aria-expanded={activeHoverItem === "deep_research"}
-        className="group flex items-center justify-between w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
-      >
-        <div className="flex items-center gap-2.5">
-          <Sparkles className="w-4 h-4 text-indigo-500 dark:text-indigo-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors" />
-          <span>Deep research</span>
-        </div>
       </button>
 
       {/* Testimonials */}

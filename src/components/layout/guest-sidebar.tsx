@@ -5,7 +5,6 @@ import {
   Search,
   ImageIcon,
   Compass,
-  Sparkles,
   ExternalLink,
   Settings,
   HelpCircle,
@@ -90,14 +89,6 @@ export function GuestSidebar({
           >
             <Compass className="w-4 h-4 text-neutral-400" />
             <span>Plugins</span>
-          </button>
-
-          <button
-            type="button"
-            className="flex items-center gap-2.5 w-full px-3 py-2 text-sm font-medium text-neutral-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors text-left"
-          >
-            <Sparkles className="w-4 h-4 text-neutral-400" />
-            <span>Deep research</span>
           </button>
         </nav>
       </div>
