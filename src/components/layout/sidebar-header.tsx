@@ -4,6 +4,8 @@ import React from "react";
 import { PanelLeft } from "lucide-react";
 import { MobileMenuIcon } from "@/components/ui/mobile-menu-icon";
 
+import { siteConfig } from "@/config/site";
+
 interface SidebarHeaderProps {
   onToggle: () => void;
   onSearch?: () => void;
@@ -16,10 +18,13 @@ export function SidebarHeader({
   isMobile,
 }: SidebarHeaderProps) {
   return (
-    <div className="flex items-center justify-between px-3 py-3.5 text-foreground">
-      <div className="flex items-center gap-2">
-        <span className="font-semibold text-base tracking-tight text-neutral-900 dark:text-white select-none">
-          Jarvis AI Academy
+    <div className="flex items-center justify-between px-3 py-3 text-foreground">
+      <div className="flex flex-col min-w-0 pr-2 select-none">
+        <span className="font-semibold text-base tracking-tight text-neutral-900 dark:text-white select-none leading-tight truncate">
+          {siteConfig.name}
+        </span>
+        <span className="text-[11px] text-neutral-500 dark:text-neutral-400 select-none tracking-normal font-normal truncate mt-0.5">
+          {siteConfig.tagline}
         </span>
       </div>
 

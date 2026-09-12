@@ -4,17 +4,19 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { ChatMessages, ChatMessage } from "./chat-messages";
 import { ChatComposer } from "./ChatComposer";
 import { CitationItem } from "./citations-view";
+import { siteConfig } from "@/config/site";
 
 const initialConversation: ChatMessage[] = [
   {
     id: "msg-init-user",
     role: "user",
-    content: "Hi! I want to transition into AI & Full-Stack software engineering. How does Jarvis AI Academy help learners reach production-ready skills?",
+    content: `Hi! I want to transition into AI & Full-Stack software engineering. How does ${siteConfig.name} help learners reach production-ready skills?`,
   },
   {
     id: "msg-init-ai",
     role: "assistant",
-    content: `Welcome to **Jarvis AI Academy**! 🚀
+    content: `Welcome to **${siteConfig.name}**! 🚀  
+*${siteConfig.tagline}*
 
 We specialize in high-impact software engineering programs engineered to take you from core programming to building and deploying production-ready AI systems:
 

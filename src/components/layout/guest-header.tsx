@@ -3,6 +3,7 @@
 import { PanelLeft } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { MobileMenuIcon } from "@/components/ui/mobile-menu-icon";
+import { siteConfig } from "@/config/site";
 
 interface GuestHeaderProps {
   sidebarOpen: boolean;
@@ -16,7 +17,7 @@ export function GuestHeader({
   sidebarOpen,
   onToggleSidebar,
   onOpenLogin,
-  modelName = "Jarvis AI Academy",
+  modelName = siteConfig.name,
 }: GuestHeaderProps) {
   return (
     <header className="relative flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 h-14 bg-transparent z-20 shrink-0 w-full select-none">
@@ -46,9 +47,12 @@ export function GuestHeader({
               </button>
 
               {/* Model title */}
-              <div className="flex items-center px-2 py-1.5 font-semibold text-foreground text-sm sm:text-base shrink min-w-0 select-none">
+              <div className="flex items-center gap-2 px-2 py-1.5 font-semibold text-foreground text-sm sm:text-base shrink min-w-0 select-none">
                 <span className="truncate whitespace-nowrap max-w-[160px] sm:max-w-none">
                   {modelName}
+                </span>
+                <span className="hidden sm:inline-block text-xs font-normal text-neutral-400 dark:text-neutral-500 truncate select-none">
+                  · {siteConfig.tagline}
                 </span>
               </div>
             </motion.div>

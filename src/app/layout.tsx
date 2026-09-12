@@ -16,6 +16,8 @@ const geistMono = Geist_Mono({
 import { ThemeProvider } from "@/providers/theme-provider";
 import { LanguageProvider } from "@/providers/language-provider";
 
+import { siteConfig } from "@/config/site";
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -25,8 +27,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Jarvis AI Academy",
-  description: "ChatGPT-inspired AI Chat Application",
+  title: `${siteConfig.name} — ${siteConfig.tagline}`,
+  description: `${siteConfig.name} — ${siteConfig.tagline}`,
 };
 
 export default function RootLayout({

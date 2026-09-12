@@ -8,6 +8,8 @@ import { LanguageSetting } from "./language-setting";
 import { DataControlsSetting } from "./data-controls-setting";
 import { motion } from "motion/react";
 
+import { siteConfig } from "@/config/site";
+
 interface SettingsPageProps {
   onBack?: () => void;
   className?: string;
@@ -40,8 +42,8 @@ export function SettingsPage({ onBack, className = "" }: SettingsPageProps) {
 
         {/* App Info / Version Footer */}
         <div className="flex flex-col items-center justify-center py-6 text-center text-xs text-muted-foreground select-none">
-          <span>Jarvis AI Academy for Web</span>
-          <span className="text-[11px] mt-0.5 opacity-75">Version 1.0.0 (ChatGPT Experience)</span>
+          <span>{siteConfig.name} for Web</span>
+          <span className="text-[11px] mt-0.5 opacity-75">{siteConfig.tagline}</span>
         </div>
       </main>
     </motion.div>
