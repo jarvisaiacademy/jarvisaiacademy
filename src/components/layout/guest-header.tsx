@@ -24,32 +24,36 @@ export function GuestHeader({
       <div className="flex items-center gap-2 min-w-0">
         <AnimatePresence>
           {!sidebarOpen && (
-            <motion.button
-              type="button"
-              onClick={onToggleSidebar}
-              initial={{ opacity: 0, scale: 0.85 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.85 }}
-              transition={{ duration: 0.15 }}
-              aria-label="Open sidebar"
-              className="flex items-center justify-center transition-colors cursor-pointer w-9 h-9 rounded-full bg-neutral-200/80 dark:bg-[#262626] text-neutral-800 dark:text-neutral-100 hover:bg-neutral-300 dark:hover:bg-[#323232] md:w-auto md:h-auto md:p-2 md:rounded-lg md:bg-transparent md:dark:bg-transparent md:text-neutral-400 md:hover:text-white md:hover:bg-white/10 shadow-xs md:shadow-none shrink-0"
+            <motion.div
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -8 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className="flex items-center gap-2 min-w-0"
             >
-              <span className="md:hidden flex items-center justify-center">
-                <MobileMenuIcon className="w-4 h-4" />
-              </span>
-              <span className="hidden md:flex items-center justify-center">
-                <PanelLeft className="w-4 h-4" />
-              </span>
-            </motion.button>
+              <button
+                type="button"
+                onClick={onToggleSidebar}
+                aria-label="Open sidebar"
+                className="flex items-center justify-center transition-colors cursor-pointer w-9 h-9 rounded-full bg-neutral-200/80 dark:bg-[#262626] text-neutral-800 dark:text-neutral-100 hover:bg-neutral-300 dark:hover:bg-[#323232] md:w-auto md:h-auto md:p-2 md:rounded-lg md:bg-transparent md:dark:bg-transparent md:text-neutral-400 md:hover:text-white md:hover:bg-white/10 shadow-xs md:shadow-none shrink-0"
+              >
+                <span className="md:hidden flex items-center justify-center">
+                  <MobileMenuIcon className="w-4 h-4" />
+                </span>
+                <span className="hidden md:flex items-center justify-center">
+                  <PanelLeft className="w-4 h-4" />
+                </span>
+              </button>
+
+              {/* Model title */}
+              <div className="flex items-center px-2 py-1.5 font-semibold text-foreground text-sm sm:text-base shrink min-w-0 select-none">
+                <span className="truncate whitespace-nowrap max-w-[160px] sm:max-w-none">
+                  {modelName}
+                </span>
+              </div>
+            </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Model title */}
-        <div className="flex items-center px-2 py-1.5 font-semibold text-foreground text-sm sm:text-base shrink min-w-0 select-none">
-          <span className="truncate whitespace-nowrap max-w-[160px] sm:max-w-none">
-            {modelName}
-          </span>
-        </div>
       </div>
 
       {/* Right controls: Login and Sign up buttons */}

@@ -64,7 +64,7 @@ export function Sidebar({
             ) : (
               <SidebarLoginCTA onLoginClick={onOpenLogin} />
             )}
-            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 px-3 pt-0.5 pb-2.5 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
+            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-3 pt-1 pb-3 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
               <button
                 type="button"
                 onClick={() => {
@@ -135,7 +135,7 @@ export function Sidebar({
         ) : (
           <SidebarLoginCTA onLoginClick={onOpenLogin} />
         )}
-        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 px-3 pt-0.5 pb-2.5 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
+        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-3 pt-1 pb-3.5 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
           <button
             type="button"
             onClick={() => onSelectSection?.("terms")}
