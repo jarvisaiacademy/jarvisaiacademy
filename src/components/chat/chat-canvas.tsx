@@ -505,14 +505,14 @@ export function ChatCanvas({
             onVoiceStart={onVoiceStart}
             onStop={handleStop}
             isGenerating={isGenerating}
-            placeholder="Ask ChatGPT"
-            showThink={false}
+            placeholder="Ask anything"
+            showThink={true}
           />
         </div>
         {/* Subtle Disclaimer Footer */}
-        {/* <p className="text-[11px] text-neutral-500 mt-2 text-center select-none">
+        <p className="text-[11px] text-neutral-500 mt-2 text-center select-none">
           ChatGPT can make mistakes. Check important info.
-        </p> */}
+        </p>
       </div>
     </div>
   );
