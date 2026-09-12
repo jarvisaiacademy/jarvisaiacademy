@@ -1,6 +1,6 @@
 "use client";
 
-import { PanelLeft, ChevronDown } from "lucide-react";
+import { PanelLeft } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { MobileMenuIcon } from "@/components/ui/mobile-menu-icon";
 
@@ -45,16 +45,12 @@ export function GuestHeader({
           )}
         </AnimatePresence>
 
-        {/* Model dropdown pill */}
-        <button
-          type="button"
-          className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-xl text-foreground/90 hover:text-foreground hover:bg-muted font-semibold text-sm sm:text-base transition-colors shrink min-w-0 cursor-pointer"
-        >
-          <span className="truncate whitespace-nowrap max-w-[140px] sm:max-w-none">
+        {/* Model title */}
+        <div className="flex items-center px-2 py-1.5 font-semibold text-foreground text-sm sm:text-base shrink min-w-0 select-none">
+          <span className="truncate whitespace-nowrap max-w-[160px] sm:max-w-none">
             {modelName}
           </span>
-          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-        </button>
+        </div>
       </div>
 
       {/* Right controls: Login and Sign up buttons */}
