@@ -1,97 +1,265 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Check, Share2 } from "lucide-react";
-import { motion } from "motion/react";
+import {
+  Copy,
+  Check,
+  Share2,
+  Pencil,
+  RotateCcw,
+  ThumbsUp,
+  ThumbsDown,
+} from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { MarkdownRenderer } from "./markdown-renderer";
+import { CitationsView, CitationItem } from "./citations-view";
+import { useToast } from "@/components/ui/toast";
 
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
+  isStreaming?: boolean;
+  citations?: CitationItem[];
+  feedback?: "like" | "dislike" | null;
   timestamp?: string;
 }
 
 interface ChatMessagesProps {
   messages: ChatMessage[];
+  onRegenerate?: (messageId: string) => void;
+  onEditSubmit?: (messageId: string, newContent: string) => void;
+  onFeedback?: (messageId: string, type: "like" | "dislike") => void;
 }
 
-export function ChatMessages({ messages }: ChatMessagesProps) {
+export function ChatMessages({
+  messages,
+  onRegenerate,
+  onEditSubmit,
+  onFeedback,
+}: ChatMessagesProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState("");
+  const { showToast } = useToast();
 
   const handleCopy = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
+    showToast("Copied to clipboard", "success");
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const startEditing = (msg: ChatMessage) => {
+    setEditingId(msg.id);
+    setEditDraft(msg.content);
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditDraft("");
+  };
+
+  const handleSaveEdit = (msgId: string) => {
+    if (!editDraft.trim()) return;
+    onEditSubmit?.(msgId, editDraft.trim());
+    setEditingId(null);
+    setEditDraft("");
+    showToast("Message updated & regenerating...", "info");
   };
 
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-6 py-6 px-4 sm:px-6">
       {messages.map((msg, idx) => {
         const isUser = msg.role === "user";
+        const isEditing = editingId === msg.id;
+
         return (
           <motion.div
             key={msg.id || idx}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.2 }}
             className={`group relative flex flex-col ${
               isUser ? "items-end" : "items-start"
             }`}
           >
             {isUser ? (
-              /* User Message Bubble */
-              <div className="flex items-center gap-2 max-w-[85%] sm:max-w-[75%]">
-                <button
-                  type="button"
-                  onClick={() => handleCopy(msg.id, msg.content)}
-                  aria-label="Copy message"
-                  className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10 transition-all"
-                >
-                  {copiedId === msg.id ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  ) : (
-                    <Copy className="w-3.5 h-3.5" />
-                  )}
-                </button>
-                <div className="bg-[#212121] text-neutral-100 px-4 py-2.5 rounded-3xl text-sm leading-relaxed shadow-sm">
-                  {msg.content}
+              /* User Message Bubble or Edit Mode */
+              isEditing ? (
+                <div className="w-full max-w-xl flex flex-col gap-2 p-3 bg-[#212121] rounded-2xl border border-white/15 shadow-xl">
+                  <textarea
+                    value={editDraft}
+                    onChange={(e) => setEditDraft(e.target.value)}
+                    rows={3}
+                    className="w-full bg-transparent text-white text-sm outline-none resize-none border-none p-1 font-normal leading-relaxed"
+                    autoFocus
+                  />
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
+                    <button
+                      type="button"
+                      onClick={cancelEditing}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-400 hover:text-white hover:bg-white/10 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSaveEdit(msg.id)}
+                      className="px-3.5 py-1.5 rounded-lg text-xs font-medium bg-white text-black hover:bg-neutral-200 transition-colors"
+                    >
+                      Save & Submit
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex items-center gap-2 max-w-[85%] sm:max-w-[75%]">
+                  {/* Action Cluster on Hover */}
+                  <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity">
+                    <button
+                      type="button"
+                      onClick={() => startEditing(msg)}
+                      aria-label="Edit message"
+                      title="Edit"
+                      className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10 transition-all"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(msg.id, msg.content)}
+                      aria-label="Copy message"
+                      title="Copy"
+                      className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10 transition-all"
+                    >
+                      {copiedId === msg.id ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Message Bubble */}
+                  <div className="bg-[#212121] text-neutral-100 px-4 py-2.5 rounded-3xl text-sm leading-relaxed shadow-sm break-words">
+                    {msg.content}
+                  </div>
+                </div>
+              )
             ) : (
               /* Assistant Response */
-              <div className="flex flex-col gap-3 max-w-full text-neutral-200 text-sm sm:text-base leading-relaxed">
-                <div className="whitespace-pre-line space-y-3.5">
-                  {msg.content.split("\n\n").map((para, pIdx) => (
-                    <p key={pIdx} className="leading-relaxed">
-                      {para}
-                    </p>
-                  ))}
+              <div className="w-full flex flex-col gap-2 max-w-full text-neutral-200">
+                {/* Assistant Message Content with Markdown & Streaming indicator */}
+                <div className="relative">
+                  {msg.content ? (
+                    <MarkdownRenderer content={msg.content} />
+                  ) : msg.isStreaming ? (
+                    /* Loading/Thinking Skeleton dots before first token */
+                    <div className="flex items-center gap-1.5 py-2">
+                      <div className="w-2 h-2 rounded-full bg-neutral-400 animate-pulse" />
+                      <div className="w-2 h-2 rounded-full bg-neutral-400 animate-pulse [animation-delay:200ms]" />
+                      <div className="w-2 h-2 rounded-full bg-neutral-400 animate-pulse [animation-delay:400ms]" />
+                    </div>
+                  ) : null}
+
+                  {/* Pulsing streaming cursor */}
+                  {msg.isStreaming && (
+                    <span className="inline-block w-2 h-4 ml-1 bg-white align-middle animate-pulse" />
+                  )}
                 </div>
 
+                {/* Clickable Citations */}
+                {msg.citations && msg.citations.length > 0 && (
+                  <CitationsView citations={msg.citations} />
+                )}
+
                 {/* Assistant Action Bar */}
-                <div className="flex items-center gap-1 mt-1 text-neutral-400">
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(msg.id, msg.content)}
-                    aria-label="Copy response"
-                    className="p-1.5 rounded-lg hover:text-white hover:bg-white/10 transition-colors"
-                    title="Copy"
-                  >
-                    {copiedId === msg.id ? (
-                      <Check className="w-4 h-4 text-emerald-400" />
-                    ) : (
-                      <Copy className="w-4 h-4" />
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Share response"
-                    className="p-1.5 rounded-lg hover:text-white hover:bg-white/10 transition-colors"
-                    title="Share"
-                  >
-                    <Share2 className="w-4 h-4" />
-                  </button>
-                </div>
+                {!msg.isStreaming && msg.content && (
+                  <div className="flex items-center gap-1 mt-1 text-neutral-400">
+                    {/* Copy */}
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(msg.id, msg.content)}
+                      aria-label="Copy response"
+                      className="p-1.5 rounded-lg hover:text-white hover:bg-white/10 transition-colors"
+                      title="Copy"
+                    >
+                      {copiedId === msg.id ? (
+                        <Check className="w-4 h-4 text-emerald-400" />
+                      ) : (
+                        <Copy className="w-4 h-4" />
+                      )}
+                    </button>
+
+                    {/* Feedback: Thumbs Up */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onFeedback?.(msg.id, "like");
+                        showToast("Thanks for the feedback!", "success");
+                      }}
+                      aria-label="Good response"
+                      className={`p-1.5 rounded-lg hover:text-white hover:bg-white/10 transition-colors ${
+                        msg.feedback === "like" ? "text-emerald-400" : ""
+                      }`}
+                      title="Good response"
+                    >
+                      <ThumbsUp
+                        className={`w-4 h-4 ${
+                          msg.feedback === "like" ? "fill-emerald-400" : ""
+                        }`}
+                      />
+                    </button>
+
+                    {/* Feedback: Thumbs Down */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onFeedback?.(msg.id, "dislike");
+                        showToast("Feedback recorded", "info");
+                      }}
+                      aria-label="Bad response"
+                      className={`p-1.5 rounded-lg hover:text-white hover:bg-white/10 transition-colors ${
+                        msg.feedback === "dislike" ? "text-rose-400" : ""
+                      }`}
+                      title="Bad response"
+                    >
+                      <ThumbsDown
+                        className={`w-4 h-4 ${
+                          msg.feedback === "dislike" ? "fill-rose-400" : ""
+                        }`}
+                      />
+                    </button>
+
+                    {/* Regenerate */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onRegenerate?.(msg.id);
+                        showToast("Regenerating response...", "info");
+                      }}
+                      aria-label="Regenerate response"
+                      className="p-1.5 rounded-lg hover:text-white hover:bg-white/10 transition-colors"
+                      title="Regenerate"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                    </button>
+
+                    {/* Share */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleCopy(msg.id, window.location.href);
+                        showToast("Share link copied to clipboard", "success");
+                      }}
+                      aria-label="Share response"
+                      className="p-1.5 rounded-lg hover:text-white hover:bg-white/10 transition-colors"
+                      title="Share"
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </motion.div>

@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { Plus, ArrowUp, Brain, Mic, AudioLines, Link2, ChevronDown } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Plus, ArrowUp, Brain, Mic, AudioLines, Square, Link2, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 interface PromptCapsuleProps {
   onSubmit?: (prompt: string, thinkMode: boolean) => void;
   onVoiceStart?: () => void;
   onAttach?: () => void;
+  onStop?: () => void;
+  isGenerating?: boolean;
   placeholder?: string;
   showThink?: boolean;
 }
@@ -16,30 +18,52 @@ export function PromptCapsule({
   onSubmit,
   onVoiceStart,
   onAttach,
-  placeholder = "Ask anything",
-  showThink = true,
+  onStop,
+  isGenerating = false,
+  placeholder = "Ask ChatGPT",
+  showThink = false,
 }: PromptCapsuleProps) {
   const [value, setValue] = useState("");
   const [thinkMode, setThinkMode] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [selectedText, setSelectedText] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize textarea as text expands
+  const adjustHeight = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    const newHeight = Math.min(el.scrollHeight, 200); // max 200px
+    el.style.height = `${Math.max(newHeight, 24)}px`;
+  }, []);
+
+  useEffect(() => {
+    adjustHeight();
+  }, [value, adjustHeight]);
 
   const handleSend = () => {
+    if (isGenerating) {
+      onStop?.();
+      return;
+    }
     if (!value.trim()) return;
     onSubmit?.(value.trim(), thinkMode);
     setValue("");
     setSelectedText("");
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "24px";
+    }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
   };
 
-  const handleSelect = (e: React.SyntheticEvent<HTMLInputElement>) => {
+  const handleSelect = (e: React.SyntheticEvent<HTMLTextAreaElement>) => {
     const target = e.currentTarget;
     const start = target.selectionStart ?? 0;
     const end = target.selectionEnd ?? 0;
@@ -52,13 +76,13 @@ export function PromptCapsule({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay: 0.05 }}
-      className={`relative w-full max-w-2xl mx-auto rounded-full bg-[#212121] border transition-all duration-200 ${
+      transition={{ duration: 0.25 }}
+      className={`relative w-full max-w-3xl mx-auto rounded-[26px] bg-[#212121] border transition-all duration-200 ${
         isFocused
-          ? "border-neutral-500 shadow-xl shadow-black/50"
-          : "border-white/10 hover:border-white/20 shadow-lg shadow-black/30"
+          ? "border-neutral-500 shadow-xl shadow-black/60"
+          : "border-white/10 hover:border-white/20 shadow-lg shadow-black/40"
       }`}
     >
       {/* Floating Selection Formatting Bar */}
@@ -104,23 +128,26 @@ export function PromptCapsule({
         )}
       </AnimatePresence>
 
-      <div className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5">
+      <div className="flex items-end gap-2 px-3 py-2.5 sm:px-4 sm:py-3">
         {/* Plus / Attach Button */}
         <button
           type="button"
           onClick={onAttach}
           aria-label="Add attachment or action"
-          className="p-1.5 rounded-full text-neutral-400 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+          className="p-1.5 rounded-full text-neutral-400 hover:text-white hover:bg-white/10 transition-colors shrink-0 mb-0.5"
         >
           <Plus className="w-5 h-5" />
         </button>
 
-        {/* Text Input Field */}
-        <input
-          ref={inputRef}
-          type="text"
+        {/* Auto-growing Textarea */}
+        <textarea
+          ref={textareaRef}
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          rows={1}
+          onChange={(e) => {
+            setValue(e.target.value);
+            adjustHeight();
+          }}
           onKeyDown={handleKeyDown}
           onSelect={handleSelect}
           onFocus={() => setIsFocused(true)}
@@ -129,11 +156,11 @@ export function PromptCapsule({
             setSelectedText("");
           }}
           placeholder={placeholder}
-          className="flex-1 bg-transparent text-white placeholder:text-neutral-500 text-sm sm:text-base font-normal border-none outline-none focus:outline-none focus:ring-0 min-w-0"
+          className="flex-1 bg-transparent text-white placeholder:text-neutral-500 text-sm sm:text-base font-normal border-none outline-none focus:outline-none focus:ring-0 resize-none min-w-0 py-0.5 leading-6 max-h-[200px] overflow-y-auto no-scrollbar"
         />
 
         {/* Right Action Cluster */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 mb-0.5">
           {/* Think Toggle Button */}
           {showThink && (
             <button
@@ -155,19 +182,37 @@ export function PromptCapsule({
             </button>
           )}
 
-          {/* Microphone Button */}
-          <button
-            type="button"
-            onClick={onVoiceStart}
-            aria-label="Voice dictation"
-            className="p-1.5 rounded-full text-neutral-400 hover:text-white hover:bg-white/10 transition-colors"
-          >
-            <Mic className="w-4 h-4" />
-          </button>
+          {/* Microphone Button (only if not generating and empty) */}
+          {!isGenerating && !value.trim() && (
+            <button
+              type="button"
+              onClick={onVoiceStart}
+              aria-label="Voice dictation"
+              className="p-1.5 rounded-full text-neutral-400 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <Mic className="w-4 h-4" />
+            </button>
+          )}
 
-          {/* Dynamic Voice / Send Action Button */}
+          {/* Dynamic Send / Stop Button */}
           <AnimatePresence mode="wait" initial={false}>
-            {value.trim() ? (
+            {isGenerating ? (
+              /* Stop Streaming Button */
+              <motion.button
+                key="stop-streaming"
+                type="button"
+                onClick={handleSend}
+                initial={{ scale: 0.7, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.7, opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                aria-label="Stop generation"
+                className="w-8 h-8 rounded-full bg-white hover:bg-neutral-200 text-black flex items-center justify-center transition-transform active:scale-95 shadow-md shrink-0"
+              >
+                <Square className="w-3.5 h-3.5 fill-black" />
+              </motion.button>
+            ) : value.trim() ? (
+              /* Active Send Button */
               <motion.button
                 key="send-action"
                 type="button"
@@ -177,11 +222,12 @@ export function PromptCapsule({
                 exit={{ scale: 0.7, opacity: 0 }}
                 transition={{ duration: 0.15 }}
                 aria-label="Send message"
-                className="w-8 h-8 rounded-full bg-[#ea580c] hover:bg-[#f97316] text-white flex items-center justify-center transition-transform active:scale-95 shadow-md shrink-0"
+                className="w-8 h-8 rounded-full bg-white hover:bg-neutral-200 text-black flex items-center justify-center transition-transform active:scale-95 shadow-md shrink-0"
               >
                 <ArrowUp className="w-4 h-4 stroke-[2.5]" />
               </motion.button>
             ) : showThink ? (
+              /* Voice Mode Button */
               <motion.button
                 key="voice-action"
                 type="button"
@@ -191,11 +237,12 @@ export function PromptCapsule({
                 exit={{ scale: 0.7, opacity: 0 }}
                 transition={{ duration: 0.15 }}
                 aria-label="Interactive voice mode"
-                className="w-8 h-8 rounded-full bg-[#ea580c] hover:bg-[#f97316] text-white flex items-center justify-center transition-transform active:scale-95 shadow-md shrink-0"
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-transform active:scale-95 shadow-md shrink-0"
               >
                 <AudioLines className="w-4 h-4" />
               </motion.button>
             ) : (
+              /* Disabled Send Placeholder */
               <motion.button
                 key="guest-empty-send"
                 type="button"
@@ -212,8 +259,6 @@ export function PromptCapsule({
             )}
           </AnimatePresence>
         </div>
-
-
       </div>
     </motion.div>
   );
