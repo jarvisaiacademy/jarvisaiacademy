@@ -518,7 +518,7 @@ export function ChatCanvas({
       </div>
 
       {/* Floating Transparent Sticky Composer */}
-      <div className="absolute bottom-0 left-0 right-0 pointer-events-none bg-gradient-to-t from-background via-background/85 to-transparent pt-10 pb-3 px-4 flex flex-col items-center transition-colors">
+      <div className="absolute bottom-0 left-0 right-0 pointer-events-none bg-gradient-to-t from-background via-background/85 to-transparent pt-6 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-3 px-3 sm:px-4 flex flex-col items-center transition-colors">
         <div className="w-full max-w-3xl pointer-events-auto">
           <ChatComposer
             onSend={({ text, activeTool, attachments }) => {
@@ -536,8 +536,8 @@ export function ChatCanvas({
             placeholder="Ask anything"
           />
         </div>
-        {/* Subtle Disclaimer Footer */}
-        <p className="text-[11px] text-neutral-500 mt-2 text-center select-none">
+        {/* Subtle Disclaimer Footer - shown on desktop screens where vertical space is ample */}
+        <p className="text-[11px] text-neutral-500 mt-1.5 text-center select-none hidden sm:block">
           ChatGPT can make mistakes. Check important info.
         </p>
       </div>

@@ -165,6 +165,14 @@ export function ChatComposer({
     }
   };
 
+  const handleFocus = () => {
+    setIsFocused(true);
+    // On mobile keyboards (like Brave with bottom address bar), ensure composer scrolls cleanly into view
+    setTimeout(() => {
+      textareaRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 150);
+  };
+
   const hasContent = text.trim().length > 0;
 
   return (
@@ -187,7 +195,7 @@ export function ChatComposer({
             adjustHeight();
           }}
           onKeyDown={handleKeyDown}
-          onFocus={() => setIsFocused(true)}
+          onFocus={handleFocus}
           onBlur={() => setIsFocused(false)}
           placeholder={placeholder}
           spellCheck

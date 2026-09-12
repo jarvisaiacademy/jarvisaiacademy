@@ -23,7 +23,7 @@ export default function Home() {
 
   return (
     <ToastProvider>
-      <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground font-sans selection:bg-[#9d5932] selection:text-white transition-colors duration-150">
+      <div className="flex h-dvh w-screen overflow-hidden bg-background text-foreground font-sans selection:bg-[#9d5932] selection:text-white transition-colors duration-150">
         {/* Animated Collapsible Sidebar */}
         <Sidebar
           isOpen={isOpen}
@@ -42,7 +42,7 @@ export default function Home() {
         />
 
         {/* Main Canvas Area or Settings Page */}
-        <main className="flex-1 flex flex-col h-screen min-w-0 bg-background relative overflow-y-auto transition-colors duration-150">
+        <main className="flex-1 flex flex-col h-full min-h-0 min-w-0 bg-background relative overflow-hidden transition-colors duration-150">
           {isSettingsOpen ? (
             <SettingsPage onBack={handleCloseSettings} />
           ) : (
