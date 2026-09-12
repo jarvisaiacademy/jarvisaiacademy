@@ -27,6 +27,7 @@ export default function Home() {
           isMobile={isMobile}
           onSelectSection={(topic) => setActiveTopic(topic)}
           onNewChat={() => setResetSignal((prev) => prev + 1)}
+          onOpenLogin={handleOpenLogin}
         />
 
         {/* Main Canvas Area */}

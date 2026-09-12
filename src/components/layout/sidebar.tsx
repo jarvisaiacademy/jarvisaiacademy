@@ -6,12 +6,15 @@ import { SidebarNav } from "./sidebar-nav";
 import { SidebarPinned } from "./sidebar-pinned";
 import { SidebarProjects } from "./sidebar-projects";
 import { UserProfile } from "./user-profile";
+import { SidebarLoginCTA } from "./sidebar-login-cta";
 
 interface SidebarProps {
   isOpen: boolean;
   onToggle: () => void;
   onSelectSection?: (section: string) => void;
   onNewChat?: () => void;
+  onOpenLogin?: () => void;
+  isLoggedIn?: boolean;
   isMobile?: boolean;
 }
 
@@ -20,6 +23,8 @@ export function Sidebar({
   onToggle,
   onSelectSection,
   onNewChat,
+  onOpenLogin,
+  isLoggedIn = false,
   isMobile,
 }: SidebarProps) {
   if (isMobile) {
@@ -48,7 +53,11 @@ export function Sidebar({
             <div className="h-px bg-white/5 mx-2 my-1" />
             <SidebarProjects />
           </div>
-          <UserProfile />
+          {isLoggedIn ? (
+            <UserProfile />
+          ) : (
+            <SidebarLoginCTA onLoginClick={onOpenLogin} />
+          )}
         </motion.aside>
       </>
     );
@@ -75,7 +84,11 @@ export function Sidebar({
         <SidebarProjects />
       </div>
       <div className="w-[260px]">
-        <UserProfile />
+        {isLoggedIn ? (
+          <UserProfile />
+        ) : (
+          <SidebarLoginCTA onLoginClick={onOpenLogin} />
+        )}
       </div>
     </motion.aside>
   );

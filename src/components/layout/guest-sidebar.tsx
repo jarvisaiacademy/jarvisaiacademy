@@ -13,6 +13,7 @@ import {
   PlusCircle,
 } from "lucide-react";
 import { motion } from "motion/react";
+import { SidebarLoginCTA } from "./sidebar-login-cta";
 
 interface GuestSidebarProps {
   isOpen: boolean;
@@ -133,24 +134,9 @@ export function GuestSidebar({
           </div>
           <ExternalLink className="w-3.5 h-3.5 text-neutral-500" />
         </button>
-
-        {/* Login Promotion Card */}
-        <div className="p-3 mt-1 bg-white/5 rounded-xl border border-white/5 flex flex-col gap-2">
-          <span className="font-semibold text-xs text-white">
-            Get responses tailored to you
-          </span>
-          <p className="text-[11px] text-neutral-400 leading-relaxed">
-            Log in to get answers based on saved chats, plus create images and upload files.
-          </p>
-          <button
-            type="button"
-            onClick={onOpenLogin}
-            className="w-full py-2 rounded-full bg-[#212121] hover:bg-[#2c2c2c] border border-white/10 text-white font-medium text-xs transition-colors text-center mt-1"
-          >
-            Log in
-          </button>
-        </div>
       </div>
+
+      <SidebarLoginCTA onLoginClick={onOpenLogin} />
     </div>
   );
 
