@@ -80,7 +80,7 @@ export function CitationsView({ citations }: CitationsViewProps) {
               </div>
 
               <div className="bg-[#141414] rounded-xl p-3 text-xs text-neutral-300 leading-relaxed border border-white/5 my-3">
-                <p className="italic font-serif">"{selectedCitation.snippet}"</p>
+                <p className="italic font-serif">&ldquo;{selectedCitation.snippet}&rdquo;</p>
               </div>
 
               <div className="flex items-center justify-between text-xs text-neutral-400 pt-2 border-t border-white/5">

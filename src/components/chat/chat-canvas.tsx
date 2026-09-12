@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { ChatMessages, ChatMessage } from "./chat-messages";
-import { ChatComposer, AttachmentItem, ActiveToolType } from "./ChatComposer";
+import { ChatComposer } from "./ChatComposer";
 import { CitationItem } from "./citations-view";
 
 const initialConversation: ChatMessage[] = [
@@ -212,8 +212,6 @@ interface ChatCanvasProps {
 }
 
 export function ChatCanvas({
-  onAttach,
-  onVoiceStart,
   activeTopic,
   onTopicHandled,
   resetSignal,

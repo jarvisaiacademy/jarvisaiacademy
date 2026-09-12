@@ -10,7 +10,7 @@ interface MarkdownRendererProps {
   onCitationClick?: (citationId: string) => void;
 }
 
-export function MarkdownRenderer({ content, onCitationClick }: MarkdownRendererProps) {
+export function MarkdownRenderer({ content }: MarkdownRendererProps) {
   return (
     <div className="prose dark:prose-invert max-w-none text-neutral-800 dark:text-neutral-200 text-[15px] leading-relaxed break-words space-y-3">
       <ReactMarkdown

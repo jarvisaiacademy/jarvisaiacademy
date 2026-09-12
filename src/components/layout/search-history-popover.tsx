@@ -34,7 +34,6 @@ export function SearchHistoryPopover({
   // Position floating card to the right of the sidebar, aligned with the trigger
   const top = Math.max(12, Math.min(window.innerHeight - 340, anchorRect.top - 16));
   const effectiveLeft = (sidebarRight ?? anchorRect.right) + 10;
-  const bridgeWidth = Math.max(16, effectiveLeft - anchorRect.left);
 
   const content = (
     <AnimatePresence>

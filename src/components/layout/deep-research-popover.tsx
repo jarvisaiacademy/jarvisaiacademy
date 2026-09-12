@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Sparkles, Compass, ArrowRight } from "lucide-react";
+import { Sparkles, Compass } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 export interface DeepResearchPopoverProps {

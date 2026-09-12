@@ -31,7 +31,6 @@ interface PromptCapsuleProps {
 export function PromptCapsule({
   onSubmit,
   onVoiceStart,
-  onAttach,
   onStop,
   isGenerating = false,
   placeholder = "Ask anything",

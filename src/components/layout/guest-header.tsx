@@ -17,7 +17,6 @@ export function GuestHeader({
   onToggleSidebar,
   onOpenLogin,
   modelName = "Jarvis AI Academy",
-  isMobile,
 }: GuestHeaderProps) {
   return (
     <header className="relative flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 h-14 bg-transparent z-20 shrink-0 w-full select-none">

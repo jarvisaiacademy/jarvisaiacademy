@@ -44,7 +44,19 @@ export function ChatComposer({
   const [isFocused, setIsFocused] = useState(false);
 
   const isGenerating = externalGenerating ?? internalGenerating;
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<{
+    start: () => void;
+    stop: () => void;
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    onresult: ((event: {
+      resultIndex: number;
+      results: Array<Array<{ transcript: string }>>;
+    }) => void) | null;
+    onerror: (() => void) | null;
+    onend: (() => void) | null;
+  } | null>(null);
 
   // Auto-grow textarea
   const adjustHeight = useCallback(() => {
@@ -81,8 +93,11 @@ export function ChatComposer({
       return;
     }
 
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const win = window as unknown as {
+      SpeechRecognition?: new () => NonNullable<typeof recognitionRef.current>;
+      webkitSpeechRecognition?: new () => NonNullable<typeof recognitionRef.current>;
+    };
+    const SpeechRecognition = win.SpeechRecognition || win.webkitSpeechRecognition;
 
     if (SpeechRecognition) {
       try {
@@ -91,7 +106,7 @@ export function ChatComposer({
         recognition.interimResults = true;
         recognition.lang = "en-US";
 
-        recognition.onresult = (event: any) => {
+        recognition.onresult = (event) => {
           let transcript = "";
           for (let i = event.resultIndex; i < event.results.length; ++i) {
             transcript += event.results[i][0].transcript;

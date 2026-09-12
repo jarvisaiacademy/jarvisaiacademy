@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useSyncExternalStore } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
 export type Theme = "system" | "light" | "dark";
 export type ResolvedTheme = "light" | "dark";

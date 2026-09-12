@@ -10,7 +10,6 @@ import {
   ThumbsUp,
   ThumbsDown,
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
 import { MarkdownRenderer } from "./markdown-renderer";
 import { CitationsView, CitationItem } from "./citations-view";
 import { useToast } from "@/components/ui/toast";

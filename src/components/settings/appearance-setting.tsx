@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { Moon, Sun, Laptop, ChevronRight, Check, X } from "lucide-react";
+import { Moon, Sun, Laptop, ChevronRight, X } from "lucide-react";
 import { useTheme, type Theme } from "@/providers/theme-provider";
 import { motion, AnimatePresence } from "motion/react";
 
 export function AppearanceSetting() {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
 
   const themeOptions: { value: Theme; label: string; description: string; icon: React.ReactNode }[] = [
