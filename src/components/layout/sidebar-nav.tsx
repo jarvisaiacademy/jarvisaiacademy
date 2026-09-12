@@ -3,7 +3,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
   SquarePen,
-  Search,
   BookOpen,
   Zap,
   MessageSquareQuote,
@@ -23,11 +22,6 @@ const navHoverData: Record<string, NavHoverItemData> = {
     title: "Start a fresh chat",
     description: "Log in to save your conversation history, organize chats, and pick up right where you left off.",
     gradientClass: "bg-gradient-to-br from-[#748ffc] via-[#9775fa] to-[#63e6be]",
-  },
-  search: {
-    title: "Search your chat history",
-    description: "Log in to save conversations, search past answers, and pick up where you left off.",
-    gradientClass: "bg-gradient-to-br from-[#8ba7f9] via-[#aca5fb] to-[#8db7fd]",
   },
   courses: {
     title: "Explore Academy Courses",
@@ -157,19 +151,6 @@ export function SidebarNav({
         </div>
       </button>
 
-      {/* Search chats */}
-      <button
-        type="button"
-        onClick={onOpenLogin}
-        onMouseEnter={(e) => handleMouseEnter("search", e)}
-        onMouseLeave={handleMouseLeave}
-        aria-haspopup="dialog"
-        aria-expanded={activeHoverItem === "search"}
-        className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
-      >
-        <Search className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors" />
-        <span>Search chats</span>
-      </button>
 
       {/* Courses */}
       <button
