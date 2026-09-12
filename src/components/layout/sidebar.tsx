@@ -6,6 +6,8 @@ import { SidebarNav } from "./sidebar-nav";
 import { UserProfile } from "./user-profile";
 import { SidebarLoginCTA } from "./sidebar-login-cta";
 
+import { User } from "@/providers/auth-provider";
+
 interface SidebarProps {
   isOpen: boolean;
   onToggle: () => void;
@@ -14,6 +16,8 @@ interface SidebarProps {
   onOpenLogin?: () => void;
   onOpenSettings?: () => void;
   isLoggedIn?: boolean;
+  user?: User | null;
+  onLogout?: () => void;
   isMobile?: boolean;
 }
 
@@ -23,7 +27,10 @@ export function Sidebar({
   onSelectSection,
   onNewChat,
   onOpenLogin,
+  onOpenSettings,
   isLoggedIn = false,
+  user,
+  onLogout,
   isMobile,
 }: SidebarProps) {
   if (isMobile) {
@@ -63,7 +70,11 @@ export function Sidebar({
 
           <div className="flex flex-col border-t border-neutral-200 dark:border-white/5">
             {isLoggedIn ? (
-              <UserProfile />
+              <UserProfile
+                user={user}
+                onLogout={onLogout}
+                onProfileClick={onOpenSettings}
+              />
             ) : (
               <SidebarLoginCTA onLoginClick={onOpenLogin} />
             )}
@@ -134,7 +145,11 @@ export function Sidebar({
       </div>
       <div className="w-[260px] flex flex-col border-t border-neutral-200 dark:border-white/5">
         {isLoggedIn ? (
-          <UserProfile />
+          <UserProfile
+            user={user}
+            onLogout={onLogout}
+            onProfileClick={onOpenSettings}
+          />
         ) : (
           <SidebarLoginCTA onLoginClick={onOpenLogin} />
         )}

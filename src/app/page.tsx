@@ -8,9 +8,11 @@ import { LoginModal } from "@/components/auth/login-modal";
 import { SettingsPage } from "@/components/settings/settings-page";
 import { ToastProvider } from "@/components/ui/toast";
 import { useSidebar } from "@/hooks/use-sidebar";
+import { useAuth } from "@/providers/auth-provider";
 
 export default function Home() {
   const { isOpen, toggle, isMobile } = useSidebar(true);
+  const { user, isLoggedIn, logout } = useAuth();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [activeTopic, setActiveTopic] = useState<string | null>(null);
@@ -29,6 +31,9 @@ export default function Home() {
           isOpen={isOpen}
           onToggle={toggle}
           isMobile={isMobile}
+          isLoggedIn={isLoggedIn}
+          user={user}
+          onLogout={logout}
           onSelectSection={(topic) => {
             setIsSettingsOpen(false);
             setActiveTopic(topic);
@@ -53,6 +58,8 @@ export default function Home() {
                 onToggleSidebar={toggle}
                 onOpenLogin={handleOpenLogin}
                 isMobile={isMobile}
+                user={user}
+                onLogout={logout}
               />
 
               <ChatCanvas
