@@ -6,16 +6,9 @@ import { ChatComposer } from "./ChatComposer";
 import { CitationItem } from "./citations-view";
 import { siteConfig } from "@/config/site";
 
-const initialConversation: ChatMessage[] = [
-  {
-    id: "msg-init-user",
-    role: "user",
-    content: `Hi! I want to transition into AI & Full-Stack software engineering. How does ${siteConfig.name} help learners reach production-ready skills?`,
-  },
-  {
-    id: "msg-init-ai",
-    role: "assistant",
-    content: `Welcome to **${siteConfig.name}**! 🚀  
+const SAMPLE_STARTER_QUESTION = `Hi! I want to transition into AI & Full-Stack software engineering. How does ${siteConfig.name} help learners reach production-ready skills?`;
+
+const WELCOME_AI_RESPONSE = `Welcome to **${siteConfig.name}**! 🚀  
 *${siteConfig.tagline}*
 
 We specialize in high-impact software engineering programs engineered to take you from core programming to building and deploying production-ready AI systems:
@@ -26,17 +19,30 @@ We specialize in high-impact software engineering programs engineered to take yo
 
 Whether you're starting with zero tech experience or looking to upskill into generative AI applications, I can tailor a personalized learning roadmap for you.
 
-What area would you like to explore first — our **Course Curriculum**, the **Super10 Batch**, or **Student Placements**?`,
-    citations: [
-      {
-        id: "c-init-1",
-        number: 1,
-        title: "Jarvis AI Academy Overview & Charter",
-        source: "Jarvis Academic Advisory Board",
-        snippet: "Hands-on engineering cohorts focusing on Next.js, Python architectures, and production GenAI pipelines.",
-        url: "https://jarvisaiacademy.com",
-      },
-    ],
+What area would you like to explore first — our **Course Curriculum**, the **Super10 Batch**, or **Student Placements**?`;
+
+const WELCOME_CITATIONS: CitationItem[] = [
+  {
+    id: "c-init-1",
+    number: 1,
+    title: `${siteConfig.name} Overview & Charter`,
+    source: "Jarvis Academic Advisory Board",
+    snippet: "Hands-on engineering cohorts focusing on Next.js, Python architectures, and production GenAI pipelines.",
+    url: "https://jarvisaiacademy.com",
+  },
+];
+
+const initialConversation: ChatMessage[] = [
+  {
+    id: "msg-init-user",
+    role: "user",
+    content: SAMPLE_STARTER_QUESTION,
+  },
+  {
+    id: "msg-init-ai",
+    role: "assistant",
+    content: WELCOME_AI_RESPONSE,
+    citations: WELCOME_CITATIONS,
   },
 ];
 
@@ -421,18 +427,6 @@ export function ChatCanvas({
     scrollToBottom("smooth");
   }, [messages, scrollToBottom]);
 
-  // Handle New Chat reset
-  useEffect(() => {
-    if (resetSignal && resetSignal > 0) {
-      if (abortStreamRef.current) {
-        abortStreamRef.current();
-        abortStreamRef.current = null;
-      }
-      setIsGenerating(false);
-      setMessages([]);
-    }
-  }, [resetSignal]);
-
   // Core simulated token streamer
   const streamAIResponse = useCallback(
     (
@@ -516,6 +510,32 @@ export function ChatCanvas({
     },
     [scrollToBottom]
   );
+
+  // Handle New Chat reset and auto-trigger sample chat starter
+  useEffect(() => {
+    if (resetSignal && resetSignal > 0) {
+      if (abortStreamRef.current) {
+        abortStreamRef.current();
+        abortStreamRef.current = null;
+      }
+
+      const starterUser: ChatMessage = {
+        id: `user-starter-${Date.now()}`,
+        role: "user",
+        content: SAMPLE_STARTER_QUESTION,
+      };
+
+      const timer = setTimeout(() => {
+        setIsGenerating(false);
+        setMessages([starterUser]);
+        setTimeout(() => {
+          streamAIResponse(WELCOME_AI_RESPONSE, WELCOME_CITATIONS);
+        }, 120);
+      }, 50);
+
+      return () => clearTimeout(timer);
+    }
+  }, [resetSignal, streamAIResponse]);
 
   // Generate reply content based on query text
   const determineReply = useCallback((prompt: string): TopicResponseData => {

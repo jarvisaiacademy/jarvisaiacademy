@@ -35,6 +35,7 @@ export default function Home() {
           }}
           onNewChat={() => {
             setIsSettingsOpen(false);
+            setActiveTopic(null);
             setResetSignal((prev) => prev + 1);
           }}
           onOpenLogin={handleOpenLogin}

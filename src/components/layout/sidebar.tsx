@@ -51,7 +51,10 @@ export function Sidebar({
               isMobile={true}
             />
             <SidebarNav
-              onNewChat={onNewChat}
+              onNewChat={() => {
+                onNewChat?.();
+                onToggle();
+              }}
               onSelectSection={onSelectSection}
               onOpenLogin={onOpenLogin}
               isMobile={true}
