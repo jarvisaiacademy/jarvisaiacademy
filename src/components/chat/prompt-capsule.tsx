@@ -53,9 +53,15 @@ export function PromptCapsule({
   const adjustHeight = useCallback(() => {
     const el = textareaRef.current;
     if (!el) return;
-    el.style.height = "auto";
-    const newHeight = Math.min(el.scrollHeight, 240); // max 240px
-    el.style.height = `${Math.max(newHeight, 36)}px`;
+    if (!el.value) {
+      el.style.height = "36px";
+      el.style.overflowY = "hidden";
+      return;
+    }
+    el.style.height = "36px";
+    const newHeight = Math.min(Math.max(el.scrollHeight, 36), 240);
+    el.style.height = `${newHeight}px`;
+    el.style.overflowY = el.scrollHeight > 240 ? "auto" : "hidden";
   }, []);
 
   useEffect(() => {

@@ -75,9 +75,21 @@ export function ChatComposer({
   const adjustHeight = useCallback(() => {
     const el = textareaRef.current;
     if (!el) return;
-    el.style.height = "auto";
-    const newHeight = Math.min(el.scrollHeight, 220); // max 220px
-    el.style.height = `${Math.max(newHeight, 24)}px`;
+
+    // Reset immediately to base 32px height when empty to prevent Firefox mobile (Gecko)
+    // from inflating scrollHeight or stretching to max-height inside flex containers
+    if (!el.value) {
+      el.style.height = "32px";
+      el.style.overflowY = "hidden";
+      return;
+    }
+
+    // Collapse to base height before measuring scrollHeight to prevent retaining inflated dimensions
+    el.style.height = "32px";
+    const scrollH = el.scrollHeight;
+    const newHeight = Math.min(Math.max(scrollH, 32), 220);
+    el.style.height = `${newHeight}px`;
+    el.style.overflowY = scrollH > 220 ? "auto" : "hidden";
   }, []);
 
   useEffect(() => {
@@ -255,7 +267,8 @@ export function ChatComposer({
     }
 
     if (textareaRef.current) {
-      textareaRef.current.style.height = "24px";
+      textareaRef.current.style.height = "32px";
+      textareaRef.current.style.overflowY = "hidden";
     }
   };
 
@@ -394,7 +407,7 @@ export function ChatComposer({
       )}
 
       {/* Main Composer Row */}
-      <div className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5">
+      <div className="flex items-end gap-2 px-3 py-2 sm:px-4 sm:py-2.5">
         {/* Left Action Button: Circular '+' */}
         <div className="relative shrink-0" ref={menuRef}>
           <button
@@ -524,7 +537,8 @@ export function ChatComposer({
           spellCheck
           autoCorrect="on"
           aria-label="Chat with ChatGPT"
-          className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground text-sm sm:text-base font-normal border-none outline-none focus:outline-none focus:ring-0 resize-none min-w-0 py-0.5 leading-6 max-h-[220px] overflow-y-auto no-scrollbar"
+          style={{ height: "32px", minHeight: "32px", maxHeight: "220px" }}
+          className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground text-base font-normal border-none outline-none focus:outline-none focus:ring-0 resize-none min-w-0 py-1 leading-6 max-h-[220px] overflow-hidden no-scrollbar box-border"
         />
 
         {/* Right Controls: Microphone & Send/Stop Button */}
@@ -535,7 +549,7 @@ export function ChatComposer({
             onClick={toggleDictation}
             aria-label="Start dictation"
             title="Start dictation"
-            className={`p-1.5 rounded-full transition-all ${
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shrink-0 ${
               isDictating
                 ? "bg-rose-500/20 text-rose-500 animate-pulse"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted"
