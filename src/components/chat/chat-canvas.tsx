@@ -72,12 +72,6 @@ Know someone interested in software engineering?
 * **Earn ₹5,000** cash reward for every friend you refer!
 * Bonus is paid directly to you once your referred person completes the full 60-day course.
 
-\`\`\`bash
-# Initialize your Academy workspace
-pnpm create jarvis-app@latest my-academy-project
-cd my-academy-project && pnpm dev
-\`\`\`
-
 Which technology stack or career track interests you the most?`,
     suggestions: [
       "What is the fee structure & payment options?",
