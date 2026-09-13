@@ -90,16 +90,16 @@ export function Sidebar({
               </div>
             )}
             <div className="flex items-center justify-center pt-2 pb-1">
-              <SocialLinks iconSize={14} />
+              <SocialLinks />
             </div>
-            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-3 pt-1 pb-3 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
+            <div className="flex flex-nowrap items-center justify-center gap-x-1.5 px-2 pt-1 pb-3 text-[10px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
               <button
                 type="button"
                 onClick={() => {
                   onSelectSection?.("terms");
                   onToggle();
                 }}
-                className="hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
+                className="whitespace-nowrap hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
               >
                 Terms & Cond.
               </button>
@@ -110,7 +110,7 @@ export function Sidebar({
                   onSelectSection?.("privacy");
                   onToggle();
                 }}
-                className="hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
+                className="whitespace-nowrap hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
               >
                 Privacy Policy
               </button>
@@ -121,7 +121,7 @@ export function Sidebar({
                   onSelectSection?.("payment_terms");
                   onToggle();
                 }}
-                className="hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
+                className="whitespace-nowrap hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
               >
                 Payment Terms
               </button>
@@ -172,13 +172,13 @@ export function Sidebar({
           </div>
         )}
         <div className="flex items-center justify-center pt-2 pb-1">
-          <SocialLinks iconSize={14} />
+          <SocialLinks />
         </div>
-        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-3 pt-1 pb-3.5 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
+        <div className="flex flex-nowrap items-center justify-center gap-x-1.5 px-2 pt-1 pb-3.5 text-[10px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
           <button
             type="button"
             onClick={() => onSelectSection?.("terms")}
-            className="hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
+            className="whitespace-nowrap hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
           >
             Terms & Cond.
           </button>
@@ -186,7 +186,7 @@ export function Sidebar({
           <button
             type="button"
             onClick={() => onSelectSection?.("privacy")}
-            className="hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
+            className="whitespace-nowrap hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
           >
             Privacy Policy
           </button>
@@ -194,7 +194,7 @@ export function Sidebar({
           <button
             type="button"
             onClick={() => onSelectSection?.("payment_terms")}
-            className="hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
+            className="whitespace-nowrap hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
           >
             Payment Terms
           </button>

@@ -109,7 +109,7 @@ function HeroGradientObject({ itemKey }: { itemKey?: string }) {
             <span className="text-[11px] font-semibold text-white">Cash Bonus</span>
           </div>
           <div className="text-[18px] font-extrabold text-white tracking-tight leading-tight mt-0.5 flex items-baseline gap-1">
-            ₹5,000 <span className="text-[10px] font-semibold text-white/80">/ student</span>
+            ₹3,000 <span className="text-[10px] font-semibold text-white/80">/ student</span>
           </div>
           <div className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-full bg-white/95 text-emerald-950 shadow-md text-[10px] font-bold flex items-center gap-1 border border-white/60">
             <span>Instant Reward</span>

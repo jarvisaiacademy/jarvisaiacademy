@@ -42,8 +42,8 @@ const navHoverData: Record<string, NavHoverItemData> = {
     gradientClass: "bg-gradient-to-br from-[#fcc419] via-[#ff922b] to-[#f76707]",
   },
   referral: {
-    title: "Refer & Earn ₹5,000",
-    description: "Refer a peer to any 60-day cohort and receive a ₹5,000 cash reward upon their course completion.",
+    title: "Refer & Earn ₹3,000",
+    description: "Refer a peer to any 60-day cohort and receive a ₹3,000 cash reward upon their course completion.",
     gradientClass: "bg-gradient-to-br from-[#12b886] via-[#20c997] to-[#38d9a9]",
   },
   testimonials: {
@@ -153,7 +153,7 @@ export function SidebarNav({
       onMouseLeave={handleMouseLeave}
       className="flex flex-col gap-1 px-2 py-1 relative"
     >
-      {/* New chat button */}
+      {/* Vibe code button */}
       <button
         type="button"
         onClick={onNewChat}
@@ -163,7 +163,7 @@ export function SidebarNav({
       >
         <div className="flex items-center gap-2.5">
           <SquarePen className="w-4 h-4 text-neutral-600 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white" />
-          <span>New chat</span>
+          <span>Vibe code</span>
         </div>
       </button>
 
@@ -237,7 +237,7 @@ export function SidebarNav({
           <span>Refer &amp; Earn</span>
         </div>
         <span className="text-[10px] font-medium tracking-wide px-2 py-0.5 rounded-full bg-neutral-200/80 dark:bg-white/10 text-neutral-600 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
-          ₹5,000
+          ₹3,000
         </span>
       </button>
 

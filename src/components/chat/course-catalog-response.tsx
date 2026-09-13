@@ -271,7 +271,7 @@ function CourseBannerGraphic({
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
           </div>
           <div className="text-[12px] font-extrabold text-white leading-none my-0.5">
-            ₹5,000 <span className="text-[8px] font-medium text-white/80">Cash</span>
+            ₹3,000 <span className="text-[8px] font-medium text-white/80">Cash</span>
           </div>
           <div className="flex items-center justify-between pt-0.5">
             <span className="text-[8px] font-semibold text-white/90">Direct UPI</span>
@@ -618,7 +618,7 @@ export function CourseCatalogResponse({
               Refer & Earn
             </span>
             <span className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate">
-              ₹5,000 Cash Reward
+              ₹3,000 Cash Reward
             </span>
           </div>
         </div>
