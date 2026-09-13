@@ -188,7 +188,7 @@ export function ChatMessages({
             )}
 
             <div
-              className={`group relative flex flex-col ${
+              className={`group/message relative flex flex-col ${
                 isEditing ? "w-full" : isUser ? "items-end" : "items-start"
               }`}
             >
@@ -240,7 +240,7 @@ export function ChatMessages({
                     </div>
 
                     {/* Action Bar on Hover (matching today's ChatGPT UI directly underneath: Copy, Share, Edit) */}
-                    <div className="opacity-0 group-hover:opacity-100 flex items-center gap-2 mt-1.5 mr-1 transition-opacity select-none text-neutral-400 dark:text-neutral-400">
+                    <div className="opacity-0 group-hover/message:opacity-100 flex items-center gap-2 mt-1.5 mr-1 transition-opacity select-none text-neutral-400 dark:text-neutral-400">
                       {/* Copy */}
                       <button
                         type="button"

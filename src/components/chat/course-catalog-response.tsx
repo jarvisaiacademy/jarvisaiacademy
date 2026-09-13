@@ -447,7 +447,13 @@ export function CourseCatalogResponse({
               {/* Card Body */}
               <div className="p-4 flex flex-col flex-1 justify-between gap-3.5">
                 <div>
-                  <h3 className="text-sm sm:text-[15px] font-bold text-neutral-900 dark:text-white leading-snug tracking-tight group-hover:text-primary transition-colors">
+                  <h3
+                    className={`text-sm sm:text-[15px] font-bold leading-snug tracking-tight transition-colors ${
+                      isHovered
+                        ? "text-primary dark:text-primary"
+                        : "text-neutral-900 dark:text-white"
+                    }`}
+                  >
                     {course.title}
                   </h3>
                   <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed mt-1 line-clamp-2">
@@ -467,7 +473,11 @@ export function CourseCatalogResponse({
                       {course.techIcons.map((icon) => (
                         <div
                           key={icon}
-                          className="w-7 h-7 rounded-lg bg-neutral-100 dark:bg-white/5 flex items-center justify-center p-1 border border-neutral-200/70 dark:border-white/10 shadow-2xs group-hover:border-neutral-300 dark:group-hover:border-white/20 transition-all"
+                          className={`w-7 h-7 rounded-lg bg-neutral-100 dark:bg-white/5 flex items-center justify-center p-1 border shadow-2xs transition-all ${
+                            isHovered
+                              ? "border-neutral-300 dark:border-white/20"
+                              : "border-neutral-200/70 dark:border-white/10"
+                          }`}
                           title={icon}
                         >
                           <DevIcon name={icon} size={18} />
@@ -516,8 +526,18 @@ export function CourseCatalogResponse({
                     <span className="text-xs font-bold text-neutral-900 dark:text-white">
                       {course.fee}
                     </span>
-                    <div className="w-7 h-7 rounded-full bg-neutral-100 dark:bg-white/10 group-hover:bg-neutral-900 dark:group-hover:bg-white text-neutral-700 dark:text-neutral-200 group-hover:text-white dark:group-hover:text-black flex items-center justify-center transition-all shadow-xs shrink-0">
-                      <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+                    <div
+                      className={`w-7 h-7 rounded-full flex items-center justify-center transition-all shadow-xs shrink-0 ${
+                        isHovered
+                          ? "bg-neutral-900 dark:bg-white text-white dark:text-black"
+                          : "bg-neutral-100 dark:bg-white/10 text-neutral-700 dark:text-neutral-200"
+                      }`}
+                    >
+                      <ArrowRight
+                        className={`w-3.5 h-3.5 transition-transform ${
+                          isHovered ? "translate-x-0.5" : ""
+                        }`}
+                      />
                     </div>
                   </div>
                 </div>
