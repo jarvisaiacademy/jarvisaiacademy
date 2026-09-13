@@ -315,17 +315,17 @@ Ready to accelerate your tech career? Our admissions counselors and mentors are 
 ---
 
 ### 🌐 Official Social Channels
-* 💼 **LinkedIn**: [linkedin.com/company/jarvisaiacademy](https://www.linkedin.com/company/jarvisaiacademy/)
+* 💼 **LinkedIn**: [@jarvisaiacademy](https://www.linkedin.com/company/jarvisaiacademy/)
 * 📸 **Instagram**: [@jarvisaiacademy](https://www.instagram.com/jarvisaiacademy/)
 * 🎥 **YouTube**: [@JarvisAIAcademy](https://www.youtube.com/@JarvisAIAcademy)
-* 📘 **Facebook**: [facebook.com/jarvisaiacademy](https://www.facebook.com/jarvisaiacademy/)
+* 📘 **Facebook**: [@jarvisaiacademy](https://www.facebook.com/jarvisaiacademy/)
 * 𝕏 **X (Twitter)**: [@jarvisaiacademy](https://x.com/jarvisaiacademy)
 
 Drop your contact number or question here and an engineering advisor will get in touch with you directly!`,
     suggestions: [
-      "What is the fee structure for the 60-day courses?",
-      "Tell me about the Super10 Elite Batch with 100% placement assurance",
-      "How does the ₹3,000 Refer & Earn program work?",
+      "What is the fee structure of courses?",
+      "Tell me more about Super10 Elite batch with free course admission.",
+      "How does ₹3,000 referral work?",
     ],
   },
   socials: {
@@ -333,10 +333,10 @@ Drop your contact number or question here and an engineering advisor will get in
 
 Connect with our community across all official channels for code walkthroughs, tech deep-dives, student success stories, and cohort announcements:
 
-* 💼 **LinkedIn**: [linkedin.com/company/jarvisaiacademy](https://www.linkedin.com/company/jarvisaiacademy/) — *Alumni updates, hiring partner connections & official credentials*
+* 💼 **LinkedIn**: [@jarvisaiacademy](https://www.linkedin.com/company/jarvisaiacademy/) — *Alumni updates, hiring partner connections & official credentials*
 * 📸 **Instagram**: [@jarvisaiacademy](https://www.instagram.com/jarvisaiacademy/) — *Campus life, project showcases & bite-sized software engineering tips*
 * 🎥 **YouTube**: [@JarvisAIAcademy](https://www.youtube.com/@JarvisAIAcademy) — *In-depth code walkthroughs, full-stack architectural builds & tutorials*
-* 📘 **Facebook**: [facebook.com/jarvisaiacademy](https://www.facebook.com/jarvisaiacademy/) — *Community announcements, admissions webinars & news*
+* 📘 **Facebook**: [@jarvisaiacademy](https://www.facebook.com/jarvisaiacademy/) — *Community announcements, admissions webinars & news*
 * 𝕏 **X (Twitter)**: [@jarvisaiacademy](https://x.com/jarvisaiacademy) — *AI news, tech discussions & founder updates*
 
 * 🌐 **Official Website**: [jarvisaiacademy.com](https://jarvisaiacademy.com)  
