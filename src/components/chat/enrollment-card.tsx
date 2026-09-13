@@ -436,18 +436,18 @@ export function EnrollmentCard({
   };
 
   return (
-    <div className="w-full my-4 p-5 sm:p-6 rounded-2xl bg-neutral-900 border border-neutral-800 text-neutral-100 shadow-xl select-none transition-all">
+    <div className="w-full my-4 p-5 sm:p-6 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xl select-none transition-colors">
       {/* Header with status badge */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4 mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 dark:border-white/10 pb-4 mb-4">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+          <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">
             <CreditCard className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="text-base font-semibold text-white tracking-tight">
+            <h4 className="text-base font-semibold text-neutral-900 dark:text-white tracking-tight">
               Admissions &amp; Enrollment Checkout
             </h4>
-            <p className="text-xs text-neutral-400">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
               Direct seat reservation with 7-day money-back guarantee
             </p>
           </div>
@@ -455,19 +455,19 @@ export function EnrollmentCard({
 
         {/* Status Indicator Pill */}
         {status === "initiated" && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">
             <Clock className="w-3.5 h-3.5" />
             Payment Pending
           </span>
         )}
         {status === "not_paid" && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-red-500/15 text-red-300 border border-red-500/30">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-500/30">
             <XCircle className="w-3.5 h-3.5" />
             Payment Incomplete
           </span>
         )}
         {status === "paid" && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
             <CheckCircle2 className="w-3.5 h-3.5" />
             Enrolled &amp; Confirmed
           </span>
@@ -477,7 +477,7 @@ export function EnrollmentCard({
       {/* Program Selector (if not yet paid) */}
       {status !== "paid" ? (
         <div className="flex flex-col gap-3 mb-4">
-          <label className="text-xs font-medium text-neutral-300">
+          <label className="text-xs font-medium text-neutral-700 dark:text-neutral-300">
             Select Learning Cohort:
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -486,16 +486,16 @@ export function EnrollmentCard({
               onClick={() => setSelectedCourse("fullstack")}
               className={`flex flex-col text-left p-3.5 rounded-xl border transition-all cursor-pointer ${
                 selectedCourse === "fullstack"
-                  ? "bg-blue-600/10 border-blue-500 text-white shadow-sm"
-                  : "bg-neutral-800/40 border-neutral-700/60 text-neutral-300 hover:border-neutral-600"
+                  ? "bg-blue-50/80 dark:bg-blue-600/10 border-blue-500 text-neutral-900 dark:text-white shadow-xs"
+                  : "bg-neutral-50 dark:bg-neutral-800/40 border-neutral-200 dark:border-neutral-700/60 text-neutral-700 dark:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600"
               }`}
             >
               <span className="text-xs font-semibold">Full-Stack AI &amp; Web</span>
-              <span className="text-[11px] text-neutral-400 mt-0.5">
+              <span className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
                 60 Days (2 Months) · Next.js 15 &amp; Python GenAI
               </span>
-              <span className="text-sm font-bold text-white mt-2">
-                ₹30,000 <span className="text-[10px] font-normal text-neutral-400">+ 18% GST</span>
+              <span className="text-sm font-bold text-neutral-900 dark:text-white mt-2">
+                ₹30,000 <span className="text-[10px] font-normal text-neutral-500 dark:text-neutral-400">+ 18% GST</span>
               </span>
             </button>
 
@@ -504,37 +504,37 @@ export function EnrollmentCard({
               onClick={() => setSelectedCourse("super10")}
               className={`flex flex-col text-left p-3.5 rounded-xl border transition-all cursor-pointer ${
                 selectedCourse === "super10"
-                  ? "bg-amber-600/10 border-amber-500 text-white shadow-sm"
-                  : "bg-neutral-800/40 border-neutral-700/60 text-neutral-300 hover:border-neutral-600"
+                  ? "bg-amber-50/80 dark:bg-amber-600/10 border-amber-500 text-neutral-900 dark:text-white shadow-xs"
+                  : "bg-neutral-50 dark:bg-neutral-800/40 border-neutral-200 dark:border-neutral-700/60 text-neutral-700 dark:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600"
               }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold">Super10 Elite Cohort</span>
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-sm bg-amber-500/20 text-amber-300">
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-sm bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300">
                   10 SEATS
                 </span>
               </div>
-              <span className="text-[11px] text-neutral-400 mt-0.5">
+              <span className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
                 60 Days · 100% Placement Assurance
               </span>
-              <span className="text-sm font-bold text-white mt-2">
-                ₹30,000 <span className="text-[10px] font-normal text-neutral-400">+ 18% GST</span>
+              <span className="text-sm font-bold text-neutral-900 dark:text-white mt-2">
+                ₹30,000 <span className="text-[10px] font-normal text-neutral-500 dark:text-neutral-400">+ 18% GST</span>
               </span>
             </button>
           </div>
           {/* Referral Reward Banner */}
-          <div className="mt-2.5 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-300 flex items-center justify-between">
+          <div className="mt-2.5 p-2 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-[11px] text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
             <span>🎁 <strong>Referral Program:</strong> Refer a student &amp; earn <strong>₹5,000</strong> cash bonus once they complete the full 60-day course!</span>
           </div>
         </div>
       ) : (
         /* Paid Summary Card */
-        <div className="mb-4 p-4 rounded-xl bg-emerald-950/30 border border-emerald-500/30 flex flex-col gap-2">
-          <div className="flex items-center gap-2 text-emerald-400 font-semibold text-sm">
+        <div className="mb-4 p-4 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-500/30 flex flex-col gap-2">
+          <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-semibold text-sm">
             <CheckCircle2 className="w-4 h-4" />
             <span>Admission Confirmed: {course.name}</span>
           </div>
-          <div className="grid grid-cols-2 gap-2 text-xs text-neutral-300 mt-1">
+          <div className="grid grid-cols-2 gap-2 text-xs text-neutral-700 dark:text-neutral-300 mt-1">
             <div>
               <span className="text-neutral-500">Student:</span> {studentName}
             </div>
@@ -552,18 +552,18 @@ export function EnrollmentCard({
       )}
 
       {/* Pricing Breakdown */}
-      <div className="rounded-xl bg-black/40 border border-white/5 p-3.5 mb-5 text-xs flex flex-col gap-1.5">
-        <div className="flex justify-between text-neutral-400">
+      <div className="rounded-xl bg-neutral-50 dark:bg-black/40 border border-neutral-200 dark:border-white/5 p-3.5 mb-5 text-xs flex flex-col gap-1.5">
+        <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
           <span>Program Tuition:</span>
-          <span>₹{course.baseAmount.toLocaleString("en-IN")}</span>
+          <span className="text-neutral-900 dark:text-neutral-200">₹{course.baseAmount.toLocaleString("en-IN")}</span>
         </div>
-        <div className="flex justify-between text-neutral-400">
+        <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
           <span>Statutory 18% GST (CGST 9% + SGST 9%):</span>
-          <span>₹{gstAmount.toLocaleString("en-IN")}</span>
+          <span className="text-neutral-900 dark:text-neutral-200">₹{gstAmount.toLocaleString("en-IN")}</span>
         </div>
-        <div className="flex justify-between font-semibold text-white text-sm pt-2 border-t border-white/10 mt-1">
+        <div className="flex justify-between font-semibold text-neutral-900 dark:text-white text-sm pt-2 border-t border-neutral-200 dark:border-white/10 mt-1">
           <span>Total Payable:</span>
-          <span className="text-blue-400 font-bold">₹{totalAmount.toLocaleString("en-IN")}</span>
+          <span className="text-blue-600 dark:text-blue-400 font-bold">₹{totalAmount.toLocaleString("en-IN")}</span>
         </div>
       </div>
 
@@ -593,7 +593,7 @@ export function EnrollmentCard({
             type="button"
             disabled={isProcessing}
             onClick={handleSimulateFailure}
-            className="w-full sm:w-auto py-2.5 px-3.5 rounded-xl border border-white/10 bg-neutral-800/60 hover:bg-neutral-800 text-neutral-300 text-xs font-medium transition-colors cursor-pointer"
+            className="w-full sm:w-auto py-2.5 px-3.5 rounded-xl border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-neutral-800/60 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs font-medium transition-colors cursor-pointer"
           >
             Cancel / Failed
           </button>
@@ -602,8 +602,8 @@ export function EnrollmentCard({
 
       {status === "not_paid" && (
         <div className="flex flex-col gap-3">
-          <div className="p-3 rounded-xl bg-red-950/30 border border-red-500/20 text-xs text-red-300 flex items-start gap-2">
-            <XCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+          <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-500/20 text-xs text-red-700 dark:text-red-300 flex items-start gap-2">
+            <XCircle className="w-4 h-4 text-red-500 dark:text-red-400 shrink-0 mt-0.5" />
             <span>
               Payment was not completed. Your cohort seat hold is temporary. Click below to retry.
             </span>
@@ -634,7 +634,7 @@ export function EnrollmentCard({
           <button
             type="button"
             onClick={() => handleDownloadReceipt()}
-            className="w-full sm:w-auto flex items-center justify-center gap-1.5 py-2.5 px-3.5 rounded-xl border border-white/15 bg-neutral-800/80 hover:bg-neutral-800 text-white text-xs font-medium transition-colors cursor-pointer"
+            className="w-full sm:w-auto flex items-center justify-center gap-1.5 py-2.5 px-3.5 rounded-xl border border-neutral-300 dark:border-white/15 bg-neutral-100 dark:bg-neutral-800/80 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-800 dark:text-white text-xs font-medium transition-colors cursor-pointer"
           >
             <FileText className="w-3.5 h-3.5" />
             <span>Print View</span>

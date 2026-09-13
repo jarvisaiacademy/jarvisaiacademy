@@ -30,7 +30,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/70 backdrop-blur-xs"
+            className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-xs"
             aria-hidden="true"
           />
 
@@ -40,24 +40,24 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 12 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="relative w-full max-w-[400px] bg-[#212121] border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 text-neutral-100"
+            className="relative w-full max-w-[400px] bg-white dark:bg-[#212121] border border-neutral-200 dark:border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 text-neutral-900 dark:text-neutral-100 transition-colors"
           >
             {/* Close Button */}
             <button
               type="button"
               onClick={onClose}
               aria-label="Close dialog"
-              className="absolute top-5 right-5 p-1.5 rounded-full text-neutral-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              className="absolute top-5 right-5 p-1.5 rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
 
             {/* Header */}
             <div className="text-center mb-6">
-              <h2 className="text-xl sm:text-2xl font-semibold text-white tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-white tracking-tight">
                 Log in or sign up
               </h2>
-              <p className="text-xs sm:text-sm text-neutral-400 mt-2 px-2 leading-relaxed">
+              <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-2 px-2 leading-relaxed">
                 Join {siteConfig.name} to start your personalized learning roadmap, review cohorts, and access code repos.
               </p>
             </div>
@@ -67,7 +67,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
               <button
                 type="button"
                 onClick={handleGoogleLogin}
-                className="flex items-center justify-center gap-3 w-full py-3 px-5 rounded-full bg-white text-neutral-900 hover:bg-neutral-100 active:scale-[0.98] transition-all text-sm font-semibold shadow-md cursor-pointer"
+                className="flex items-center justify-center gap-3 w-full py-3 px-5 rounded-full bg-white dark:bg-white text-neutral-800 dark:text-neutral-900 border border-neutral-300 dark:border-transparent hover:bg-neutral-50 dark:hover:bg-neutral-100 active:scale-[0.98] transition-all text-sm font-semibold shadow-xs dark:shadow-md cursor-pointer"
               >
                 <svg className="w-4.5 h-4.5 shrink-0" viewBox="0 0 24 24">
                   <path
@@ -90,7 +90,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
                 <span>Continue with Google</span>
               </button>
 
-              <p className="text-[11px] text-neutral-500 text-center mt-2 px-3 leading-tight">
+              <p className="text-[11px] text-neutral-500 dark:text-neutral-400 text-center mt-2 px-3 leading-tight">
                 By continuing, you agree to our Terms &amp; Conditions and Privacy Policy.
               </p>
             </div>

@@ -52,20 +52,20 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.94 }}
               transition={{ duration: 0.2 }}
-              className="pointer-events-auto flex items-center gap-2.5 px-3.5 py-2 bg-[#212121] border border-white/15 text-white rounded-full shadow-2xl text-xs sm:text-sm font-medium"
+              className="pointer-events-auto flex items-center gap-2.5 px-3.5 py-2 bg-white dark:bg-[#212121] border border-neutral-200 dark:border-white/15 text-neutral-900 dark:text-white rounded-full shadow-lg dark:shadow-2xl text-xs sm:text-sm font-medium transition-colors"
             >
               {toast.type === "success" ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 dark:text-emerald-400 shrink-0" />
               ) : toast.type === "error" ? (
-                <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                <AlertCircle className="w-4 h-4 text-red-500 dark:text-red-400 shrink-0" />
               ) : (
-                <Info className="w-4 h-4 text-blue-400 shrink-0" />
+                <Info className="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0" />
               )}
               <span>{toast.message}</span>
               <button
                 type="button"
                 onClick={() => dismissToast(toast.id)}
-                className="ml-1 text-neutral-400 hover:text-white p-0.5 rounded-full transition-colors"
+                className="ml-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-white p-0.5 rounded-full transition-colors cursor-pointer"
                 aria-label="Dismiss toast"
               >
                 <X className="w-3.5 h-3.5" />
