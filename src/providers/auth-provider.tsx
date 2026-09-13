@@ -8,6 +8,7 @@ import {
   User as FirebaseUser,
 } from "firebase/auth";
 import { auth, googleProvider, isFirebaseConfigured } from "@/lib/firebase";
+import { upsertStudentRecord } from "@/services/students-service";
 
 export interface User {
   id: string;
@@ -132,6 +133,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return () => unsubscribe();
     }
   }, []);
+
+  // Best-effort roster sync so admins can assign courses to real accounts.
+  useEffect(() => {
+    if (!user) return;
+    void upsertStudentRecord({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      picture: user.picture,
+      role: user.role,
+      plan: user.plan,
+    });
+  }, [user]);
 
   const loginWithGoogle = useCallback(async () => {
     if (isFirebaseConfigured && auth && googleProvider) {

@@ -9,10 +9,12 @@ import {
   ArrowLeft,
   ShieldCheck,
   Sparkles,
+  GraduationCap,
 } from "lucide-react";
 import { useCourses } from "@/providers/courses-provider";
+import { useAssignments } from "@/providers/assignments-provider";
 
-export type DashboardTab = "courses" | "users" | "analytics" | "cloud";
+export type DashboardTab = "courses" | "users" | "assignments" | "analytics" | "cloud";
 
 interface DashboardSidebarNavProps {
   activeTab: DashboardTab;
@@ -28,6 +30,9 @@ export function DashboardSidebarNav({
   isMobile,
 }: DashboardSidebarNavProps) {
   const { courses, isLiveFromFirebase } = useCourses();
+  const { assignments } = useAssignments();
+
+  const activeGrantCount = assignments.filter((a) => a.status === "active").length;
 
   const handleSelect = (tab: DashboardTab) => {
     onSelectTab(tab);
@@ -123,7 +128,38 @@ export function DashboardSidebarNav({
           </span>
         </button>
 
-        {/* 3. Revenue & Analytics */}
+        {/* 3. Course Assignments */}
+        <button
+          type="button"
+          onClick={() => handleSelect("assignments")}
+          className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            activeTab === "assignments"
+              ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-xs"
+              : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/5"
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <GraduationCap
+              className={`w-4 h-4 ${
+                activeTab === "assignments"
+                  ? "text-indigo-400 dark:text-indigo-600"
+                  : "text-neutral-500"
+              }`}
+            />
+            <span>Assignments</span>
+          </div>
+          <span
+            className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+              activeTab === "assignments"
+                ? "bg-white/20 dark:bg-black/15 text-white dark:text-neutral-900"
+                : "bg-neutral-200/70 dark:bg-white/10 text-neutral-600 dark:text-neutral-300"
+            }`}
+          >
+            {activeGrantCount}
+          </span>
+        </button>
+
+        {/* 4. Revenue & Analytics */}
         <button
           type="button"
           onClick={() => handleSelect("analytics")}
@@ -154,7 +190,7 @@ export function DashboardSidebarNav({
           </span>
         </button>
 
-        {/* 4. Firebase Cloud Sync */}
+        {/* 5. Firebase Cloud Sync */}
         <button
           type="button"
           onClick={() => handleSelect("cloud")}

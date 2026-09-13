@@ -17,6 +17,8 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import { LanguageProvider } from "@/providers/language-provider";
 import { AuthProvider } from "@/providers/auth-provider";
 import { CoursesProvider } from "@/providers/courses-provider";
+import { StudentsProvider } from "@/providers/students-provider";
+import { AssignmentsProvider } from "@/providers/assignments-provider";
 
 import { siteConfig } from "@/config/site";
 
@@ -111,7 +113,11 @@ export default function RootLayout({
         <ThemeProvider>
           <LanguageProvider>
             <AuthProvider>
-              <CoursesProvider>{children}</CoursesProvider>
+              <CoursesProvider>
+                <StudentsProvider>
+                  <AssignmentsProvider>{children}</AssignmentsProvider>
+                </StudentsProvider>
+              </CoursesProvider>
             </AuthProvider>
           </LanguageProvider>
         </ThemeProvider>

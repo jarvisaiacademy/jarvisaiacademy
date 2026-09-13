@@ -38,6 +38,7 @@ import { DevIcon } from "@/components/ui/dev-icon";
 import { useToast } from "@/components/ui/toast";
 
 import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
+import { AdminAssignments } from "@/components/admin/admin-assignments";
 
 interface EnrollmentRecord {
   action: string;
@@ -849,7 +850,10 @@ export function AdminDashboard({
           </div>
         )}
 
-        {/* TAB 3: REVENUE & ANALYTICS */}
+        {/* TAB 3: COURSE ASSIGNMENTS */}
+        {activeTab === "assignments" && <AdminAssignments />}
+
+        {/* TAB 4: REVENUE & ANALYTICS */}
         {activeTab === "analytics" && (
           <div className="flex flex-col gap-6">
             {/* Banner */}

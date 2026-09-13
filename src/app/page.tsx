@@ -6,6 +6,7 @@ import { GuestHeader } from "@/components/layout/guest-header";
 import { ChatCanvas } from "@/components/chat/chat-canvas";
 import { LoginModal } from "@/components/auth/login-modal";
 import { SettingsPage } from "@/components/settings/settings-page";
+import { MyLearningPage } from "@/components/learning/my-learning-page";
 import { AdminDashboard } from "@/components/admin/admin-dashboard";
 import { ToastProvider } from "@/components/ui/toast";
 import { useSidebar } from "@/hooks/use-sidebar";
@@ -18,6 +19,7 @@ export default function Home() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+  const [isLearningOpen, setIsLearningOpen] = useState(false);
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>("courses");
   const [activeTopic, setActiveTopic] = useState<string | null>(null);
   const [resetSignal, setResetSignal] = useState(0);
@@ -26,16 +28,29 @@ export default function Home() {
   const handleCloseLogin = () => setIsLoginOpen(false);
   const handleOpenSettings = () => {
     setIsDashboardOpen(false);
+    setIsLearningOpen(false);
     setIsSettingsOpen(true);
   };
   const handleCloseSettings = () => setIsSettingsOpen(false);
   const handleOpenDashboard = () => {
     setIsSettingsOpen(false);
+    setIsLearningOpen(false);
     setIsDashboardOpen(true);
   };
   const handleCloseDashboard = () => setIsDashboardOpen(false);
+  const handleOpenLearning = () => {
+    setIsSettingsOpen(false);
+    setIsDashboardOpen(false);
+    setIsLearningOpen(true);
+  };
+  const handleCloseLearning = () => setIsLearningOpen(false);
+  const handleOpenCourseFromLearning = (topic: string) => {
+    setIsLearningOpen(false);
+    setActiveTopic(topic);
+  };
   const handleLogout = () => {
     setIsDashboardOpen(false);
+    setIsLearningOpen(false);
     logout();
   };
 
@@ -53,17 +68,20 @@ export default function Home() {
           onSelectSection={(topic) => {
             setIsSettingsOpen(false);
             setIsDashboardOpen(false);
+            setIsLearningOpen(false);
             setActiveTopic(topic);
           }}
           onNewChat={() => {
             setIsSettingsOpen(false);
             setIsDashboardOpen(false);
+            setIsLearningOpen(false);
             setActiveTopic(null);
             setResetSignal((prev) => prev + 1);
           }}
           onOpenLogin={handleOpenLogin}
           onOpenSettings={handleOpenSettings}
           onOpenDashboard={handleOpenDashboard}
+          onOpenLearning={handleOpenLearning}
           isDashboardOpen={isDashboardOpen && !!user?.isAdmin}
           activeDashboardTab={dashboardTab}
           onSelectDashboardTab={setDashboardTab}
@@ -82,6 +100,11 @@ export default function Home() {
             />
           ) : isSettingsOpen ? (
             <SettingsPage onBack={handleCloseSettings} />
+          ) : isLearningOpen && isLoggedIn && !user?.isAdmin ? (
+            <MyLearningPage
+              onBack={handleCloseLearning}
+              onOpenCourse={handleOpenCourseFromLearning}
+            />
           ) : (
             <>
               <GuestHeader
