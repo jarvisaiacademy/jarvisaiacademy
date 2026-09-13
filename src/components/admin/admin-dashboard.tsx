@@ -392,145 +392,14 @@ export function AdminDashboard({
   return (
     <div className="flex flex-col min-h-screen w-full bg-neutral-50 dark:bg-[#121212] text-neutral-900 dark:text-neutral-100 overflow-y-auto">
       {/* Top Header */}
-      <header className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-8 py-3.5 bg-white/90 dark:bg-[#181818]/90 backdrop-blur-md border-b border-neutral-200 dark:border-white/10 select-none">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onBackToChat}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Chat</span>
-          </button>
-          <div className="h-4 w-px bg-neutral-300 dark:bg-white/15" />
-          <div className="flex items-center gap-2">
-            <h1 className="text-base sm:text-lg font-bold tracking-tight text-neutral-900 dark:text-white">
-              Admin Control Center
-            </h1>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">
-              Admin Portal
-            </span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
-            <ShieldCheck className="w-4 h-4 text-emerald-500" />
-            <span>
-              Authenticated as <strong>{user?.email || "Admin"}</strong>
-            </span>
-          </div>
-          {activeTab === "courses" ? (
-            <button
-              type="button"
-              onClick={handleOpenAdd}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add New Course</span>
-            </button>
-          ) : activeTab === "cloud" ? (
-            <button
-              type="button"
-              disabled={isSeeding}
-              onClick={handleSeedCourses}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-            >
-              <Database className="w-3.5 h-3.5" />
-              <span>{isSeeding ? "Feeding..." : "Feed 12 Courses"}</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={exportCSV}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-100 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Export CSV</span>
-            </button>
-          )}
-        </div>
+      <header className="sticky top-0 z-30 flex items-center px-4 sm:px-8 py-3.5 bg-white/90 dark:bg-[#181818]/90 backdrop-blur-md border-b border-neutral-200 dark:border-white/10 select-none">
+        <h1 className="text-base sm:text-lg font-bold tracking-tight text-neutral-900 dark:text-white">
+          Admin Control Center
+        </h1>
       </header>
 
       {/* Main Container */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
-        {/* Navigation Tab Bar */}
-        <div className="flex items-center justify-between border-b border-neutral-200 dark:border-white/10 pb-3">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
-            <button
-              type="button"
-              onClick={() => setActiveTab("courses")}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap ${
-                activeTab === "courses"
-                  ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-xs"
-                  : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/5"
-              }`}
-            >
-              <BookOpen className="w-4 h-4" />
-              <span>Courses (CRUD)</span>
-              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-blue-500/20 text-blue-600 dark:text-blue-300">
-                {courses.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("users")}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap ${
-                activeTab === "users"
-                  ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-xs"
-                  : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/5"
-              }`}
-            >
-              <Users className="w-4 h-4" />
-              <span>Users &amp; Admissions</span>
-              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-300">
-                {records.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("analytics")}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap ${
-                activeTab === "analytics"
-                  ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-xs"
-                  : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/5"
-              }`}
-            >
-              <TrendingUp className="w-4 h-4" />
-              <span>Revenue &amp; Analytics</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("cloud")}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap ${
-                activeTab === "cloud"
-                  ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-xs"
-                  : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/5"
-              }`}
-            >
-              <Database className="w-4 h-4" />
-              <span>Cloud Sync</span>
-            </button>
-          </div>
-
-          {/* Real-time sync badge */}
-          <div className="hidden md:flex items-center gap-2 text-xs">
-            {isLiveFromFirebase ? (
-              <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-medium">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                Firebase Real-Time Synced
-              </span>
-            ) : (
-              <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-300 font-medium">
-                <span className="w-2 h-2 rounded-full bg-blue-500" />
-                Local Storage Fallback
-              </span>
-            )}
-          </div>
-        </div>
 
         {/* TAB 1: COURSE MANAGEMENT (CRUD) */}
         {activeTab === "courses" && (
@@ -864,6 +733,15 @@ export function AdminDashboard({
                     <option value="paid">Paid (Enrolled)</option>
                     <option value="pending">Pending</option>
                   </select>
+
+                  <button
+                    type="button"
+                    onClick={exportCSV}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-100 text-xs font-semibold shadow-xs transition-colors cursor-pointer whitespace-nowrap"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Export CSV</span>
+                  </button>
                 </div>
               </div>
 

@@ -185,17 +185,6 @@ export function DashboardSidebarNav({
           </span>
         </button>
       </div>
-
-      {/* Informative Admin Card */}
-      <div className="mt-2 p-3 rounded-2xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 flex flex-col gap-1.5 select-none">
-        <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-900 dark:text-white">
-          <ShieldCheck className="w-3.5 h-3.5 text-blue-500" />
-          <span>Admin Access Active</span>
-        </div>
-        <p className="text-[10px] text-neutral-500 dark:text-neutral-400 leading-relaxed">
-          Course modifications immediately reflect across chat recommendations, live catalog cards, and student checkout.
-        </p>
-      </div>
     </div>
   );
 }
