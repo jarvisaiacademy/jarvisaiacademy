@@ -21,6 +21,137 @@ import {
 } from "@/data/courses";
 import { DevIcon } from "@/components/ui/dev-icon";
 
+function CourseBannerGraphic({ course }: { course: CourseItem }) {
+  switch (course.category) {
+    case "web":
+      return (
+        <div className="relative flex flex-col gap-1 p-2 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 shadow-lg shadow-black/10 w-[114px] rotate-[-2deg] group-hover:rotate-0 transition-transform duration-300">
+          <div className="flex items-center gap-1">
+            <div className="flex gap-0.5">
+              <span className="w-1 h-1 rounded-full bg-white/80" />
+              <span className="w-1 h-1 rounded-full bg-white/50" />
+              <span className="w-1 h-1 rounded-full bg-white/50" />
+            </div>
+            <span className="text-[9px] font-mono text-white/90 font-medium ml-1">app.tsx</span>
+          </div>
+          <div className="flex flex-col gap-0.5 my-0.5">
+            <div className="h-1 w-16 bg-white/70 rounded-full" />
+            <div className="h-1 w-10 bg-white/40 rounded-full" />
+          </div>
+          <div className="flex items-center justify-between pt-0.5">
+            <span className="text-[8px] font-semibold text-white/90">React 19</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-300 animate-pulse" />
+          </div>
+        </div>
+      );
+
+    case "ai":
+    case "datascience":
+      return (
+        <div className="relative flex flex-col gap-1 p-2 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 shadow-lg shadow-black/10 w-[114px] rotate-[-2deg] group-hover:rotate-0 transition-transform duration-300">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <Sparkles className="w-2.5 h-2.5 text-amber-300" />
+              <span className="text-[9px] font-bold text-white tracking-tight">AI Agent</span>
+            </div>
+            <span className="text-[8px] font-mono text-emerald-300">v2.0</span>
+          </div>
+          <div className="flex flex-col gap-0.5 my-0.5">
+            <div className="h-1 w-16 bg-white/70 rounded-full" />
+            <div className="h-1 w-12 bg-white/40 rounded-full" />
+          </div>
+          <div className="flex items-center justify-between pt-0.5">
+            <span className="text-[8px] font-semibold text-white/90">LLM Vector</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse" />
+          </div>
+        </div>
+      );
+
+    case "devops":
+      return (
+        <div className="relative flex flex-col gap-1 p-2 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 shadow-lg shadow-black/10 w-[114px] rotate-[-2deg] group-hover:rotate-0 transition-transform duration-300">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <span className="text-[9px] font-mono text-cyan-300">&gt;_</span>
+              <span className="text-[9px] font-mono text-white/90">deploy.sh</span>
+            </div>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          </div>
+          <div className="flex flex-col gap-0.5 my-0.5">
+            <div className="h-1 w-16 bg-white/70 rounded-full" />
+            <div className="h-1 w-10 bg-white/40 rounded-full" />
+          </div>
+          <div className="flex items-center justify-between pt-0.5">
+            <span className="text-[8px] font-semibold text-white/90">K8s + Cloud</span>
+            <span className="text-[8px] text-emerald-300 font-bold">LIVE</span>
+          </div>
+        </div>
+      );
+
+    case "database":
+      return (
+        <div className="relative flex flex-col gap-1 p-2 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 shadow-lg shadow-black/10 w-[114px] rotate-[-2deg] group-hover:rotate-0 transition-transform duration-300">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <span className="text-[9px] font-bold text-white tracking-tight">SQL Query</span>
+            </div>
+            <span className="w-1.5 h-1.5 rounded-full bg-sky-300" />
+          </div>
+          <div className="flex flex-col gap-0.5 my-0.5">
+            <div className="h-1 w-16 bg-white/70 rounded-full" />
+            <div className="h-1 w-10 bg-white/40 rounded-full" />
+          </div>
+          <div className="flex items-center justify-between pt-0.5">
+            <span className="text-[8px] font-semibold text-white/90">Postgres + Redis</span>
+            <span className="text-[8px] text-sky-300 font-mono">0.2ms</span>
+          </div>
+        </div>
+      );
+
+    case "elite":
+      return (
+        <div className="relative flex flex-col gap-1 p-2 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 shadow-lg shadow-black/10 w-[114px] rotate-[-2deg] group-hover:rotate-0 transition-transform duration-300">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <span className="text-[9px] font-bold text-amber-300">★ Super10</span>
+            </div>
+            <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-amber-400/30 text-amber-200">
+              ELITE
+            </span>
+          </div>
+          <div className="flex items-center gap-1 my-0.5">
+            <div className="flex -space-x-1">
+              <div className="w-3 h-3 rounded-full bg-white/80 border border-amber-300" />
+              <div className="w-3 h-3 rounded-full bg-white/60 border border-amber-300" />
+              <div className="w-3 h-3 rounded-full bg-white/40 border border-amber-300" />
+            </div>
+            <span className="text-[8px] font-semibold text-white/90">10 Seats</span>
+          </div>
+          <div className="flex items-center justify-between pt-0.5">
+            <span className="text-[8px] font-bold text-white">100% Placement</span>
+          </div>
+        </div>
+      );
+
+    default:
+      return (
+        <div className="relative flex flex-col gap-1 p-2 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 shadow-lg shadow-black/10 w-[114px] rotate-[-2deg] group-hover:rotate-0 transition-transform duration-300">
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-semibold text-white">Curriculum</span>
+            <Sparkles className="w-2.5 h-2.5 text-white/80" />
+          </div>
+          <div className="flex flex-col gap-0.5 my-0.5">
+            <div className="h-1 w-16 bg-white/70 rounded-full" />
+            <div className="h-1 w-10 bg-white/40 rounded-full" />
+          </div>
+          <div className="flex items-center justify-between pt-0.5">
+            <span className="text-[8px] font-medium text-white/90">60 Days Cohort</span>
+          </div>
+        </div>
+      );
+  }
+}
+
 interface CourseCatalogResponseProps {
   onActionPrompt?: (prompt: string) => void;
   onSelectCourse?: (courseId: string) => void;
@@ -47,17 +178,17 @@ export function CourseCatalogResponse({
   };
 
   const handleViewAll = () => {
-    if (selectedCategory !== "all") {
-      setSelectedCategory("all");
-    } else if (onActionPrompt) {
-      onActionPrompt("Tell me about all available courses at Jarvis AI Academy");
+    if (onActionPrompt) {
+      onActionPrompt(
+        "Show me the complete 60-day curriculum breakdown, weekly roadmap, and tech stack comparison for all Jarvis AI Academy courses."
+      );
     }
   };
 
   return (
-    <div className="w-full flex flex-col gap-4 mt-2 mb-3 select-none">
-      {/* 1. Category Filter Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+    <div className="w-full flex flex-col gap-4 my-2">
+      {/* 1. Category Filter Pills */}
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
         {COURSE_CATEGORIES.map((cat) => {
           const isActive = selectedCategory === cat.id;
           return (
@@ -65,10 +196,10 @@ export function CourseCatalogResponse({
               key={cat.id}
               type="button"
               onClick={() => setSelectedCategory(cat.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer select-none ${
+              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
                 isActive
-                  ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-xs font-semibold"
-                  : "bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/80 dark:hover:bg-neutral-700/80 border border-neutral-200 dark:border-white/5"
+                  ? "bg-neutral-900 text-white dark:bg-white dark:text-black shadow-2xs font-semibold"
+                  : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200/80 hover:text-neutral-900 dark:bg-white/5 dark:text-neutral-400 dark:hover:bg-white/10 dark:hover:text-white border border-neutral-200/50 dark:border-white/5"
               }`}
             >
               {cat.label}
@@ -95,8 +226,37 @@ export function CourseCatalogResponse({
               <div
                 className={`relative h-32 sm:h-36 w-full p-4 bg-gradient-to-br ${course.gradient} flex flex-col justify-between overflow-hidden shrink-0 border-b border-neutral-200/60 dark:border-white/10`}
               >
-                {/* Background ambient glow effect */}
-                <div className="absolute -top-12 -right-12 w-36 h-36 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+                {/* Specular sheen across top */}
+                <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-white/5 to-transparent pointer-events-none" />
+
+                {/* Background ambient glow effects */}
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/15 rounded-full blur-2xl pointer-events-none" />
+                <div className="absolute -bottom-8 -left-8 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none" />
+
+                {/* Delicate concentric glass rings */}
+                <div className="absolute -top-12 -right-12 w-36 h-36 rounded-full border border-white/15 pointer-events-none" />
+                <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full border border-white/10 pointer-events-none" />
+
+                {/* Sparkling light stars */}
+                <svg
+                  className="absolute top-3.5 right-14 w-3 h-3 text-white/50 animate-pulse pointer-events-none"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
+                </svg>
+                <svg
+                  className="absolute bottom-3 right-6 w-2 h-2 text-white/40 pointer-events-none"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
+                </svg>
+
+                {/* Floating Frosted Object on the Right */}
+                <div className="absolute right-3.5 top-1/2 -translate-y-1/2 z-10 pointer-events-none drop-shadow-md">
+                  <CourseBannerGraphic course={course} />
+                </div>
 
                 {/* Top Row: Badge + Number */}
                 <div className="flex items-center justify-between gap-2 z-10">
@@ -111,13 +271,13 @@ export function CourseCatalogResponse({
                     </span>
                   )}
 
-                  <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white/30 font-mono">
+                  <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white/20 font-mono select-none">
                     {course.number}
                   </span>
                 </div>
 
                 {/* Bottom of Banner: Title & Subtitle */}
-                <div className="z-10 mt-auto">
+                <div className="z-10 mt-auto max-w-[66%] sm:max-w-[62%]">
                   <h4 className="text-base sm:text-[17px] font-bold text-white tracking-tight leading-tight drop-shadow-xs">
                     {course.bannerTitle}
                   </h4>
