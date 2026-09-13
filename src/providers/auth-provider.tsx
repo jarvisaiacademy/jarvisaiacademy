@@ -30,7 +30,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const ADMIN_EMAILS = (
-  process.env.NEXT_PUBLIC_ADMIN_EMAILS || "sugat@jarvisaiacademy.com"
+  process.env.NEXT_PUBLIC_ADMIN_EMAILS || "sugat@jarvisaiacademy.com,jarvisaiacademy@gmail.com"
 )
   .split(",")
   .map((e) => e.trim().toLowerCase());

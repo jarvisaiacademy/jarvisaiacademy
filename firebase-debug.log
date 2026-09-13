@@ -1,0 +1,23 @@
+[debug] [2026-09-13T08:55:24.678Z] ----------------------------------------------------------------------
+[debug] [2026-09-13T08:55:24.680Z] Command:       /usr/local/bin/firebase /home/sugat/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/bin/firebase apps:list --project jarvisaiacademy
+[debug] [2026-09-13T08:55:24.681Z] CLI Version:   15.29.0
+[debug] [2026-09-13T08:55:24.681Z] Platform:      linux
+[debug] [2026-09-13T08:55:24.681Z] Node Version:  v20.18.2
+[debug] [2026-09-13T08:55:24.681Z] Detected Agent: antigravity
+[debug] [2026-09-13T08:55:24.681Z] Time:          Sun Sep 13 2026 14:25:24 GMT+0530 (India Standard Time)
+[debug] [2026-09-13T08:55:24.681Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-09-13T08:55:24.690Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-09-13T08:55:24.690Z] > authorizing via signed-in user (sugatraj.2106@gmail.com)
+[debug] [2026-09-13T08:55:24.703Z] Checked if tokens are valid: true, expires at: 1789293311697
+[debug] [2026-09-13T08:55:24.704Z] Checked if tokens are valid: true, expires at: 1789293311697
+[debug] [2026-09-13T08:55:24.706Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/jarvisaiacademy:searchApps pageSize=100
+[debug] [2026-09-13T08:55:26.000Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/jarvisaiacademy:searchApps 403
+[debug] [2026-09-13T08:55:26.000Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/jarvisaiacademy:searchApps {"error":{"code":403,"message":"The caller does not have permission","status":"PERMISSION_DENIED"}}
+[debug] [2026-09-13T08:55:26.001Z] Request to https://firebase.googleapis.com/v1beta1/projects/jarvisaiacademy:searchApps?pageSize=100 had HTTP Error: 403, The caller does not have permission
+[debug] [2026-09-13T08:55:26.567Z] FirebaseError: Request to https://firebase.googleapis.com/v1beta1/projects/jarvisaiacademy:searchApps?pageSize=100 had HTTP Error: 403, The caller does not have permission
+    at responseToError (/home/sugat/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/responseToError.js:53:12)
+    at RetryOperation._fn (/home/sugat/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/apiv2.js:415:77)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+[error] 
+[error] Error: Failed to list Firebase apps. See firebase-debug.log for more info.
