@@ -56,19 +56,15 @@ git add -A
 git commit -m "feat(scope): concise description of changes"
 ```
 
-### Step 5: Push Branch to Remote
+### Step 5: Push & PR (Only Upon Explicit User Confirmation)
+> ⚠️ **DO NOT PUSH OR CREATE A PR UNLESS EXPLICITLY INSTRUCTED BY THE USER.**
+Keep changes committed locally on your feature branch. When the user asks to push or create a PR:
 ```bash
 git push -u origin feat/your-feature-name
-```
-
-### Step 6: Open a Pull Request (PR)
-Using the GitHub CLI:
-```bash
 gh pr create --base main --title "feat(scope): title of PR" --body "Summary of changes and testing steps"
 ```
-Or open the PR link provided by GitHub in your browser.
 
-### Step 7: Review & Merge to Production
+### Step 6: Review & Merge to Production
 * Inspect the Netlify **Deploy Preview** URL automatically attached to the PR.
 * Once accepted and merged into `main`, Netlify automatically publishes the build to **`https://jarvisaiacademy.com`**.
 * Delete the feature branch locally and remotely after merge.
@@ -80,4 +76,4 @@ Or open the PR link provided by GitHub in your browser.
 Any AI agent (Antigravity, Claude, Copilot, Cursor) operating in this workspace must:
 1. Verify the current working branch before making any commit (`git branch --show-current`).
 2. If currently on `main`, immediately checkout a new dedicated branch before making changes or commits.
-3. Push exclusively to the feature branch and raise/provide the PR for the user.
+3. Keep changes committed locally on the branch. **NEVER push (`git push`) or create a PR unless the user explicitly requests it.**
