@@ -110,6 +110,7 @@ Which file owns what:
 | Sitemap | `src/app/sitemap.ts` |
 | Crawl rules | `src/app/robots.ts` |
 | Web app manifest | `public/site.webmanifest` |
+| `/llms.txt`, the summary AI agents read | `src/app/llms.txt/route.ts` |
 
 **When public-facing content changes, update the matching SEO value in the same commit:**
 
@@ -123,6 +124,9 @@ Which file owns what:
   metadata — that is why `src/app/settings/layout.tsx` exists. Never use a `Disallow`
   for this: it stops the crawl before the `noindex` can be read.
 - New social profile → `siteConfig.links`, which feeds both the sidebar and `sameAs`.
+- Course catalogue, fees, duration or contact details → nothing to do. `/llms.txt` is
+  generated from `COURSES_DATA` and `siteConfig`, so it tracks those changes on its own.
+  Never paste the catalogue into it by hand.
 
 Do not add `keywords` (Google ignores it). Do not add an SEO library — Next's Metadata API
 plus `robots.ts` / `sitemap.ts` cover everything here.
