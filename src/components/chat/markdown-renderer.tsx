@@ -46,35 +46,38 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
               {children}
             </blockquote>
           ),
-          a: ({ href, children }) => (
-            <a
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#ea580c] hover:text-[#f97316] underline underline-offset-2 inline-flex items-center gap-0.5 break-all"
-            >
-              <span>{children}</span>
-              <ExternalLink className="w-3 h-3 inline shrink-0" />
-            </a>
-          ),
+          a: ({ href, children }) => {
+            const isMailto = href?.startsWith("mailto:");
+            return (
+              <a
+                href={href}
+                target={isMailto ? undefined : "_blank"}
+                rel={isMailto ? undefined : "noopener noreferrer"}
+                className="text-[#9d5932] dark:text-[#ea580c] hover:text-[#7c4424] dark:hover:text-[#f97316] font-medium underline underline-offset-2 inline-flex items-center gap-0.5 break-all"
+              >
+                <span>{children}</span>
+                {!isMailto && <ExternalLink className="w-3 h-3 inline shrink-0 opacity-70" />}
+              </a>
+            );
+          },
           table: ({ children }) => (
-            <div className="overflow-x-auto my-3 border border-white/10 rounded-lg">
-              <table className="w-full text-left text-sm text-neutral-300 border-collapse">
+            <div className="overflow-x-auto my-3 border border-neutral-200 dark:border-white/10 rounded-lg">
+              <table className="w-full text-left text-sm text-neutral-800 dark:text-neutral-300 border-collapse">
                 {children}
               </table>
             </div>
           ),
           thead: ({ children }) => (
-            <thead className="bg-[#1e1e1e] text-xs uppercase font-medium text-neutral-400 border-b border-white/10">
+            <thead className="bg-neutral-100 dark:bg-[#1e1e1e] text-xs uppercase font-medium text-neutral-600 dark:text-neutral-400 border-b border-neutral-200 dark:border-white/10">
               {children}
             </thead>
           ),
           tbody: ({ children }) => (
-            <tbody className="divide-y divide-white/5">{children}</tbody>
+            <tbody className="divide-y divide-neutral-200 dark:divide-white/5">{children}</tbody>
           ),
-          tr: ({ children }) => <tr className="hover:bg-white/[0.02]">{children}</tr>,
+          tr: ({ children }) => <tr className="hover:bg-neutral-50 dark:hover:bg-white/[0.02]">{children}</tr>,
           th: ({ children }) => <th className="px-3.5 py-2.5 font-medium">{children}</th>,
-          td: ({ children }) => <td className="px-3.5 py-2.5 text-neutral-300">{children}</td>,
+          td: ({ children }) => <td className="px-3.5 py-2.5 text-neutral-700 dark:text-neutral-300">{children}</td>,
           code: ({ className, children, ...props }) => {
             const match = /language-(\w+)/.exec(className || "");
             const isInline = !match && !String(children).includes("\n");
@@ -82,7 +85,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
             if (isInline) {
               return (
                 <code
-                  className="bg-[#2a2a2a] text-[#f59e0b] px-1.5 py-0.5 rounded text-[13px] font-mono border border-white/5"
+                  className="bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 px-1.5 py-0.5 rounded text-[13px] font-mono border border-neutral-200 dark:border-white/10 font-medium"
                   {...props}
                 >
                   {children}

@@ -168,7 +168,7 @@ Ready to accelerate your tech career? Our admissions counselors and mentors are 
 
 * **Phone / WhatsApp**: +91 91729 11988
 * **Office & Lab**: Pune, Maharashtra
-* **Email**: admissions@jarvisaiacademy.com
+* **Email**: [admissions@jarvisaiacademy.com](mailto:admissions@jarvisaiacademy.com)
 * **Walk-In Hours**: Monday – Saturday, 10:00 AM – 7:00 PM IST
 
 Drop your contact number or question here and an engineering advisor will get in touch with you directly!`,
@@ -237,7 +237,7 @@ At **Jarvis AI Academy**, we respect your personal data and are committed to tra
 * **Zero Data Selling:** Jarvis AI Academy never sells, rents, or monetizes student personal data to third-party advertisers.
 * **Data Protection:** All data in transit is protected using modern **TLS 1.3** encryption. Sensitive records are encrypted with **AES-256**.
 
-Contact Data Privacy Officer: \`privacy@jarvisaiacademy.com\``,
+Contact Data Privacy Officer: [privacy@jarvisaiacademy.com](mailto:privacy@jarvisaiacademy.com)`,
   },
   payment_terms: {
     text: `# Payment Terms & Refund Policy — Jarvis AI Academy
@@ -272,9 +272,9 @@ At **Jarvis AI Academy**, we maintain transparent, straightforward pricing with 
 
 ### 4. 7-Day Money-Back Guarantee (Trial Period)
 * If within the first **7 days** from your batch commencement date you decide the program is not the right fit, you are entitled to a **100% full refund**—no questions asked.
-* Submit a written request to \`admissions@jarvisaiacademy.com\` within the 7-day window. Refunds are credited in **5–7 business days**.
+* Submit a written request to [admissions@jarvisaiacademy.com](mailto:admissions@jarvisaiacademy.com) within the 7-day window. Refunds are credited in **5–7 business days**.
 
-For billing assistance: \`finance@jarvisaiacademy.com\` | 📞 **+91 91729 11988**`,
+For billing assistance: [finance@jarvisaiacademy.com](mailto:finance@jarvisaiacademy.com) | 📞 **+91 91729 11988**`,
     suggestions: [
       "I want to enroll in the upcoming cohort and proceed with payment",
       "Are zero-cost EMI installment plans available?",

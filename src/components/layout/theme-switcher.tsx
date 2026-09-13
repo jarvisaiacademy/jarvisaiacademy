@@ -19,7 +19,7 @@ export function ThemeSwitcher({ className = "" }: ThemeSwitcherProps) {
 
   return (
     <div className={`px-3 pt-2 pb-1 ${className}`}>
-      <div className="flex items-center justify-between p-1 bg-neutral-200/80 dark:bg-[#202020] rounded-xl border border-neutral-300/70 dark:border-white/10 text-xs shadow-2xs">
+      <div className="flex items-center justify-between p-1 bg-neutral-200/70 dark:bg-[#202020] rounded-xl border border-neutral-300/60 dark:border-white/10 shadow-2xs">
         {options.map(({ value, label, icon: Icon }) => {
           const isActive = theme === value;
           return (
@@ -28,14 +28,15 @@ export function ThemeSwitcher({ className = "" }: ThemeSwitcherProps) {
               type="button"
               onClick={() => setTheme(value)}
               title={`Switch to ${label} appearance`}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-medium transition-all cursor-pointer select-none ${
+              aria-label={`Switch to ${label} appearance`}
+              className={`flex-1 flex items-center justify-center py-1.5 rounded-lg transition-all cursor-pointer select-none ${
                 isActive
-                  ? "bg-white dark:bg-[#2e2e2e] text-neutral-900 dark:text-white shadow-xs font-semibold"
-                  : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5"
+                  ? "bg-white dark:bg-[#2e2e2e] text-neutral-900 dark:text-white shadow-xs"
+                  : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5"
               }`}
             >
               <Icon
-                className={`w-3.5 h-3.5 ${
+                className={`w-4 h-4 transition-colors ${
                   isActive
                     ? value === "light"
                       ? "text-amber-500"
@@ -45,7 +46,6 @@ export function ThemeSwitcher({ className = "" }: ThemeSwitcherProps) {
                     : "text-neutral-500 dark:text-neutral-400"
                 }`}
               />
-              <span className="text-[11px]">{label}</span>
             </button>
           );
         })}
