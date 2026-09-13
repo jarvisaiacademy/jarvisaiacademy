@@ -16,6 +16,7 @@ interface SidebarProps {
   onNewChat?: () => void;
   onOpenLogin?: () => void;
   onOpenSettings?: () => void;
+  onOpenDashboard?: () => void;
   isLoggedIn?: boolean;
   user?: User | null;
   onLogout?: () => void;
@@ -29,6 +30,7 @@ export function Sidebar({
   onNewChat,
   onOpenLogin,
   onOpenSettings,
+  onOpenDashboard,
   isLoggedIn = false,
   user,
   onLogout,
@@ -65,6 +67,10 @@ export function Sidebar({
               }}
               onSelectSection={onSelectSection}
               onOpenLogin={onOpenLogin}
+              onOpenDashboard={() => {
+                onOpenDashboard?.();
+                onToggle();
+              }}
               isMobile={true}
             />
           </div>
@@ -142,6 +148,7 @@ export function Sidebar({
           onNewChat={onNewChat}
           onSelectSection={onSelectSection}
           onOpenLogin={onOpenLogin}
+          onOpenDashboard={onOpenDashboard}
           isMobile={false}
         />
       </div>

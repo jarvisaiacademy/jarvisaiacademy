@@ -9,8 +9,10 @@ import {
   Award,
   HelpCircle,
   Gift,
+  LayoutDashboard,
 } from "lucide-react";
 import { SidebarHoverCard } from "./sidebar-hover-card";
+import { useAuth } from "@/providers/auth-provider";
 
 interface NavHoverItemData {
   title: string;
@@ -19,6 +21,11 @@ interface NavHoverItemData {
 }
 
 const navHoverData: Record<string, NavHoverItemData> = {
+  dashboard: {
+    title: "Academy Admin Dashboard",
+    description: "Access real-time student admissions, revenue metrics, batch cohorts, and export student ledgers.",
+    gradientClass: "bg-gradient-to-br from-[#339af0] via-[#4dabf7] to-[#74c0fc]",
+  },
   new_chat: {
     title: "Start a fresh chat",
     description: "Log in to save your conversation history, organize chats, and pick up right where you left off.",
@@ -60,6 +67,7 @@ interface SidebarNavProps {
   onNewChat?: () => void;
   onSelectSection?: (section: string) => void;
   onOpenLogin?: () => void;
+  onOpenDashboard?: () => void;
   isMobile?: boolean;
 }
 
@@ -67,8 +75,10 @@ export function SidebarNav({
   onNewChat,
   onSelectSection,
   onOpenLogin,
+  onOpenDashboard,
   isMobile,
 }: SidebarNavProps) {
+  const { user } = useAuth();
   const [activeHoverItem, setActiveHoverItem] = useState<string | null>(null);
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
   const [sidebarRight, setSidebarRight] = useState<number | undefined>(undefined);
@@ -114,8 +124,8 @@ export function SidebarNav({
   // Clean up timer and add outside click & escape handlers
   useEffect(() => {
     const handleDismiss = (e: MouseEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (target?.closest('[role="dialog"]') || target?.closest("nav")) {
+      const target = e.target as HTMLElement;
+      if (target.closest("[data-sidebar-hover-card]")) {
         return;
       }
       clearHideTimer();
@@ -156,6 +166,27 @@ export function SidebarNav({
           <span>New chat</span>
         </div>
       </button>
+
+      {/* Admin / Guest Dashboard Navigation */}
+      {(!user || user.isAdmin) && (
+        <button
+          type="button"
+          onClick={onOpenDashboard}
+          onMouseEnter={(e) => handleMouseEnter("dashboard", e)}
+          onMouseLeave={handleMouseLeave}
+          aria-haspopup="dialog"
+          aria-expanded={activeHoverItem === "dashboard"}
+          className="group flex items-center justify-between w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
+        >
+          <div className="flex items-center gap-2.5">
+            <LayoutDashboard className="w-4 h-4 text-blue-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+            <span>Dashboard</span>
+          </div>
+          <span className="text-[10px] font-semibold tracking-wide px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+            Admin
+          </span>
+        </button>
+      )}
 
 
       {/* Courses */}

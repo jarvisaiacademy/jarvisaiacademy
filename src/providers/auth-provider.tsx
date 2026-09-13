@@ -1,6 +1,13 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import {
+  signInWithPopup,
+  signOut as firebaseSignOut,
+  onAuthStateChanged,
+  User as FirebaseUser,
+} from "firebase/auth";
+import { auth, googleProvider, isFirebaseConfigured } from "@/lib/firebase";
 
 export interface User {
   id: string;
@@ -8,72 +15,136 @@ export interface User {
   email: string;
   picture?: string;
   plan?: string;
+  role?: "admin" | "student" | "guest";
+  isAdmin?: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   isLoggedIn: boolean;
-  loginWithGoogle: () => void;
-  logout: () => void;
+  isAdmin: boolean;
+  loginWithGoogle: () => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const DEMO_GOOGLE_USER: User = {
-  id: "usr_google_jarvis",
+const ADMIN_EMAILS = (
+  process.env.NEXT_PUBLIC_ADMIN_EMAILS || "sugat@jarvisaiacademy.com"
+)
+  .split(",")
+  .map((e) => e.trim().toLowerCase());
+
+function checkIsAdmin(email?: string | null): boolean {
+  if (!email) return false;
+  return ADMIN_EMAILS.includes(email.toLowerCase());
+}
+
+const DEMO_ADMIN_USER: User = {
+  id: "usr_admin_sugat",
   name: "Sugatraj Sarwade",
   email: "sugat@jarvisaiacademy.com",
-  plan: "Pro",
+  plan: "Admin / Founder",
+  role: "admin",
+  isAdmin: true,
 };
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
-  // Load user session from URL or localStorage on mount
+  // Sync Firebase Auth state if configured
   useEffect(() => {
-    try {
-      const urlParams = new URLSearchParams(window.location.search);
-      const authUserParam = urlParams.get("auth_user");
-      if (authUserParam) {
-        const parsed = JSON.parse(decodeURIComponent(authUserParam));
-        setUser(parsed);
-        localStorage.setItem("jarvis_auth_user", JSON.stringify(parsed));
-        window.history.replaceState({}, "", window.location.pathname);
-        return;
-      }
-
-      const stored = localStorage.getItem("jarvis_auth_user");
-      if (stored) {
-        setUser(JSON.parse(stored));
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  const loginWithGoogle = useCallback(() => {
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-
-    if (clientId) {
-      // Redirect to Google OAuth endpoint
-      const redirectUri = `${window.location.origin}/api/auth/google/callback`;
-      const scope = encodeURIComponent("openid email profile");
-      const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(
-        redirectUri
-      )}&response_type=code&scope=${scope}&access_type=offline&prompt=consent`;
-      window.location.href = url;
+    if (isFirebaseConfigured && auth) {
+      const unsubscribe = onAuthStateChanged(auth, (fbUser: FirebaseUser | null) => {
+        if (fbUser) {
+          const isAdmin = checkIsAdmin(fbUser.email);
+          const mappedUser: User = {
+            id: fbUser.uid,
+            name: fbUser.displayName || fbUser.email?.split("@")[0] || "Learner",
+            email: fbUser.email || "",
+            picture: fbUser.photoURL || undefined,
+            isAdmin,
+            role: isAdmin ? "admin" : "student",
+            plan: isAdmin ? "Admin / Founder" : "Learner Pro",
+          };
+          setUser(mappedUser);
+          try {
+            localStorage.setItem("jarvis_auth_user", JSON.stringify(mappedUser));
+          } catch {
+            // ignore
+          }
+        } else {
+          setUser(null);
+          try {
+            localStorage.removeItem("jarvis_auth_user");
+          } catch {
+            // ignore
+          }
+        }
+      });
+      return () => unsubscribe();
     } else {
-      // Instant seamless login when credentials are pending in Netlify
-      setUser(DEMO_GOOGLE_USER);
+      // Local fallback if Firebase keys are pending
       try {
-        localStorage.setItem("jarvis_auth_user", JSON.stringify(DEMO_GOOGLE_USER));
+        const stored = localStorage.getItem("jarvis_auth_user");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          parsed.isAdmin = checkIsAdmin(parsed.email);
+          parsed.role = parsed.isAdmin ? "admin" : "student";
+          setUser(parsed);
+        }
       } catch {
         // ignore
       }
     }
   }, []);
 
-  const logout = useCallback(() => {
+  const loginWithGoogle = useCallback(async () => {
+    if (isFirebaseConfigured && auth && googleProvider) {
+      try {
+        const result = await signInWithPopup(auth, googleProvider);
+        const fbUser = result.user;
+        const isAdmin = checkIsAdmin(fbUser.email);
+        const mappedUser: User = {
+          id: fbUser.uid,
+          name: fbUser.displayName || fbUser.email?.split("@")[0] || "Learner",
+          email: fbUser.email || "",
+          picture: fbUser.photoURL || undefined,
+          isAdmin,
+          role: isAdmin ? "admin" : "student",
+          plan: isAdmin ? "Admin / Founder" : "Learner Pro",
+        };
+        setUser(mappedUser);
+        try {
+          localStorage.setItem("jarvis_auth_user", JSON.stringify(mappedUser));
+        } catch {
+          // ignore
+        }
+      } catch (err: unknown) {
+        const error = err as { code?: string; message?: string };
+        if (error.code !== "auth/popup-closed-by-user") {
+          console.error("[Auth] Google sign-in error:", error);
+        }
+      }
+    } else {
+      // Instant fallback when Firebase keys are being configured
+      setUser(DEMO_ADMIN_USER);
+      try {
+        localStorage.setItem("jarvis_auth_user", JSON.stringify(DEMO_ADMIN_USER));
+      } catch {
+        // ignore
+      }
+    }
+  }, []);
+
+  const logout = useCallback(async () => {
+    if (isFirebaseConfigured && auth) {
+      try {
+        await firebaseSignOut(auth);
+      } catch (err) {
+        console.warn("[Auth] Logout error:", err);
+      }
+    }
     setUser(null);
     try {
       localStorage.removeItem("jarvis_auth_user");
@@ -82,11 +153,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const isAdmin = !!user?.isAdmin;
+
   return (
     <AuthContext.Provider
       value={{
         user,
         isLoggedIn: !!user,
+        isAdmin,
         loginWithGoogle,
         logout,
       }}

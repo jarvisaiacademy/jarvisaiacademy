@@ -164,7 +164,7 @@ export function CourseCatalogResponse({
                     <div />
                   )}
 
-                  {renderBannerGraphic(course.id)}
+                  {/* {renderBannerGraphic(course.id)} */}
                 </div>
 
                 {/* Bottom of Banner: Title & Subtitle */}
