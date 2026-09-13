@@ -13,7 +13,7 @@ import { useAuth } from "@/providers/auth-provider";
 
 export default function Home() {
   const { isOpen, toggle, isMobile } = useSidebar(true);
-  const { user, isLoggedIn, logout } = useAuth();
+  const { user, isLoggedIn, logout, clearAuthError } = useAuth();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
@@ -21,7 +21,10 @@ export default function Home() {
   const [resetSignal, setResetSignal] = useState(0);
 
   const handleOpenLogin = () => setIsLoginOpen(true);
-  const handleCloseLogin = () => setIsLoginOpen(false);
+  const handleCloseLogin = () => {
+    setIsLoginOpen(false);
+    clearAuthError();
+  };
   const handleOpenSettings = () => {
     setIsDashboardOpen(false);
     setIsSettingsOpen(true);
