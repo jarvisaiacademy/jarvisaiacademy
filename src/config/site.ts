@@ -2,7 +2,8 @@ export const siteConfig = {
   name: "Jarvis AI Academy",
   shortName: "Jarvis AI",
   tagline: "For the vibe code generation.",
-  description: "Jarvis AI Academy — For the vibe code generation.",
+  description:
+    "60-day build-first AI & full-stack engineering program in Pune. 1-on-1 mentorship, real portfolio projects, and 100% placement assurance on the Super10 Elite batch.",
   url: "https://jarvisaiacademy.com",
   contact: {
     email: "admissions@jarvisaiacademy.com",
