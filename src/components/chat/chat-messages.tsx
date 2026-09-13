@@ -19,7 +19,6 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   isStreaming?: boolean;
-  citations?: any[];
   feedback?: "like" | "dislike" | null;
   timestamp?: string;
   enrollment?: EnrollmentData;

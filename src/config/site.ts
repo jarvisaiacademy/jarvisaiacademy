@@ -3,7 +3,7 @@ export const siteConfig = {
   shortName: "Jarvis AI",
   tagline: "For the no-code generation.",
   description: "Jarvis AI Academy — For the no-code generation.",
-  url: "https://jarvisaiacademy.netlify.app",
+  url: "https://jarvisaiacademy.com",
   contact: {
     email: "admissions@jarvisaiacademy.com",
     financeEmail: "finance@jarvisaiacademy.com",

@@ -707,7 +707,7 @@ export function ChatCanvas({
         </div>
         {/* Subtle Disclaimer Footer - shown on desktop screens where vertical space is ample */}
         <p className="text-[11px] text-neutral-500 mt-1.5 text-center select-none hidden sm:block">
-          ChatGPT can make mistakes. Check important info.
+          Jarvis AI can make mistakes. Verify important info.
         </p>
       </div>
     </div>

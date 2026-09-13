@@ -215,7 +215,7 @@ export function ChatComposer({
           placeholder={placeholder}
           spellCheck
           autoCorrect="on"
-          aria-label="Chat with ChatGPT"
+          aria-label="Message Jarvis AI"
           style={{ height: "32px", minHeight: "32px", maxHeight: "220px" }}
           className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground text-base font-normal border-none outline-none focus:outline-none focus:ring-0 resize-none min-w-0 py-1 leading-6 max-h-[220px] overflow-hidden no-scrollbar box-border"
         />

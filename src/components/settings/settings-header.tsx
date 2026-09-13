@@ -18,8 +18,8 @@ export function SettingsHeader({
         <button
           type="button"
           onClick={onBack}
-          aria-label="Back to ChatGPT"
-          title="Back to ChatGPT"
+          aria-label="Back to Jarvis AI Academy"
+          title="Back to Jarvis AI Academy"
           className="p-2 -ml-2 rounded-full text-foreground/80 hover:text-foreground hover:bg-muted transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
         >
           <ArrowLeft className="w-5 h-5" />

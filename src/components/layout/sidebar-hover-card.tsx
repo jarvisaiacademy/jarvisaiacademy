@@ -85,37 +85,37 @@ export function SidebarHoverCard({
             role="dialog"
             aria-label={cachedContent.title}
             data-placement="right-of-sidebar"
-            className="w-[316px] sm:w-[328px] bg-[#212121] border border-white/10 rounded-[22px] shadow-2xl shadow-black/70 overflow-hidden flex flex-col pointer-events-auto"
+            className="w-[316px] sm:w-[328px] bg-white dark:bg-[#212121] border border-neutral-200 dark:border-white/10 rounded-[22px] shadow-2xl shadow-black/20 dark:shadow-black/70 overflow-hidden flex flex-col pointer-events-auto"
           >
             {/* Top: Vibrant pastel/hero gradient block */}
             <div className={`h-36 w-full ${cachedContent.gradientClass} rounded-t-[22px]`} />
 
-            {/* Bottom: Dark charcoal content area */}
-            <div className="p-5 flex flex-col gap-2.5 bg-[#212121] rounded-b-[22px]">
-              <h3 className="text-[16px] font-semibold text-white leading-snug tracking-tight">
+            {/* Bottom: Content area */}
+            <div className="p-5 flex flex-col gap-2.5 bg-white dark:bg-[#212121] rounded-b-[22px]">
+              <h3 className="text-[16px] font-semibold text-neutral-900 dark:text-white leading-snug tracking-tight">
                 {cachedContent.title}
               </h3>
 
-              <p className="text-[13px] text-neutral-400 leading-relaxed font-normal">
+              <p className="text-[13px] text-neutral-600 dark:text-neutral-400 leading-relaxed font-normal">
                 {cachedContent.description}
               </p>
 
               {/* Action Buttons */}
               <div className="flex items-center gap-2.5 pt-2 mt-0.5">
-                {/* Primary Button: White "Log in" */}
+                {/* Primary Button */}
                 <button
                   type="button"
                   onClick={onLoginClick}
-                  className="py-2 px-5 rounded-full bg-white hover:bg-neutral-100 text-black text-[13px] font-semibold text-center transition-all shadow-xs cursor-pointer active:scale-[0.98]"
+                  className="py-2 px-5 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:hover:bg-neutral-100 dark:text-black text-[13px] font-semibold text-center transition-all shadow-xs cursor-pointer active:scale-[0.98]"
                 >
                   {primaryButtonText}
                 </button>
 
-                {/* Secondary Button: Dark Outlined "Sign up for free" */}
+                {/* Secondary Button */}
                 <button
                   type="button"
                   onClick={onSignupClick || onLoginClick}
-                  className="py-2 px-4 rounded-full bg-[#2f2f2f] hover:bg-[#383838] border border-white/10 text-white text-[13px] font-medium text-center transition-all cursor-pointer active:scale-[0.98] truncate"
+                  className="py-2 px-4 rounded-full bg-neutral-100 hover:bg-neutral-200 border border-neutral-200 text-neutral-900 dark:bg-[#2f2f2f] dark:hover:bg-[#383838] dark:border-white/10 dark:text-white text-[13px] font-medium text-center transition-all cursor-pointer active:scale-[0.98] truncate"
                 >
                   {secondaryButtonText}
                 </button>
