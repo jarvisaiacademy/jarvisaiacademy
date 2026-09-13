@@ -75,7 +75,7 @@ export function Sidebar({
             />
           </div>
 
-          <div className="flex flex-col border-t border-neutral-200 dark:border-white/5">
+          <div suppressHydrationWarning className="flex flex-col border-t border-neutral-200 dark:border-white/5">
             <ThemeSwitcher />
             {isLoggedIn ? (
               <UserProfile
@@ -152,7 +152,7 @@ export function Sidebar({
           isMobile={false}
         />
       </div>
-      <div className="w-[260px] flex flex-col border-t border-neutral-200 dark:border-white/5">
+      <div suppressHydrationWarning className="w-[260px] flex flex-col border-t border-neutral-200 dark:border-white/5">
         <ThemeSwitcher />
         {isLoggedIn ? (
           <UserProfile

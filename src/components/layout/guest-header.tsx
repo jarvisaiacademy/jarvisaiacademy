@@ -66,7 +66,7 @@ export function GuestHeader({
 
       {/* Right controls: Login and Sign up buttons (only when guest) */}
       {!user && (
-        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+        <div suppressHydrationWarning className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           <button
             type="button"
             onClick={onOpenLogin}

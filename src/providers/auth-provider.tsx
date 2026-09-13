@@ -40,6 +40,22 @@ function checkIsAdmin(email?: string | null): boolean {
   return ADMIN_EMAILS.includes(email.toLowerCase());
 }
 
+function getInitialUser(): User | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = localStorage.getItem("jarvis_auth_user");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      parsed.isAdmin = checkIsAdmin(parsed.email);
+      parsed.role = parsed.isAdmin ? "admin" : "student";
+      return parsed;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
 const DEMO_ADMIN_USER: User = {
   id: "usr_admin_sugat",
   name: "Sugatraj Sarwade",
@@ -50,10 +66,17 @@ const DEMO_ADMIN_USER: User = {
 };
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  // Synchronous immediate initialization from localStorage prevents refresh flicker
+  const [user, setUser] = useState<User | null>(getInitialUser);
 
-  // Sync Firebase Auth state if configured
+  // Sync Firebase Auth state in the background
   useEffect(() => {
+    // Ensure state is hydrated immediately on client mount
+    const cached = getInitialUser();
+    if (cached && !user) {
+      setUser(cached);
+    }
+
     if (isFirebaseConfigured && auth) {
       const unsubscribe = onAuthStateChanged(auth, (fbUser: FirebaseUser | null) => {
         if (fbUser) {
@@ -83,19 +106,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       });
       return () => unsubscribe();
-    } else {
-      // Local fallback if Firebase keys are pending
-      try {
-        const stored = localStorage.getItem("jarvis_auth_user");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          parsed.isAdmin = checkIsAdmin(parsed.email);
-          parsed.role = parsed.isAdmin ? "admin" : "student";
-          setUser(parsed);
-        }
-      } catch {
-        // ignore
-      }
     }
   }, []);
 
