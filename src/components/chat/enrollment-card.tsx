@@ -186,8 +186,8 @@ export function EnrollmentCard({
     });
   };
 
-  // Generate and download official Tax Invoice & Receipt
-  const handleDownloadReceipt = () => {
+  // Generate and download or print official Tax Invoice & Receipt
+  const handleDownloadReceipt = (mode: "download" | "print" = "download") => {
     const invoiceNumber = `INV-${transactionId.replace("TXN-", "")}`;
     const invoiceDate = paidAt || new Date().toLocaleDateString("en-IN");
 
@@ -216,7 +216,7 @@ export function EnrollmentCard({
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      border-bottom: 2px solid #2563eb;
+      border-bottom: 2px solid #0f172a;
       padding-bottom: 20px;
       margin-bottom: 24px;
     }
@@ -237,7 +237,7 @@ export function EnrollmentCard({
     .invoice-badge h2 {
       margin: 0;
       font-size: 18px;
-      color: #2563eb;
+      color: #0f172a;
     }
     .invoice-badge p {
       margin: 4px 0 0;
@@ -411,28 +411,30 @@ export function EnrollmentCard({
 </body>
 </html>`;
 
-    // 1. Create downloadable HTML file
-    const blob = new Blob([receiptHtml], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `Receipt_${invoiceNumber}_${studentName.replace(/\s+/g, "_")}.html`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    // 2. Open printable view in new window
-    const printWin = window.open("", "_blank");
-    if (printWin) {
-      printWin.document.write(receiptHtml);
-      printWin.document.close();
-      setTimeout(() => {
-        printWin.print();
-      }, 350);
+    if (mode === "download") {
+      // 1. Create downloadable HTML file
+      const blob = new Blob([receiptHtml], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Receipt_${invoiceNumber}_${studentName.replace(/\s+/g, "_")}.html`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast("Official tax invoice & receipt downloaded!", "success");
+    } else {
+      // 2. Open printable view in new window
+      const printWin = window.open("", "_blank");
+      if (printWin) {
+        printWin.document.write(receiptHtml);
+        printWin.document.close();
+        setTimeout(() => {
+          printWin.print();
+        }, 350);
+      }
+      showToast("Official tax invoice print preview opened!", "info");
     }
-
-    showToast("Official invoice receipt downloaded & ready to print!", "success");
   };
 
   return (
@@ -624,7 +626,7 @@ export function EnrollmentCard({
         <div className="flex flex-col sm:flex-row items-center gap-3">
           <button
             type="button"
-            onClick={handleDownloadReceipt}
+            onClick={() => handleDownloadReceipt("download")}
             className="flex-1 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:hover:bg-neutral-200 dark:text-neutral-900 text-xs sm:text-sm font-medium transition-all shadow-xs active:scale-98 cursor-pointer"
           >
             <Download className="w-4 h-4" />
@@ -633,7 +635,7 @@ export function EnrollmentCard({
 
           <button
             type="button"
-            onClick={() => handleDownloadReceipt()}
+            onClick={() => handleDownloadReceipt("print")}
             className="w-full sm:w-auto flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-full border border-neutral-300 dark:border-white/15 bg-neutral-100 dark:bg-neutral-800/80 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-800 dark:text-white text-xs font-medium transition-colors cursor-pointer"
           >
             <FileText className="w-3.5 h-3.5" />
