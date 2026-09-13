@@ -10,6 +10,7 @@ import { AdminDashboard } from "@/components/admin/admin-dashboard";
 import { ToastProvider } from "@/components/ui/toast";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useAuth } from "@/providers/auth-provider";
+import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
 
 export default function Home() {
   const { isOpen, toggle, isMobile } = useSidebar(true);
@@ -17,6 +18,7 @@ export default function Home() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+  const [dashboardTab, setDashboardTab] = useState<DashboardTab>("courses");
   const [activeTopic, setActiveTopic] = useState<string | null>(null);
   const [resetSignal, setResetSignal] = useState(0);
 
@@ -62,12 +64,20 @@ export default function Home() {
           onOpenLogin={handleOpenLogin}
           onOpenSettings={handleOpenSettings}
           onOpenDashboard={handleOpenDashboard}
+          isDashboardOpen={isDashboardOpen && !!user?.isAdmin}
+          activeDashboardTab={dashboardTab}
+          onSelectDashboardTab={setDashboardTab}
+          onBackToChat={handleCloseDashboard}
         />
 
         {/* Main Canvas Area, Settings Page, or Admin Dashboard */}
         <main className="flex-1 flex flex-col h-full min-h-0 min-w-0 bg-background relative overflow-hidden transition-colors duration-150">
           {isDashboardOpen && user?.isAdmin ? (
-            <AdminDashboard onBackToChat={handleCloseDashboard} />
+            <AdminDashboard
+              activeTab={dashboardTab}
+              onChangeTab={setDashboardTab}
+              onBackToChat={handleCloseDashboard}
+            />
           ) : isSettingsOpen ? (
             <SettingsPage onBack={handleCloseSettings} />
           ) : (

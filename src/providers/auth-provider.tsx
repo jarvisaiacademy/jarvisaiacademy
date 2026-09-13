@@ -29,14 +29,14 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const ADMIN_EMAILS = (
+export const ADMIN_EMAILS = (
   process.env.NEXT_PUBLIC_ADMIN_EMAILS ||
   "sugat@jarvisaiacademy.com,jarvisaiacademy@gmail.com,sugatraj.2106@gmail.com"
 )
   .split(",")
   .map((e) => e.trim().toLowerCase());
 
-function checkIsAdmin(email?: string | null): boolean {
+export function checkIsAdmin(email?: string | null): boolean {
   if (!email) return false;
   return ADMIN_EMAILS.includes(email.toLowerCase());
 }

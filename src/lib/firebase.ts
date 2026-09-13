@@ -27,15 +27,17 @@ let auth: Auth | null = null;
 let db: Firestore | null = null;
 let googleProvider: GoogleAuthProvider | null = null;
 
-if (typeof window !== "undefined" && isFirebaseConfigured) {
+if (isFirebaseConfigured) {
   try {
     app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    // Use browserLocalPersistence for instant synchronous token restoration
-    setPersistence(auth, browserLocalPersistence).catch(() => {});
+    if (typeof window !== "undefined") {
+      auth = getAuth(app);
+      // Use browserLocalPersistence for instant synchronous token restoration
+      setPersistence(auth, browserLocalPersistence).catch(() => {});
+      googleProvider = new GoogleAuthProvider();
+      googleProvider.setCustomParameters({ prompt: "select_account" });
+    }
     db = getFirestore(app);
-    googleProvider = new GoogleAuthProvider();
-    googleProvider.setCustomParameters({ prompt: "select_account" });
   } catch (err) {
     console.warn("[Firebase] Initialization error:", err);
   }

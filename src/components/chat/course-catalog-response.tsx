@@ -14,11 +14,11 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  COURSES_DATA,
   COURSE_CATEGORIES,
   CourseCategoryId,
   CourseItem,
 } from "@/data/courses";
+import { useCourses } from "@/providers/courses-provider";
 import { DevIcon } from "@/components/ui/dev-icon";
 
 function CourseBannerGraphic({
@@ -308,11 +308,12 @@ export function CourseCatalogResponse({
   onActionPrompt,
   onSelectCourse,
 }: CourseCatalogResponseProps) {
+  const { courses } = useCourses();
   const [selectedCategory, setSelectedCategory] =
     useState<CourseCategoryId>("all");
   const [hoveredCourseId, setHoveredCourseId] = useState<string | null>(null);
 
-  const filteredCourses = COURSES_DATA.filter((course) => {
+  const filteredCourses = courses.filter((course) => {
     if (selectedCategory === "all") return true;
     return course.category === selectedCategory;
   });

@@ -9,6 +9,7 @@ import { ThemeSwitcher } from "./theme-switcher";
 import { SocialLinks } from "@/components/common/social-links";
 
 import { User } from "@/providers/auth-provider";
+import { DashboardSidebarNav, DashboardTab } from "./dashboard-sidebar-nav";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -22,6 +23,10 @@ interface SidebarProps {
   user?: User | null;
   onLogout?: () => void;
   isMobile?: boolean;
+  isDashboardOpen?: boolean;
+  activeDashboardTab?: DashboardTab;
+  onSelectDashboardTab?: (tab: DashboardTab) => void;
+  onBackToChat?: () => void;
 }
 
 export function Sidebar({
@@ -36,6 +41,10 @@ export function Sidebar({
   user,
   onLogout,
   isMobile,
+  isDashboardOpen = false,
+  activeDashboardTab = "courses",
+  onSelectDashboardTab,
+  onBackToChat,
 }: SidebarProps) {
   if (isMobile) {
     return (
@@ -60,20 +69,36 @@ export function Sidebar({
               onToggle={onToggle}
               onOpenLogin={onOpenLogin}
               isMobile={true}
+              isDashboardOpen={isDashboardOpen}
             />
-            <SidebarNav
-              onNewChat={() => {
-                onNewChat?.();
-                onToggle();
-              }}
-              onSelectSection={onSelectSection}
-              onOpenLogin={onOpenLogin}
-              onOpenDashboard={() => {
-                onOpenDashboard?.();
-                onToggle();
-              }}
-              isMobile={true}
-            />
+            {isDashboardOpen ? (
+              <DashboardSidebarNav
+                activeTab={activeDashboardTab}
+                onSelectTab={(tab) => {
+                  onSelectDashboardTab?.(tab);
+                  onToggle();
+                }}
+                onBackToChat={() => {
+                  onBackToChat?.();
+                  onToggle();
+                }}
+                isMobile={true}
+              />
+            ) : (
+              <SidebarNav
+                onNewChat={() => {
+                  onNewChat?.();
+                  onToggle();
+                }}
+                onSelectSection={onSelectSection}
+                onOpenLogin={onOpenLogin}
+                onOpenDashboard={() => {
+                  onOpenDashboard?.();
+                  onToggle();
+                }}
+                isMobile={true}
+              />
+            )}
           </div>
 
           <div suppressHydrationWarning className="flex flex-col border-t border-neutral-200 dark:border-white/5">
@@ -149,14 +174,24 @@ export function Sidebar({
           onToggle={onToggle}
           onOpenLogin={onOpenLogin}
           isMobile={false}
+          isDashboardOpen={isDashboardOpen}
         />
-        <SidebarNav
-          onNewChat={onNewChat}
-          onSelectSection={onSelectSection}
-          onOpenLogin={onOpenLogin}
-          onOpenDashboard={onOpenDashboard}
-          isMobile={false}
-        />
+        {isDashboardOpen ? (
+          <DashboardSidebarNav
+            activeTab={activeDashboardTab}
+            onSelectTab={(tab) => onSelectDashboardTab?.(tab)}
+            onBackToChat={() => onBackToChat?.()}
+            isMobile={false}
+          />
+        ) : (
+          <SidebarNav
+            onNewChat={onNewChat}
+            onSelectSection={onSelectSection}
+            onOpenLogin={onOpenLogin}
+            onOpenDashboard={onOpenDashboard}
+            isMobile={false}
+          />
+        )}
       </div>
       <div suppressHydrationWarning className="w-[260px] flex flex-col border-t border-neutral-200 dark:border-white/5">
         <ThemeSwitcher />
