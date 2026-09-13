@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { MarkdownRenderer } from "./markdown-renderer";
 import { EnrollmentCard, EnrollmentData } from "./enrollment-card";
+import { CourseCatalogResponse } from "./course-catalog-response";
 import { useToast } from "@/components/ui/toast";
 
 export interface ChatMessage {
@@ -23,6 +24,7 @@ export interface ChatMessage {
   timestamp?: string;
   enrollment?: EnrollmentData;
   suggestions?: string[];
+  showCourseCatalog?: boolean;
 }
 
 interface ChatMessagesProps {
@@ -207,6 +209,40 @@ export function ChatMessages({
                       initialData={msg.enrollment}
                       currentUser={currentUser}
                       onUpdate={(data) => onUpdateEnrollment?.(msg.id, data)}
+                    />
+                  )}
+
+                {/* Interactive Course Catalog Response */}
+                {(msg.showCourseCatalog ||
+                  msg.content.includes("featured programs") ||
+                  msg.content.includes("Choose a category or explore all courses") ||
+                  msg.content.includes("Here are our featured courses")) &&
+                  !msg.isStreaming && (
+                    <CourseCatalogResponse
+                      onActionPrompt={onActionPrompt}
+                      onSelectCourse={(courseId) => {
+                        if (courseId === "super10") {
+                          onActionPrompt?.(
+                            "Tell me about the Super10 Elite Batch with 100% placement assurance"
+                          );
+                        } else if (courseId === "referral") {
+                          onActionPrompt?.(
+                            "How does the ₹5,000 Refer & Earn program work?"
+                          );
+                        } else if (courseId === "datascience") {
+                          onActionPrompt?.(
+                            "Tell me more about the Python & Data Science Specialization"
+                          );
+                        } else if (courseId === "genai") {
+                          onActionPrompt?.(
+                            "Tell me more about Generative AI & Agentic Systems"
+                          );
+                        } else {
+                          onActionPrompt?.(
+                            "I want to enroll in the Full-Stack AI & Web Engineering Cohort and proceed with payment"
+                          );
+                        }
+                      }}
                     />
                   )}
 

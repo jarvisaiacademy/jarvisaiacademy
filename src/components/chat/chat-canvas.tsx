@@ -45,34 +45,14 @@ const initialConversation: ChatMessage[] = [
 interface TopicResponseData {
   text: string;
   suggestions?: string[];
+  showCourseCatalog?: boolean;
 }
 
 const academyKnowledge: Record<string, TopicResponseData> = {
   courses: {
-    text: `Here are the flagship programs offered at **Jarvis AI Academy**:
-
-### 1. Full-Stack AI & Web Engineering (60 Days)
-Comprehensive training from fundamentals to enterprise architectures:
-* **Duration**: **60 Days (2 Months)** intensive build-first curriculum
-* **Tuition Fee**: **₹30,000** (₹30K)
-* **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS v4
-* **Backend**: Python, FastAPI, Django, REST APIs, PostgreSQL
-* **AI & Agentic Systems**: OpenAI API, Gemini SDK, LangChain, Vector Databases
-
-### 2. Python & Data Science Specialization (60 Days)
-* **Duration**: **60 Days (2 Months)**
-* **Tuition Fee**: **₹30,000** (₹30K)
-* Core & Advanced Python, Pandas, NumPy, Machine Learning basics
-* Automated pipelines, data visualization, and model deployment
-
----
-
-### 🎁 Refer & Earn ₹5,000:
-Know someone interested in software engineering?
-* **Earn ₹5,000** cash reward for every friend you refer!
-* Bonus is paid directly to you once your referred person completes the full 60-day course.
-
-Which technology stack or career track interests you the most?`,
+    text: `Here are our featured programs to help you learn, build, and accelerate your engineering career.
+Choose a category or explore all courses below:`,
+    showCourseCatalog: true,
     suggestions: [
       "What is the fee structure & payment options?",
       "Tell me about the Super10 Elite Batch with 100% placement assurance",
@@ -339,6 +319,10 @@ export function ChatCanvas({
     (
       fullText: string,
       suggestions?: string[],
+      extraData?: {
+        showCourseCatalog?: boolean;
+        enrollment?: EnrollmentData;
+      },
       onComplete?: () => void
     ) => {
       // Abort any ongoing stream
@@ -357,6 +341,8 @@ export function ChatCanvas({
           role: "assistant",
           content: "",
           isStreaming: true,
+          showCourseCatalog: extraData?.showCourseCatalog,
+          enrollment: extraData?.enrollment,
         },
       ]);
 
@@ -406,6 +392,8 @@ export function ChatCanvas({
                     content: fullText,
                     isStreaming: false,
                     suggestions: suggestions,
+                    showCourseCatalog: extraData?.showCourseCatalog,
+                    enrollment: extraData?.enrollment,
                   }
                 : msg
             )
@@ -484,6 +472,11 @@ export function ChatCanvas({
       return academyKnowledge.super10;
     } else if (
       lower.includes("course") ||
+      lower.includes("courses") ||
+      lower.includes("program") ||
+      lower.includes("programs") ||
+      lower.includes("syllabus") ||
+      lower.includes("curriculum") ||
       lower.includes("learn") ||
       lower.includes("duration") ||
       lower.includes("60") ||
@@ -535,7 +528,11 @@ export function ChatCanvas({
       // Brief thinking delay then stream tokens
       setTimeout(() => {
         const responseData = determineReply(prompt);
-        streamAIResponse(responseData.text, responseData.suggestions);
+        streamAIResponse(
+          responseData.text,
+          responseData.suggestions,
+          { showCourseCatalog: responseData.showCourseCatalog }
+        );
       }, 300);
     },
     [determineReply, streamAIResponse]
@@ -568,7 +565,11 @@ export function ChatCanvas({
       const data = academyKnowledge[activeTopic] || determineReply(activeTopic);
 
       setTimeout(() => {
-        streamAIResponse(data.text, data.suggestions);
+        streamAIResponse(
+          data.text,
+          data.suggestions,
+          { showCourseCatalog: data.showCourseCatalog }
+        );
       }, 300);
 
       onTopicHandled?.();
@@ -606,7 +607,11 @@ export function ChatCanvas({
         const data = determineReply(userPrompt);
         // Slightly rephrase for regenerated variation
         const alternativeText = `*(Regenerated response)*\n\n${data.text}`;
-        streamAIResponse(alternativeText, data.suggestions);
+        streamAIResponse(
+          alternativeText,
+          data.suggestions,
+          { showCourseCatalog: data.showCourseCatalog }
+        );
       }, 250);
     },
     [messages, determineReply, streamAIResponse]
@@ -631,7 +636,11 @@ export function ChatCanvas({
       // Trigger fresh streaming response
       setTimeout(() => {
         const data = determineReply(newContent);
-        streamAIResponse(data.text, data.suggestions);
+        streamAIResponse(
+          data.text,
+          data.suggestions,
+          { showCourseCatalog: data.showCourseCatalog }
+        );
       }, 300);
     },
     [messages, determineReply, streamAIResponse]
