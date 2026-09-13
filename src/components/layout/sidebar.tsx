@@ -5,6 +5,7 @@ import { SidebarHeader } from "./sidebar-header";
 import { SidebarNav } from "./sidebar-nav";
 import { UserProfile } from "./user-profile";
 import { SidebarLoginCTA } from "./sidebar-login-cta";
+import { ThemeSwitcher } from "./theme-switcher";
 
 import { User } from "@/providers/auth-provider";
 
@@ -69,6 +70,7 @@ export function Sidebar({
           </div>
 
           <div className="flex flex-col border-t border-neutral-200 dark:border-white/5">
+            <ThemeSwitcher />
             {isLoggedIn ? (
               <UserProfile
                 user={user}
@@ -144,6 +146,7 @@ export function Sidebar({
         />
       </div>
       <div className="w-[260px] flex flex-col border-t border-neutral-200 dark:border-white/5">
+        <ThemeSwitcher />
         {isLoggedIn ? (
           <UserProfile
             user={user}

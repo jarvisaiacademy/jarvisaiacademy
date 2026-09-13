@@ -188,7 +188,7 @@ export function ChatMessages({
                             "I want to enroll in the upcoming cohort and proceed with payment"
                           )
                         }
-                        className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/30 text-blue-400 hover:text-blue-300 text-xs font-semibold transition-all cursor-pointer shadow-xs active:scale-95"
+                        className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 dark:bg-blue-600/15 hover:bg-blue-100 dark:hover:bg-blue-600/25 border border-blue-300 dark:border-blue-500/30 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-xs font-semibold transition-all cursor-pointer shadow-xs active:scale-95"
                       >
                         <span>⚡ Enroll Now in Upcoming Batch</span>
                       </button>
@@ -216,12 +216,12 @@ export function ChatMessages({
                         key={sIdx}
                         type="button"
                         onClick={() => onActionPrompt?.(suggestion)}
-                        className="group/sug inline-flex items-center gap-2 text-left py-1 px-1.5 -ml-1 rounded-md text-neutral-300 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer text-xs sm:text-[13px]"
+                        className="group/sug inline-flex items-center gap-2 text-left py-1.5 px-2 -ml-1.5 rounded-lg text-neutral-800 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/[0.06] transition-colors cursor-pointer text-xs sm:text-[13px]"
                       >
-                        <span className="text-neutral-400 group-hover/sug:text-neutral-200 transition-colors text-sm font-semibold select-none leading-none">
+                        <span className="text-neutral-500 dark:text-neutral-400 group-hover/sug:text-neutral-800 dark:group-hover/sug:text-neutral-200 transition-colors text-sm font-semibold select-none leading-none">
                           ↳
                         </span>
-                        <span className="underline underline-offset-3 decoration-neutral-500/70 group-hover/sug:decoration-white transition-all font-normal">
+                        <span className="underline underline-offset-3 decoration-neutral-400/80 dark:decoration-neutral-500/70 group-hover/sug:decoration-neutral-900 dark:group-hover/sug:decoration-white transition-all font-normal">
                           {suggestion}
                         </span>
                       </button>
@@ -231,17 +231,17 @@ export function ChatMessages({
 
                 {/* Assistant Action Bar */}
                 {!msg.isStreaming && msg.content && (
-                  <div className="flex items-center gap-1 mt-1 text-neutral-400">
+                  <div className="flex items-center gap-1 mt-1 text-neutral-500 dark:text-neutral-400">
                     {/* Copy */}
                     <button
                       type="button"
                       onClick={() => handleCopy(msg.id, msg.content)}
                       aria-label="Copy response"
-                      className="p-1.5 rounded-lg hover:text-white hover:bg-white/10 transition-colors"
+                      className="p-1.5 rounded-lg hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/10 transition-colors"
                       title="Copy"
                     >
                       {copiedId === msg.id ? (
-                        <Check className="w-4 h-4 text-emerald-400" />
+                        <Check className="w-4 h-4 text-emerald-500" />
                       ) : (
                         <Copy className="w-4 h-4" />
                       )}
@@ -255,14 +255,14 @@ export function ChatMessages({
                         showToast("Thanks for the feedback!", "success");
                       }}
                       aria-label="Good response"
-                      className={`p-1.5 rounded-lg hover:text-white hover:bg-white/10 transition-colors ${
-                        msg.feedback === "like" ? "text-emerald-400" : ""
+                      className={`p-1.5 rounded-lg hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/10 transition-colors ${
+                        msg.feedback === "like" ? "text-emerald-500" : ""
                       }`}
                       title="Good response"
                     >
                       <ThumbsUp
                         className={`w-4 h-4 ${
-                          msg.feedback === "like" ? "fill-emerald-400" : ""
+                          msg.feedback === "like" ? "fill-emerald-500" : ""
                         }`}
                       />
                     </button>
@@ -275,14 +275,14 @@ export function ChatMessages({
                         showToast("Feedback recorded", "info");
                       }}
                       aria-label="Bad response"
-                      className={`p-1.5 rounded-lg hover:text-white hover:bg-white/10 transition-colors ${
-                        msg.feedback === "dislike" ? "text-rose-400" : ""
+                      className={`p-1.5 rounded-lg hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/10 transition-colors ${
+                        msg.feedback === "dislike" ? "text-rose-500" : ""
                       }`}
                       title="Bad response"
                     >
                       <ThumbsDown
                         className={`w-4 h-4 ${
-                          msg.feedback === "dislike" ? "fill-rose-400" : ""
+                          msg.feedback === "dislike" ? "fill-rose-500" : ""
                         }`}
                       />
                     </button>
@@ -295,7 +295,7 @@ export function ChatMessages({
                         showToast("Regenerating response...", "info");
                       }}
                       aria-label="Regenerate response"
-                      className="p-1.5 rounded-lg hover:text-white hover:bg-white/10 transition-colors"
+                      className="p-1.5 rounded-lg hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/10 transition-colors"
                       title="Regenerate"
                     >
                       <RotateCcw className="w-4 h-4" />
@@ -309,7 +309,7 @@ export function ChatMessages({
                         showToast("Share link copied to clipboard", "success");
                       }}
                       aria-label="Share response"
-                      className="p-1.5 rounded-lg hover:text-white hover:bg-white/10 transition-colors"
+                      className="p-1.5 rounded-lg hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/10 transition-colors"
                       title="Share"
                     >
                       <Share2 className="w-4 h-4" />
