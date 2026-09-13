@@ -9,6 +9,14 @@ export const siteConfig = {
     financeEmail: "finance@jarvisaiacademy.com",
     phone: "+91 91729 11988",
   },
+  links: {
+    facebook: "https://www.facebook.com/jarvisaiacademy/",
+    instagram: "https://www.instagram.com/jarvisaiacademy/",
+    youtube: "https://www.youtube.com/@JarvisAIAcademy",
+    linkedin: "https://www.linkedin.com/company/jarvisaiacademy/",
+    twitter: "https://x.com/jarvisaiacademy",
+    github: "https://github.com/jarvisaiacademy",
+  },
 } as const;
 
 export type SiteConfig = typeof siteConfig;
