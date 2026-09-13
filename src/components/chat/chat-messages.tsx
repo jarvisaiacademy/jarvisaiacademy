@@ -166,9 +166,12 @@ export function ChatMessages({
                     </div>
                   ) : null}
 
-                  {/* Pulsing streaming cursor */}
+                  {/* Pulsing streaming circle cursor (ChatGPT style circle instead of box) */}
                   {msg.isStreaming && (
-                    <span className="inline-block w-2 h-4 ml-1 bg-foreground align-middle animate-pulse" />
+                    <span
+                      aria-hidden="true"
+                      className="inline-block w-2.5 h-2.5 ml-1.5 rounded-full bg-neutral-900 dark:bg-white align-middle animate-pulse shrink-0"
+                    />
                   )}
                 </div>
 
