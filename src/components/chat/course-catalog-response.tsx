@@ -316,17 +316,6 @@ export function CourseCatalogResponse({
                           <DevIcon name={icon} size={18} />
                         </div>
                       ))}
-                      {/* Human-readable stack tags for quick scanning */}
-                      <div className="flex items-center gap-1 flex-wrap ml-1">
-                        {course.techStack.slice(0, 3).map((tech, tIdx) => (
-                          <span
-                            key={tIdx}
-                            className="px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-white/5 text-[10px] font-medium text-neutral-600 dark:text-neutral-400 border border-neutral-200/50 dark:border-white/5"
-                          >
-                            {tech}
-                          </span>
-                        ))}
-                      </div>
                     </div>
                   </div>
                 )}
