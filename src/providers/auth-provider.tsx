@@ -24,6 +24,7 @@ interface AuthContextType {
   isLoggedIn: boolean;
   isAdmin: boolean;
   loginWithGoogle: () => Promise<void>;
+  loginAsDemoAdmin: () => void;
   logout: () => Promise<void>;
 }
 
@@ -152,6 +153,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const loginAsDemoAdmin = useCallback(() => {
+    setUser(DEMO_ADMIN_USER);
+    saveUserSession(DEMO_ADMIN_USER);
+  }, []);
+
   const logout = useCallback(async () => {
     if (isFirebaseConfigured && auth) {
       try {
@@ -173,6 +179,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoggedIn: !!user,
         isAdmin,
         loginWithGoogle,
+        loginAsDemoAdmin,
         logout,
       }}
     >

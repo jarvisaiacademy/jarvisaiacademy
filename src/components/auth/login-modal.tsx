@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { X, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "@/providers/auth-provider";
 import { siteConfig } from "@/config/site";
@@ -12,7 +12,7 @@ interface LoginModalProps {
 }
 
 export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
-  const { loginWithGoogle } = useAuth();
+  const { loginWithGoogle, loginAsDemoAdmin } = useAuth();
 
   const handleGoogleLogin = () => {
     loginWithGoogle();
@@ -88,6 +88,26 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
                   />
                 </svg>
                 <span>Continue with Google</span>
+              </button>
+
+              <div className="relative flex items-center justify-center my-0.5">
+                <div className="border-t border-neutral-200 dark:border-white/10 w-full" />
+                <span className="bg-white dark:bg-[#212121] px-2.5 text-[10px] uppercase font-semibold text-neutral-400 select-none">
+                  OR
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  loginAsDemoAdmin();
+                  onSuccess?.();
+                  onClose();
+                }}
+                className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30 text-xs font-semibold hover:bg-blue-100 dark:hover:bg-blue-500/20 active:scale-[0.98] transition-all cursor-pointer"
+              >
+                <ShieldCheck className="w-4 h-4 text-blue-500" />
+                <span>Sign in as Demo Admin</span>
               </button>
 
               <p className="text-[11px] text-neutral-500 dark:text-neutral-400 text-center mt-2 px-3 leading-tight">
