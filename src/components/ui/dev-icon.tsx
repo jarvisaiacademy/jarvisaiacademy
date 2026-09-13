@@ -35,8 +35,7 @@ const ICON_MAP: Record<string, string> = {
   bootstrap: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/bootstrap/bootstrap-original.svg",
   sass: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/sass/sass-original.svg",
 
-  // Backend Frameworks
-  django: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/django/django-plain.svg",
+  django: "/django-plain.svg",
   flask: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/flask/flask-original.svg",
   fastapi: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/fastapi/fastapi-original.svg",
   laravel: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/laravel/laravel-plain.svg",
@@ -139,8 +138,9 @@ export const DevIcon: React.FC<DevIconProps> = ({
       alt={`${name} logo`}
       width={size}
       height={size}
-      loading="lazy"
-      className={`inline-block shrink-0 object-contain transition-transform duration-200 ${className}`.trim()}
+      className={`inline-block shrink-0 object-contain transition-transform duration-200 ${
+        normalizedKey === "django" ? "invert dark:invert-0" : ""
+      } ${className}`.trim()}
       title={name}
       onError={(e) => {
         // graceful fallback if CDN fails
