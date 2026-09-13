@@ -1,0 +1,8 @@
+# Redirect .in domain to .com domain (HTTP 301 Permanent Redirect)
+https://jarvisaiacademy.in/* https://jarvisaiacademy.com/:splat 301!
+https://www.jarvisaiacademy.in/* https://jarvisaiacademy.com/:splat 301!
+http://jarvisaiacademy.in/* https://jarvisaiacademy.com/:splat 301!
+http://www.jarvisaiacademy.in/* https://jarvisaiacademy.com/:splat 301!
+
+# SPA fallback
+/* /index.html 200

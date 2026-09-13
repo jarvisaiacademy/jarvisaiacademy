@@ -11,7 +11,6 @@ import {
   ThumbsDown,
 } from "lucide-react";
 import { MarkdownRenderer } from "./markdown-renderer";
-import { CitationsView, CitationItem } from "./citations-view";
 import { EnrollmentCard, EnrollmentData } from "./enrollment-card";
 import { useToast } from "@/components/ui/toast";
 
@@ -20,7 +19,7 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   isStreaming?: boolean;
-  citations?: CitationItem[];
+  citations?: any[];
   feedback?: "like" | "dislike" | null;
   timestamp?: string;
   enrollment?: EnrollmentData;
@@ -172,10 +171,7 @@ export function ChatMessages({
                   )}
                 </div>
 
-                {/* Clickable Citations */}
-                {msg.citations && msg.citations.length > 0 && (
-                  <CitationsView citations={msg.citations} />
-                )}
+
 
                 {/* Quick Action Pill for Courses / Super10 */}
                 {!msg.isStreaming &&

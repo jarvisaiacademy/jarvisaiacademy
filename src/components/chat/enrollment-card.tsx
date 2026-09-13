@@ -39,15 +39,15 @@ const COURSES_INFO = {
   fullstack: {
     id: "fullstack" as const,
     name: "Full-Stack AI & Web Engineering Cohort",
-    duration: "16 Weeks Live",
-    baseAmount: 45000,
+    duration: "60 Days (2 Months)",
+    baseAmount: 30000,
     gstRate: 0.18,
   },
   super10: {
     id: "super10" as const,
     name: "Super10 Elite Cohort (100% Placement Assurance)",
-    duration: "24 Weeks Intensive",
-    baseAmount: 75000,
+    duration: "60 Days Intensive",
+    baseAmount: 30000,
     gstRate: 0.18,
   },
 };
@@ -492,10 +492,10 @@ export function EnrollmentCard({
             >
               <span className="text-xs font-semibold">Full-Stack AI &amp; Web</span>
               <span className="text-[11px] text-neutral-400 mt-0.5">
-                16 Weeks · Next.js 15 &amp; Python GenAI
+                60 Days (2 Months) · Next.js 15 &amp; Python GenAI
               </span>
               <span className="text-sm font-bold text-white mt-2">
-                ₹45,000 <span className="text-[10px] font-normal text-neutral-400">+ 18% GST</span>
+                ₹30,000 <span className="text-[10px] font-normal text-neutral-400">+ 18% GST</span>
               </span>
             </button>
 
@@ -515,12 +515,16 @@ export function EnrollmentCard({
                 </span>
               </div>
               <span className="text-[11px] text-neutral-400 mt-0.5">
-                24 Weeks · 100% Placement Assurance
+                60 Days · 100% Placement Assurance
               </span>
               <span className="text-sm font-bold text-white mt-2">
-                ₹75,000 <span className="text-[10px] font-normal text-neutral-400">+ 18% GST</span>
+                ₹30,000 <span className="text-[10px] font-normal text-neutral-400">+ 18% GST</span>
               </span>
             </button>
+          </div>
+          {/* Referral Reward Banner */}
+          <div className="mt-2.5 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-300 flex items-center justify-between">
+            <span>🎁 <strong>Referral Program:</strong> Refer a student &amp; earn <strong>₹5,000</strong> cash bonus once they complete the full 60-day course!</span>
           </div>
         </div>
       ) : (

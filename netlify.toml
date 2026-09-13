@@ -1,0 +1,29 @@
+# Netlify Configuration for Jarvis AI Academy
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[redirects]]
+  from = "https://jarvisaiacademy.in/*"
+  to = "https://jarvisaiacademy.com/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "https://www.jarvisaiacademy.in/*"
+  to = "https://jarvisaiacademy.com/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://jarvisaiacademy.in/*"
+  to = "https://jarvisaiacademy.com/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://www.jarvisaiacademy.in/*"
+  to = "https://jarvisaiacademy.com/:splat"
+  status = 301
+  force = true

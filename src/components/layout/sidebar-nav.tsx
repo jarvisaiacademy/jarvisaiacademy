@@ -8,6 +8,7 @@ import {
   MessageSquareQuote,
   Award,
   HelpCircle,
+  Gift,
 } from "lucide-react";
 import { SidebarHoverCard } from "./sidebar-hover-card";
 
@@ -25,13 +26,18 @@ const navHoverData: Record<string, NavHoverItemData> = {
   },
   courses: {
     title: "Explore Academy Courses",
-    description: "Log in to enroll in Full-Stack AI & Web Engineering, view curriculum roadmaps, and track learning progress.",
+    description: "Log in to enroll in Full-Stack AI & Web Engineering (60 Days / ₹30K), view roadmaps, and track progress.",
     gradientClass: "bg-gradient-to-br from-[#38d9a9] via-[#20c997] to-[#12b886]",
   },
   super10: {
     title: "Super10 Elite Cohort",
-    description: "Log in to apply for the selective 10-student cohort, view live projects, and access placement details.",
+    description: "Log in to apply for the selective 10-student cohort (60 Days / ₹30K) with 100% placement assurance.",
     gradientClass: "bg-gradient-to-br from-[#fcc419] via-[#ff922b] to-[#f76707]",
+  },
+  referral: {
+    title: "Refer & Earn ₹5,000",
+    description: "Refer a peer to any 60-day cohort and receive a ₹5,000 cash reward upon their course completion.",
+    gradientClass: "bg-gradient-to-br from-[#12b886] via-[#20c997] to-[#38d9a9]",
   },
   testimonials: {
     title: "Student Success & Reviews",
@@ -182,6 +188,25 @@ export function SidebarNav({
         </div>
         <span className="text-[10px] font-medium tracking-wide uppercase px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-white/10 text-neutral-700 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
           Elite
+        </span>
+      </button>
+
+      {/* Refer & Earn */}
+      <button
+        type="button"
+        onClick={() => onSelectSection?.("referral")}
+        onMouseEnter={(e) => handleMouseEnter("referral", e)}
+        onMouseLeave={handleMouseLeave}
+        aria-haspopup="dialog"
+        aria-expanded={activeHoverItem === "referral"}
+        className="group flex items-center justify-between w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
+      >
+        <div className="flex items-center gap-2.5">
+          <Gift className="w-4 h-4 text-emerald-500 group-hover:text-emerald-400 transition-colors" />
+          <span>Refer &amp; Earn</span>
+        </div>
+        <span className="text-[10px] font-semibold tracking-wide px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+          ₹5,000
         </span>
       </button>
 
