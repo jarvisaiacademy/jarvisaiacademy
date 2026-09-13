@@ -198,36 +198,53 @@ export function ChatMessages({
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 max-w-[85%] sm:max-w-[75%]">
-                    {/* Action Cluster on Hover */}
-                    <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity">
-                      <button
-                        type="button"
-                        onClick={() => startEditing(msg)}
-                        aria-label="Edit message"
-                        title="Edit"
-                        className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10 transition-all"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
+                  <div className="flex flex-col items-end max-w-[85%] sm:max-w-[75%]">
+                    {/* Message Bubble (ChatGPT exact classes) */}
+                    <div className="corner-superellipse/0.98 relative min-w-0 overflow-hidden rounded-[22px] px-4 py-2.5 leading-6 user-message-bubble-color w-full text-sm sm:text-[15px] font-normal shadow-xs break-words">
+                      {msg.content}
+                    </div>
+
+                    {/* Action Bar on Hover (matching today's ChatGPT UI directly underneath: Copy, Share, Edit) */}
+                    <div className="opacity-0 group-hover:opacity-100 flex items-center gap-2 mt-1.5 mr-1 transition-opacity select-none text-neutral-400 dark:text-neutral-400">
+                      {/* Copy */}
                       <button
                         type="button"
                         onClick={() => handleCopy(msg.id, msg.content)}
                         aria-label="Copy message"
                         title="Copy"
-                        className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10 transition-all"
+                        className="p-1 rounded-md hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-white/10 transition-colors cursor-pointer"
                       >
                         {copiedId === msg.id ? (
-                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          <Check className="w-4 h-4 text-emerald-500" />
                         ) : (
-                          <Copy className="w-3.5 h-3.5" />
+                          <Copy className="w-4 h-4" />
                         )}
                       </button>
-                    </div>
 
-                    {/* Message Bubble (ChatGPT exact classes) */}
-                    <div className="corner-superellipse/0.98 relative min-w-0 overflow-hidden rounded-[22px] px-4 py-2.5 leading-6 user-message-bubble-color w-full text-sm sm:text-[15px] font-normal shadow-xs break-words">
-                      {msg.content}
+                      {/* Share */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleCopy(msg.id, window.location.href);
+                          showToast("Share link copied to clipboard", "success");
+                        }}
+                        aria-label="Share message"
+                        title="Share"
+                        className="p-1 rounded-md hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                      >
+                        <ShareTrayIcon className="w-4 h-4" />
+                      </button>
+
+                      {/* Edit */}
+                      <button
+                        type="button"
+                        onClick={() => startEditing(msg)}
+                        aria-label="Edit message"
+                        title="Edit"
+                        className="p-1 rounded-md hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 )
