@@ -13,6 +13,7 @@ import {
 import { MarkdownRenderer } from "./markdown-renderer";
 import { EnrollmentCard, EnrollmentData } from "./enrollment-card";
 import { CourseCatalogResponse } from "./course-catalog-response";
+import { COURSES_DATA } from "@/data/courses";
 import { useToast } from "@/components/ui/toast";
 
 export interface ChatMessage {
@@ -221,26 +222,11 @@ export function ChatMessages({
                     <CourseCatalogResponse
                       onActionPrompt={onActionPrompt}
                       onSelectCourse={(courseId) => {
-                        if (courseId === "super10") {
-                          onActionPrompt?.(
-                            "Tell me about the Super10 Elite Batch with 100% placement assurance"
-                          );
-                        } else if (courseId === "referral") {
-                          onActionPrompt?.(
-                            "How does the ₹5,000 Refer & Earn program work?"
-                          );
-                        } else if (courseId === "datascience") {
-                          onActionPrompt?.(
-                            "Tell me more about the Python & Data Science Specialization"
-                          );
-                        } else if (courseId === "genai") {
-                          onActionPrompt?.(
-                            "Tell me more about Generative AI & Agentic Systems"
-                          );
+                        const course = COURSES_DATA.find((c) => c.id === courseId);
+                        if (course) {
+                          onActionPrompt?.(course.actionPrompt);
                         } else {
-                          onActionPrompt?.(
-                            "I want to enroll in the Full-Stack AI & Web Engineering Cohort and proceed with payment"
-                          );
+                          onActionPrompt?.("Tell me more about " + courseId);
                         }
                       }}
                     />

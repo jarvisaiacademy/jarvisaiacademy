@@ -102,6 +102,179 @@ Ready to refer someone? Share their details with our admissions desk or have the
       "Tell me about available courses at Jarvis AI Academy",
     ],
   },
+  frontend: {
+    text: `### ⚛️ Frontend Engineering (ReactJS + Tailwind CSS)
+    
+* **Duration**: **60 Days (8 Weeks)** hands-on training.
+* **Tuition**: **₹30,000** (₹30K flat across all programs).
+* **Tech Stack**: React 19, Tailwind CSS, TypeScript, modern ES6+ JavaScript, HTML5 & CSS3.
+
+#### Core Modules:
+1. **Semantic HTML5 & Responsive CSS3**: Modern layout patterns, Flexbox, Grid, CSS animations.
+2. **Modern JavaScript (ES6+) & TypeScript**: Closures, async/await, DOM APIs, strict typing.
+3. **ReactJS Architecture**: Component hierarchy, Props, custom Hooks, Context API.
+4. **Tailwind CSS Utility Design**: Rapid UI styling, dark mode configuration, mobile-first design.
+5. **Production Capstone**: Build a high-performance responsive web dashboard with live API integration.
+
+* **🎁 Refer & Earn**: Refer a friend to this course and earn **₹5,000** once they complete!`,
+    suggestions: [
+      "I want to enroll in the Frontend Engineering cohort and proceed with payment",
+      "What projects will I build in Frontend Engineering?",
+      "Tell me about the Super10 Elite Batch with 100% placement assurance",
+    ],
+  },
+  backend: {
+    text: `### 🐍 Backend Engineering (Python + FastAPI + Django)
+
+* **Duration**: **60 Days (10 Weeks)** intensive API engineering.
+* **Tuition**: **₹30,000** (₹30K).
+* **Tech Stack**: Python, FastAPI, Django, PostgreSQL, REST APIs, JWT Auth.
+
+#### Core Modules:
+1. **Advanced Python**: OOP, decorators, generators, async concurrency.
+2. **FastAPI Asynchronous APIs**: Pydantic models, OpenAPI documentation, async endpoints.
+3. **Django Framework**: ORM relations, admin dashboard, auth middleware.
+4. **PostgreSQL Database**: Indexing, migrations, query optimization.
+5. **Live Capstone**: Architect a scalable microservice with real-time authentication and payment processing.
+
+* **🎁 Refer & Earn**: Refer a student and receive **₹5,000** upon course completion!`,
+    suggestions: [
+      "I want to enroll in Backend Engineering and proceed with payment",
+      "How is FastAPI compared with Django in this course?",
+      "Show all available courses",
+    ],
+  },
+  devops: {
+    text: `### ☁️ DevOps & Cloud Engineering (AWS + Docker + CI/CD)
+
+* **Duration**: **60 Days (10 Weeks)** cloud automation.
+* **Tuition**: **₹30,000** (₹30K).
+* **Tech Stack**: AWS (EC2, S3, IAM, VPC), Docker, Kubernetes, Linux, GitHub Actions CI/CD.
+
+#### Core Modules:
+1. **Linux Systems & Shell Scripting**: Server management, permissions, automated bash scripts.
+2. **Docker Containers**: Containerizing full-stack apps, multi-stage Dockerfiles, Docker Compose.
+3. **AWS Core Architecture**: Deploying on AWS EC2, S3 asset delivery, IAM security.
+4. **Kubernetes Basics**: Pods, services, deployments, and cluster management.
+5. **CI/CD Pipelines**: Automated GitHub Actions testing and zero-downtime releases.
+
+* **🎁 Refer & Earn**: Earn **₹5,000** cash reward for every referral who completes the course!`,
+    suggestions: [
+      "I want to enroll in DevOps & Cloud Engineering and proceed with payment",
+      "What AWS certifications does this course prepare for?",
+      "Show all available courses",
+    ],
+  },
+  database: {
+    text: `### 🗄️ Database Administration (Oracle + PL/SQL + MongoDB)
+
+* **Duration**: **60 Days (8 Weeks)** enterprise database administration.
+* **Tuition**: **₹30,000** (₹30K).
+* **Tech Stack**: Oracle Database, PL/SQL, MongoDB, MySQL.
+
+#### Core Modules:
+1. **Relational Database Design**: Normalization, schemas, referential integrity.
+2. **PL/SQL Mastery**: Stored procedures, functions, packages, triggers, cursors.
+3. **NoSQL with MongoDB**: Collections, document modeling, aggregation pipelines.
+4. **Performance Tuning**: Index optimization, query execution plans, memory buffers.
+5. **Disaster Recovery**: Backups, replication, point-in-time recovery strategies.`,
+    suggestions: [
+      "I want to enroll in Database Administration and proceed with payment",
+      "What are the career prospects for Database Admins?",
+      "Show all available courses",
+    ],
+  },
+  data_analyst: {
+    text: `### 📊 Data Analyst (PowerBI + SQL + SAP + Python)
+
+* **Duration**: **60 Days (12 Weeks)** business intelligence & analytics.
+* **Tuition**: **₹30,000** (₹30K).
+* **Tech Stack**: Microsoft PowerBI, MySQL, Python (Pandas/NumPy), SAP BI.
+
+#### Core Modules:
+1. **PowerBI Visual Reporting**: Interactive dashboards, slicers, mobile layouts.
+2. **DAX & Data Modeling**: Calculated columns, measures, relationship topologies.
+3. **Advanced SQL**: Window functions, subqueries, aggregations, schema joins.
+4. **Python Data Wrangling**: Pandas, NumPy, statistical distribution analysis.
+5. **Enterprise Capstone**: Build an executive revenue intelligence dashboard for board presentation.`,
+    suggestions: [
+      "I want to enroll in Data Analyst with PowerBI and proceed with payment",
+      "What is the difference between Data Analyst and Business Analyst?",
+      "Show all available courses",
+    ],
+  },
+  business_analyst: {
+    text: `### 📋 Business Analyst (PowerBI + MySQL + BRD + Jira)
+
+* **Duration**: **60 Days (8 Weeks)** strategy and requirements engineering.
+* **Tuition**: **₹30,000** (₹30K).
+* **Tech Stack**: PowerBI, MySQL, Jira Agile Boards, BRD/PRD Documentation.
+
+#### Core Modules:
+1. **Business Analysis Methodologies**: Requirements gathering, gap analysis, stakeholder mapping.
+2. **BRD & PRD Documentation**: Writing industry-standard Functional Specifications and User Stories.
+3. **Agile & Jira Sprint Tracking**: Managing backlogs, sprint ceremonies, burndown charts.
+4. **SQL for Analysts**: Querying operational databases without developer dependencies.
+5. **PowerBI Executive Dashboards**: Visualizing KPIs, conversion funnels, and churn metrics.`,
+    suggestions: [
+      "I want to enroll in the Business Analyst program and proceed with payment",
+      "Show all available courses",
+    ],
+  },
+  genai: {
+    text: `### 🤖 Generative AI, RAG & Agentic Systems
+
+* **Duration**: **60 Days (2 Months)** cutting-edge AI engineering.
+* **Tuition**: **₹30,000** (₹30K).
+* **Tech Stack**: Python, OpenAI API, Gemini SDK, LangChain, Pinecone / Chroma Vector DBs, FastAPI.
+
+#### Core Modules:
+1. **Prompt Engineering & Structured Outputs**: Few-shot prompting, JSON schemas, function calling.
+2. **RAG Architecture**: Document chunking, vector embeddings, hybrid semantic search.
+3. **Autonomous Agent Workflows**: Tool execution, multi-step reasoning, LangGraph state machines.
+4. **Production LLMOps**: Latency optimization, prompt caching, evaluation guardrails.
+5. **Capstone Project**: Deploy an end-to-end multi-agent coding assistant with live web browsing.`,
+    suggestions: [
+      "I want to enroll in Generative AI & Agents and proceed with payment",
+      "Show all available courses",
+    ],
+  },
+  laravel: {
+    text: `### 🚀 Full-Stack Web Development (Laravel + PHP + MySQL)
+
+* **Duration**: **60 Days (10 Weeks)** enterprise PHP web development.
+* **Tuition**: **₹30,000** (₹30K).
+* **Tech Stack**: PHP, Laravel, MySQL, Bootstrap, JavaScript.
+
+#### Core Modules:
+1. **Modern PHP**: OOP patterns, namespace resolution, Composer package management.
+2. **Laravel MVC Architecture**: Blade templating, routing, Eloquent ORM relationships.
+3. **Authentication & Roles**: Multi-guard auth, middleware security, password resets.
+4. **REST APIs & AJAX**: Building JSON APIs for frontends and mobile consumers.
+5. **Deployment & Maintenance**: Server setup, cron jobs, database backups.`,
+    suggestions: [
+      "I want to enroll in Laravel Web Development and proceed with payment",
+      "Show all available courses",
+    ],
+  },
+  app_support: {
+    text: `### 🛠️ Application Support & Cloud Ops (Linux + MySQL)
+
+* **Duration**: **60 Days (8 Weeks)** technical support & cloud operations.
+* **Tuition**: **₹30,000** (₹30K).
+* **Tech Stack**: Linux, MySQL, Shell Scripting, Ubuntu, Git.
+
+#### Core Modules:
+1. **Linux Administration**: Command-line utilities, file permissions, daemon management.
+2. **Bash Scripting**: Automated health checks, disk monitoring, log rotating.
+3. **MySQL Troubleshooting**: Slow query log analysis, indexing, data restoration.
+4. **Production Incident Management**: Debugging crash logs, triaging alerts, SLA compliance.
+5. **Support Runbooks**: Writing escalation procedures and technical documentation.`,
+    suggestions: [
+      "I want to enroll in Application Support and proceed with payment",
+      "Show all available courses",
+    ],
+  },
   testimonials: {
     text: `🏆 **Student Success Stories & Placements**:
 
@@ -468,8 +641,28 @@ export function ChatCanvas({
       lower.includes("join cohort")
     ) {
       return academyKnowledge.enroll;
-    } else if (lower.includes("super10") || lower.includes("batch") || lower.includes("elite")) {
+    } else if (lower.includes("super10") || lower.includes("elite")) {
       return academyKnowledge.super10;
+    } else if (lower.includes("referral") || lower.includes("refer & earn") || lower.includes("5,000") || lower.includes("5000")) {
+      return academyKnowledge.referral;
+    } else if (lower.includes("frontend") || lower.includes("reactjs") || lower.includes("tailwind")) {
+      return academyKnowledge.frontend;
+    } else if (lower.includes("backend") || lower.includes("fastapi") || lower.includes("django")) {
+      return academyKnowledge.backend;
+    } else if (lower.includes("devops") || lower.includes("aws") || lower.includes("docker") || lower.includes("kubernetes")) {
+      return academyKnowledge.devops;
+    } else if (lower.includes("database admin") || lower.includes("oracle") || lower.includes("pl/sql") || lower.includes("plsql") || lower.includes("mongodb")) {
+      return academyKnowledge.database;
+    } else if (lower.includes("data analyst") || lower.includes("data science")) {
+      return academyKnowledge.data_analyst;
+    } else if (lower.includes("business analyst") || lower.includes("brd") || lower.includes("jira")) {
+      return academyKnowledge.business_analyst;
+    } else if (lower.includes("genai") || lower.includes("generative ai") || lower.includes("rag") || lower.includes("agentic")) {
+      return academyKnowledge.genai;
+    } else if (lower.includes("laravel") || lower.includes("php")) {
+      return academyKnowledge.laravel;
+    } else if (lower.includes("application support") || (lower.includes("support") && lower.includes("linux"))) {
+      return academyKnowledge.app_support;
     } else if (
       lower.includes("course") ||
       lower.includes("courses") ||
@@ -481,8 +674,6 @@ export function ChatCanvas({
       lower.includes("duration") ||
       lower.includes("60") ||
       lower.includes("30k") ||
-      lower.includes("frontend") ||
-      lower.includes("backend") ||
       lower.includes("full-stack")
     ) {
       return academyKnowledge.courses;

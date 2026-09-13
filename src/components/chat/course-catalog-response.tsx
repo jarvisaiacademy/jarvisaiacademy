@@ -6,14 +6,11 @@ import {
   GraduationCap,
   Sparkles,
   ArrowRight,
-  Code2,
-  Brain,
-  Database,
-  Zap,
+  CheckCircle2,
   Award,
   Users,
   Briefcase,
-  Gift,
+  Layers,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -22,6 +19,7 @@ import {
   CourseCategoryId,
   CourseItem,
 } from "@/data/courses";
+import { DevIcon } from "@/components/ui/dev-icon";
 
 interface CourseCatalogResponseProps {
   onActionPrompt?: (prompt: string) => void;
@@ -37,14 +35,7 @@ export function CourseCatalogResponse({
 
   const filteredCourses = COURSES_DATA.filter((course) => {
     if (selectedCategory === "all") return true;
-    if (selectedCategory === "web") return course.category === "web";
-    if (selectedCategory === "ai")
-      return course.category === "ai" || course.id === "fullstack";
-    if (selectedCategory === "datascience")
-      return course.category === "datascience";
-    if (selectedCategory === "elite")
-      return course.category === "elite" || course.id === "super10";
-    return true;
+    return course.category === selectedCategory;
   });
 
   const handleCardClick = (course: CourseItem) => {
@@ -59,59 +50,13 @@ export function CourseCatalogResponse({
     if (selectedCategory !== "all") {
       setSelectedCategory("all");
     } else if (onActionPrompt) {
-      onActionPrompt("Tell me about the available courses at Jarvis AI Academy");
-    }
-  };
-
-  // Render course-specific visual emblem in the banner
-  const renderBannerGraphic = (courseId: string) => {
-    switch (courseId) {
-      case "fullstack":
-        return (
-          <div className="relative flex items-center justify-center w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 shadow-lg shrink-0">
-            <Code2 className="w-7 h-7 text-sky-300" />
-            <span className="absolute -top-1.5 -right-1.5 flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-sky-500" />
-            </span>
-          </div>
-        );
-      case "super10":
-        return (
-          <div className="relative flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-500/20 backdrop-blur-md border border-amber-400/30 shadow-lg shrink-0">
-            <Zap className="w-7 h-7 text-amber-300 fill-amber-300/30" />
-          </div>
-        );
-      case "datascience":
-        return (
-          <div className="relative flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500/20 backdrop-blur-md border border-emerald-400/30 shadow-lg shrink-0">
-            <Database className="w-7 h-7 text-emerald-300" />
-          </div>
-        );
-      case "genai":
-        return (
-          <div className="relative flex items-center justify-center w-14 h-14 rounded-2xl bg-purple-500/20 backdrop-blur-md border border-purple-400/30 shadow-lg shrink-0">
-            <Brain className="w-7 h-7 text-purple-300" />
-          </div>
-        );
-      case "referral":
-        return (
-          <div className="relative flex items-center justify-center w-14 h-14 rounded-2xl bg-teal-500/20 backdrop-blur-md border border-teal-400/30 shadow-lg shrink-0">
-            <Gift className="w-7 h-7 text-teal-300" />
-          </div>
-        );
-      default:
-        return (
-          <div className="relative flex items-center justify-center w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 shadow-lg shrink-0">
-            <Sparkles className="w-7 h-7 text-amber-300" />
-          </div>
-        );
+      onActionPrompt("Tell me about all available courses at Jarvis AI Academy");
     }
   };
 
   return (
     <div className="w-full flex flex-col gap-4 mt-2 mb-3 select-none">
-      {/* 1. Category Filter Pills */}
+      {/* 1. Category Filter Tabs */}
       <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
         {COURSE_CATEGORIES.map((cat) => {
           const isActive = selectedCategory === cat.id;
@@ -120,7 +65,7 @@ export function CourseCatalogResponse({
               key={cat.id}
               type="button"
               onClick={() => setSelectedCategory(cat.id)}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer select-none ${
+              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer select-none ${
                 isActive
                   ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-xs font-semibold"
                   : "bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/80 dark:hover:bg-neutral-700/80 border border-neutral-200 dark:border-white/5"
@@ -133,38 +78,42 @@ export function CourseCatalogResponse({
       </div>
 
       {/* 2. Responsive Course Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <AnimatePresence mode="popLayout">
           {filteredCourses.map((course) => (
             <motion.div
               key={course.id}
               layout
-              initial={{ opacity: 0, scale: 0.96 }}
+              initial={{ opacity: 0, scale: 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              transition={{ duration: 0.2 }}
+              exit={{ opacity: 0, scale: 0.97 }}
+              transition={{ duration: 0.18 }}
               onClick={() => handleCardClick(course)}
-              className="group relative flex flex-col rounded-2xl bg-white dark:bg-[#1c1c1c] hover:bg-neutral-50/80 dark:hover:bg-[#232323] border border-neutral-200/90 dark:border-white/10 hover:border-neutral-300 dark:hover:border-white/20 transition-all duration-200 overflow-hidden shadow-xs hover:shadow-md text-left cursor-pointer"
+              className="group relative flex flex-col rounded-2xl bg-white dark:bg-[#191919] hover:bg-neutral-50/90 dark:hover:bg-[#202020] border border-neutral-200 dark:border-white/10 hover:border-neutral-400/60 dark:hover:border-white/20 transition-all duration-200 overflow-hidden shadow-xs hover:shadow-md text-left cursor-pointer"
             >
-              {/* Card Banner Thumbnail */}
+              {/* Card Banner Header */}
               <div
                 className={`relative h-32 sm:h-36 w-full p-4 bg-gradient-to-br ${course.gradient} flex flex-col justify-between overflow-hidden shrink-0 border-b border-neutral-200/60 dark:border-white/10`}
               >
                 {/* Background ambient glow effect */}
                 <div className="absolute -top-12 -right-12 w-36 h-36 bg-white/10 rounded-full blur-2xl pointer-events-none" />
 
-                {/* Top Row: Badge + Emblem Graphic */}
-                <div className="flex items-start justify-between gap-2 z-10">
+                {/* Top Row: Badge + Number */}
+                <div className="flex items-center justify-between gap-2 z-10">
                   {course.badge ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide uppercase bg-black/40 dark:bg-black/60 backdrop-blur-md text-amber-300 border border-amber-400/30 shadow-xs">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide uppercase bg-black/40 backdrop-blur-md text-amber-300 border border-amber-400/30 shadow-xs">
                       <Sparkles className="w-2.5 h-2.5" />
                       {course.badge}
                     </span>
                   ) : (
-                    <div />
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-black/30 backdrop-blur-md text-white/80 border border-white/10">
+                      {course.categoryLabel}
+                    </span>
                   )}
 
-                  {/* {renderBannerGraphic(course.id)} */}
+                  <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white/30 font-mono">
+                    {course.number}
+                  </span>
                 </div>
 
                 {/* Bottom of Banner: Title & Subtitle */}
@@ -172,16 +121,16 @@ export function CourseCatalogResponse({
                   <h4 className="text-base sm:text-[17px] font-bold text-white tracking-tight leading-tight drop-shadow-xs">
                     {course.bannerTitle}
                   </h4>
-                  <p className="text-[11px] text-neutral-200/90 font-medium tracking-wide mt-0.5 drop-shadow-xs line-clamp-1">
+                  <p className="text-[11px] text-white/80 font-medium tracking-wide mt-0.5 drop-shadow-xs line-clamp-1">
                     {course.bannerSubtitle}
                   </p>
                 </div>
               </div>
 
               {/* Card Body */}
-              <div className="p-3.5 sm:p-4 flex flex-col flex-1 justify-between gap-3">
+              <div className="p-4 flex flex-col flex-1 justify-between gap-3.5">
                 <div>
-                  <h3 className="text-sm sm:text-[15px] font-semibold text-neutral-900 dark:text-white leading-snug tracking-tight group-hover:text-primary transition-colors">
+                  <h3 className="text-sm sm:text-[15px] font-bold text-neutral-900 dark:text-white leading-snug tracking-tight group-hover:text-primary transition-colors">
                     {course.title}
                   </h3>
                   <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed mt-1 line-clamp-2">
@@ -189,21 +138,64 @@ export function CourseCatalogResponse({
                   </p>
                 </div>
 
-                {/* Tech Badges */}
-                <div className="flex flex-wrap gap-1">
-                  {course.techStack.slice(0, 3).map((tech, tIdx) => (
-                    <span
-                      key={tIdx}
-                      className="px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-white/5 text-[10px] font-medium text-neutral-600 dark:text-neutral-400 border border-neutral-200/60 dark:border-white/5"
-                    >
-                      {tech}
-                    </span>
-                  ))}
-                </div>
+                {/* Tech Stack Logos (DevIcon integration from Codexa) */}
+                {course.techIcons && course.techIcons.length > 0 && (
+                  <div className="flex flex-col gap-1.5 pt-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                        Tech Stack
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {course.techIcons.map((icon) => (
+                        <div
+                          key={icon}
+                          className="w-7 h-7 rounded-lg bg-neutral-100 dark:bg-white/5 flex items-center justify-center p-1 border border-neutral-200/70 dark:border-white/10 shadow-2xs group-hover:border-neutral-300 dark:group-hover:border-white/20 transition-all"
+                          title={icon}
+                        >
+                          <DevIcon name={icon} size={18} />
+                        </div>
+                      ))}
+                      {/* Human-readable stack tags for quick scanning */}
+                      <div className="flex items-center gap-1 flex-wrap ml-1">
+                        {course.techStack.slice(0, 3).map((tech, tIdx) => (
+                          <span
+                            key={tIdx}
+                            className="px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-white/5 text-[10px] font-medium text-neutral-600 dark:text-neutral-400 border border-neutral-200/50 dark:border-white/5"
+                          >
+                            {tech}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-                {/* Card Meta Row */}
-                <div className="flex items-center justify-between pt-2.5 border-t border-neutral-200/60 dark:border-white/5 text-[11px] text-neutral-500 dark:text-neutral-400">
-                  <div className="flex items-center gap-2.5">
+                {/* Key Learning Topics Bullet Points */}
+                {course.topics && course.topics.length > 0 && (
+                  <div className="flex flex-col gap-1 pt-1">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                      Core Modules
+                    </span>
+                    <div className="grid grid-cols-1 gap-1">
+                      {course.topics.slice(0, 3).map((topic, i) => (
+                        <div
+                          key={i}
+                          className="flex items-start gap-1.5 text-xs text-neutral-700 dark:text-neutral-300"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 text-emerald-500 shrink-0" />
+                          <span className="line-clamp-1 leading-snug">
+                            {topic}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Card Meta Row (Duration, Level, Fee & Action CTA) */}
+                <div className="flex items-center justify-between pt-3 border-t border-neutral-200/70 dark:border-white/5 text-[11px] text-neutral-500 dark:text-neutral-400">
+                  <div className="flex items-center gap-3">
                     <span className="flex items-center gap-1 font-medium">
                       <Clock className="w-3.5 h-3.5 text-neutral-400" />
                       <span>{course.duration}</span>
@@ -218,7 +210,7 @@ export function CourseCatalogResponse({
                     <span className="text-xs font-bold text-neutral-900 dark:text-white">
                       {course.fee}
                     </span>
-                    <div className="w-7 h-7 rounded-full bg-neutral-200/80 dark:bg-white/10 group-hover:bg-neutral-900 dark:group-hover:bg-white text-neutral-700 dark:text-neutral-200 group-hover:text-white dark:group-hover:text-black flex items-center justify-center transition-all shadow-xs shrink-0">
+                    <div className="w-7 h-7 rounded-full bg-neutral-100 dark:bg-white/10 group-hover:bg-neutral-900 dark:group-hover:bg-white text-neutral-700 dark:text-neutral-200 group-hover:text-white dark:group-hover:text-black flex items-center justify-center transition-all shadow-xs shrink-0">
                       <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
                     </div>
                   </div>
@@ -229,17 +221,18 @@ export function CourseCatalogResponse({
         </AnimatePresence>
       </div>
 
-      {/* 3. "View All Courses" Action Button */}
+      {/* 3. "View Full Curriculum & Roadmap" Action Button */}
       <div className="flex items-center justify-center pt-1">
         <button
           type="button"
           onClick={handleViewAll}
           className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-neutral-100 dark:bg-neutral-800/80 hover:bg-neutral-200/90 dark:hover:bg-neutral-700/90 border border-neutral-200 dark:border-white/10 text-neutral-800 dark:text-neutral-200 text-xs sm:text-[13px] font-semibold transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
         >
+          <Layers className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
           <span>
             {selectedCategory === "all"
-              ? "View Full Curriculum & Roadmap"
-              : "View All Courses"}
+              ? "Explore All 11+ Programs & Roadmaps"
+              : `View All ${COURSE_CATEGORIES.find((c) => c.id === selectedCategory)?.label} Tracks`}
           </span>
           <ArrowRight className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
         </button>
@@ -270,7 +263,7 @@ export function CourseCatalogResponse({
               Live Capstones
             </span>
             <span className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate">
-              Commercial code
+              Commercial Code
             </span>
           </div>
         </div>
@@ -284,7 +277,7 @@ export function CourseCatalogResponse({
               Certificates
             </span>
             <span className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate">
-              Verified credentials
+              Verified Credentials
             </span>
           </div>
         </div>
