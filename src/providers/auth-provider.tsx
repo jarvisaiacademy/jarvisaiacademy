@@ -23,11 +23,40 @@ interface AuthContextType {
   user: User | null;
   isLoggedIn: boolean;
   isAdmin: boolean;
-  loginWithGoogle: () => Promise<void>;
+  authError: string | null;
+  /** Resolves true only when a user session was actually established. */
+  loginWithGoogle: () => Promise<boolean>;
   logout: () => Promise<void>;
+  clearAuthError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+/**
+ * Turn Firebase error codes into something a visitor can act on.
+ * Returns "" for deliberate cancellations, which are not errors.
+ */
+function describeAuthError(error: { code?: string; message?: string }): string {
+  switch (error.code) {
+    case "auth/popup-closed-by-user":
+    case "auth/cancelled-popup-request":
+      return "";
+    case "auth/popup-blocked":
+      return "Your browser blocked the sign-in window. Allow popups for this site, then try again.";
+    case "auth/unauthorized-domain":
+      return "This domain is not authorised for sign-in. Add it under Authentication → Settings → Authorized domains in the Firebase console.";
+    case "auth/operation-not-allowed":
+      return "Google sign-in is not enabled for this project.";
+    case "auth/network-request-failed":
+      return "Could not reach the sign-in service. Check your connection and try again.";
+    case "auth/internal-error":
+      return "The sign-in service returned an error (internal-error). This usually means the Firebase project or its API key is disabled or suspended.";
+    case "auth/too-many-requests":
+      return "Too many sign-in attempts. Please wait a moment and try again.";
+    default:
+      return `Sign-in failed${error.code ? ` (${error.code})` : ""}. Please try again.`;
+  }
+}
 
 const ADMIN_EMAILS = (
   process.env.NEXT_PUBLIC_ADMIN_EMAILS ||
@@ -79,18 +108,10 @@ function getInitialUser(): User | null {
   return null;
 }
 
-const DEMO_ADMIN_USER: User = {
-  id: "usr_admin_sugat",
-  name: "Sugatraj Sarwade",
-  email: "sugat@jarvisaiacademy.com",
-  plan: "Admin / Founder",
-  role: "admin",
-  isAdmin: true,
-};
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Synchronous immediate initialization from localStorage prevents refresh flicker
   const [user, setUser] = useState<User | null>(getInitialUser);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Sync Firebase Auth state in the background
   useEffect(() => {
@@ -122,35 +143,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const loginWithGoogle = useCallback(async () => {
-    if (isFirebaseConfigured && auth && googleProvider) {
-      try {
-        const result = await signInWithPopup(auth, googleProvider);
-        const fbUser = result.user;
-        const isAdmin = checkIsAdmin(fbUser.email);
-        const mappedUser: User = {
-          id: fbUser.uid,
-          name: fbUser.displayName || fbUser.email?.split("@")[0] || "Learner",
-          email: fbUser.email || "",
-          picture: fbUser.photoURL || undefined,
-          isAdmin,
-          role: isAdmin ? "admin" : "student",
-          plan: isAdmin ? "Admin / Founder" : "Learner Pro",
-        };
-        setUser(mappedUser);
-        saveUserSession(mappedUser);
-      } catch (err: unknown) {
-        const error = err as { code?: string; message?: string };
-        if (error.code !== "auth/popup-closed-by-user") {
-          console.error("[Auth] Google sign-in error:", error);
-        }
+  const loginWithGoogle = useCallback(async (): Promise<boolean> => {
+    setAuthError(null);
+
+    if (!isFirebaseConfigured || !auth || !googleProvider) {
+      setAuthError(
+        "Sign-in is unavailable because authentication is not configured. Please contact support."
+      );
+      return false;
+    }
+
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const fbUser = result.user;
+      const isAdmin = checkIsAdmin(fbUser.email);
+      const mappedUser: User = {
+        id: fbUser.uid,
+        name: fbUser.displayName || fbUser.email?.split("@")[0] || "Learner",
+        email: fbUser.email || "",
+        picture: fbUser.photoURL || undefined,
+        isAdmin,
+        role: isAdmin ? "admin" : "student",
+        plan: isAdmin ? "Admin / Founder" : "Learner Pro",
+      };
+      setUser(mappedUser);
+      saveUserSession(mappedUser);
+      return true;
+    } catch (err: unknown) {
+      const error = err as { code?: string; message?: string };
+      const message = describeAuthError(error);
+      if (!message) {
+        // Visitor dismissed the popup — not a failure worth reporting.
+        return false;
       }
-    } else {
-      // Instant fallback when Firebase keys are being configured
-      setUser(DEMO_ADMIN_USER);
-      saveUserSession(DEMO_ADMIN_USER);
+      console.error("[Auth] Google sign-in error:", error);
+      setAuthError(message);
+      return false;
     }
   }, []);
+
+  const clearAuthError = useCallback(() => setAuthError(null), []);
 
   const logout = useCallback(async () => {
     if (isFirebaseConfigured && auth) {
@@ -172,8 +204,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         isLoggedIn: !!user,
         isAdmin,
+        authError,
         loginWithGoogle,
         logout,
+        clearAuthError,
       }}
     >
       {children}
