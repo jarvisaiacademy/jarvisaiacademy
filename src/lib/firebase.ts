@@ -8,22 +8,9 @@ import {
 } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
 
-const getCleanAuthDomain = () => {
-  if (process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN) {
-    return process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
-  }
-  if (typeof window !== "undefined") {
-    const host = window.location.host;
-    if (host.includes("jarvisaiacademy") || host.includes("netlify.app")) {
-      return host;
-    }
-  }
-  return "jarvisaiacademy-580a7.firebaseapp.com";
-};
-
 export const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyABWBeFX9nHxWzCpxhu4iCmS1TeaTHijMg",
-  authDomain: getCleanAuthDomain(),
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "jarvisaiacademy-580a7.firebaseapp.com",
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "jarvisaiacademy-580a7",
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "jarvisaiacademy-580a7.firebasestorage.app",
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "864804438661",
