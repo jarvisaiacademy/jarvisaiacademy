@@ -83,8 +83,24 @@ The advisor model uses structured prompt chaining:
 
 ---
 
-## 5. Context Evolution Log
+---
+
+## 6. Production Release & Git Branching Safeguard
+
+- **Production Target**: Netlify auto-deploys `main` to **`https://jarvisaiacademy.com`**.
+- **Rule**: Direct pushes to `main` are strictly forbidden.
+- **Workflow**:
+  1. Every task or feature must branch off `main` (`feat/...`, `fix/...`, `chore/...`).
+  2. Verify with `pnpm tsc --noEmit` (never run `pnpm build` locally).
+  3. Push to feature branch and raise a Pull Request (PR) against `main`.
+  4. Inspect Netlify Deploy Preview.
+  5. Merge to `main` only after PR acceptance.
+
+---
+
+## 7. Context Evolution Log
 
 | Date & Time | Source | Context Added |
 | :--- | :--- | :--- |
 | **2026-09-12 23:30** | User Directive | Defined core funnel: Visitor lands on ChatGPT UI → types prompt → forced one-shot login/signup (Google / Email+Pass) → prompt auto-sent to API → conversational follow-up questions → final course recommendation based on old Codexa Classes curriculum → Rebrand all occurrences of Codexa Classes to Jarvis AI Academy → Initialized persistent `PROJECT_CONTEXT.md`. |
+| **2026-09-13 17:25** | User Directive | Site is deployed live on custom domain (`jarvisaiacademy.com`). Enforced strict production branching policy: all modifications require dedicated feature branches, verification, and Pull Requests against `main`. Direct pushes to `main` strictly prohibited. Created `RELEASE_WORKFLOW.md` and `GEMINI.md`. |

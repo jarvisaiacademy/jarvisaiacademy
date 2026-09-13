@@ -22,8 +22,13 @@ This is a real application, not a static UI mockup.
 
 These rules take priority over convenience.
 
+> **CRITICAL PRODUCTION SAFEGUARD**: The `main` branch is connected to live production at **`https://jarvisaiacademy.com`** via Netlify. **NEVER** push directly to `main`. Every change must be in a separate branch and merged via a Pull Request (PR) after verification.
+
 ### DO
 
+- **ALWAYS** check out a separate branch (`feat/...`, `fix/...`, `chore/...`) before making changes or commits.
+- **ALWAYS** verify changes with `pnpm tsc --noEmit` before raising a Pull Request.
+- **ALWAYS** push to the feature branch and raise a Pull Request (PR) against `main`.
 - Inspect the existing code before modifying it.
 - Reuse existing components and utilities when appropriate.
 - Follow the existing project architecture.
@@ -43,6 +48,8 @@ These rules take priority over convenience.
 
 ### DO NOT
 
+- **Do not push directly to `main` under any circumstances** (all changes must be on feature branches and merged via PR).
+- **Do not run `pnpm build` locally** (use `pnpm tsc --noEmit` only; Netlify performs the production build).
 - Do not replace the project's framework or stack without explicit approval.
 - Do not migrate libraries simply because another library is fashionable.
 - Do not introduce Redux unless explicitly requested.
