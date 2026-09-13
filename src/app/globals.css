@@ -154,3 +154,13 @@
 html.is-auth .guest-cta-block {
   display: none !important;
 }
+
+/* ChatGPT Superellipse & User Bubble Styles */
+.user-message-bubble-color {
+  background-color: #864223;
+  color: #ffffff;
+}
+
+.corner-superellipse\/0\.98 {
+  border-radius: 22px;
+}

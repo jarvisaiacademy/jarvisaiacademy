@@ -89,7 +89,7 @@ export function CourseCatalogResponse({
               exit={{ opacity: 0, scale: 0.97 }}
               transition={{ duration: 0.18 }}
               onClick={() => handleCardClick(course)}
-              className="group relative flex flex-col rounded-2xl bg-white dark:bg-[#191919] hover:bg-neutral-50/90 dark:hover:bg-[#202020] border border-neutral-200 dark:border-white/10 hover:border-neutral-400/60 dark:hover:border-white/20 transition-all duration-200 overflow-hidden shadow-xs hover:shadow-md text-left cursor-pointer"
+              className="group relative flex flex-col rounded-3xl bg-white dark:bg-[#191919] hover:bg-neutral-50/90 dark:hover:bg-[#202020] border border-neutral-200 dark:border-white/10 hover:border-neutral-400/60 dark:hover:border-white/20 transition-all duration-200 overflow-hidden shadow-xs hover:shadow-md text-left cursor-pointer"
             >
               {/* Card Banner Header */}
               <div

@@ -61,7 +61,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
             );
           },
           table: ({ children }) => (
-            <div className="overflow-x-auto my-3 border border-neutral-200 dark:border-white/10 rounded-lg">
+            <div className="overflow-x-auto my-3 border border-neutral-200 dark:border-white/10 rounded-2xl">
               <table className="w-full text-left text-sm text-neutral-800 dark:text-neutral-300 border-collapse">
                 {children}
               </table>
@@ -116,7 +116,7 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
   };
 
   return (
-    <div className="relative my-3 rounded-lg overflow-hidden bg-[#171717] border border-white/10 font-mono text-xs">
+    <div className="relative my-3 rounded-2xl overflow-hidden bg-[#171717] border border-white/10 font-mono text-xs">
       {/* Code Header Bar */}
       <div className="flex items-center justify-between px-3.5 py-1.5 bg-[#212121] text-neutral-400 border-b border-white/5 text-[11px]">
         <span className="uppercase tracking-wider">{language}</span>

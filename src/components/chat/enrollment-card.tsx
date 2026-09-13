@@ -438,7 +438,7 @@ export function EnrollmentCard({
   };
 
   return (
-    <div className="w-full my-4 p-5 sm:p-6 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xl select-none transition-colors">
+    <div className="w-full my-4 p-5 sm:p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xl select-none transition-colors">
       {/* Header with status badge */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 dark:border-white/10 pb-4 mb-4">
         <div className="flex items-center gap-2.5">

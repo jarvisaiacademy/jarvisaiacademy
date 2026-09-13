@@ -172,7 +172,7 @@ export function ChatMessages({
               {isUser ? (
                 /* User Message Bubble or Edit Mode */
                 isEditing ? (
-                  <div className="w-full max-w-xl flex flex-col gap-2 p-3 bg-neutral-100 dark:bg-[#212121] rounded-2xl border border-neutral-300 dark:border-white/15 shadow-xl transition-colors">
+                  <div className="w-full max-w-xl flex flex-col gap-2 p-3 bg-neutral-100 dark:bg-[#212121] rounded-[22px] border border-neutral-300 dark:border-white/15 shadow-xl transition-colors">
                     <textarea
                       value={editDraft}
                       onChange={(e) => setEditDraft(e.target.value)}
@@ -184,14 +184,14 @@ export function ChatMessages({
                       <button
                         type="button"
                         onClick={cancelEditing}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                        className="px-3 py-1.5 rounded-full text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/10 transition-colors cursor-pointer"
                       >
                         Cancel
                       </button>
                       <button
                         type="button"
                         onClick={() => handleSaveEdit(msg.id)}
-                        className="px-3.5 py-1.5 rounded-lg text-xs font-medium bg-neutral-900 dark:bg-white text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors cursor-pointer shadow-xs"
+                        className="px-3.5 py-1.5 rounded-full text-xs font-medium bg-neutral-900 dark:bg-white text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors cursor-pointer shadow-xs"
                       >
                         Save & Submit
                       </button>
@@ -225,8 +225,8 @@ export function ChatMessages({
                       </button>
                     </div>
 
-                    {/* Message Bubble (ChatGPT warm terracotta pill capsule) */}
-                    <div className="bg-[#864223] text-white px-5 py-2.5 rounded-full text-sm sm:text-[15px] font-normal leading-relaxed shadow-xs break-words max-w-full">
+                    {/* Message Bubble (ChatGPT exact classes) */}
+                    <div className="corner-superellipse/0.98 relative min-w-0 overflow-hidden rounded-[22px] px-4 py-2.5 leading-6 user-message-bubble-color w-full text-sm sm:text-[15px] font-normal shadow-xs break-words">
                       {msg.content}
                     </div>
                   </div>
