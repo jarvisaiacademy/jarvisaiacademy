@@ -37,7 +37,11 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
  * Returns "" for deliberate cancellations, which are not errors.
  */
 function describeAuthError(error: { code?: string; message?: string }): string {
-  switch (error.code) {
+  // Firebase can pack the raw message into `code` (e.g. "auth/permission-denied: consumer
+  // 'api-key:...' has been suspended."), so match on the leading identifier only.
+  const code = error.code?.split(":")[0] ?? "";
+
+  switch (code) {
     case "auth/popup-closed-by-user":
     case "auth/cancelled-popup-request":
       return "";
@@ -49,12 +53,14 @@ function describeAuthError(error: { code?: string; message?: string }): string {
       return "Google sign-in is not enabled for this project.";
     case "auth/network-request-failed":
       return "Could not reach the sign-in service. Check your connection and try again.";
+    case "auth/permission-denied":
+      return "Sign-in is temporarily unavailable for this site. Please try again later or contact support.";
     case "auth/internal-error":
       return "The sign-in service returned an error (internal-error). This usually means the Firebase project or its API key is disabled or suspended.";
     case "auth/too-many-requests":
       return "Too many sign-in attempts. Please wait a moment and try again.";
     default:
-      return `Sign-in failed${error.code ? ` (${error.code})` : ""}. Please try again.`;
+      return `Sign-in failed${code ? ` (${code})` : ""}. Please try again.`;
   }
 }
 
