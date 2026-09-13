@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Copy,
   Check,
@@ -96,6 +96,7 @@ export function ChatMessages({
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<string>("5:44 PM");
   const { showToast } = useToast();
+  const editTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setCurrentTime(
@@ -105,6 +106,29 @@ export function ChatMessages({
       })
     );
   }, []);
+
+  useEffect(() => {
+    if (editingId && editTextareaRef.current) {
+      const el = editTextareaRef.current;
+      el.style.height = "auto";
+      const scrollH = el.scrollHeight;
+      const newH = Math.min(Math.max(scrollH, 40), 400);
+      el.style.height = `${newH}px`;
+      el.style.overflowY = scrollH > 400 ? "auto" : "hidden";
+      el.focus();
+      el.selectionStart = el.value.length;
+      el.selectionEnd = el.value.length;
+    }
+  }, [editingId]);
+
+  const handleEditChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditDraft(e.target.value);
+    e.target.style.height = "auto";
+    const scrollH = e.target.scrollHeight;
+    const newH = Math.min(Math.max(scrollH, 40), 400);
+    e.target.style.height = `${newH}px`;
+    e.target.style.overflowY = scrollH > 400 ? "auto" : "hidden";
+  };
 
   const handleReadAloud = (text: string) => {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
@@ -141,7 +165,6 @@ export function ChatMessages({
     onEditSubmit?.(msgId, editDraft.trim());
     setEditingId(null);
     setEditDraft("");
-    showToast("Message updated & regenerating...", "info");
   };
 
   return (
@@ -166,34 +189,46 @@ export function ChatMessages({
 
             <div
               className={`group relative flex flex-col ${
-                isUser ? "items-end" : "items-start"
+                isEditing ? "w-full" : isUser ? "items-end" : "items-start"
               }`}
             >
               {isUser ? (
                 /* User Message Bubble or Edit Mode */
                 isEditing ? (
-                  <div className="w-full max-w-xl flex flex-col gap-2 p-3 bg-neutral-100 dark:bg-[#212121] rounded-[22px] border border-neutral-300 dark:border-white/15 shadow-xl transition-colors">
+                  <div className="w-full bg-[#f4f4f4] dark:bg-[#2f2f2f] rounded-[24px] p-3.5 sm:p-4 pb-3 sm:pb-3.5 transition-colors">
                     <textarea
+                      ref={editTextareaRef}
                       value={editDraft}
-                      onChange={(e) => setEditDraft(e.target.value)}
-                      rows={3}
-                      className="w-full bg-transparent text-neutral-900 dark:text-white placeholder:text-neutral-500 text-sm outline-none resize-none border-none p-1 font-normal leading-relaxed"
+                      onChange={handleEditChange}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSaveEdit(msg.id);
+                        } else if (e.key === "Escape") {
+                          e.preventDefault();
+                          cancelEditing();
+                        }
+                      }}
+                      rows={1}
+                      className="w-full bg-transparent text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 text-sm sm:text-[15px] leading-6 outline-none resize-none border-0 focus:outline-none focus:ring-0 p-0 font-normal selection:bg-[#9d5932] selection:text-white"
+                      placeholder="Send a message..."
                       autoFocus
                     />
-                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-200 dark:border-white/10">
+                    <div className="flex items-center justify-end gap-2 mt-2 select-none">
                       <button
                         type="button"
                         onClick={cancelEditing}
-                        className="px-3 py-1.5 rounded-full text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                        className="rounded-full px-4 py-1.5 text-[13px] sm:text-sm font-medium transition-colors cursor-pointer bg-neutral-200 hover:bg-neutral-300 text-neutral-800 dark:bg-[#383838] dark:hover:bg-[#484848] dark:text-white active:scale-95"
                       >
                         Cancel
                       </button>
                       <button
                         type="button"
                         onClick={() => handleSaveEdit(msg.id)}
-                        className="px-3.5 py-1.5 rounded-full text-xs font-medium bg-neutral-900 dark:bg-white text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors cursor-pointer shadow-xs"
+                        disabled={!editDraft.trim()}
+                        className="rounded-full px-4 py-1.5 text-[13px] sm:text-sm font-medium transition-colors cursor-pointer bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
                       >
-                        Save & Submit
+                        Send
                       </button>
                     </div>
                   </div>
