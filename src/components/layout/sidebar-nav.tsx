@@ -292,6 +292,7 @@ export function SidebarNav({
           title={activeHoverItem ? navHoverData[activeHoverItem]?.title ?? "" : ""}
           description={activeHoverItem ? navHoverData[activeHoverItem]?.description ?? "" : ""}
           gradientClass={activeHoverItem ? navHoverData[activeHoverItem]?.gradientClass ?? "" : ""}
+          itemKey={activeHoverItem ?? undefined}
           onMouseEnter={handlePopoverMouseEnter}
           onMouseLeave={handlePopoverMouseLeave}
           onLoginClick={() => {
