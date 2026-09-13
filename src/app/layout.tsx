@@ -18,6 +18,7 @@ import { LanguageProvider } from "@/providers/language-provider";
 import { AuthProvider } from "@/providers/auth-provider";
 
 import { siteConfig } from "@/config/site";
+import { structuredData } from "@/config/seo";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -28,8 +29,15 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: `${siteConfig.name} — ${siteConfig.tagline}`,
-  description: `${siteConfig.name} — ${siteConfig.tagline}`,
+  // Needed for the relative canonical below, and as a guard for any future
+  // relative URL field.
+  metadataBase: new URL(siteConfig.url),
+  title: {
+    default: `${siteConfig.name} — ${siteConfig.tagline}`,
+    template: `%s | ${siteConfig.name}`,
+  },
+  description: siteConfig.description,
+  alternates: { canonical: "/" },
   icons: {
     icon: [
       { url: "/favicon.ico" },
@@ -41,17 +49,20 @@ export const metadata: Metadata = {
     ],
   },
   manifest: "/site.webmanifest",
+  // Absolute URLs on purpose. The app-directory opengraph-image/twitter-image
+  // file conventions ignore metadataBase and emit the dev origin
+  // (http://localhost:3000) in the built HTML, which breaks every share preview.
   openGraph: {
     title: `${siteConfig.name} — ${siteConfig.tagline}`,
-    description: `${siteConfig.name} — ${siteConfig.tagline}`,
+    description: siteConfig.description,
     url: siteConfig.url,
     siteName: siteConfig.name,
     images: [
       {
-        url: "/og-image.png",
+        url: `${siteConfig.url}/og-image.png`,
         width: 1200,
         height: 630,
-        alt: `${siteConfig.name} Logo`,
+        alt: `${siteConfig.name} — ${siteConfig.tagline}`,
       },
     ],
     locale: "en_US",
@@ -60,8 +71,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: `${siteConfig.name} — ${siteConfig.tagline}`,
-    description: `${siteConfig.name} — ${siteConfig.tagline}`,
-    images: ["/og-image.png"],
+    description: siteConfig.description,
+    images: [`${siteConfig.url}/og-image.png`],
   },
 };
 
@@ -104,6 +115,10 @@ export default function RootLayout({
               })();
             `,
           }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
       </head>
       <body className="h-full bg-background text-foreground antialiased overflow-hidden selection:bg-[#9d5932] selection:text-white font-sans transition-colors duration-150">
