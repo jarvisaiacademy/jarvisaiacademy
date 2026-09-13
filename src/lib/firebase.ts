@@ -1,5 +1,11 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, Auth } from "firebase/auth";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  Auth,
+  browserLocalPersistence,
+  setPersistence,
+} from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
 
 export const firebaseConfig = {
@@ -25,6 +31,8 @@ if (typeof window !== "undefined" && isFirebaseConfigured) {
   try {
     app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
     auth = getAuth(app);
+    // Use browserLocalPersistence for instant synchronous token restoration
+    setPersistence(auth, browserLocalPersistence).catch(() => {});
     db = getFirestore(app);
     googleProvider = new GoogleAuthProvider();
     googleProvider.setCustomParameters({ prompt: "select_account" });

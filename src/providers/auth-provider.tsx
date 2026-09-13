@@ -78,6 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (isFirebaseConfigured && auth) {
+      // Listen for authenticated user updates without wiping local session on initial tick
       const unsubscribe = onAuthStateChanged(auth, (fbUser: FirebaseUser | null) => {
         if (fbUser) {
           const isAdmin = checkIsAdmin(fbUser.email);
@@ -93,13 +94,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(mappedUser);
           try {
             localStorage.setItem("jarvis_auth_user", JSON.stringify(mappedUser));
-          } catch {
-            // ignore
-          }
-        } else {
-          setUser(null);
-          try {
-            localStorage.removeItem("jarvis_auth_user");
           } catch {
             // ignore
           }
