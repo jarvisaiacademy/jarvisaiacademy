@@ -32,6 +32,10 @@ export default function Home() {
     setIsDashboardOpen(true);
   };
   const handleCloseDashboard = () => setIsDashboardOpen(false);
+  const handleLogout = () => {
+    setIsDashboardOpen(false);
+    logout();
+  };
 
   return (
     <ToastProvider>
@@ -43,7 +47,7 @@ export default function Home() {
           isMobile={isMobile}
           isLoggedIn={isLoggedIn}
           user={user}
-          onLogout={logout}
+          onLogout={handleLogout}
           onSelectSection={(topic) => {
             setIsSettingsOpen(false);
             setIsDashboardOpen(false);
@@ -62,7 +66,7 @@ export default function Home() {
 
         {/* Main Canvas Area, Settings Page, or Admin Dashboard */}
         <main className="flex-1 flex flex-col h-full min-h-0 min-w-0 bg-background relative overflow-hidden transition-colors duration-150">
-          {isDashboardOpen ? (
+          {isDashboardOpen && user?.isAdmin ? (
             <AdminDashboard onBackToChat={handleCloseDashboard} />
           ) : isSettingsOpen ? (
             <SettingsPage onBack={handleCloseSettings} />

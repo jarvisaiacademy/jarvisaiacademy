@@ -167,8 +167,8 @@ export function SidebarNav({
         </div>
       </button>
 
-      {/* Admin / Guest Dashboard Navigation */}
-      {(!user || user.isAdmin) && (
+      {/* Admin Dashboard Navigation (only for authenticated admins) */}
+      {user?.isAdmin && (
         <button
           type="button"
           onClick={onOpenDashboard}
