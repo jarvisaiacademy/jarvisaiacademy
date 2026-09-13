@@ -22,30 +22,12 @@ export function SidebarHeader({
   return (
     <div className="flex items-center justify-between px-3 py-3 text-foreground">
       <div className="flex flex-col min-w-0 pr-2 select-none">
-        {isDashboardOpen ? (
-          <>
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-sm tracking-tight text-neutral-900 dark:text-white truncate">
-                Admin Portal
-              </span>
-              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-blue-500/15 text-blue-600 dark:text-blue-400">
-                HQ
-              </span>
-            </div>
-            <span className="text-[10px] text-neutral-400 dark:text-neutral-500 truncate mt-0.5">
-              {siteConfig.name} Control
-            </span>
-          </>
-        ) : (
-          <>
-            <span className="font-semibold text-base tracking-tight text-neutral-900 dark:text-white select-none leading-tight truncate">
-              {siteConfig.name}
-            </span>
-            <span className="text-[11px] text-neutral-500 dark:text-neutral-400 select-none tracking-normal font-normal truncate mt-0.5">
-              {siteConfig.tagline}
-            </span>
-          </>
-        )}
+        <span className="font-semibold text-base tracking-tight text-neutral-900 dark:text-white select-none leading-tight truncate">
+          {siteConfig.name}
+        </span>
+        <span className="text-[11px] text-neutral-500 dark:text-neutral-400 select-none tracking-normal font-normal truncate mt-0.5">
+          {siteConfig.tagline}
+        </span>
       </div>
 
       <button

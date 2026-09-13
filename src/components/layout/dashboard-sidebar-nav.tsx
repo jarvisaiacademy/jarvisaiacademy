@@ -79,7 +79,7 @@ export function DashboardSidebarNav({
                   : "text-neutral-500"
               }`}
             />
-            <span>Courses (CRUD)</span>
+            <span>Courses</span>
           </div>
           <span
             className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
