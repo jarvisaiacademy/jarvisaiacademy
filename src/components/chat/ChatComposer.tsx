@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { ArrowUp, Square, Mic, MicOff } from "lucide-react";
+import { ArrowUp, Square } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 export interface AttachmentItem {
@@ -39,24 +39,10 @@ export function ChatComposer({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // States
-  const [isDictating, setIsDictating] = useState(false);
   const [internalGenerating, setInternalGenerating] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
   const isGenerating = externalGenerating ?? internalGenerating;
-  const recognitionRef = useRef<{
-    start: () => void;
-    stop: () => void;
-    continuous: boolean;
-    interimResults: boolean;
-    lang: string;
-    onresult: ((event: {
-      resultIndex: number;
-      results: Array<Array<{ transcript: string }>>;
-    }) => void) | null;
-    onerror: (() => void) | null;
-    onend: (() => void) | null;
-  } | null>(null);
 
   // Auto-grow textarea
   const adjustHeight = useCallback(() => {
@@ -82,66 +68,6 @@ export function ChatComposer({
   useEffect(() => {
     adjustHeight();
   }, [text, adjustHeight]);
-
-  // Speech Recognition (Dictation)
-  const toggleDictation = () => {
-    if (isDictating) {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-      setIsDictating(false);
-      return;
-    }
-
-    const win = window as unknown as {
-      SpeechRecognition?: new () => NonNullable<typeof recognitionRef.current>;
-      webkitSpeechRecognition?: new () => NonNullable<typeof recognitionRef.current>;
-    };
-    const SpeechRecognition = win.SpeechRecognition || win.webkitSpeechRecognition;
-
-    if (SpeechRecognition) {
-      try {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = "en-US";
-
-        recognition.onresult = (event) => {
-          let transcript = "";
-          for (let i = event.resultIndex; i < event.results.length; ++i) {
-            transcript += event.results[i][0].transcript;
-          }
-          if (transcript) {
-            setText((prev) => (prev ? `${prev} ${transcript}` : transcript));
-          }
-        };
-
-        recognition.onerror = () => {
-          setIsDictating(false);
-        };
-
-        recognition.onend = () => {
-          setIsDictating(false);
-        };
-
-        recognition.start();
-        recognitionRef.current = recognition;
-        setIsDictating(true);
-      } catch {
-        simulateDictation();
-      }
-    } else {
-      simulateDictation();
-    }
-  };
-
-  const simulateDictation = () => {
-    setIsDictating(true);
-    setTimeout(() => {
-      setText((prev) => (prev ? `${prev} Tell me more about the academy` : "Tell me more about the academy"));
-      setIsDictating(false);
-    }, 2500);
-  };
 
   // Submission handler
   const handleSend = () => {
@@ -220,27 +146,8 @@ export function ChatComposer({
           className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground text-base font-normal border-none outline-none focus:outline-none focus:ring-0 resize-none min-w-0 py-1 leading-6 max-h-[220px] overflow-hidden no-scrollbar box-border"
         />
 
-        {/* Right Controls: Microphone & Send/Stop Button */}
+        {/* Right Controls: Send/Stop Button */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Microphone Dictation Button */}
-          <button
-            type="button"
-            onClick={toggleDictation}
-            aria-label="Start dictation"
-            title="Start dictation"
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shrink-0 cursor-pointer ${
-              isDictating
-                ? "bg-rose-500/20 text-rose-500 animate-pulse"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-          >
-            {isDictating ? (
-              <MicOff className="w-4 h-4 text-rose-500" />
-            ) : (
-              <Mic className="w-4 h-4" />
-            )}
-          </button>
-
           {/* Dynamic Send / Stop Button */}
           <AnimatePresence mode="wait" initial={false}>
             {isGenerating ? (
