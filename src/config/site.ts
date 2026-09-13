@@ -1,8 +1,8 @@
 export const siteConfig = {
   name: "Jarvis AI Academy",
   shortName: "Jarvis AI",
-  tagline: "For the no-code generation.",
-  description: "Jarvis AI Academy — For the no-code generation.",
+  tagline: "For the vibe code generation.",
+  description: "Jarvis AI Academy — For the vibe code generation.",
   url: "https://jarvisaiacademy.com",
   contact: {
     email: "admissions@jarvisaiacademy.com",
