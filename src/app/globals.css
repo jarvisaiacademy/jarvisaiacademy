@@ -149,3 +149,8 @@
     display: none;
   }
 }
+
+/* Anti-flash auth: immediately hide guest login CTA when session is authenticated */
+html.is-auth .guest-cta-block {
+  display: none !important;
+}

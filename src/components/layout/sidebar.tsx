@@ -84,7 +84,9 @@ export function Sidebar({
                 onProfileClick={onOpenSettings}
               />
             ) : (
-              <SidebarLoginCTA onLoginClick={onOpenLogin} />
+              <div className="guest-cta-block">
+                <SidebarLoginCTA onLoginClick={onOpenLogin} />
+              </div>
             )}
             <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-3 pt-1 pb-3 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
               <button
@@ -161,7 +163,9 @@ export function Sidebar({
             onProfileClick={onOpenSettings}
           />
         ) : (
-          <SidebarLoginCTA onLoginClick={onOpenLogin} />
+          <div className="guest-cta-block">
+            <SidebarLoginCTA onLoginClick={onOpenLogin} />
+          </div>
         )}
         <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-3 pt-1 pb-3.5 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
           <button

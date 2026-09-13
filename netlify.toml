@@ -3,3 +3,10 @@
 [build]
   command = "npm run build"
   publish = ".next"
+
+# Proxy Firebase Auth Handler so OAuth popup can use your clean domain
+[[redirects]]
+  from = "/__/auth/*"
+  to = "https://jarvisaiacademy-580a7.firebaseapp.com/__/auth/:splat"
+  status = 200
+  force = true

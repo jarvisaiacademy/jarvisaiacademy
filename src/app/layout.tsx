@@ -92,6 +92,15 @@ export default function RootLayout({
                     document.documentElement.classList.remove('dark');
                   }
                 } catch (e) {}
+
+                try {
+                  var user = localStorage.getItem('jarvis_auth_user');
+                  if (user && user !== 'null') {
+                    document.documentElement.classList.add('is-auth');
+                  } else {
+                    document.documentElement.classList.remove('is-auth');
+                  }
+                } catch (e) {}
               })();
             `,
           }}

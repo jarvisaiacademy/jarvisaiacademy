@@ -30,7 +30,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const ADMIN_EMAILS = (
-  process.env.NEXT_PUBLIC_ADMIN_EMAILS || "sugat@jarvisaiacademy.com,jarvisaiacademy@gmail.com"
+  process.env.NEXT_PUBLIC_ADMIN_EMAILS ||
+  "sugat@jarvisaiacademy.com,jarvisaiacademy@gmail.com,sugatraj.2106@gmail.com"
 )
   .split(",")
   .map((e) => e.trim().toLowerCase());
@@ -40,11 +41,33 @@ function checkIsAdmin(email?: string | null): boolean {
   return ADMIN_EMAILS.includes(email.toLowerCase());
 }
 
+function saveUserSession(mappedUser: User | null) {
+  try {
+    if (mappedUser) {
+      localStorage.setItem("jarvis_auth_user", JSON.stringify(mappedUser));
+      document.cookie = `jarvis_auth_user=${encodeURIComponent(
+        JSON.stringify(mappedUser)
+      )}; path=/; max-age=31536000; SameSite=Lax`;
+      if (typeof document !== "undefined") {
+        document.documentElement.classList.add("is-auth");
+      }
+    } else {
+      localStorage.removeItem("jarvis_auth_user");
+      document.cookie = "jarvis_auth_user=; path=/; max-age=0; SameSite=Lax";
+      if (typeof document !== "undefined") {
+        document.documentElement.classList.remove("is-auth");
+      }
+    }
+  } catch {
+    // ignore
+  }
+}
+
 function getInitialUser(): User | null {
   if (typeof window === "undefined") return null;
   try {
     const stored = localStorage.getItem("jarvis_auth_user");
-    if (stored) {
+    if (stored && stored !== "null") {
       const parsed = JSON.parse(stored);
       parsed.isAdmin = checkIsAdmin(parsed.email);
       parsed.role = parsed.isAdmin ? "admin" : "student";
@@ -92,11 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             plan: isAdmin ? "Admin / Founder" : "Learner Pro",
           };
           setUser(mappedUser);
-          try {
-            localStorage.setItem("jarvis_auth_user", JSON.stringify(mappedUser));
-          } catch {
-            // ignore
-          }
+          saveUserSession(mappedUser);
         }
       });
       return () => unsubscribe();
@@ -119,11 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           plan: isAdmin ? "Admin / Founder" : "Learner Pro",
         };
         setUser(mappedUser);
-        try {
-          localStorage.setItem("jarvis_auth_user", JSON.stringify(mappedUser));
-        } catch {
-          // ignore
-        }
+        saveUserSession(mappedUser);
       } catch (err: unknown) {
         const error = err as { code?: string; message?: string };
         if (error.code !== "auth/popup-closed-by-user") {
@@ -133,11 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       // Instant fallback when Firebase keys are being configured
       setUser(DEMO_ADMIN_USER);
-      try {
-        localStorage.setItem("jarvis_auth_user", JSON.stringify(DEMO_ADMIN_USER));
-      } catch {
-        // ignore
-      }
+      saveUserSession(DEMO_ADMIN_USER);
     }
   }, []);
 
@@ -150,11 +161,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
     setUser(null);
-    try {
-      localStorage.removeItem("jarvis_auth_user");
-    } catch {
-      // ignore
-    }
+    saveUserSession(null);
   }, []);
 
   const isAdmin = !!user?.isAdmin;
