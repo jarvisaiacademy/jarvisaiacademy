@@ -23,6 +23,7 @@ export interface ChatMessage {
   feedback?: "like" | "dislike" | null;
   timestamp?: string;
   enrollment?: EnrollmentData;
+  suggestions?: string[];
 }
 
 interface ChatMessagesProps {
@@ -206,6 +207,27 @@ export function ChatMessages({
                       onUpdate={(data) => onUpdateEnrollment?.(msg.id, data)}
                     />
                   )}
+
+                {/* Follow-up Question Suggestions (matching ChatGPT / Claude UI with ↳ curved arrow) */}
+                {!msg.isStreaming && msg.suggestions && msg.suggestions.length > 0 && (
+                  <div className="flex flex-col items-start gap-1 mt-2.5 mb-1 w-full">
+                    {msg.suggestions.map((suggestion, sIdx) => (
+                      <button
+                        key={sIdx}
+                        type="button"
+                        onClick={() => onActionPrompt?.(suggestion)}
+                        className="group/sug inline-flex items-center gap-2 text-left py-1 px-1.5 -ml-1 rounded-md text-neutral-300 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer text-xs sm:text-[13px]"
+                      >
+                        <span className="text-neutral-400 group-hover/sug:text-neutral-200 transition-colors text-sm font-semibold select-none leading-none">
+                          ↳
+                        </span>
+                        <span className="underline underline-offset-3 decoration-neutral-500/70 group-hover/sug:decoration-white transition-all font-normal">
+                          {suggestion}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
 
                 {/* Assistant Action Bar */}
                 {!msg.isStreaming && msg.content && (

@@ -22,6 +22,12 @@ We specialize in high-impact software engineering programs engineered to take yo
 
 What area would you like to explore first — our **Course Curriculum**, the **Super10 Batch**, **Admissions & Fees**, or **Refer & Earn**?`;
 
+const WELCOME_SUGGESTIONS = [
+  "What is the fee structure for the 60-day courses?",
+  "Tell me about the Super10 Elite Cohort with 100% placement assurance",
+  "How does the ₹5,000 Refer & Earn program work?",
+];
+
 const initialConversation: ChatMessage[] = [
   {
     id: "msg-init-user",
@@ -32,11 +38,13 @@ const initialConversation: ChatMessage[] = [
     id: "msg-init-ai",
     role: "assistant",
     content: WELCOME_AI_RESPONSE,
+    suggestions: WELCOME_SUGGESTIONS,
   },
 ];
 
 interface TopicResponseData {
   text: string;
+  suggestions?: string[];
 }
 
 const academyKnowledge: Record<string, TopicResponseData> = {
@@ -71,6 +79,11 @@ cd my-academy-project && pnpm dev
 \`\`\`
 
 Which technology stack or career track interests you the most?`,
+    suggestions: [
+      "What is the fee structure & payment options?",
+      "Tell me about the Super10 Elite Batch with 100% placement assurance",
+      "How does the ₹5,000 Refer & Earn program work?",
+    ],
   },
   super10: {
     text: `⚡ **Super10 Elite Batch** is our signature, high-intensity career acceleration cohort.
@@ -86,6 +99,11 @@ Which technology stack or career track interests you the most?`,
 > "Super10 is engineered for ambitious learners ready to build real production-grade systems and secure senior developer packages."
 
 Would you like to review the eligibility criteria or reserve a screening interview?`,
+    suggestions: [
+      "What is the fee structure for Super10?",
+      "How does the 100% placement assurance work?",
+      "I want to enroll in the upcoming cohort and proceed with payment",
+    ],
   },
   referral: {
     text: `# 🎁 Refer & Earn ₹5,000 — Jarvis AI Academy Referral Program
@@ -104,6 +122,11 @@ Earn **₹5,000** direct bonus for every learner you refer to Jarvis AI Academy!
 * **No Caps**: Refer 5 peers and earn **₹25,000**!
 
 Ready to refer someone? Share their details with our admissions desk or have them mention your name during registration!`,
+    suggestions: [
+      "What is the course duration and fee structure?",
+      "How do I enroll in the upcoming cohort?",
+      "Tell me about available courses at Jarvis AI Academy",
+    ],
   },
   testimonials: {
     text: `🏆 **Student Success Stories & Placements**:
@@ -252,6 +275,11 @@ At **Jarvis AI Academy**, we maintain transparent, straightforward pricing with 
 * Submit a written request to \`admissions@jarvisaiacademy.com\` within the 7-day window. Refunds are credited in **5–7 business days**.
 
 For billing assistance: \`finance@jarvisaiacademy.com\` | 📞 **+91 91729 11988**`,
+    suggestions: [
+      "I want to enroll in the upcoming cohort and proceed with payment",
+      "Are zero-cost EMI installment plans available?",
+      "How do I earn ₹5,000 by referring a friend?",
+    ],
   },
   enroll: {
     text: `# Admissions & Enrollment Portal — ${siteConfig.name}
@@ -272,6 +300,11 @@ Welcome to the direct admissions and enrollment portal. Confirm your seat for th
 * Earn a **₹5,000** cash reward once your referred candidate completes the full 60-day course!
 
 Please select your program below and proceed with the secure checkout. Your verified Tax Invoice & Receipt will be available for download immediately upon confirmation.`,
+    suggestions: [
+      "What are the accepted payment methods and EMI options?",
+      "How does the 7-day 100% money-back guarantee work?",
+      "Tell me about the ₹5,000 referral reward upon course completion",
+    ],
   },
 };
 
@@ -311,6 +344,7 @@ export function ChatCanvas({
   const streamAIResponse = useCallback(
     (
       fullText: string,
+      suggestions?: string[],
       onComplete?: () => void
     ) => {
       // Abort any ongoing stream
@@ -377,6 +411,7 @@ export function ChatCanvas({
                     ...msg,
                     content: fullText,
                     isStreaming: false,
+                    suggestions: suggestions,
                   }
                 : msg
             )
@@ -407,7 +442,7 @@ export function ChatCanvas({
         setIsGenerating(false);
         setMessages([starterUser]);
         setTimeout(() => {
-          streamAIResponse(WELCOME_AI_RESPONSE);
+          streamAIResponse(WELCOME_AI_RESPONSE, WELCOME_SUGGESTIONS);
         }, 120);
       }, 50);
 
@@ -430,6 +465,16 @@ export function ChatCanvas({
     ) {
       return academyKnowledge.referral;
     } else if (
+      lower.includes("fee") ||
+      lower.includes("fees") ||
+      lower.includes("cost") ||
+      lower.includes("price") ||
+      lower.includes("pricing") ||
+      lower.includes("installment") ||
+      lower.includes("emi")
+    ) {
+      return academyKnowledge.payment_terms;
+    } else if (
       lower.includes("enroll") ||
       lower.includes("admission") ||
       lower.includes("checkout") ||
@@ -446,7 +491,6 @@ export function ChatCanvas({
     } else if (
       lower.includes("course") ||
       lower.includes("learn") ||
-      lower.includes("fees") ||
       lower.includes("duration") ||
       lower.includes("60") ||
       lower.includes("30k") ||
@@ -475,6 +519,11 @@ export function ChatCanvas({
 
     return {
       text: `Thank you for your question about **"${prompt}"**!\n\nAt **Jarvis AI Academy**, our programs feature:\n* **Duration**: Fast-track **60 Days (2 Months)** build-first training.\n* **Tuition**: **₹30,000** (₹30K) flat fees across all courses.\n* **🎁 Refer & Earn**: Refer a student and receive **₹5,000** cash reward once they complete the full 60-day course!\n\nWould you like to explore our course syllabus, the **Super10** batch, or start enrollment?`,
+      suggestions: [
+        "What is the fee structure for the 60-day courses?",
+        "Tell me about the Super10 Elite Cohort with 100% placement assurance",
+        "How does the ₹5,000 Refer & Earn program work?",
+      ],
     };
   }, []);
 
@@ -492,7 +541,7 @@ export function ChatCanvas({
       // Brief thinking delay then stream tokens
       setTimeout(() => {
         const responseData = determineReply(prompt);
-        streamAIResponse(responseData.text);
+        streamAIResponse(responseData.text, responseData.suggestions);
       }, 300);
     },
     [determineReply, streamAIResponse]
@@ -525,7 +574,7 @@ export function ChatCanvas({
       const data = academyKnowledge[activeTopic] || determineReply(activeTopic);
 
       setTimeout(() => {
-        streamAIResponse(data.text);
+        streamAIResponse(data.text, data.suggestions);
       }, 300);
 
       onTopicHandled?.();
@@ -563,7 +612,7 @@ export function ChatCanvas({
         const data = determineReply(userPrompt);
         // Slightly rephrase for regenerated variation
         const alternativeText = `*(Regenerated response)*\n\n${data.text}`;
-        streamAIResponse(alternativeText);
+        streamAIResponse(alternativeText, data.suggestions);
       }, 250);
     },
     [messages, determineReply, streamAIResponse]
@@ -588,7 +637,7 @@ export function ChatCanvas({
       // Trigger fresh streaming response
       setTimeout(() => {
         const data = determineReply(newContent);
-        streamAIResponse(data.text);
+        streamAIResponse(data.text, data.suggestions);
       }, 300);
     },
     [messages, determineReply, streamAIResponse]
