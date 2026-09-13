@@ -118,7 +118,7 @@ export function ChatComposer({
 
   return (
     <div
-      className={`relative w-full max-w-3xl mx-auto rounded-[28px] bg-neutral-100 dark:bg-[#212121] border transition-all duration-200 ${
+      className={`relative z-30 w-full max-w-3xl mx-auto rounded-[28px] bg-white dark:bg-[#212121] border transition-all duration-200 ${
         isFocused
           ? "border-neutral-400 dark:border-neutral-500 shadow-xl shadow-neutral-300/30 dark:shadow-black/50"
           : "border-neutral-300 dark:border-white/10 hover:border-neutral-400 dark:hover:border-white/20 shadow-md shadow-neutral-200/40 dark:shadow-black/40"

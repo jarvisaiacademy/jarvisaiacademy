@@ -294,17 +294,10 @@ Would you like to connect with an alumnus or see our hiring partner companies?`,
 
 Every graduate from **Jarvis AI Academy** earns an industry-recognized, cryptographically verifiable certificate:
 
-* **Tamper-Proof**: Each credential includes a unique Certificate ID and QR code.
+* **Tamper-Proof Credential**: Each certificate carries a unique Certificate ID and QR code backed by digital signature verification.
 * **LinkedIn Compatible**: One-click addition to your LinkedIn Licenses & Certifications profile.
-* **Employer Instant Verification**: Recruiters can instantly validate student competencies, completed capstones, and project source code.
-
-\`\`\`json
-{
-  "issuer": "Jarvis AI Academy",
-  "verificationStatus": "VERIFIED_AUTHENTIC",
-  "credentialType": "Full Stack AI Specialist (60-Day Program)"
-}
-\`\`\`
+* **Employer Instant Verification**: Recruiters and engineering leads can instantly validate completed capstones, course curricula, and evaluated competencies.
+* **ID Format**: e.g., \`JAA-2026-XXXX\` printed on the bottom of your official credential.
 
 Do you have a certificate ID you would like to verify right now?`,
   },
@@ -927,7 +920,7 @@ export function ChatCanvas({
       {/* Scrollable Conversation Stream */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto no-scrollbar pb-44 sm:pb-36 pt-2 sm:pt-4"
+        className="flex-1 overflow-y-auto no-scrollbar pb-44 sm:pb-36 pt-2 sm:pt-4 relative z-0"
       >
         <ChatMessages
           messages={messages}
@@ -940,8 +933,8 @@ export function ChatCanvas({
         />
       </div>
 
-      {/* Floating Transparent Sticky Composer */}
-      <div className="absolute bottom-0 left-0 right-0 pointer-events-none bg-gradient-to-t from-background via-background/85 to-transparent pt-6 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-3 px-3 sm:px-4 flex flex-col items-center transition-colors">
+      {/* Floating Sticky Composer (Always on top with z-30) */}
+      <div className="absolute bottom-0 left-0 right-0 z-30 pointer-events-none bg-gradient-to-t from-background via-background/95 to-transparent pt-6 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-3 px-3 sm:px-4 flex flex-col items-center transition-colors">
         <div className="w-full max-w-3xl pointer-events-auto">
           <ChatComposer
             onSend={({ text, activeTool, attachments }) => {

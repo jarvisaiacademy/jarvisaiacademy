@@ -13,7 +13,7 @@ const ICON_MAP: Record<string, string> = {
   java: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/java/java-original.svg",
   csharp: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/csharp/csharp-original.svg",
   go: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/go/go-original.svg",
-  rust: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/rust/rust-plain.svg",
+  rust: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/rust/rust-original.svg",
   nodejs: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nodejs/nodejs-original.svg",
   typescript: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/typescript/typescript-original.svg",
   javascript: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/javascript/javascript-original.svg",
@@ -35,11 +35,10 @@ const ICON_MAP: Record<string, string> = {
   bootstrap: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/bootstrap/bootstrap-original.svg",
   sass: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/sass/sass-original.svg",
 
-  // Backend Frameworks
-  django: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/django/django-plain.svg",
+  django: "/django-plain.svg",
   flask: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/flask/flask-original.svg",
   fastapi: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/fastapi/fastapi-original.svg",
-  laravel: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/laravel/laravel-plain.svg",
+  laravel: "/laravel-plain.svg",
   express: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/express/express-original.svg",
   spring: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/spring/spring-original.svg",
 
@@ -96,6 +95,8 @@ export const DevIcon: React.FC<DevIconProps> = ({
       ? ICON_MAP.fastapi
       : normalizedKey.includes("django")
       ? ICON_MAP.django
+      : normalizedKey.includes("laravel")
+      ? ICON_MAP.laravel
       : normalizedKey.includes("tailwind")
       ? ICON_MAP.tailwindcss
       : normalizedKey.includes("powerbi")
@@ -139,8 +140,11 @@ export const DevIcon: React.FC<DevIconProps> = ({
       alt={`${name} logo`}
       width={size}
       height={size}
-      loading="lazy"
-      className={`inline-block shrink-0 object-contain transition-transform duration-200 ${className}`.trim()}
+      className={`inline-block shrink-0 object-contain transition-transform duration-200 ${
+        normalizedKey === "django" || normalizedKey === "laravel"
+          ? "invert dark:invert-0"
+          : ""
+      } ${className}`.trim()}
       title={name}
       onError={(e) => {
         // graceful fallback if CDN fails

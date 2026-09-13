@@ -186,8 +186,8 @@ export function EnrollmentCard({
     });
   };
 
-  // Generate and download official Tax Invoice & Receipt
-  const handleDownloadReceipt = () => {
+  // Generate and download or print official Tax Invoice & Receipt
+  const handleDownloadReceipt = (mode: "download" | "print" = "download") => {
     const invoiceNumber = `INV-${transactionId.replace("TXN-", "")}`;
     const invoiceDate = paidAt || new Date().toLocaleDateString("en-IN");
 
@@ -216,7 +216,7 @@ export function EnrollmentCard({
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      border-bottom: 2px solid #2563eb;
+      border-bottom: 2px solid #0f172a;
       padding-bottom: 20px;
       margin-bottom: 24px;
     }
@@ -237,7 +237,7 @@ export function EnrollmentCard({
     .invoice-badge h2 {
       margin: 0;
       font-size: 18px;
-      color: #2563eb;
+      color: #0f172a;
     }
     .invoice-badge p {
       margin: 4px 0 0;
@@ -411,36 +411,38 @@ export function EnrollmentCard({
 </body>
 </html>`;
 
-    // 1. Create downloadable HTML file
-    const blob = new Blob([receiptHtml], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `Receipt_${invoiceNumber}_${studentName.replace(/\s+/g, "_")}.html`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    // 2. Open printable view in new window
-    const printWin = window.open("", "_blank");
-    if (printWin) {
-      printWin.document.write(receiptHtml);
-      printWin.document.close();
-      setTimeout(() => {
-        printWin.print();
-      }, 350);
+    if (mode === "download") {
+      // 1. Create downloadable HTML file
+      const blob = new Blob([receiptHtml], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Receipt_${invoiceNumber}_${studentName.replace(/\s+/g, "_")}.html`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast("Official tax invoice & receipt downloaded!", "success");
+    } else {
+      // 2. Open printable view in new window
+      const printWin = window.open("", "_blank");
+      if (printWin) {
+        printWin.document.write(receiptHtml);
+        printWin.document.close();
+        setTimeout(() => {
+          printWin.print();
+        }, 350);
+      }
+      showToast("Official tax invoice print preview opened!", "info");
     }
-
-    showToast("Official invoice receipt downloaded & ready to print!", "success");
   };
 
   return (
-    <div className="w-full my-4 p-5 sm:p-6 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xl select-none transition-colors">
+    <div className="w-full my-4 p-5 sm:p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xl select-none transition-colors">
       {/* Header with status badge */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 dark:border-white/10 pb-4 mb-4">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">
+          <div className="p-2 rounded-full bg-neutral-100 dark:bg-white/10 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-white/10">
             <CreditCard className="w-5 h-5" />
           </div>
           <div>
@@ -455,7 +457,7 @@ export function EnrollmentCard({
 
         {/* Status Indicator Pill */}
         {status === "initiated" && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-neutral-100 dark:bg-white/10 text-neutral-800 dark:text-neutral-200 border border-neutral-300/60 dark:border-white/10">
             <Clock className="w-3.5 h-3.5" />
             Payment Pending
           </span>
@@ -467,7 +469,7 @@ export function EnrollmentCard({
           </span>
         )}
         {status === "paid" && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-neutral-100 dark:bg-white/10 text-neutral-800 dark:text-neutral-200 border border-neutral-300/60 dark:border-white/10">
             <CheckCircle2 className="w-3.5 h-3.5" />
             Enrolled &amp; Confirmed
           </span>
@@ -486,7 +488,7 @@ export function EnrollmentCard({
               onClick={() => setSelectedCourse("fullstack")}
               className={`flex flex-col text-left p-3.5 rounded-xl border transition-all cursor-pointer ${
                 selectedCourse === "fullstack"
-                  ? "bg-blue-50/80 dark:bg-blue-600/10 border-blue-500 text-neutral-900 dark:text-white shadow-xs"
+                  ? "bg-neutral-100 dark:bg-white/10 border-neutral-900 dark:border-white text-neutral-900 dark:text-white shadow-xs"
                   : "bg-neutral-50 dark:bg-neutral-800/40 border-neutral-200 dark:border-neutral-700/60 text-neutral-700 dark:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600"
               }`}
             >
@@ -504,13 +506,13 @@ export function EnrollmentCard({
               onClick={() => setSelectedCourse("super10")}
               className={`flex flex-col text-left p-3.5 rounded-xl border transition-all cursor-pointer ${
                 selectedCourse === "super10"
-                  ? "bg-amber-50/80 dark:bg-amber-600/10 border-amber-500 text-neutral-900 dark:text-white shadow-xs"
+                  ? "bg-neutral-100 dark:bg-white/10 border-neutral-900 dark:border-white text-neutral-900 dark:text-white shadow-xs"
                   : "bg-neutral-50 dark:bg-neutral-800/40 border-neutral-200 dark:border-neutral-700/60 text-neutral-700 dark:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600"
               }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold">Super10 Elite Cohort</span>
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-sm bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300">
+                <span className="text-[9px] font-medium px-2 py-0.5 rounded-full bg-neutral-200/80 dark:bg-white/10 text-neutral-700 dark:text-neutral-300">
                   10 SEATS
                 </span>
               </div>
@@ -563,7 +565,7 @@ export function EnrollmentCard({
         </div>
         <div className="flex justify-between font-semibold text-neutral-900 dark:text-white text-sm pt-2 border-t border-neutral-200 dark:border-white/10 mt-1">
           <span>Total Payable:</span>
-          <span className="text-blue-600 dark:text-blue-400 font-bold">₹{totalAmount.toLocaleString("en-IN")}</span>
+          <span className="text-neutral-900 dark:text-white font-bold">₹{totalAmount.toLocaleString("en-IN")}</span>
         </div>
       </div>
 
@@ -574,7 +576,7 @@ export function EnrollmentCard({
             type="button"
             disabled={isProcessing}
             onClick={handleSimulatePayment}
-            className="flex-1 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold transition-all shadow-md active:scale-98 cursor-pointer disabled:opacity-50"
+            className="flex-1 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:hover:bg-neutral-200 dark:text-neutral-900 text-xs sm:text-sm font-medium transition-all shadow-xs active:scale-98 cursor-pointer disabled:opacity-50"
           >
             {isProcessing ? (
               <>
@@ -593,7 +595,7 @@ export function EnrollmentCard({
             type="button"
             disabled={isProcessing}
             onClick={handleSimulateFailure}
-            className="w-full sm:w-auto py-2.5 px-3.5 rounded-xl border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-neutral-800/60 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs font-medium transition-colors cursor-pointer"
+            className="w-full sm:w-auto py-2.5 px-4 rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-neutral-800/60 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs font-medium transition-colors cursor-pointer"
           >
             Cancel / Failed
           </button>
@@ -612,7 +614,7 @@ export function EnrollmentCard({
           <button
             type="button"
             onClick={handleRetry}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold transition-all shadow-md active:scale-98 cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:hover:bg-neutral-200 dark:text-neutral-900 text-xs sm:text-sm font-medium transition-all shadow-xs active:scale-98 cursor-pointer"
           >
             <RotateCcw className="w-4 h-4" />
             <span>Retry Enrollment &amp; Payment</span>
@@ -624,8 +626,8 @@ export function EnrollmentCard({
         <div className="flex flex-col sm:flex-row items-center gap-3">
           <button
             type="button"
-            onClick={handleDownloadReceipt}
-            className="flex-1 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold transition-all shadow-md active:scale-98 cursor-pointer"
+            onClick={() => handleDownloadReceipt("download")}
+            className="flex-1 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:hover:bg-neutral-200 dark:text-neutral-900 text-xs sm:text-sm font-medium transition-all shadow-xs active:scale-98 cursor-pointer"
           >
             <Download className="w-4 h-4" />
             <span>Download Official Tax Invoice &amp; Receipt (PDF)</span>
@@ -633,8 +635,8 @@ export function EnrollmentCard({
 
           <button
             type="button"
-            onClick={() => handleDownloadReceipt()}
-            className="w-full sm:w-auto flex items-center justify-center gap-1.5 py-2.5 px-3.5 rounded-xl border border-neutral-300 dark:border-white/15 bg-neutral-100 dark:bg-neutral-800/80 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-800 dark:text-white text-xs font-medium transition-colors cursor-pointer"
+            onClick={() => handleDownloadReceipt("print")}
+            className="w-full sm:w-auto flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-full border border-neutral-300 dark:border-white/15 bg-neutral-100 dark:bg-neutral-800/80 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-800 dark:text-white text-xs font-medium transition-colors cursor-pointer"
           >
             <FileText className="w-3.5 h-3.5" />
             <span>Print View</span>
