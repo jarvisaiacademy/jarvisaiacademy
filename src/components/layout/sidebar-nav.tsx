@@ -153,7 +153,7 @@ export function SidebarNav({
       onMouseLeave={handleMouseLeave}
       className="flex flex-col gap-1 px-2 py-1 relative"
     >
-      {/* Vibe code button */}
+      {/* New chat button */}
       <button
         type="button"
         onClick={onNewChat}
@@ -163,7 +163,7 @@ export function SidebarNav({
       >
         <div className="flex items-center gap-2.5">
           <SquarePen className="w-4 h-4 text-neutral-600 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white" />
-          <span>Vibe code</span>
+          <span>New chat</span>
         </div>
       </button>
 
