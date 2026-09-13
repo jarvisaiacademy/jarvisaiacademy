@@ -77,6 +77,8 @@ export default function Home() {
               activeTab={dashboardTab}
               onChangeTab={setDashboardTab}
               onBackToChat={handleCloseDashboard}
+              sidebarOpen={isOpen}
+              onToggleSidebar={toggle}
             />
           ) : isSettingsOpen ? (
             <SettingsPage onBack={handleCloseSettings} />
