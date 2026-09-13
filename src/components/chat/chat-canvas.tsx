@@ -314,11 +314,45 @@ Do you have a certificate ID you would like to verify right now?`,
 Ready to accelerate your tech career? Our admissions counselors and mentors are available for guidance:
 
 * **Phone / WhatsApp**: +91 91729 11988
-* **Office & Lab**: Pune, Maharashtra
+* **Office & Lab**: Pune, Maharashtra, India
 * **Email**: [admissions@jarvisaiacademy.com](mailto:admissions@jarvisaiacademy.com)
+* **Official Website**: [jarvisaiacademy.com](https://jarvisaiacademy.com)
 * **Walk-In Hours**: Monday – Saturday, 10:00 AM – 7:00 PM IST
 
+---
+
+### 🌐 Official Social Channels
+* 💼 **LinkedIn**: [linkedin.com/company/jarvisaiacademy](https://www.linkedin.com/company/jarvisaiacademy/)
+* 📸 **Instagram**: [@jarvisaiacademy](https://www.instagram.com/jarvisaiacademy/)
+* 🎥 **YouTube**: [@JarvisAIAcademy](https://www.youtube.com/@JarvisAIAcademy)
+* 📘 **Facebook**: [facebook.com/jarvisaiacademy](https://www.facebook.com/jarvisaiacademy/)
+* 𝕏 **X (Twitter)**: [@jarvisaiacademy](https://x.com/jarvisaiacademy)
+
 Drop your contact number or question here and an engineering advisor will get in touch with you directly!`,
+    suggestions: [
+      "What is the fee structure for the 60-day courses?",
+      "Tell me about the Super10 Elite Batch with 100% placement assurance",
+      "How does the ₹5,000 Refer & Earn program work?",
+    ],
+  },
+  socials: {
+    text: `### 🌐 Official Social Channels — Jarvis AI Academy
+
+Connect with our community across all official channels for code walkthroughs, tech deep-dives, student success stories, and cohort announcements:
+
+* 💼 **LinkedIn**: [linkedin.com/company/jarvisaiacademy](https://www.linkedin.com/company/jarvisaiacademy/) — *Alumni updates, hiring partner connections & official credentials*
+* 📸 **Instagram**: [@jarvisaiacademy](https://www.instagram.com/jarvisaiacademy/) — *Campus life, project showcases & bite-sized software engineering tips*
+* 🎥 **YouTube**: [@JarvisAIAcademy](https://www.youtube.com/@JarvisAIAcademy) — *In-depth code walkthroughs, full-stack architectural builds & tutorials*
+* 📘 **Facebook**: [facebook.com/jarvisaiacademy](https://www.facebook.com/jarvisaiacademy/) — *Community announcements, admissions webinars & news*
+* 𝕏 **X (Twitter)**: [@jarvisaiacademy](https://x.com/jarvisaiacademy) — *AI news, tech discussions & founder updates*
+
+* 🌐 **Official Website**: [jarvisaiacademy.com](https://jarvisaiacademy.com)  
+* 📞 **Admissions Desk**: +91 91729 11988 | [admissions@jarvisaiacademy.com](mailto:admissions@jarvisaiacademy.com)`,
+    suggestions: [
+      "Tell me about the Super10 Elite Batch with 100% placement assurance",
+      "What is the fee structure for the 60-day courses?",
+      "How does the ₹5,000 Refer & Earn program work?",
+    ],
   },
   deep_research: {
     text: `🔬 **Jarvis Autonomous Deep Research**:
@@ -687,16 +721,36 @@ export function ChatCanvas({
     } else if (lower.includes("certificate") || lower.includes("verify")) {
       return academyKnowledge.certificate;
     } else if (
+      lower.includes("social") ||
+      lower.includes("socials") ||
+      lower.includes("instagram") ||
+      lower.includes("insta") ||
+      lower.includes("linkedin") ||
+      lower.includes("youtube") ||
+      lower.includes("yt") ||
+      lower.includes("twitter") ||
+      lower.includes("x.com") ||
+      lower.includes("facebook") ||
+      lower.includes("fb") ||
+      lower.includes("follow") ||
+      lower.includes("channel") ||
+      lower.includes("community")
+    ) {
+      return academyKnowledge.socials;
+    } else if (
       lower.includes("contact") ||
       lower.includes("counselor") ||
       lower.includes("enquiry") ||
-      lower.includes("phone")
+      lower.includes("phone") ||
+      lower.includes("email") ||
+      lower.includes("reach") ||
+      lower.includes("support")
     ) {
       return academyKnowledge.enquiry;
     }
 
     return {
-      text: `Thank you for your question about **"${prompt}"**!\n\nAt **Jarvis AI Academy**, our programs feature:\n* **Duration**: Fast-track **60 Days (2 Months)** build-first training.\n* **Tuition**: **₹30,000** (₹30K) flat fees across all courses.\n* **🎁 Refer & Earn**: Refer a student and receive **₹5,000** cash reward once they complete the full 60-day course!\n\nWould you like to explore our course syllabus, the **Super10** batch, or start enrollment?`,
+      text: `Thank you for your question about **"${prompt}"**!\n\nAt **Jarvis AI Academy**, our programs feature:\n* **Duration**: Fast-track **60 Days (2 Months)** build-first training.\n* **Tuition**: **₹30,000** (₹30K) flat fees across all courses.\n* **🎁 Refer & Earn**: Refer a student and receive **₹5,000** cash reward once they complete the full 60-day course!\n\n🌐 **Connect With Us Online**:\n* [LinkedIn](https://www.linkedin.com/company/jarvisaiacademy/) · [Instagram](https://www.instagram.com/jarvisaiacademy/) · [YouTube](https://www.youtube.com/@JarvisAIAcademy) · [X](https://x.com/jarvisaiacademy) · [Facebook](https://www.facebook.com/jarvisaiacademy/)\n\nWould you like to explore our course syllabus, the **Super10** batch, or start enrollment?`,
       suggestions: [
         "What is the fee structure for the 60-day courses?",
         "Tell me about the Super10 Elite Cohort with 100% placement assurance",

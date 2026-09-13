@@ -6,6 +6,7 @@ import { SidebarNav } from "./sidebar-nav";
 import { UserProfile } from "./user-profile";
 import { SidebarLoginCTA } from "./sidebar-login-cta";
 import { ThemeSwitcher } from "./theme-switcher";
+import { SocialLinks } from "@/components/common/social-links";
 
 import { User } from "@/providers/auth-provider";
 
@@ -88,6 +89,9 @@ export function Sidebar({
                 <SidebarLoginCTA onLoginClick={onOpenLogin} />
               </div>
             )}
+            <div className="flex items-center justify-center pt-2 pb-1">
+              <SocialLinks iconSize={14} />
+            </div>
             <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-3 pt-1 pb-3 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
               <button
                 type="button"
@@ -167,6 +171,9 @@ export function Sidebar({
             <SidebarLoginCTA onLoginClick={onOpenLogin} />
           </div>
         )}
+        <div className="flex items-center justify-center pt-2 pb-1">
+          <SocialLinks iconSize={14} />
+        </div>
         <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-3 pt-1 pb-3.5 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
           <button
             type="button"
