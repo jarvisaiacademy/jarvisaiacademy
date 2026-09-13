@@ -21,96 +21,43 @@ import {
 } from "@/data/courses";
 import { DevIcon } from "@/components/ui/dev-icon";
 
-function CourseBannerGraphic({ course }: { course: CourseItem }) {
-  switch (course.category) {
-    case "web":
+function CourseBannerGraphic({
+  course,
+  isHovered,
+}: {
+  course: CourseItem;
+  isHovered?: boolean;
+}) {
+  const containerClass = `relative flex flex-col gap-1 p-2 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 shadow-lg shadow-black/10 w-[116px] transition-all duration-300 ${
+    isHovered ? "rotate-0 scale-105 bg-white/20" : "rotate-[-2deg] scale-100"
+  }`;
+
+  switch (course.id) {
+    case "fullstack":
       return (
-        <div className="relative flex flex-col gap-1 p-2 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 shadow-lg shadow-black/10 w-[114px] rotate-[-2deg] group-hover:rotate-0 transition-transform duration-300">
+        <div className={containerClass}>
           <div className="flex items-center gap-1">
             <div className="flex gap-0.5">
               <span className="w-1 h-1 rounded-full bg-white/80" />
               <span className="w-1 h-1 rounded-full bg-white/50" />
               <span className="w-1 h-1 rounded-full bg-white/50" />
             </div>
-            <span className="text-[9px] font-mono text-white/90 font-medium ml-1">app.tsx</span>
+            <span className="text-[9px] font-mono text-white/90 font-medium ml-1">fullstack.tsx</span>
           </div>
           <div className="flex flex-col gap-0.5 my-0.5">
             <div className="h-1 w-16 bg-white/70 rounded-full" />
             <div className="h-1 w-10 bg-white/40 rounded-full" />
           </div>
           <div className="flex items-center justify-between pt-0.5">
-            <span className="text-[8px] font-semibold text-white/90">React 19</span>
+            <span className="text-[8px] font-semibold text-white/90">Next.js + AI</span>
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-300 animate-pulse" />
           </div>
         </div>
       );
 
-    case "ai":
-    case "datascience":
+    case "super10":
       return (
-        <div className="relative flex flex-col gap-1 p-2 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 shadow-lg shadow-black/10 w-[114px] rotate-[-2deg] group-hover:rotate-0 transition-transform duration-300">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1">
-              <Sparkles className="w-2.5 h-2.5 text-amber-300" />
-              <span className="text-[9px] font-bold text-white tracking-tight">AI Agent</span>
-            </div>
-            <span className="text-[8px] font-mono text-emerald-300">v2.0</span>
-          </div>
-          <div className="flex flex-col gap-0.5 my-0.5">
-            <div className="h-1 w-16 bg-white/70 rounded-full" />
-            <div className="h-1 w-12 bg-white/40 rounded-full" />
-          </div>
-          <div className="flex items-center justify-between pt-0.5">
-            <span className="text-[8px] font-semibold text-white/90">LLM Vector</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse" />
-          </div>
-        </div>
-      );
-
-    case "devops":
-      return (
-        <div className="relative flex flex-col gap-1 p-2 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 shadow-lg shadow-black/10 w-[114px] rotate-[-2deg] group-hover:rotate-0 transition-transform duration-300">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1">
-              <span className="text-[9px] font-mono text-cyan-300">&gt;_</span>
-              <span className="text-[9px] font-mono text-white/90">deploy.sh</span>
-            </div>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-          </div>
-          <div className="flex flex-col gap-0.5 my-0.5">
-            <div className="h-1 w-16 bg-white/70 rounded-full" />
-            <div className="h-1 w-10 bg-white/40 rounded-full" />
-          </div>
-          <div className="flex items-center justify-between pt-0.5">
-            <span className="text-[8px] font-semibold text-white/90">K8s + Cloud</span>
-            <span className="text-[8px] text-emerald-300 font-bold">LIVE</span>
-          </div>
-        </div>
-      );
-
-    case "database":
-      return (
-        <div className="relative flex flex-col gap-1 p-2 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 shadow-lg shadow-black/10 w-[114px] rotate-[-2deg] group-hover:rotate-0 transition-transform duration-300">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1">
-              <span className="text-[9px] font-bold text-white tracking-tight">SQL Query</span>
-            </div>
-            <span className="w-1.5 h-1.5 rounded-full bg-sky-300" />
-          </div>
-          <div className="flex flex-col gap-0.5 my-0.5">
-            <div className="h-1 w-16 bg-white/70 rounded-full" />
-            <div className="h-1 w-10 bg-white/40 rounded-full" />
-          </div>
-          <div className="flex items-center justify-between pt-0.5">
-            <span className="text-[8px] font-semibold text-white/90">Postgres + Redis</span>
-            <span className="text-[8px] text-sky-300 font-mono">0.2ms</span>
-          </div>
-        </div>
-      );
-
-    case "elite":
-      return (
-        <div className="relative flex flex-col gap-1 p-2 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 shadow-lg shadow-black/10 w-[114px] rotate-[-2deg] group-hover:rotate-0 transition-transform duration-300">
+        <div className={containerClass}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1">
               <span className="text-[9px] font-bold text-amber-300">★ Super10</span>
@@ -133,11 +80,211 @@ function CourseBannerGraphic({ course }: { course: CourseItem }) {
         </div>
       );
 
+    case "frontend-react":
+      return (
+        <div className={containerClass}>
+          <div className="flex items-center gap-1">
+            <div className="flex gap-0.5">
+              <span className="w-1 h-1 rounded-full bg-white/80" />
+              <span className="w-1 h-1 rounded-full bg-white/50" />
+              <span className="w-1 h-1 rounded-full bg-white/50" />
+            </div>
+            <span className="text-[9px] font-mono text-white/90 font-medium ml-1">app.tsx</span>
+          </div>
+          <div className="flex flex-col gap-0.5 my-0.5">
+            <div className="h-1 w-16 bg-white/70 rounded-full" />
+            <div className="h-1 w-10 bg-white/40 rounded-full" />
+          </div>
+          <div className="flex items-center justify-between pt-0.5">
+            <span className="text-[8px] font-semibold text-white/90">React 19 + UI</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-300 animate-pulse" />
+          </div>
+        </div>
+      );
+
+    case "backend-python":
+      return (
+        <div className={containerClass}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <span className="text-[9px] font-mono text-emerald-300 font-bold">def</span>
+              <span className="text-[9px] font-mono text-white/90 font-medium">api():</span>
+            </div>
+            <span className="text-[8px] font-mono text-emerald-300 bg-emerald-950/60 px-1 rounded">200 OK</span>
+          </div>
+          <div className="flex flex-col gap-0.5 my-0.5">
+            <div className="h-1 w-16 bg-white/70 rounded-full" />
+            <div className="h-1 w-11 bg-white/40 rounded-full" />
+          </div>
+          <div className="flex items-center justify-between pt-0.5">
+            <span className="text-[8px] font-semibold text-white/90">FastAPI + Django</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          </div>
+        </div>
+      );
+
+    case "genai":
+      return (
+        <div className={containerClass}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <Sparkles className="w-2.5 h-2.5 text-amber-300" />
+              <span className="text-[9px] font-bold text-white tracking-tight">AI Agent</span>
+            </div>
+            <span className="text-[8px] font-mono text-purple-300">RAG v2</span>
+          </div>
+          <div className="flex flex-col gap-0.5 my-0.5">
+            <div className="h-1 w-16 bg-white/70 rounded-full" />
+            <div className="h-1 w-12 bg-white/40 rounded-full" />
+          </div>
+          <div className="flex items-center justify-between pt-0.5">
+            <span className="text-[8px] font-semibold text-white/90">LLM Vector DB</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse" />
+          </div>
+        </div>
+      );
+
+    case "data-analyst":
+      return (
+        <div className={containerClass}>
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-bold text-white tracking-tight">PowerBI + SQL</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-teal-300" />
+          </div>
+          <div className="flex items-end gap-1 h-3.5 my-0.5">
+            <div className="w-1.5 bg-white/40 rounded-t h-1.5" />
+            <div className="w-1.5 bg-white/60 rounded-t h-2.5" />
+            <div className="w-1.5 bg-white/80 rounded-t h-2" />
+            <div className="w-1.5 bg-white rounded-t h-3" />
+            <span className="text-[7px] text-teal-300 font-mono ml-auto">DAX</span>
+          </div>
+          <div className="flex items-center justify-between pt-0.5">
+            <span className="text-[8px] font-semibold text-white/90">KPI Analytics</span>
+            <span className="text-[8px] font-mono text-white/80">+88%</span>
+          </div>
+        </div>
+      );
+
+    case "business-analyst":
+      return (
+        <div className={containerClass}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <span className="text-[9px] font-bold text-amber-300">Jira Sprint</span>
+            </div>
+            <span className="text-[7px] font-mono bg-amber-400/30 text-amber-200 px-1 rounded">AGILE</span>
+          </div>
+          <div className="flex flex-col gap-0.5 my-0.5">
+            <div className="h-1 w-16 bg-white/70 rounded-full" />
+            <div className="h-1 w-10 bg-white/40 rounded-full" />
+          </div>
+          <div className="flex items-center justify-between pt-0.5">
+            <span className="text-[8px] font-semibold text-white/90">BRD & Stories</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+          </div>
+        </div>
+      );
+
+    case "devops-aws":
+      return (
+        <div className={containerClass}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <span className="text-[9px] font-mono text-purple-300">&gt;_</span>
+              <span className="text-[9px] font-mono text-white/90">deploy.sh</span>
+            </div>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          </div>
+          <div className="flex flex-col gap-0.5 my-0.5">
+            <div className="h-1 w-16 bg-white/70 rounded-full" />
+            <div className="h-1 w-10 bg-white/40 rounded-full" />
+          </div>
+          <div className="flex items-center justify-between pt-0.5">
+            <span className="text-[8px] font-semibold text-white/90">AWS + K8s</span>
+            <span className="text-[8px] text-emerald-300 font-bold">CI/CD</span>
+          </div>
+        </div>
+      );
+
+    case "database-admin":
+      return (
+        <div className={containerClass}>
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-bold text-white tracking-tight">Oracle PL/SQL</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+          </div>
+          <div className="flex flex-col gap-0.5 my-0.5">
+            <div className="h-1 w-16 bg-white/70 rounded-full" />
+            <div className="h-1 w-10 bg-white/40 rounded-full" />
+          </div>
+          <div className="flex items-center justify-between pt-0.5">
+            <span className="text-[8px] font-semibold text-white/90">MongoDB + SQL</span>
+            <span className="text-[8px] text-slate-300 font-mono">0.2ms</span>
+          </div>
+        </div>
+      );
+
+    case "app-support":
+      return (
+        <div className={containerClass}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <span className="text-[9px] font-mono text-orange-300">#</span>
+              <span className="text-[9px] font-mono text-white/90">syslog.log</span>
+            </div>
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+          </div>
+          <div className="flex flex-col gap-0.5 my-0.5">
+            <div className="h-1 w-16 bg-white/70 rounded-full" />
+            <div className="h-1 w-10 bg-white/40 rounded-full" />
+          </div>
+          <div className="flex items-center justify-between pt-0.5">
+            <span className="text-[8px] font-semibold text-white/90">Linux Ops</span>
+            <span className="text-[8px] text-orange-300 font-bold">24/7 SLA</span>
+          </div>
+        </div>
+      );
+
+    case "web-laravel":
+      return (
+        <div className={containerClass}>
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-mono text-pink-300 font-bold">&lt;?php</span>
+            <span className="text-[8px] font-mono text-white/80">routes.php</span>
+          </div>
+          <div className="flex flex-col gap-0.5 my-0.5">
+            <div className="h-1 w-16 bg-white/70 rounded-full" />
+            <div className="h-1 w-10 bg-white/40 rounded-full" />
+          </div>
+          <div className="flex items-center justify-between pt-0.5">
+            <span className="text-[8px] font-semibold text-white/90">Laravel 11</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-pink-400" />
+          </div>
+        </div>
+      );
+
+    case "referral":
+      return (
+        <div className={containerClass}>
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-bold text-emerald-300">🎁 Reward</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          </div>
+          <div className="text-[12px] font-extrabold text-white leading-none my-0.5">
+            ₹5,000 <span className="text-[8px] font-medium text-white/80">Cash</span>
+          </div>
+          <div className="flex items-center justify-between pt-0.5">
+            <span className="text-[8px] font-semibold text-white/90">Direct UPI</span>
+            <span className="text-[8px] font-bold text-emerald-300">INSTANT</span>
+          </div>
+        </div>
+      );
+
     default:
       return (
-        <div className="relative flex flex-col gap-1 p-2 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 shadow-lg shadow-black/10 w-[114px] rotate-[-2deg] group-hover:rotate-0 transition-transform duration-300">
+        <div className={containerClass}>
           <div className="flex items-center justify-between">
-            <span className="text-[9px] font-semibold text-white">Curriculum</span>
+            <span className="text-[9px] font-semibold text-white">{course.categoryLabel}</span>
             <Sparkles className="w-2.5 h-2.5 text-white/80" />
           </div>
           <div className="flex flex-col gap-0.5 my-0.5">
@@ -145,7 +292,7 @@ function CourseBannerGraphic({ course }: { course: CourseItem }) {
             <div className="h-1 w-10 bg-white/40 rounded-full" />
           </div>
           <div className="flex items-center justify-between pt-0.5">
-            <span className="text-[8px] font-medium text-white/90">60 Days Cohort</span>
+            <span className="text-[8px] font-medium text-white/90">{course.duration}</span>
           </div>
         </div>
       );
@@ -163,6 +310,7 @@ export function CourseCatalogResponse({
 }: CourseCatalogResponseProps) {
   const [selectedCategory, setSelectedCategory] =
     useState<CourseCategoryId>("all");
+  const [hoveredCourseId, setHoveredCourseId] = useState<string | null>(null);
 
   const filteredCourses = COURSES_DATA.filter((course) => {
     if (selectedCategory === "all") return true;
@@ -211,52 +359,61 @@ export function CourseCatalogResponse({
       {/* 2. Responsive Course Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <AnimatePresence mode="popLayout">
-          {filteredCourses.map((course) => (
-            <motion.div
-              key={course.id}
-              layout
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.97 }}
-              transition={{ duration: 0.18 }}
-              onClick={() => handleCardClick(course)}
-              className="group relative flex flex-col rounded-3xl bg-white dark:bg-[#191919] hover:bg-neutral-50/90 dark:hover:bg-[#202020] border border-neutral-200 dark:border-white/10 hover:border-neutral-400/60 dark:hover:border-white/20 transition-all duration-200 overflow-hidden shadow-xs hover:shadow-md text-left cursor-pointer"
-            >
-              {/* Card Banner Header */}
-              <div
-                className={`relative h-32 sm:h-36 w-full p-4 bg-gradient-to-br ${course.gradient} flex flex-col justify-between overflow-hidden shrink-0 border-b border-neutral-200/60 dark:border-white/10`}
+          {filteredCourses.map((course) => {
+            const isHovered = hoveredCourseId === course.id;
+
+            return (
+              <motion.div
+                key={course.id}
+                layout
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.97 }}
+                transition={{ duration: 0.18 }}
+                onClick={() => handleCardClick(course)}
+                onMouseEnter={() => setHoveredCourseId(course.id)}
+                onMouseLeave={() => setHoveredCourseId(null)}
+                className={`group/card relative flex flex-col rounded-3xl bg-white dark:bg-[#191919] hover:bg-neutral-50/90 dark:hover:bg-[#202020] border transition-all duration-200 overflow-hidden text-left cursor-pointer ${
+                  isHovered
+                    ? "border-neutral-400/60 dark:border-white/20 shadow-md"
+                    : "border-neutral-200 dark:border-white/10 shadow-xs"
+                }`}
               >
-                {/* Specular sheen across top */}
-                <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-white/5 to-transparent pointer-events-none" />
-
-                {/* Background ambient glow effects */}
-                <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/15 rounded-full blur-2xl pointer-events-none" />
-                <div className="absolute -bottom-8 -left-8 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none" />
-
-                {/* Delicate concentric glass rings */}
-                <div className="absolute -top-12 -right-12 w-36 h-36 rounded-full border border-white/15 pointer-events-none" />
-                <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full border border-white/10 pointer-events-none" />
-
-                {/* Sparkling light stars */}
-                <svg
-                  className="absolute top-3.5 right-14 w-3 h-3 text-white/50 animate-pulse pointer-events-none"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
+                {/* Card Banner Header */}
+                <div
+                  className={`relative h-32 sm:h-36 w-full p-4 bg-gradient-to-br ${course.gradient} flex flex-col justify-between overflow-hidden shrink-0 border-b border-neutral-200/60 dark:border-white/10`}
                 >
-                  <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
-                </svg>
-                <svg
-                  className="absolute bottom-3 right-6 w-2 h-2 text-white/40 pointer-events-none"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
-                </svg>
+                  {/* Specular sheen across top */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-white/5 to-transparent pointer-events-none" />
 
-                {/* Floating Frosted Object on the Right */}
-                <div className="absolute right-3.5 top-1/2 -translate-y-1/2 z-10 pointer-events-none drop-shadow-md">
-                  <CourseBannerGraphic course={course} />
-                </div>
+                  {/* Background ambient glow effects */}
+                  <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/15 rounded-full blur-2xl pointer-events-none" />
+                  <div className="absolute -bottom-8 -left-8 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none" />
+
+                  {/* Delicate concentric glass rings */}
+                  <div className="absolute -top-12 -right-12 w-36 h-36 rounded-full border border-white/15 pointer-events-none" />
+                  <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full border border-white/10 pointer-events-none" />
+
+                  {/* Sparkling light stars */}
+                  <svg
+                    className="absolute top-3.5 right-14 w-3 h-3 text-white/50 animate-pulse pointer-events-none"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
+                  </svg>
+                  <svg
+                    className="absolute bottom-3 right-6 w-2 h-2 text-white/40 pointer-events-none"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
+                  </svg>
+
+                  {/* Floating Frosted Object on the Right */}
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 z-10 pointer-events-none drop-shadow-md">
+                    <CourseBannerGraphic course={course} isHovered={isHovered} />
+                  </div>
 
                 {/* Top Row: Badge + Number */}
                 <div className="flex items-center justify-between gap-2 z-10">
@@ -366,7 +523,8 @@ export function CourseCatalogResponse({
                 </div>
               </div>
             </motion.div>
-          ))}
+          );
+        })}
         </AnimatePresence>
       </div>
 
