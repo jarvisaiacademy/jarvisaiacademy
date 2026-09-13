@@ -294,17 +294,10 @@ Would you like to connect with an alumnus or see our hiring partner companies?`,
 
 Every graduate from **Jarvis AI Academy** earns an industry-recognized, cryptographically verifiable certificate:
 
-* **Tamper-Proof**: Each credential includes a unique Certificate ID and QR code.
+* **Tamper-Proof Credential**: Each certificate carries a unique Certificate ID and QR code backed by digital signature verification.
 * **LinkedIn Compatible**: One-click addition to your LinkedIn Licenses & Certifications profile.
-* **Employer Instant Verification**: Recruiters can instantly validate student competencies, completed capstones, and project source code.
-
-\`\`\`json
-{
-  "issuer": "Jarvis AI Academy",
-  "verificationStatus": "VERIFIED_AUTHENTIC",
-  "credentialType": "Full Stack AI Specialist (60-Day Program)"
-}
-\`\`\`
+* **Employer Instant Verification**: Recruiters and engineering leads can instantly validate completed capstones, course curricula, and evaluated competencies.
+* **ID Format**: e.g., \`JAA-2026-XXXX\` printed on the bottom of your official credential.
 
 Do you have a certificate ID you would like to verify right now?`,
   },

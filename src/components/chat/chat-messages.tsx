@@ -17,27 +17,6 @@ import { CourseCatalogResponse } from "./course-catalog-response";
 import { COURSES_DATA } from "@/data/courses";
 import { useToast } from "@/components/ui/toast";
 
-// Dual Thumbs Feedback Icon (matching today's ChatGPT UI)
-function DualThumbsIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      {/* Upward thumb (top-left) */}
-      <path d="M7 11V7a2 2 0 0 1 2-2 1 1 0 0 1 1 1v5h3a1.5 1.5 0 0 1 1.5 1.5v1a1.5 1.5 0 0 1-1.5 1.5H7" />
-      <path d="M4 11h3v6H4z" />
-      {/* Downward thumb (bottom-right) */}
-      <path d="M17 13v4a2 2 0 0 1-2 2 1 1 0 0 1-1-1v-5h-3a1.5 1.5 0 0 1-1.5-1.5v-1A1.5 1.5 0 0 1 11 9h6" />
-      <path d="M20 13h-3V7h3z" />
-    </svg>
-  );
-}
 
 // Share Tray with Up Arrow Icon (matching today's ChatGPT UI)
 function ShareTrayIcon({ className }: { className?: string }) {
@@ -92,7 +71,6 @@ export function ChatMessages({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
-  const [feedbackOpenId, setFeedbackOpenId] = useState<string | null>(null);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<string>("5:44 PM");
   const { showToast } = useToast();
@@ -400,56 +378,47 @@ export function ChatMessages({
                       )}
                     </button>
 
-                    {/* 2. Dual Thumbs Feedback */}
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setFeedbackOpenId(feedbackOpenId === msg.id ? null : msg.id)
+                    {/* 2. Good Response (Like) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const isTogglingOff = msg.feedback === "like";
+                        onFeedback?.(msg.id, "like");
+                        if (!isTogglingOff) {
+                          showToast("Thanks for the feedback!", "success");
                         }
-                        aria-label="Rate response"
-                        className={`p-1 rounded-md hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-white/10 transition-colors cursor-pointer ${
-                          msg.feedback ? "text-neutral-900 dark:text-white" : ""
-                        }`}
-                        title="Rate response"
-                      >
-                        <DualThumbsIcon className="w-4 h-4" />
-                      </button>
+                      }}
+                      aria-label="Good response"
+                      className={`p-1 rounded-md hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-white/10 transition-colors cursor-pointer ${
+                        msg.feedback === "like"
+                          ? "text-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400"
+                          : ""
+                      }`}
+                      title="Good response"
+                    >
+                      <ThumbsUp className={`w-4 h-4 ${msg.feedback === "like" ? "fill-current" : ""}`} />
+                    </button>
 
-                      {/* Feedback Flyout */}
-                      {feedbackOpenId === msg.id && (
-                        <div className="absolute left-0 bottom-full mb-1.5 flex items-center gap-1 p-1 rounded-full bg-white dark:bg-[#212121] border border-neutral-200 dark:border-white/10 shadow-lg z-20">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              onFeedback?.(msg.id, "like");
-                              setFeedbackOpenId(null);
-                              showToast("Thanks for the feedback!", "success");
-                            }}
-                            className={`p-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors cursor-pointer ${
-                              msg.feedback === "like" ? "text-emerald-500" : ""
-                            }`}
-                            title="Good response"
-                          >
-                            <ThumbsUp className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              onFeedback?.(msg.id, "dislike");
-                              setFeedbackOpenId(null);
-                              showToast("Feedback recorded", "info");
-                            }}
-                            className={`p-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors cursor-pointer ${
-                              msg.feedback === "dislike" ? "text-rose-500" : ""
-                            }`}
-                            title="Bad response"
-                          >
-                            <ThumbsDown className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    {/* 3. Bad Response (Dislike) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const isTogglingOff = msg.feedback === "dislike";
+                        onFeedback?.(msg.id, "dislike");
+                        if (!isTogglingOff) {
+                          showToast("Feedback recorded", "info");
+                        }
+                      }}
+                      aria-label="Bad response"
+                      className={`p-1 rounded-md hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-white/10 transition-colors cursor-pointer ${
+                        msg.feedback === "dislike"
+                          ? "text-rose-500 hover:text-rose-600 dark:hover:text-rose-400"
+                          : ""
+                      }`}
+                      title="Bad response"
+                    >
+                      <ThumbsDown className={`w-4 h-4 ${msg.feedback === "dislike" ? "fill-current" : ""}`} />
+                    </button>
 
                     {/* 3. Share (Tray with Up Arrow) */}
                     <button
