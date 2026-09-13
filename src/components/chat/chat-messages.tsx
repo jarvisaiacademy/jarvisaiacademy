@@ -179,7 +179,7 @@ export function ChatMessages({
 
 
 
-                {/* Quick Action Pill for Courses / Super10 */}
+                {/* Quick Action Pill for Courses / Super10 (ChatGPT High-Contrast Pill) */}
                 {!msg.isStreaming &&
                   (msg.content.includes("Full-Stack AI & Web Engineering") ||
                     msg.content.includes("Super10 Elite Batch") ||
@@ -193,7 +193,7 @@ export function ChatMessages({
                             "I want to enroll in the upcoming cohort and proceed with payment"
                           )
                         }
-                        className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 dark:bg-blue-600/15 hover:bg-blue-100 dark:hover:bg-blue-600/25 border border-blue-300 dark:border-blue-500/30 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-xs font-semibold transition-all cursor-pointer shadow-xs active:scale-95"
+                        className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95"
                       >
                         <span>⚡ Enroll Now in Upcoming Batch</span>
                       </button>
@@ -232,22 +232,20 @@ export function ChatMessages({
                     />
                   )}
 
-                {/* Follow-up Question Suggestions (matching ChatGPT / Claude UI with ↳ curved arrow) */}
+                {/* Follow-up Question Suggestions (ChatGPT clean pill chips) */}
                 {!msg.isStreaming && msg.suggestions && msg.suggestions.length > 0 && (
-                  <div className="flex flex-col items-start gap-1 mt-2.5 mb-1 w-full">
+                  <div className="flex flex-wrap items-center gap-2 mt-3 mb-1 w-full">
                     {msg.suggestions.map((suggestion, sIdx) => (
                       <button
                         key={sIdx}
                         type="button"
                         onClick={() => onActionPrompt?.(suggestion)}
-                        className="group/sug inline-flex items-center gap-2 text-left py-1.5 px-2 -ml-1.5 rounded-lg text-neutral-800 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/[0.06] transition-colors cursor-pointer text-xs sm:text-[13px]"
+                        className="group/sug inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white bg-neutral-100 dark:bg-white/[0.06] hover:bg-neutral-200/80 dark:hover:bg-white/10 border border-neutral-200 dark:border-white/10 transition-all cursor-pointer text-left active:scale-98"
                       >
-                        <span className="text-neutral-500 dark:text-neutral-400 group-hover/sug:text-neutral-800 dark:group-hover/sug:text-neutral-200 transition-colors text-sm font-semibold select-none leading-none">
+                        <span className="text-neutral-400 dark:text-neutral-500 group-hover/sug:text-neutral-600 dark:group-hover/sug:text-neutral-300 transition-colors text-xs select-none">
                           ↳
                         </span>
-                        <span className="underline underline-offset-3 decoration-neutral-400/80 dark:decoration-neutral-500/70 group-hover/sug:decoration-neutral-900 dark:group-hover/sug:decoration-white transition-all font-normal">
-                          {suggestion}
-                        </span>
+                        <span>{suggestion}</span>
                       </button>
                     ))}
                   </div>
