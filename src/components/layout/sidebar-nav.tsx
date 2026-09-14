@@ -184,12 +184,10 @@ export function SidebarNav({
         onClick={onNewChat}
         onMouseEnter={(e) => handleMouseEnter("new_chat", e)}
         onMouseLeave={handleMouseLeave}
-        className="group flex items-center justify-between w-full px-3 py-2 text-sm font-medium text-neutral-900 dark:text-white bg-neutral-200/80 dark:bg-[#212121] hover:bg-neutral-300/80 dark:hover:bg-[#2c2c2c] rounded-lg transition-all text-left shadow-xs cursor-pointer"
+        className={`group flex items-center gap-2.5 w-full px-3 py-2 text-sm rounded-lg transition-colors text-left cursor-pointer ${navStateClass(false)}`}
       >
-        <div className="flex items-center gap-2.5">
-          <SquarePen className="w-4 h-4 text-neutral-600 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white" />
-          <span>New chat</span>
-        </div>
+        <SquarePen className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors" />
+        <span>New chat</span>
       </button>
 
       {/* Admin Dashboard Navigation (only for authenticated admins) */}
