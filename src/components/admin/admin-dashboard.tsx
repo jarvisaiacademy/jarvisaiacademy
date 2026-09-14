@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Users,
   IndianRupee,
@@ -18,6 +18,9 @@ import {
 } from "lucide-react";
 import { siteConfig } from "@/config/site";
 import { useAuth } from "@/providers/auth-provider";
+import { Select } from "@/components/ui/select";
+import { shortcutById } from "@/data/shortcuts";
+import { isTypingTarget, matchesShortcut } from "@/lib/keyboard";
 
 interface EnrollmentRecord {
   action: string;
@@ -82,6 +85,8 @@ export function AdminDashboard({ onBackToChat }: AdminDashboardProps) {
   const [records, setRecords] = useState<EnrollmentRecord[]>(DEFAULT_RECORDS);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     try {
@@ -101,6 +106,27 @@ export function AdminDashboard({ onBackToChat }: AdminDashboardProps) {
     } catch {
       // ignore
     }
+  }, []);
+
+  // Only live while the dashboard is mounted, so these never fight the shortcuts
+  // on the chat view.
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isTypingTarget(event.target)) return;
+
+      if (matchesShortcut(event, shortcutById("search"))) {
+        event.preventDefault();
+        searchRef.current?.focus();
+        return;
+      }
+      if (matchesShortcut(event, shortcutById("filter"))) {
+        event.preventDefault();
+        setFilterOpen(true);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   const filteredRecords = records.filter((r) => {
@@ -160,25 +186,7 @@ export function AdminDashboard({ onBackToChat }: AdminDashboardProps) {
             <h1 className="text-base sm:text-lg font-bold tracking-tight text-neutral-900 dark:text-white">
               Admin Control Center
             </h1>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">
-              Admin Portal
-            </span>
           </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
-            <ShieldCheck className="w-4 h-4 text-emerald-500" />
-            <span>Authenticated as <strong>{user?.email || "Admin"}</strong></span>
-          </div>
-          <button
-            type="button"
-            onClick={exportCSV}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-100 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Export CSV</span>
-          </button>
         </div>
       </header>
 
@@ -193,12 +201,6 @@ export function AdminDashboard({ onBackToChat }: AdminDashboardProps) {
             <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
               Real-time admissions, revenue analytics, and student management for {siteConfig.name}.
             </p>
-          </div>
-          <div className="flex items-center gap-2 text-xs">
-            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-medium">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              Gateway Active
-            </span>
           </div>
         </div>
 
@@ -303,6 +305,7 @@ export function AdminDashboard({ onBackToChat }: AdminDashboardProps) {
               <div className="relative">
                 <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
+                  ref={searchRef}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -312,15 +315,19 @@ export function AdminDashboard({ onBackToChat }: AdminDashboardProps) {
               </div>
 
               {/* Status Filter */}
-              <select
+              <Select
+                label="Filter by status"
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs focus:outline-hidden cursor-pointer"
-              >
-                <option value="all">All Status</option>
-                <option value="paid">Paid (Enrolled)</option>
-                <option value="pending">Pending</option>
-              </select>
+                onValueChange={setStatusFilter}
+                open={filterOpen}
+                onOpenChange={setFilterOpen}
+                options={[
+                  { value: "all", label: "All Status" },
+                  { value: "paid", label: "Paid (Enrolled)" },
+                  { value: "pending", label: "Pending" },
+                ]}
+                className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+              />
             </div>
           </div>
 

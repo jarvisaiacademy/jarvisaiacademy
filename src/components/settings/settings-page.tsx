@@ -6,6 +6,7 @@ import { SettingsSection } from "./settings-section";
 import { AppearanceSetting } from "./appearance-setting";
 import { LanguageSetting } from "./language-setting";
 import { DataControlsSetting } from "./data-controls-setting";
+import { KeyboardShortcutsSetting } from "./keyboard-shortcuts-setting";
 import { motion } from "motion/react";
 
 import { siteConfig } from "@/config/site";
@@ -38,6 +39,11 @@ export function SettingsPage({ onBack, className = "" }: SettingsPageProps) {
         {/* Data Controls Section */}
         <SettingsSection title="Account & Data">
           <DataControlsSetting />
+        </SettingsSection>
+
+        {/* Shortcuts Section */}
+        <SettingsSection title="Shortcuts">
+          <KeyboardShortcutsSetting />
         </SettingsSection>
 
         {/* App Info / Version Footer */}

@@ -16,6 +16,7 @@ const geistMono = Geist_Mono({
 import { ThemeProvider } from "@/providers/theme-provider";
 import { LanguageProvider } from "@/providers/language-provider";
 import { AuthProvider } from "@/providers/auth-provider";
+import { ShortcutGuide } from "@/components/ui/shortcut-guide";
 
 import { siteConfig } from "@/config/site";
 import { structuredData } from "@/config/seo";
@@ -124,7 +125,11 @@ export default function RootLayout({
       <body className="h-full bg-background text-foreground antialiased overflow-hidden selection:bg-[#9d5932] selection:text-white font-sans transition-colors duration-150">
         <ThemeProvider>
           <LanguageProvider>
-            <AuthProvider>{children}</AuthProvider>
+            <AuthProvider>
+              {children}
+              {/* Renders nothing until opened, so it adds no markup to the HTML. */}
+              <ShortcutGuide />
+            </AuthProvider>
           </LanguageProvider>
         </ThemeProvider>
       </body>
