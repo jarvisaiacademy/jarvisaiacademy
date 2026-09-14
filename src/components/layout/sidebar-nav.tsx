@@ -104,6 +104,12 @@ export function SidebarNav({
   const { user, isLoggedIn } = useAuth();
   const enrollmentCount = useStudentEnrollments(user?.email).length;
   const showStudentItems = isLoggedIn && !user?.isAdmin;
+
+  // The auth provider restores the session from localStorage during render, so
+  // the server sees no user and the client's first render does. Rendering
+  // auth-gated items before mount therefore mismatches the server HTML.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const [activeHoverItem, setActiveHoverItem] = useState<string | null>(null);
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
   const [sidebarRight, setSidebarRight] = useState<number | undefined>(undefined);
@@ -191,7 +197,7 @@ export function SidebarNav({
       </button>
 
       {/* Admin Dashboard Navigation (only for authenticated admins) */}
-      {user?.isAdmin && (
+      {mounted && user?.isAdmin && (
         <button
           type="button"
           onClick={onOpenDashboard}
@@ -213,7 +219,7 @@ export function SidebarNav({
       )}
 
       {/* Student Navigation (only for signed-in students) */}
-      {showStudentItems && (
+      {mounted && showStudentItems && (
         <>
           <button
             type="button"
