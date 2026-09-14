@@ -10,9 +10,12 @@ import {
   HelpCircle,
   Gift,
   LayoutDashboard,
+  UserRound,
+  GraduationCap,
 } from "lucide-react";
 import { SidebarHoverCard } from "./sidebar-hover-card";
 import { useAuth } from "@/providers/auth-provider";
+import { useStudentEnrollments } from "@/hooks/use-student-enrollments";
 
 interface NavHoverItemData {
   title: string;
@@ -30,6 +33,16 @@ const navHoverData: Record<string, NavHoverItemData> = {
     title: "Start a fresh chat",
     description: "Log in to save your conversation history, organize chats, and pick up right where you left off.",
     gradientClass: "bg-gradient-to-br from-[#748ffc] via-[#9775fa] to-[#63e6be]",
+  },
+  my_profile: {
+    title: "My Profile",
+    description: "Your Jarvis AI Academy account — name, email and the plan you are enrolled on.",
+    gradientClass: "bg-gradient-to-br from-[#845ef7] via-[#5c7cfa] to-[#4dabf7]",
+  },
+  my_courses: {
+    title: "My Courses",
+    description: "Every course you have enrolled in, with its amount, transaction ID and payment status.",
+    gradientClass: "bg-gradient-to-br from-[#38d9a9] via-[#4dabf7] to-[#4c6ef5]",
   },
   courses: {
     title: "Explore Academy Courses",
@@ -68,6 +81,7 @@ interface SidebarNavProps {
   onSelectSection?: (section: string) => void;
   onOpenLogin?: () => void;
   onOpenDashboard?: () => void;
+  onOpenStudentView?: (view: "profile" | "courses") => void;
   isMobile?: boolean;
 }
 
@@ -76,9 +90,12 @@ export function SidebarNav({
   onSelectSection,
   onOpenLogin,
   onOpenDashboard,
+  onOpenStudentView,
   isMobile,
 }: SidebarNavProps) {
-  const { user } = useAuth();
+  const { user, isLoggedIn } = useAuth();
+  const enrollmentCount = useStudentEnrollments(user?.email).length;
+  const showStudentItems = isLoggedIn && !user?.isAdmin;
   const [activeHoverItem, setActiveHoverItem] = useState<string | null>(null);
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
   const [sidebarRight, setSidebarRight] = useState<number | undefined>(undefined);
@@ -188,6 +205,43 @@ export function SidebarNav({
         </button>
       )}
 
+      {/* Student Navigation (only for signed-in students) */}
+      {showStudentItems && (
+        <>
+          <button
+            type="button"
+            onClick={() => onOpenStudentView?.("profile")}
+            onMouseEnter={(e) => handleMouseEnter("my_profile", e)}
+            onMouseLeave={handleMouseLeave}
+            aria-haspopup="dialog"
+            aria-expanded={activeHoverItem === "my_profile"}
+            className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
+          >
+            <UserRound className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors" />
+            <span>My Profile</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onOpenStudentView?.("courses")}
+            onMouseEnter={(e) => handleMouseEnter("my_courses", e)}
+            onMouseLeave={handleMouseLeave}
+            aria-haspopup="dialog"
+            aria-expanded={activeHoverItem === "my_courses"}
+            className="group flex items-center justify-between w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
+          >
+            <div className="flex items-center gap-2.5">
+              <GraduationCap className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors" />
+              <span>My Courses</span>
+            </div>
+            {enrollmentCount > 0 && (
+              <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-neutral-200/80 dark:bg-white/10 text-neutral-600 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
+                {enrollmentCount}
+              </span>
+            )}
+          </button>
+        </>
+      )}
 
       {/* Courses */}
       <button
