@@ -5,23 +5,26 @@ import { useEffect, useState } from "react";
 const MOBILE_BREAKPOINT = 768;
 
 export function useSidebar(initialState = true) {
-  const [isOpen, setIsOpen] = useState(initialState);
+  // The docked sidebar and the mobile drawer are different UIs with opposite
+  // defaults, so they keep separate open state. A single shared flag meant every
+  // close of the drawer — entering the breakpoint, browser zoom — also collapsed
+  // the docked sidebar, and nothing brought it back.
+  const [dockedOpen, setDockedOpen] = useState(initialState);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     let wasMobile: boolean | null = null;
 
-    // React to breakpoint crossings only. Running on every resize would also
-    // re-close an open drawer (or re-open a closed sidebar) on a stray pixel.
+    // Only react to breakpoint crossings: a per-resize run would re-close a
+    // drawer the user just opened when a stray pixel crosses the line.
     const checkScreen = () => {
       const mobile = window.innerWidth < MOBILE_BREAKPOINT;
       if (mobile === wasMobile) return;
       wasMobile = mobile;
       setIsMobile(mobile);
-      // The drawer and the docked sidebar want opposite defaults. Without
-      // resetting here, the drawer's forced close left the desktop sidebar
-      // hidden for the rest of the session.
-      setIsOpen(!mobile);
+      // A drawer left open while the viewport shrinks would sit over the page.
+      if (mobile) setDrawerOpen(false);
     };
 
     checkScreen();
@@ -33,14 +36,16 @@ export function useSidebar(initialState = true) {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
         e.preventDefault();
-        setIsOpen((prev) => !prev);
+        (isMobile ? setDrawerOpen : setDockedOpen)((prev) => !prev);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [isMobile]);
 
+  const isOpen = isMobile ? drawerOpen : dockedOpen;
+  const setIsOpen = isMobile ? setDrawerOpen : setDockedOpen;
   const toggle = () => setIsOpen((prev) => !prev);
 
   return { isOpen, setIsOpen, toggle, isMobile };

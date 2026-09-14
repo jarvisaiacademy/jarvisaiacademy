@@ -144,10 +144,7 @@ export function Sidebar({
   return (
     <motion.aside
       initial={false}
-      animate={{
-        width: isOpen ? 260 : 0,
-        opacity: isOpen ? 1 : 0,
-      }}
+      animate={{ width: isOpen ? 260 : 0 }}
       transition={{ type: "spring", stiffness: 350, damping: 32 }}
       className={`relative flex flex-col justify-between h-screen bg-[#f9f9f9] dark:bg-[#171717] overflow-hidden shrink-0 select-none z-30 transition-colors ${
         isOpen ? "border-r border-neutral-200 dark:border-white/5" : "border-none"
