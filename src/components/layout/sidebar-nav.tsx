@@ -82,8 +82,15 @@ interface SidebarNavProps {
   onOpenLogin?: () => void;
   onOpenDashboard?: () => void;
   onOpenStudentView?: (view: "profile" | "courses") => void;
+  activeItem?: string | null;
   isMobile?: boolean;
 }
+
+/** Colour-only variant, so each item keeps its own layout classes. */
+const navStateClass = (isActive: boolean) =>
+  isActive
+    ? "font-medium text-neutral-900 dark:text-white bg-neutral-200/80 dark:bg-white/10"
+    : "font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5";
 
 export function SidebarNav({
   onNewChat,
@@ -91,6 +98,7 @@ export function SidebarNav({
   onOpenLogin,
   onOpenDashboard,
   onOpenStudentView,
+  activeItem,
   isMobile,
 }: SidebarNavProps) {
   const { user, isLoggedIn } = useAuth();
@@ -193,7 +201,8 @@ export function SidebarNav({
           onMouseLeave={handleMouseLeave}
           aria-haspopup="dialog"
           aria-expanded={activeHoverItem === "dashboard"}
-          className="group flex items-center justify-between w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
+          aria-current={activeItem === "dashboard" ? "page" : undefined}
+          className={`group flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg transition-colors text-left cursor-pointer ${navStateClass(activeItem === "dashboard")}`}
         >
           <div className="flex items-center gap-2.5">
             <LayoutDashboard className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors" />
@@ -215,7 +224,8 @@ export function SidebarNav({
             onMouseLeave={handleMouseLeave}
             aria-haspopup="dialog"
             aria-expanded={activeHoverItem === "my_profile"}
-            className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
+            aria-current={activeItem === "my_profile" ? "page" : undefined}
+            className={`group flex items-center gap-2.5 w-full px-3 py-2 text-sm rounded-lg transition-colors text-left cursor-pointer ${navStateClass(activeItem === "my_profile")}`}
           >
             <UserRound className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors" />
             <span>My Profile</span>
@@ -228,7 +238,8 @@ export function SidebarNav({
             onMouseLeave={handleMouseLeave}
             aria-haspopup="dialog"
             aria-expanded={activeHoverItem === "my_courses"}
-            className="group flex items-center justify-between w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
+            aria-current={activeItem === "my_courses" ? "page" : undefined}
+            className={`group flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg transition-colors text-left cursor-pointer ${navStateClass(activeItem === "my_courses")}`}
           >
             <div className="flex items-center gap-2.5">
               <GraduationCap className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors" />
@@ -347,6 +358,7 @@ export function SidebarNav({
           description={activeHoverItem ? navHoverData[activeHoverItem]?.description ?? "" : ""}
           gradientClass={activeHoverItem ? navHoverData[activeHoverItem]?.gradientClass ?? "" : ""}
           itemKey={activeHoverItem ?? undefined}
+          showActions={!isLoggedIn}
           onMouseEnter={handlePopoverMouseEnter}
           onMouseLeave={handlePopoverMouseLeave}
           onLoginClick={() => {

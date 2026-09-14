@@ -73,6 +73,13 @@ export default function Home() {
           onOpenSettings={handleOpenSettings}
           onOpenDashboard={handleOpenDashboard}
           onOpenStudentView={setStudentView}
+          activeItem={
+            isDashboardOpen && user?.isAdmin
+              ? "dashboard"
+              : studentView
+                ? `my_${studentView}`
+                : null
+          }
         />
 
         {/* Main Canvas Area, Settings Page, or Admin Dashboard */}

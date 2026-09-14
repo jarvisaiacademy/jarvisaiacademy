@@ -19,6 +19,7 @@ interface SidebarProps {
   onOpenSettings?: () => void;
   onOpenDashboard?: () => void;
   onOpenStudentView?: (view: "profile" | "courses") => void;
+  activeItem?: string | null;
   isLoggedIn?: boolean;
   user?: User | null;
   onLogout?: () => void;
@@ -34,6 +35,7 @@ export function Sidebar({
   onOpenSettings,
   onOpenDashboard,
   onOpenStudentView,
+  activeItem,
   isLoggedIn = false,
   user,
   onLogout,
@@ -78,6 +80,7 @@ export function Sidebar({
                 onOpenStudentView?.(view);
                 onToggle();
               }}
+              activeItem={activeItem}
               isMobile={true}
             />
           </div>
@@ -162,6 +165,7 @@ export function Sidebar({
           onOpenLogin={onOpenLogin}
           onOpenDashboard={onOpenDashboard}
           onOpenStudentView={onOpenStudentView}
+          activeItem={activeItem}
           isMobile={false}
         />
       </div>
