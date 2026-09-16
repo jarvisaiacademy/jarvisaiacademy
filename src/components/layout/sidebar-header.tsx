@@ -21,13 +21,23 @@ export function SidebarHeader({
 }: SidebarHeaderProps) {
   return (
     <div className="flex items-center justify-between px-3 py-3 text-foreground">
-      <div className="flex flex-col min-w-0 pr-2 select-none">
-        <span className="font-semibold text-base tracking-tight text-neutral-900 dark:text-white select-none leading-tight truncate">
-          {siteConfig.name}
-        </span>
-        <span className="text-[11px] text-neutral-500 dark:text-neutral-400 select-none tracking-normal font-normal truncate mt-0.5">
-          {siteConfig.tagline}
-        </span>
+      <div className="flex items-center gap-2.5 min-w-0 pr-2 select-none">
+        {/* Decorative — the wordmark beside it already names the brand. */}
+        <img
+          src={siteConfig.logo}
+          alt=""
+          width={32}
+          height={32}
+          className="w-8 h-8 shrink-0 object-contain"
+        />
+        <div className="flex flex-col min-w-0">
+          <span className="font-semibold text-base tracking-tight text-neutral-900 dark:text-white select-none leading-tight truncate">
+            {siteConfig.name}
+          </span>
+          <span className="text-[11px] text-neutral-500 dark:text-neutral-400 select-none tracking-normal font-normal truncate mt-0.5">
+            {siteConfig.tagline}
+          </span>
+        </div>
       </div>
 
       <button

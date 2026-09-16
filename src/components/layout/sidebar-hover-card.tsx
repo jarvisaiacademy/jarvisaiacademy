@@ -109,7 +109,7 @@ function HeroGradientObject({ itemKey }: { itemKey?: string }) {
             <span className="text-[11px] font-semibold text-white">Cash Bonus</span>
           </div>
           <div className="text-[18px] font-extrabold text-white tracking-tight leading-tight mt-0.5 flex items-baseline gap-1">
-            ₹5,000 <span className="text-[10px] font-semibold text-white/80">/ student</span>
+            ₹3,000 <span className="text-[10px] font-semibold text-white/80">/ student</span>
           </div>
           <div className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-full bg-white/95 text-emerald-950 shadow-md text-[10px] font-bold flex items-center gap-1 border border-white/60">
             <span>Instant Reward</span>
@@ -216,9 +216,9 @@ export interface SidebarHoverCardProps {
   onMouseEnter: () => void;
   onMouseLeave: () => void;
   onLoginClick?: () => void;
-  onSignupClick?: () => void;
   primaryButtonText?: string;
-  secondaryButtonText?: string;
+  /** Signed-in users have nothing to log into — hide the auth actions. */
+  showActions?: boolean;
 }
 
 export function SidebarHoverCard({
@@ -232,9 +232,8 @@ export function SidebarHoverCard({
   onMouseEnter,
   onMouseLeave,
   onLoginClick,
-  onSignupClick,
   primaryButtonText = "Log in",
-  secondaryButtonText = "Sign up for free",
+  showActions = true,
 }: SidebarHoverCardProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -346,25 +345,17 @@ export function SidebarHoverCard({
               </p>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2.5 pt-2 mt-0.5">
-                {/* Primary Button */}
-                <button
-                  type="button"
-                  onClick={onLoginClick}
-                  className="py-2 px-5 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:hover:bg-neutral-100 dark:text-black text-[13px] font-semibold text-center transition-all shadow-xs cursor-pointer active:scale-[0.98]"
-                >
-                  {primaryButtonText}
-                </button>
-
-                {/* Secondary Button */}
-                <button
-                  type="button"
-                  onClick={onSignupClick || onLoginClick}
-                  className="py-2 px-4 rounded-full bg-neutral-100 hover:bg-neutral-200 border border-neutral-200 text-neutral-900 dark:bg-[#2f2f2f] dark:hover:bg-[#383838] dark:border-white/10 dark:text-white text-[13px] font-medium text-center transition-all cursor-pointer active:scale-[0.98] truncate"
-                >
-                  {secondaryButtonText}
-                </button>
-              </div>
+              {showActions && (
+                <div className="flex items-center gap-2.5 pt-2 mt-0.5">
+                  <button
+                    type="button"
+                    onClick={onLoginClick}
+                    className="py-2 px-5 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:hover:bg-neutral-100 dark:text-black text-[13px] font-semibold text-center transition-all shadow-xs cursor-pointer active:scale-[0.98]"
+                  >
+                    {primaryButtonText}
+                  </button>
+                </div>
+              )}
             </div>
           </motion.div>
         </div>

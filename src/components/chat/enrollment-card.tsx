@@ -526,7 +526,7 @@ export function EnrollmentCard({
           </div>
           {/* Referral Reward Banner */}
           <div className="mt-2.5 p-2 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-[11px] text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
-            <span>🎁 <strong>Referral Program:</strong> Refer a student &amp; earn <strong>₹5,000</strong> cash bonus once they complete the full 60-day course!</span>
+            <span>🎁 <strong>Referral Program:</strong> Refer a student &amp; earn <strong>₹3,000</strong> cash bonus once they complete the full 60-day course!</span>
           </div>
         </div>
       ) : (

@@ -1,29 +1,44 @@
 "use client";
 
 import { LogOut } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { User } from "@/providers/auth-provider";
 
 interface UserProfileProps {
   user?: User | null;
   onProfileClick?: () => void;
   onLogout?: () => void;
+  /** "sidebar" is the footer row; "compact" is the inline header chip. */
+  variant?: "sidebar" | "compact";
 }
 
 export function UserProfile({
   user,
   onProfileClick,
   onLogout,
+  variant = "sidebar",
 }: UserProfileProps) {
   const name = user?.name || "Jarvis Member";
   const plan = user?.plan || "Pro";
   const initials = user?.name ? user.name.slice(0, 2).toUpperCase() : "JA";
+  const compact = variant === "compact";
 
   return (
-    <div className="flex items-center justify-between p-3 border-t border-neutral-200 dark:border-white/5 bg-transparent select-none">
+    <div
+      className={cn(
+        "flex items-center select-none",
+        compact
+          ? "gap-1.5 shrink-0"
+          : "justify-between p-3 border-t border-neutral-200 dark:border-white/5 bg-transparent"
+      )}
+    >
       <button
         type="button"
         onClick={onProfileClick}
-        className="flex items-center gap-2.5 min-w-0 p-1 -m-1 rounded-lg hover:bg-neutral-200/50 dark:hover:bg-white/5 transition-colors text-left cursor-pointer"
+        className={cn(
+          "flex items-center gap-2.5 min-w-0 rounded-lg hover:bg-neutral-200/50 dark:hover:bg-white/5 transition-colors text-left cursor-pointer",
+          compact ? "p-1" : "p-1 -m-1"
+        )}
       >
         {user?.picture ? (
           <img
@@ -36,7 +51,7 @@ export function UserProfile({
             {initials}
           </div>
         )}
-        <div className="flex flex-col min-w-0">
+        <div className={cn("flex-col min-w-0", compact ? "hidden md:flex" : "flex")}>
           <span className="text-xs font-medium text-neutral-900 dark:text-white truncate">
             {name}
           </span>

@@ -19,7 +19,9 @@ interface SidebarProps {
   onOpenLogin?: () => void;
   onOpenSettings?: () => void;
   onOpenDashboard?: () => void;
+  onOpenStudentView?: (view: "profile" | "courses") => void;
   onOpenLearning?: () => void;
+  activeItem?: string | null;
   isLoggedIn?: boolean;
   user?: User | null;
   onLogout?: () => void;
@@ -38,7 +40,9 @@ export function Sidebar({
   onOpenLogin,
   onOpenSettings,
   onOpenDashboard,
+  onOpenStudentView,
   onOpenLearning,
+  activeItem,
   isLoggedIn = false,
   user,
   onLogout,
@@ -59,6 +63,7 @@ export function Sidebar({
           />
         )}
         <motion.aside
+          key="sidebar-drawer"
           initial={false}
           animate={{
             x: isOpen ? 0 : -280,
@@ -98,10 +103,15 @@ export function Sidebar({
                   onOpenDashboard?.();
                   onToggle();
                 }}
+                onOpenStudentView={(view) => {
+                  onOpenStudentView?.(view);
+                  onToggle();
+                }}
                 onOpenLearning={() => {
                   onOpenLearning?.();
                   onToggle();
                 }}
+                activeItem={activeItem}
                 isMobile={true}
               />
             )}
@@ -121,16 +131,16 @@ export function Sidebar({
               </div>
             )}
             <div className="flex items-center justify-center pt-2 pb-1">
-              <SocialLinks iconSize={14} />
+              <SocialLinks />
             </div>
-            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-3 pt-1 pb-3 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
+            <div className="flex flex-nowrap items-center justify-center gap-x-1.5 px-2 pt-1 pb-3 text-[10px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
               <button
                 type="button"
                 onClick={() => {
                   onSelectSection?.("terms");
                   onToggle();
                 }}
-                className="hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
+                className="whitespace-nowrap hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
               >
                 Terms & Cond.
               </button>
@@ -141,7 +151,7 @@ export function Sidebar({
                   onSelectSection?.("privacy");
                   onToggle();
                 }}
-                className="hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
+                className="whitespace-nowrap hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
               >
                 Privacy Policy
               </button>
@@ -152,7 +162,7 @@ export function Sidebar({
                   onSelectSection?.("payment_terms");
                   onToggle();
                 }}
-                className="hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
+                className="whitespace-nowrap hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
               >
                 Payment Terms
               </button>
@@ -165,11 +175,13 @@ export function Sidebar({
 
   return (
     <motion.aside
+      key="sidebar-docked"
       initial={false}
-      animate={{
-        width: isOpen ? 260 : 0,
-        opacity: isOpen ? 1 : 0,
-      }}
+      // Motion only writes the properties named in `animate`. Without the
+      // explicit `x`, the drawer's `translateX(-280px)` survives on this node
+      // and parks the docked sidebar 280px off-screen while it still occupies
+      // its full width — the "empty space" bug.
+      animate={{ width: isOpen ? 260 : 0, x: 0 }}
       transition={{ type: "spring", stiffness: 350, damping: 32 }}
       className={`relative flex flex-col justify-between h-screen bg-[#f9f9f9] dark:bg-[#171717] overflow-hidden shrink-0 select-none z-30 transition-colors ${
         isOpen ? "border-r border-neutral-200 dark:border-white/5" : "border-none"
@@ -190,14 +202,16 @@ export function Sidebar({
             isMobile={false}
           />
         ) : (
-          <SidebarNav
-            onNewChat={onNewChat}
-            onSelectSection={onSelectSection}
-            onOpenLogin={onOpenLogin}
-            onOpenDashboard={onOpenDashboard}
-            onOpenLearning={onOpenLearning}
-            isMobile={false}
-          />
+        <SidebarNav
+          onNewChat={onNewChat}
+          onSelectSection={onSelectSection}
+          onOpenLogin={onOpenLogin}
+          onOpenDashboard={onOpenDashboard}
+          onOpenStudentView={onOpenStudentView}
+          onOpenLearning={onOpenLearning}
+          activeItem={activeItem}
+          isMobile={false}
+        />
         )}
       </div>
       <div suppressHydrationWarning className="w-[260px] flex flex-col border-t border-neutral-200 dark:border-white/5">
@@ -214,13 +228,13 @@ export function Sidebar({
           </div>
         )}
         <div className="flex items-center justify-center pt-2 pb-1">
-          <SocialLinks iconSize={14} />
+          <SocialLinks />
         </div>
-        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-3 pt-1 pb-3.5 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
+        <div className="flex flex-nowrap items-center justify-center gap-x-1.5 px-2 pt-1 pb-3.5 text-[10px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
           <button
             type="button"
             onClick={() => onSelectSection?.("terms")}
-            className="hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
+            className="whitespace-nowrap hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
           >
             Terms & Cond.
           </button>
@@ -228,7 +242,7 @@ export function Sidebar({
           <button
             type="button"
             onClick={() => onSelectSection?.("privacy")}
-            className="hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
+            className="whitespace-nowrap hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
           >
             Privacy Policy
           </button>
@@ -236,7 +250,7 @@ export function Sidebar({
           <button
             type="button"
             onClick={() => onSelectSection?.("payment_terms")}
-            className="hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
+            className="whitespace-nowrap hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
           >
             Payment Terms
           </button>

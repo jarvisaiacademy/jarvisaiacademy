@@ -5,8 +5,9 @@ import {
   Auth,
   browserLocalPersistence,
   setPersistence,
+  connectAuthEmulator,
 } from "firebase/auth";
-import { getFirestore, Firestore } from "firebase/firestore";
+import { getFirestore, Firestore, connectFirestoreEmulator } from "firebase/firestore";
 
 export const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyABWBeFX9nHxWzCpxhu4iCmS1TeaTHijMg",
@@ -27,17 +28,21 @@ let auth: Auth | null = null;
 let db: Firestore | null = null;
 let googleProvider: GoogleAuthProvider | null = null;
 
-if (isFirebaseConfigured) {
+if (typeof window !== "undefined" && isFirebaseConfigured) {
   try {
     app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-    if (typeof window !== "undefined") {
-      auth = getAuth(app);
-      // Use browserLocalPersistence for instant synchronous token restoration
-      setPersistence(auth, browserLocalPersistence).catch(() => {});
-      googleProvider = new GoogleAuthProvider();
-      googleProvider.setCustomParameters({ prompt: "select_account" });
-    }
+    auth = getAuth(app);
+    // Use browserLocalPersistence for instant synchronous token restoration
+    setPersistence(auth, browserLocalPersistence).catch(() => {});
     db = getFirestore(app);
+    googleProvider = new GoogleAuthProvider();
+    googleProvider.setCustomParameters({ prompt: "select_account" });
+
+    // Point at the local Emulator Suite. Needs no real project, API key, or login.
+    if (process.env.NEXT_PUBLIC_FIREBASE_EMULATOR === "1") {
+      connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+      connectFirestoreEmulator(db, "127.0.0.1", 8080);
+    }
   } catch (err) {
     console.warn("[Firebase] Initialization error:", err);
   }

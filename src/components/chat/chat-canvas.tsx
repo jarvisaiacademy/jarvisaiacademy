@@ -17,7 +17,7 @@ We specialize in high-impact software engineering programs engineered to take yo
 * **Fast-Track 60-Day Duration**: All cohort programs are intensive **60 days (2 months)** with build-first commercial project development.
 * **Transparent Pricing**: Flat tuition fee of **₹30,000** (₹30K) across all courses.
 * **Flagship Programs**: Comprehensive **Full-Stack AI & Web Engineering** and our signature **Super10 Elite Cohort** with 100% placement assurance.
-* **🎁 Refer & Earn ₹5,000**: Refer a friend or colleague and receive **₹5,000** direct reward once your referred student completes the whole course!
+* **🎁 Refer & Earn ₹3,000**: Refer a friend or colleague and receive **₹3,000** direct reward once your referred student completes the whole course!
 * **1-on-1 Mentorship**: Direct weekly architecture reviews, mock technical interviews, and resume coaching with lead software engineers.
 
 What area would you like to explore first — our **Course Curriculum**, the **Super10 Batch**, **Admissions & Fees**, or **Refer & Earn**?`;
@@ -25,7 +25,7 @@ What area would you like to explore first — our **Course Curriculum**, the **S
 const WELCOME_SUGGESTIONS = [
   "What is the fee structure for the 60-day courses?",
   "Tell me about the Super10 Elite Cohort with 100% placement assurance",
-  "How does the ₹5,000 Refer & Earn program work?",
+  "How does the ₹3,000 Refer & Earn program work?",
 ];
 
 const initialConversation: ChatMessage[] = [
@@ -56,7 +56,7 @@ Choose a category or explore all courses below:`,
     suggestions: [
       "What is the fee structure & payment options?",
       "Tell me about the Super10 Elite Batch with 100% placement assurance",
-      "How does the ₹5,000 Refer & Earn program work?",
+      "How does the ₹3,000 Refer & Earn program work?",
     ],
   },
   super10: {
@@ -68,7 +68,7 @@ Choose a category or explore all courses below:`,
 * **Format**: Hands-on live commercial projects, daily peer code reviews, and enterprise system designs.
 * **1-on-1 Mentorship**: Direct weekly architecture reviews with lead tech architects.
 * **Placement Guarantee**: 100% job placement assurance with partner tech companies across Pune and remote hubs.
-* **🎁 Referral Bonus**: Refer a peer to Super10 and earn **₹5,000** after they complete the full 60-day cohort!
+* **🎁 Referral Bonus**: Refer a peer to Super10 and earn **₹3,000** after they complete the full 60-day cohort!
 
 > "Super10 is engineered for ambitious learners ready to build real production-grade systems and secure senior developer packages."
 
@@ -80,18 +80,18 @@ Would you like to review the eligibility criteria or reserve a screening intervi
     ],
   },
   referral: {
-    text: `# 🎁 Refer & Earn ₹5,000 — Jarvis AI Academy Referral Program
+    text: `# 🎁 Refer & Earn ₹3,000 — Jarvis AI Academy Referral Program
 
-Earn **₹5,000** direct bonus for every learner you refer to Jarvis AI Academy!
+Earn **₹3,000** direct bonus for every learner you refer to Jarvis AI Academy!
 
 ### How the Referral Program Works:
 1. **Invite a Learner**: Refer a friend, colleague, or classmate to enroll in any 60-day program.
 2. **They Enroll**: Your referred person enrolls in their chosen cohort (Program Fee: **₹30,000**).
 3. **Course Completion**: They attend classes, submit projects, and finish the full **60-day course**.
-4. **Get Rewarded**: Once the referred candidate completes the whole course, you receive **₹5,000** cash reward directly via UPI or bank transfer!
+4. **Get Rewarded**: Once the referred candidate completes the whole course, you receive **₹3,000** cash reward directly via UPI or bank transfer!
 
 ### Key Program Details:
-* **Reward Amount**: **₹5,000** per successful student completion.
+* **Reward Amount**: **₹3,000** per successful student completion.
 * **Disbursement**: Prompt payout upon verification of course completion.
 * **No Caps**: Refer 5 peers and earn **₹25,000**!
 
@@ -116,7 +116,7 @@ Ready to refer someone? Share their details with our admissions desk or have the
 4. **Tailwind CSS Utility Design**: Rapid UI styling, dark mode configuration, mobile-first design.
 5. **Production Capstone**: Build a high-performance responsive web dashboard with live API integration.
 
-* **🎁 Refer & Earn**: Refer a friend to this course and earn **₹5,000** once they complete!`,
+* **🎁 Refer & Earn**: Refer a friend to this course and earn **₹3,000** once they complete!`,
     suggestions: [
       "I want to enroll in the Frontend Engineering cohort and proceed with payment",
       "What projects will I build in Frontend Engineering?",
@@ -137,7 +137,7 @@ Ready to refer someone? Share their details with our admissions desk or have the
 4. **PostgreSQL Database**: Indexing, migrations, query optimization.
 5. **Live Capstone**: Architect a scalable microservice with real-time authentication and payment processing.
 
-* **🎁 Refer & Earn**: Refer a student and receive **₹5,000** upon course completion!`,
+* **🎁 Refer & Earn**: Refer a student and receive **₹3,000** upon course completion!`,
     suggestions: [
       "I want to enroll in Backend Engineering and proceed with payment",
       "How is FastAPI compared with Django in this course?",
@@ -158,7 +158,7 @@ Ready to refer someone? Share their details with our admissions desk or have the
 4. **Kubernetes Basics**: Pods, services, deployments, and cluster management.
 5. **CI/CD Pipelines**: Automated GitHub Actions testing and zero-downtime releases.
 
-* **🎁 Refer & Earn**: Earn **₹5,000** cash reward for every referral who completes the course!`,
+* **🎁 Refer & Earn**: Earn **₹3,000** cash reward for every referral who completes the course!`,
     suggestions: [
       "I want to enroll in DevOps & Cloud Engineering and proceed with payment",
       "What AWS certifications does this course prepare for?",
@@ -315,17 +315,17 @@ Ready to accelerate your tech career? Our admissions counselors and mentors are 
 ---
 
 ### 🌐 Official Social Channels
-* 💼 **LinkedIn**: [linkedin.com/company/jarvisaiacademy](https://www.linkedin.com/company/jarvisaiacademy/)
+* 💼 **LinkedIn**: [@jarvisaiacademy](https://www.linkedin.com/company/jarvisaiacademy/)
 * 📸 **Instagram**: [@jarvisaiacademy](https://www.instagram.com/jarvisaiacademy/)
 * 🎥 **YouTube**: [@JarvisAIAcademy](https://www.youtube.com/@JarvisAIAcademy)
-* 📘 **Facebook**: [facebook.com/jarvisaiacademy](https://www.facebook.com/jarvisaiacademy/)
+* 📘 **Facebook**: [@jarvisaiacademy](https://www.facebook.com/jarvisaiacademy/)
 * 𝕏 **X (Twitter)**: [@jarvisaiacademy](https://x.com/jarvisaiacademy)
 
 Drop your contact number or question here and an engineering advisor will get in touch with you directly!`,
     suggestions: [
-      "What is the fee structure for the 60-day courses?",
-      "Tell me about the Super10 Elite Batch with 100% placement assurance",
-      "How does the ₹5,000 Refer & Earn program work?",
+      "What is the fee structure of courses?",
+      "Tell me more about Super10 Elite batch with free course admission.",
+      "How does ₹3,000 referral work?",
     ],
   },
   socials: {
@@ -333,10 +333,10 @@ Drop your contact number or question here and an engineering advisor will get in
 
 Connect with our community across all official channels for code walkthroughs, tech deep-dives, student success stories, and cohort announcements:
 
-* 💼 **LinkedIn**: [linkedin.com/company/jarvisaiacademy](https://www.linkedin.com/company/jarvisaiacademy/) — *Alumni updates, hiring partner connections & official credentials*
+* 💼 **LinkedIn**: [@jarvisaiacademy](https://www.linkedin.com/company/jarvisaiacademy/) — *Alumni updates, hiring partner connections & official credentials*
 * 📸 **Instagram**: [@jarvisaiacademy](https://www.instagram.com/jarvisaiacademy/) — *Campus life, project showcases & bite-sized software engineering tips*
 * 🎥 **YouTube**: [@JarvisAIAcademy](https://www.youtube.com/@JarvisAIAcademy) — *In-depth code walkthroughs, full-stack architectural builds & tutorials*
-* 📘 **Facebook**: [facebook.com/jarvisaiacademy](https://www.facebook.com/jarvisaiacademy/) — *Community announcements, admissions webinars & news*
+* 📘 **Facebook**: [@jarvisaiacademy](https://www.facebook.com/jarvisaiacademy/) — *Community announcements, admissions webinars & news*
 * 𝕏 **X (Twitter)**: [@jarvisaiacademy](https://x.com/jarvisaiacademy) — *AI news, tech discussions & founder updates*
 
 * 🌐 **Official Website**: [jarvisaiacademy.com](https://jarvisaiacademy.com)  
@@ -344,7 +344,7 @@ Connect with our community across all official channels for code walkthroughs, t
     suggestions: [
       "Tell me about the Super10 Elite Batch with 100% placement assurance",
       "What is the fee structure for the 60-day courses?",
-      "How does the ₹5,000 Refer & Earn program work?",
+      "How does the ₹3,000 Refer & Earn program work?",
     ],
   },
   deep_research: {
@@ -382,7 +382,7 @@ Welcome to **Jarvis AI Academy**! By enrolling in any cohort, accessing our engi
 ---
 
 ### 3. Refer & Earn Program Terms
-* Referrers receive **₹5,000** for each referred candidate.
+* Referrers receive **₹3,000** for each referred candidate.
 * The payout is released once the referred student successfully completes the entire 60-day program.
 
 ---
@@ -431,9 +431,9 @@ At **Jarvis AI Academy**, we maintain transparent, straightforward pricing with 
 
 ---
 
-### 2. 🎁 Refer & Earn Policy (₹5,000 Reward)
+### 2. 🎁 Refer & Earn Policy (₹3,000 Reward)
 * Anyone can refer prospective candidates to Jarvis AI Academy.
-* Referrer receives **₹5,000** cash reward once the referred student successfully completes the whole 60-day course.
+* Referrer receives **₹3,000** cash reward once the referred student successfully completes the whole 60-day course.
 
 ---
 
@@ -452,7 +452,7 @@ For billing assistance: [finance@jarvisaiacademy.com](mailto:finance@jarvisaiaca
     suggestions: [
       "I want to enroll in the upcoming cohort and proceed with payment",
       "Are zero-cost EMI installment plans available?",
-      "How do I earn ₹5,000 by referring a friend?",
+      "How do I earn ₹3,000 by referring a friend?",
     ],
   },
   enroll: {
@@ -469,15 +469,15 @@ Welcome to the direct admissions and enrollment portal. Confirm your seat for th
 
 ---
 
-### 🎁 Refer & Earn ₹5,000:
+### 🎁 Refer & Earn ₹3,000:
 * Refer a friend or colleague to any Jarvis AI Academy program.
-* Earn a **₹5,000** cash reward once your referred candidate completes the full 60-day course!
+* Earn a **₹3,000** cash reward once your referred candidate completes the full 60-day course!
 
 Please select your program below and proceed with the secure checkout. Your verified Tax Invoice & Receipt will be available for download immediately upon confirmation.`,
     suggestions: [
       "What are the accepted payment methods and EMI options?",
       "How does the 7-day 100% money-back guarantee work?",
-      "Tell me about the ₹5,000 referral reward upon course completion",
+      "Tell me about the ₹3,000 referral reward upon course completion",
     ],
   },
 };
@@ -639,8 +639,8 @@ export function ChatCanvas({
       lower.includes("refer") ||
       lower.includes("reffer") ||
       lower.includes("referral") ||
-      lower.includes("5k") ||
-      lower.includes("5000") ||
+      lower.includes("3k") ||
+      lower.includes("3000") ||
       lower.includes("reward") ||
       lower.includes("affiliate") ||
       lower.includes("invite")
@@ -670,7 +670,7 @@ export function ChatCanvas({
       return academyKnowledge.enroll;
     } else if (lower.includes("super10") || lower.includes("elite")) {
       return academyKnowledge.super10;
-    } else if (lower.includes("referral") || lower.includes("refer & earn") || lower.includes("5,000") || lower.includes("5000")) {
+    } else if (lower.includes("referral") || lower.includes("refer & earn") || lower.includes("3,000") || lower.includes("3000")) {
       return academyKnowledge.referral;
     } else if (lower.includes("frontend") || lower.includes("reactjs") || lower.includes("tailwind")) {
       return academyKnowledge.frontend;
@@ -743,11 +743,11 @@ export function ChatCanvas({
     }
 
     return {
-      text: `Thank you for your question about **"${prompt}"**!\n\nAt **Jarvis AI Academy**, our programs feature:\n* **Duration**: Fast-track **60 Days (2 Months)** build-first training.\n* **Tuition**: **₹30,000** (₹30K) flat fees across all courses.\n* **🎁 Refer & Earn**: Refer a student and receive **₹5,000** cash reward once they complete the full 60-day course!\n\n🌐 **Connect With Us Online**:\n* [LinkedIn](https://www.linkedin.com/company/jarvisaiacademy/) · [Instagram](https://www.instagram.com/jarvisaiacademy/) · [YouTube](https://www.youtube.com/@JarvisAIAcademy) · [X](https://x.com/jarvisaiacademy) · [Facebook](https://www.facebook.com/jarvisaiacademy/)\n\nWould you like to explore our course syllabus, the **Super10** batch, or start enrollment?`,
+      text: `Thank you for your question about **"${prompt}"**!\n\nAt **Jarvis AI Academy**, our programs feature:\n* **Duration**: Fast-track **60 Days (2 Months)** build-first training.\n* **Tuition**: **₹30,000** (₹30K) flat fees across all courses.\n* **🎁 Refer & Earn**: Refer a student and receive **₹3,000** cash reward once they complete the full 60-day course!\n\n🌐 **Connect With Us Online**:\n* 💼 **LinkedIn**: [@jarvisaiacademy](https://www.linkedin.com/company/jarvisaiacademy/)\n* 📸 **Instagram**: [@jarvisaiacademy](https://www.instagram.com/jarvisaiacademy/)\n* 🎥 **YouTube**: [@JarvisAIAcademy](https://www.youtube.com/@JarvisAIAcademy)\n* 𝕏 **X (Twitter)**: [@jarvisaiacademy](https://x.com/jarvisaiacademy)\n* 📘 **Facebook**: [@jarvisaiacademy](https://www.facebook.com/jarvisaiacademy/)\n\nWould you like to explore our course syllabus, the **Super10** batch, or start enrollment?`,
       suggestions: [
         "What is the fee structure for the 60-day courses?",
         "Tell me about the Super10 Elite Cohort with 100% placement assurance",
-        "How does the ₹5,000 Refer & Earn program work?",
+        "How does the ₹3,000 Refer & Earn program work?",
       ],
     };
   }, []);
@@ -782,7 +782,7 @@ export function ChatCanvas({
       const topicPrompts: Record<string, string> = {
         courses: "Tell me about the available courses at Jarvis AI Academy",
         super10: "What is the Super10 Elite Batch and how can I qualify?",
-        referral: "Tell me about the Refer & Earn program (₹5,000 reward)",
+        referral: "Tell me about the Refer & Earn program (₹3,000 reward)",
         testimonials: "Show me student reviews and placement testimonials",
         certificate: "How do I verify a certificate issued by Jarvis AI Academy?",
         enquiry: "I'd like to get in touch with an admissions counselor",

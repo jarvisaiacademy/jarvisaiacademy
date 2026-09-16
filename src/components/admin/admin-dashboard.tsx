@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Users,
   IndianRupee,
@@ -39,6 +39,9 @@ import { useToast } from "@/components/ui/toast";
 
 import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
 import { AdminAssignments } from "@/components/admin/admin-assignments";
+import { Select } from "@/components/ui/select";
+import { shortcutById } from "@/data/shortcuts";
+import { isTypingTarget, matchesShortcut } from "@/lib/keyboard";
 
 interface EnrollmentRecord {
   action: string;
@@ -133,6 +136,8 @@ export function AdminDashboard({
   const [records, setRecords] = useState<EnrollmentRecord[]>(DEFAULT_RECORDS);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   // Courses management state
   const [courseSearch, setCourseSearch] = useState("");
@@ -180,6 +185,27 @@ export function AdminDashboard({
     } catch {
       // ignore
     }
+  }, []);
+
+  // Only live while the dashboard is mounted, so these never fight the shortcuts
+  // on the chat view.
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isTypingTarget(event.target)) return;
+
+      if (matchesShortcut(event, shortcutById("search"))) {
+        event.preventDefault();
+        searchRef.current?.focus();
+        return;
+      }
+      if (matchesShortcut(event, shortcutById("filter"))) {
+        event.preventDefault();
+        setFilterOpen(true);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   // Filter admissions
@@ -428,6 +454,17 @@ export function AdminDashboard({
 
       {/* Main Container */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
+        {/* Welcome Banner */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-600/10 border border-blue-500/20 shadow-xs">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
+              Welcome back, {user?.name?.split(" ")[0] || "Director"}
+            </h2>
+            <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
+              Real-time admissions, revenue analytics, and student management for {siteConfig.name}.
+            </p>
+          </div>
+        </div>
 
         {/* TAB 1: COURSE MANAGEMENT (CRUD) */}
         {activeTab === "courses" && (
@@ -744,6 +781,7 @@ export function AdminDashboard({
                   <div className="relative">
                     <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
+                      ref={searchRef}
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
@@ -752,15 +790,19 @@ export function AdminDashboard({
                     />
                   </div>
 
-                  <select
+                  <Select
+                    label="Filter by status"
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs focus:outline-hidden cursor-pointer"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="paid">Paid (Enrolled)</option>
-                    <option value="pending">Pending</option>
-                  </select>
+                    onValueChange={setStatusFilter}
+                    open={filterOpen}
+                    onOpenChange={setFilterOpen}
+                    options={[
+                      { value: "all", label: "All Status" },
+                      { value: "paid", label: "Paid (Enrolled)" },
+                      { value: "pending", label: "Pending" },
+                    ]}
+                    className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+                  />
 
                   <button
                     type="button"
