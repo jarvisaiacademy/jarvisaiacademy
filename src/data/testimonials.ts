@@ -15,6 +15,8 @@ export interface TestimonialPerson {
   company: string;
   location: string;
   quote: string;
+  /** DiceBear `notionists` hair variant, picked to match the name (see `avatarUrl`). */
+  hair: string;
 }
 
 export const TESTIMONIAL_POOL: TestimonialPerson[] = [
@@ -25,6 +27,7 @@ export const TESTIMONIAL_POOL: TestimonialPerson[] = [
     location: "London, UK",
     quote:
       "Transitioned from a non-IT background to full-stack development in 60 days. The live project reviews made all the difference.",
+    hair: "variant41",
   },
   {
     name: "Rahul Mehta",
@@ -33,6 +36,7 @@ export const TESTIMONIAL_POOL: TestimonialPerson[] = [
     location: "Austin, US",
     quote:
       "The system design mock interviews were what got me through the loop.",
+    hair: "variant06",
   },
   {
     name: "Amit Kumar",
@@ -41,6 +45,7 @@ export const TESTIMONIAL_POOL: TestimonialPerson[] = [
     location: "Manchester, UK",
     quote:
       "Unlike regular courses, we wrote production code from week one.",
+    hair: "variant15",
   },
   {
     name: "Sofia Mendes",
@@ -49,6 +54,7 @@ export const TESTIMONIAL_POOL: TestimonialPerson[] = [
     location: "Boston, US",
     quote:
       "The capstone was the closest thing to a real sprint I had done before joining a team.",
+    hair: "variant36",
   },
   {
     name: "James Whitfield",
@@ -57,6 +63,7 @@ export const TESTIMONIAL_POOL: TestimonialPerson[] = [
     location: "Bristol, UK",
     quote:
       "Debugging alongside mentors on live systems taught me more than any tutorial.",
+    hair: "variant18",
   },
   {
     name: "Neha Iyer",
@@ -65,6 +72,7 @@ export const TESTIMONIAL_POOL: TestimonialPerson[] = [
     location: "San Francisco, US",
     quote:
       "We shipped a retrieval pipeline end to end. That project is still the first thing I show in interviews.",
+    hair: "variant63",
   },
   {
     name: "Daniel Okafor",
@@ -73,6 +81,7 @@ export const TESTIMONIAL_POOL: TestimonialPerson[] = [
     location: "London, UK",
     quote:
       "60 days of daily code review built the habits I now use on every pull request.",
+    hair: "variant33",
   },
   {
     name: "Arjun Rao",
@@ -81,6 +90,7 @@ export const TESTIMONIAL_POOL: TestimonialPerson[] = [
     location: "Austin, US",
     quote:
       "The mentorship was relentless in the best way — no ticket was ever left half done.",
+    hair: "variant07",
   },
   {
     name: "Chloe Bennett",
@@ -89,6 +99,7 @@ export const TESTIMONIAL_POOL: TestimonialPerson[] = [
     location: "Birmingham, UK",
     quote:
       "Coming from a design background, the frontend track met me exactly where I was.",
+    hair: "variant10",
   },
   {
     name: "Vikram Nair",
@@ -97,6 +108,7 @@ export const TESTIMONIAL_POOL: TestimonialPerson[] = [
     location: "New York, US",
     quote:
       "I arrived knowing basic SQL and left able to reason about query plans and replication.",
+    hair: "variant17",
   },
   {
     name: "Rachel Lim",
@@ -105,6 +117,7 @@ export const TESTIMONIAL_POOL: TestimonialPerson[] = [
     location: "Seattle, US",
     quote:
       "The 60-day structure forced me to finish things. That was the skill I was missing.",
+    hair: "variant39",
   },
   {
     name: "Tom Ellery",
@@ -113,14 +126,27 @@ export const TESTIMONIAL_POOL: TestimonialPerson[] = [
     location: "Leeds, UK",
     quote:
       "Live commercial projects meant my portfolio was made of work, not exercises.",
+    hair: "variant25",
   },
 ];
 
 const AVATAR_STYLE = "notionists";
 
-/** Seeded by the name, so one person always gets the same illustration. */
-export const avatarUrl = (name: string) =>
-  `https://api.dicebear.com/9.x/${AVATAR_STYLE}/svg?seed=${encodeURIComponent(name)}`;
+/**
+ * Seeded by the name, so one person always gets the same illustration — plus the hair
+ * variant pinned in the pool.
+ *
+ * The style has no gender option (no DiceBear style does), so `seed` alone gives every
+ * feature at random and the illustration has nothing to do with the name. Two of those
+ * features are wrong on a woman: `beardProbability` defaults to 10, so about one in ten
+ * grows a beard, and hair is a uniform draw from 64 variants. Pinning `hair` and taking
+ * the beard to zero is the whole fix.
+ */
+export const avatarUrl = (person: TestimonialPerson) =>
+  `https://api.dicebear.com/9.x/${AVATAR_STYLE}/svg` +
+  `?seed=${encodeURIComponent(person.name)}` +
+  `&hair=${person.hair}` +
+  `&beardProbability=0`;
 
 /** Fisher-Yates, so a fresh sample can come out in a different order every time. */
 function shuffle<T>(items: T[]): T[] {
@@ -152,7 +178,7 @@ export function buildTestimonialsText(count = 3): string {
     ``,
     ...people.map(
       (person) =>
-        `* ![](${avatarUrl(person.name)}) **${person.name}** — ${person.role}, ${person.company} · ${person.location}  \n  *"${person.quote}"*`
+        `* ![](${avatarUrl(person)}) **${person.name}** — ${person.role}, ${person.company} · ${person.location}  \n  *"${person.quote}"*`
     ),
     ``,
     `Would you like to connect with an alumnus or see our hiring partner companies?`,
