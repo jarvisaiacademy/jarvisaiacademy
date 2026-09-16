@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 import { ThemeProvider } from "@/providers/theme-provider";
 import { LanguageProvider } from "@/providers/language-provider";
 import { AuthProvider } from "@/providers/auth-provider";
+import { CoursesProvider } from "@/providers/courses-provider";
+import { StudentsProvider } from "@/providers/students-provider";
+import { AssignmentsProvider } from "@/providers/assignments-provider";
 import { ShortcutGuide } from "@/components/ui/shortcut-guide";
 
 import { siteConfig } from "@/config/site";
@@ -116,9 +119,15 @@ export default function RootLayout({
         <ThemeProvider>
           <LanguageProvider>
             <AuthProvider>
-              {children}
-              {/* Renders nothing until opened, so it adds no markup to the HTML. */}
-              <ShortcutGuide />
+              <CoursesProvider>
+                <StudentsProvider>
+                  <AssignmentsProvider>
+                    {children}
+                    {/* Renders nothing until opened, so it adds no markup to the HTML. */}
+                    <ShortcutGuide />
+                  </AssignmentsProvider>
+                </StudentsProvider>
+              </CoursesProvider>
             </AuthProvider>
           </LanguageProvider>
         </ThemeProvider>

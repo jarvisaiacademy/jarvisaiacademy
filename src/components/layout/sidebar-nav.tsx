@@ -44,6 +44,11 @@ const navHoverData: Record<string, NavHoverItemData> = {
     description: "Every course you have enrolled in, with its amount, transaction ID and payment status.",
     gradientClass: "bg-gradient-to-br from-[#38d9a9] via-[#4dabf7] to-[#4c6ef5]",
   },
+  learning: {
+    title: "My Learning",
+    description: "Open the courses your academy admin granted you and jump straight into the syllabus with Jarvis.",
+    gradientClass: "bg-gradient-to-br from-[#845ef7] via-[#5c7cfa] to-[#22b8cf]",
+  },
   courses: {
     title: "Explore Academy Courses",
     description: "Log in to enroll in Full-Stack AI & Web Engineering (60 Days / ₹30K), view roadmaps, and track progress.",
@@ -82,6 +87,7 @@ interface SidebarNavProps {
   onOpenLogin?: () => void;
   onOpenDashboard?: () => void;
   onOpenStudentView?: (view: "profile" | "courses") => void;
+  onOpenLearning?: () => void;
   activeItem?: string | null;
   isMobile?: boolean;
 }
@@ -110,6 +116,7 @@ export function SidebarNav({
   onOpenLogin,
   onOpenDashboard,
   onOpenStudentView,
+  onOpenLearning,
   activeItem,
   isMobile,
 }: SidebarNavProps) {
@@ -266,6 +273,22 @@ export function SidebarNav({
                 {enrollmentCount}
               </span>
             )}
+          </button>
+
+          {/* Courses an admin granted this account — distinct from the paid
+              enrolments above, so it keeps its own row. */}
+          <button
+            type="button"
+            onClick={onOpenLearning}
+            onMouseEnter={(e) => handleMouseEnter("learning", e)}
+            onMouseLeave={handleMouseLeave}
+            aria-haspopup="dialog"
+            aria-expanded={activeHoverItem === "learning"}
+            aria-current={activeItem === "learning" ? "page" : undefined}
+            className={`group flex items-center gap-2.5 w-full px-3 py-2 text-sm rounded-lg transition-colors text-left cursor-pointer ${navStateClass(activeItem === "learning")}`}
+          >
+            <NavIcon icon={BookOpen} />
+            <span>My Learning</span>
           </button>
         </>
       )}

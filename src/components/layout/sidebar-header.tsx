@@ -11,11 +11,13 @@ interface SidebarHeaderProps {
   onSearch?: () => void;
   onOpenLogin?: () => void;
   isMobile?: boolean;
+  isDashboardOpen?: boolean;
 }
 
 export function SidebarHeader({
   onToggle,
   isMobile,
+  isDashboardOpen,
 }: SidebarHeaderProps) {
   return (
     <div className="flex items-center justify-between px-3 py-3 text-foreground">

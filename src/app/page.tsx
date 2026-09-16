@@ -8,6 +8,8 @@ import { LoginModal } from "@/components/auth/login-modal";
 import { SettingsPage } from "@/components/settings/settings-page";
 import { AdminDashboard } from "@/components/admin/admin-dashboard";
 import { StudentPanel, type StudentView } from "@/components/student/student-panel";
+import { MyLearningPage } from "@/components/learning/my-learning-page";
+import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
 import { ToastProvider } from "@/components/ui/toast";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useAuth } from "@/providers/auth-provider";
@@ -19,6 +21,8 @@ export default function Home() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [studentView, setStudentView] = useState<StudentView | null>(null);
+  const [isLearningOpen, setIsLearningOpen] = useState(false);
+  const [dashboardTab, setDashboardTab] = useState<DashboardTab>("courses");
   const [activeTopic, setActiveTopic] = useState<string | null>(null);
   const [resetSignal, setResetSignal] = useState(0);
 
@@ -30,18 +34,28 @@ export default function Home() {
   const handleOpenSettings = () => {
     setIsDashboardOpen(false);
     setStudentView(null);
+    setIsLearningOpen(false);
     setIsSettingsOpen(true);
   };
   const handleCloseSettings = () => setIsSettingsOpen(false);
   const handleOpenDashboard = () => {
     setIsSettingsOpen(false);
     setStudentView(null);
+    setIsLearningOpen(false);
     setIsDashboardOpen(true);
   };
   const handleCloseDashboard = () => setIsDashboardOpen(false);
+  const handleOpenLearning = () => {
+    setIsSettingsOpen(false);
+    setIsDashboardOpen(false);
+    setStudentView(null);
+    setIsLearningOpen(true);
+  };
+  const handleCloseLearning = () => setIsLearningOpen(false);
   const handleLogout = () => {
     setIsDashboardOpen(false);
     setStudentView(null);
+    setIsLearningOpen(false);
     logout();
   };
 
@@ -60,12 +74,14 @@ export default function Home() {
             setIsSettingsOpen(false);
             setIsDashboardOpen(false);
             setStudentView(null);
+            setIsLearningOpen(false);
             setActiveTopic(topic);
           }}
           onNewChat={() => {
             setIsSettingsOpen(false);
             setIsDashboardOpen(false);
             setStudentView(null);
+            setIsLearningOpen(false);
             setActiveTopic(null);
             setResetSignal((prev) => prev + 1);
           }}
@@ -73,19 +89,32 @@ export default function Home() {
           onOpenSettings={handleOpenSettings}
           onOpenDashboard={handleOpenDashboard}
           onOpenStudentView={setStudentView}
+          onOpenLearning={handleOpenLearning}
+          isDashboardOpen={isDashboardOpen && !!user?.isAdmin}
+          activeDashboardTab={dashboardTab}
+          onSelectDashboardTab={setDashboardTab}
+          onBackToChat={handleCloseDashboard}
           activeItem={
             isDashboardOpen && user?.isAdmin
               ? "dashboard"
-              : studentView
-                ? `my_${studentView}`
-                : null
+              : isLearningOpen
+                ? "learning"
+                : studentView
+                  ? `my_${studentView}`
+                  : null
           }
         />
 
         {/* Main Canvas Area, Settings Page, or Admin Dashboard */}
         <main className="flex-1 flex flex-col h-full min-h-0 min-w-0 bg-background relative overflow-hidden transition-colors duration-150">
           {isDashboardOpen && user?.isAdmin ? (
-            <AdminDashboard onBackToChat={handleCloseDashboard} />
+            <AdminDashboard
+              activeTab={dashboardTab}
+              onChangeTab={setDashboardTab}
+              onBackToChat={handleCloseDashboard}
+              sidebarOpen={isOpen}
+              onToggleSidebar={toggle}
+            />
           ) : isSettingsOpen ? (
             <SettingsPage onBack={handleCloseSettings} />
           ) : studentView ? (
@@ -95,6 +124,14 @@ export default function Home() {
               onBrowseCourses={() => {
                 setStudentView(null);
                 setActiveTopic("courses");
+              }}
+            />
+          ) : isLearningOpen && isLoggedIn && !user?.isAdmin ? (
+            <MyLearningPage
+              onBack={handleCloseLearning}
+              onOpenCourse={(topic) => {
+                setIsLearningOpen(false);
+                setActiveTopic(topic);
               }}
             />
           ) : (

@@ -14,7 +14,7 @@ import {
 import { MarkdownRenderer } from "./markdown-renderer";
 import { EnrollmentCard, EnrollmentData } from "./enrollment-card";
 import { CourseCatalogResponse } from "./course-catalog-response";
-import { COURSES_DATA } from "@/data/courses";
+import { useCourses } from "@/providers/courses-provider";
 import { useToast } from "@/components/ui/toast";
 
 
@@ -68,6 +68,7 @@ export function ChatMessages({
   onActionPrompt,
   currentUser,
 }: ChatMessagesProps) {
+  const { courses } = useCourses();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
@@ -331,7 +332,7 @@ export function ChatMessages({
                     <CourseCatalogResponse
                       onActionPrompt={onActionPrompt}
                       onSelectCourse={(courseId) => {
-                        const course = COURSES_DATA.find((c) => c.id === courseId);
+                        const course = courses.find((c) => c.id === courseId);
                         if (course) {
                           onActionPrompt?.(course.actionPrompt);
                         } else {
