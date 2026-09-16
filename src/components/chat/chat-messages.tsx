@@ -145,6 +145,15 @@ export function ChatMessages({
           Boolean(msg.enrollment) ||
           msg.content.includes("Admissions & Enrollment Portal") ||
           msg.content.includes("Enrollment Checkout");
+        // The question this answer replies to, carried into the share link so a
+        // fresh browser opens on the same ask instead of the welcome screen.
+        let sharePrompt = "";
+        for (let i = idx - 1; i >= 0; i--) {
+          if (messages[i].role === "user") {
+            sharePrompt = messages[i].content;
+            break;
+          }
+        }
 
         return (
           <div key={msg.id || idx} className="flex flex-col w-full">
@@ -392,7 +401,10 @@ export function ChatMessages({
                     <button
                       type="button"
                       onClick={() => {
-                        handleCopy(msg.id, window.location.href);
+                        const url = sharePrompt
+                          ? `${window.location.origin}/?q=${encodeURIComponent(sharePrompt)}`
+                          : window.location.href;
+                        navigator.clipboard.writeText(url);
                         showToast("Share link copied to clipboard", "success");
                       }}
                       aria-label="Share response"
