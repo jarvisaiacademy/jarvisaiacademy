@@ -216,9 +216,7 @@ export interface SidebarHoverCardProps {
   onMouseEnter: () => void;
   onMouseLeave: () => void;
   onLoginClick?: () => void;
-  onSignupClick?: () => void;
   primaryButtonText?: string;
-  secondaryButtonText?: string;
   /** Signed-in users have nothing to log into — hide the auth actions. */
   showActions?: boolean;
 }
@@ -234,9 +232,7 @@ export function SidebarHoverCard({
   onMouseEnter,
   onMouseLeave,
   onLoginClick,
-  onSignupClick,
   primaryButtonText = "Log in",
-  secondaryButtonText = "Sign up for free",
   showActions = true,
 }: SidebarHoverCardProps) {
   const [mounted, setMounted] = useState(false);
@@ -351,22 +347,12 @@ export function SidebarHoverCard({
               {/* Action Buttons */}
               {showActions && (
                 <div className="flex items-center gap-2.5 pt-2 mt-0.5">
-                  {/* Primary Button */}
                   <button
                     type="button"
                     onClick={onLoginClick}
                     className="py-2 px-5 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:hover:bg-neutral-100 dark:text-black text-[13px] font-semibold text-center transition-all shadow-xs cursor-pointer active:scale-[0.98]"
                   >
                     {primaryButtonText}
-                  </button>
-
-                  {/* Secondary Button */}
-                  <button
-                    type="button"
-                    onClick={onSignupClick || onLoginClick}
-                    className="py-2 px-4 rounded-full bg-neutral-100 hover:bg-neutral-200 border border-neutral-200 text-neutral-900 dark:bg-[#2f2f2f] dark:hover:bg-[#383838] dark:border-white/10 dark:text-white text-[13px] font-medium text-center transition-all cursor-pointer active:scale-[0.98] truncate"
-                  >
-                    {secondaryButtonText}
                   </button>
                 </div>
               )}

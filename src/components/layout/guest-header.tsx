@@ -4,12 +4,16 @@ import { PanelLeft } from "lucide-react";
 import { MobileMenuIcon } from "@/components/ui/mobile-menu-icon";
 import { siteConfig } from "@/config/site";
 
+import { ThemeSwitcher } from "./theme-switcher";
+import { UserProfile } from "./user-profile";
 import { User } from "@/providers/auth-provider";
 
 interface GuestHeaderProps {
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
   onOpenLogin: () => void;
+  onLogout?: () => void;
+  onOpenProfile?: () => void;
   modelName?: string;
   isMobile?: boolean;
   user?: User | null;
@@ -19,6 +23,8 @@ export function GuestHeader({
   sidebarOpen,
   onToggleSidebar,
   onOpenLogin,
+  onLogout,
+  onOpenProfile,
   modelName = siteConfig.name,
   user,
 }: GuestHeaderProps) {
@@ -47,6 +53,14 @@ export function GuestHeader({
 
             {/* Model title */}
             <div className="flex items-center gap-2 px-2 py-1.5 font-semibold text-foreground text-sm sm:text-base shrink min-w-0 select-none">
+              {/* Decorative — the wordmark beside it already names the brand. */}
+              <img
+                src={siteConfig.logo}
+                alt=""
+                width={28}
+                height={28}
+                className="w-7 h-7 shrink-0 object-contain"
+              />
               <span className="truncate whitespace-nowrap max-w-[160px] sm:max-w-none">
                 {modelName}
               </span>
@@ -58,26 +72,31 @@ export function GuestHeader({
         )}
       </div>
 
-      {/* Right controls: Login and Sign up buttons (only when guest) */}
-      {!user && (
-        <div suppressHydrationWarning className="guest-cta-block flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-          <button
-            type="button"
-            onClick={onOpenLogin}
-            className="px-3.5 py-1.5 rounded-full bg-foreground hover:opacity-90 text-background text-xs sm:text-sm font-semibold transition-colors shadow-xs whitespace-nowrap shrink-0 cursor-pointer active:scale-95"
-          >
-            Log in
-          </button>
+      {/* Right controls: theme, then the signed-in identity chip or one log-in CTA.
+          The chip sits deliberately outside .guest-cta-block — globals.css hides that
+          block for signed-in users, which is exactly who needs this chip. */}
+      <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+        <ThemeSwitcher className="shrink-0" />
 
-          <button
-            type="button"
-            onClick={onOpenLogin}
-            className="hidden sm:inline-flex px-4 py-1.5 rounded-full bg-muted hover:bg-muted/80 border border-border text-foreground text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer active:scale-95"
-          >
-            Sign up for free
-          </button>
-        </div>
-      )}
+        {user ? (
+          <UserProfile
+            user={user}
+            variant="compact"
+            onLogout={onLogout}
+            onProfileClick={onOpenProfile}
+          />
+        ) : (
+          <div suppressHydrationWarning className="guest-cta-block flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            <button
+              type="button"
+              onClick={onOpenLogin}
+              className="px-3.5 py-1.5 rounded-full bg-foreground hover:opacity-90 text-background text-xs sm:text-sm font-semibold transition-colors shadow-xs whitespace-nowrap shrink-0 cursor-pointer active:scale-95"
+            >
+              Log in
+            </button>
+          </div>
+        )}
+      </div>
     </header>
   );
 }

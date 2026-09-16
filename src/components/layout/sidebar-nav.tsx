@@ -369,10 +369,6 @@ export function SidebarNav({
             setActiveHoverItem(null);
             onOpenLogin?.();
           }}
-          onSignupClick={() => {
-            setActiveHoverItem(null);
-            onOpenLogin?.();
-          }}
         />
       )}
     </nav>

@@ -89,22 +89,12 @@ export default function RootLayout({
       className={`${inter.variable} ${geistMono.variable} dark h-full antialiased font-sans`}
     >
       <head>
-        {/* Anti-flash theme script executed before initial paint */}
+        {/* Anti-flash auth script executed before initial paint. The theme class is
+            next-themes' own pre-paint script, injected by ThemeProvider. */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                try {
-                  var saved = localStorage.getItem('theme') || 'system';
-                  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  var isDark = saved === 'dark' || (saved === 'system' && prefersDark);
-                  if (isDark) {
-                    document.documentElement.classList.add('dark');
-                  } else {
-                    document.documentElement.classList.remove('dark');
-                  }
-                } catch (e) {}
-
                 try {
                   var user = localStorage.getItem('jarvis_auth_user');
                   if (user && user !== 'null') {

@@ -103,6 +103,8 @@ export default function Home() {
                 sidebarOpen={isOpen}
                 onToggleSidebar={toggle}
                 onOpenLogin={handleOpenLogin}
+                onLogout={handleLogout}
+                onOpenProfile={handleOpenSettings}
                 isMobile={isMobile}
                 user={user}
               />
