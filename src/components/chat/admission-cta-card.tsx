@@ -64,7 +64,7 @@ export function AdmissionCtaCard({ onActionPrompt }: AdmissionCtaCardProps) {
   return (
     <section
       aria-label="Admissions"
-      className="mt-4 w-full max-w-xl rounded-3xl border border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-[#191919]"
+      className="mx-auto mt-4 w-full max-w-xl rounded-3xl border border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-[#191919]"
     >
       <div className="flex items-start gap-3">
         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-neutral-200/70 bg-neutral-100 text-neutral-600 shadow-2xs dark:border-white/10 dark:bg-white/5 dark:text-neutral-300">
