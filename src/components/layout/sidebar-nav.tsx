@@ -12,15 +12,73 @@ import {
   LayoutDashboard,
   UserRound,
   GraduationCap,
+  Layers,
+  Code2,
+  Server,
+  Sparkles,
+  BarChart3,
+  ClipboardList,
+  Cloud,
+  Database,
+  Wrench,
+  Globe,
 } from "lucide-react";
 import { SidebarHoverCard } from "./sidebar-hover-card";
+import { SidebarSection } from "./sidebar-section";
 import { useAuth } from "@/providers/auth-provider";
 import { useStudentEnrollments } from "@/hooks/use-student-enrollments";
+import { COURSES_DATA, type CourseItem } from "@/data/courses";
+
+/**
+ * The two catalogue entries that already have a nav row of their own — Super10
+ * has its own item and the referral entry is a reward, not a programme — so the
+ * course list below does not repeat them.
+ */
+const DEDICATED_ROWS = new Set(["super10", "referral"]);
+
+const COURSE_ROWS = COURSES_DATA.filter((course) => !DEDICATED_ROWS.has(course.id));
+
+/**
+ * A coloured glyph per programme, so the list scans the way the catalogue grid
+ * does. Presentation only — which is why it lives here and not in COURSES_DATA,
+ * whose shape Firestore and the admin form also depend on.
+ */
+const COURSE_GLYPHS: Record<
+  string,
+  { icon: React.ComponentType<{ className?: string }>; color: string }
+> = {
+  fullstack: { icon: Layers, color: "text-sky-500 dark:text-sky-400" },
+  "frontend-react": { icon: Code2, color: "text-indigo-500 dark:text-indigo-400" },
+  "backend-python": { icon: Server, color: "text-emerald-500 dark:text-emerald-400" },
+  genai: { icon: Sparkles, color: "text-purple-500 dark:text-purple-400" },
+  "data-analyst": { icon: BarChart3, color: "text-teal-500 dark:text-teal-400" },
+  "business-analyst": { icon: ClipboardList, color: "text-amber-500 dark:text-amber-400" },
+  "devops-aws": { icon: Cloud, color: "text-orange-500 dark:text-orange-400" },
+  "database-admin": { icon: Database, color: "text-slate-500 dark:text-slate-400" },
+  "app-support": { icon: Wrench, color: "text-rose-500 dark:text-rose-400" },
+  "web-laravel": { icon: Globe, color: "text-pink-500 dark:text-pink-400" },
+};
+
+/** Hover-card copy for a course row, read off the catalogue rather than restated. */
+function courseHoverData(id: string) {
+  const course = COURSE_ROWS.find((c) => c.id === id);
+  if (!course) return undefined;
+  return {
+    title: course.title,
+    // Duration and fee are already on the card's hero object, so the body copy is
+    // only the description.
+    description: course.description,
+    gradientClass: `bg-gradient-to-br ${course.gradient}`,
+    course,
+  };
+}
 
 interface NavHoverItemData {
   title: string;
   description: string;
   gradientClass: string;
+  /** Programme rows carry the entry itself, which drives the hero object. */
+  course?: CourseItem;
 }
 
 const navHoverData: Record<string, NavHoverItemData> = {
@@ -51,7 +109,7 @@ const navHoverData: Record<string, NavHoverItemData> = {
   },
   courses: {
     title: "Explore Academy Courses",
-    description: "Log in to enroll in Full-Stack AI & Web Engineering (60 Days / ₹0 — fully sponsored), view roadmaps, and track progress.",
+    description: "Log in to enroll in Full-Stack AI & Web Engineering (60 Days / ₹30,000 all-inclusive), view roadmaps, and track progress.",
     gradientClass: "bg-gradient-to-br from-[#38d9a9] via-[#20c997] to-[#12b886]",
   },
   super10: {
@@ -93,10 +151,13 @@ interface SidebarNavProps {
 }
 
 /** Colour-only variant, so each item keeps its own layout classes. */
-const navStateClass = (isActive: boolean) =>
+const navColorClass = (isActive: boolean) =>
   isActive
-    ? "font-medium text-neutral-900 dark:text-white bg-neutral-200/80 dark:bg-white/10"
-    : "font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5";
+    ? "text-neutral-900 dark:text-white bg-neutral-200/80 dark:bg-white/10"
+    : "text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5";
+
+const navStateClass = (isActive: boolean) =>
+  `${isActive ? "font-medium" : "font-normal"} ${navColorClass(isActive)}`;
 
 /**
  * Lifts and tilts on row hover. Keyed off the row's `group` for both the colour
@@ -197,6 +258,11 @@ export function SidebarNav({
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
+
+  // Course rows are not in `navHoverData`, so the card falls back to the catalogue.
+  const hoverItem = activeHoverItem
+    ? navHoverData[activeHoverItem] ?? courseHoverData(activeHoverItem)
+    : undefined;
 
   return (
     <nav
@@ -393,16 +459,51 @@ export function SidebarNav({
         <span>Enquiry</span>
       </button>
 
+      {/* Every 60-day programme, so one can be opened without going through the
+          catalogue. Clicks go to the chat, which answers with that programme. */}
+      <div
+        role="separator"
+        className="mx-2 my-1.5 h-px bg-neutral-200 dark:bg-white/10"
+      />
+
+      <SidebarSection label="Courses">
+        {COURSE_ROWS.map((course) => {
+          // A course with no glyph still gets the icon column, so its label stays
+          // on the same line as every other row's.
+          const Icon = COURSE_GLYPHS[course.id]?.icon ?? BookOpen;
+          const color =
+            COURSE_GLYPHS[course.id]?.color ?? "text-neutral-500 dark:text-neutral-400";
+
+          return (
+            <button
+              key={course.id}
+              type="button"
+              onClick={() => onSelectSection?.(course.id)}
+              onMouseEnter={(e) => handleMouseEnter(course.id, e)}
+              onMouseLeave={handleMouseLeave}
+              aria-haspopup="dialog"
+              aria-expanded={activeHoverItem === course.id}
+              aria-current={activeItem === course.id ? "page" : undefined}
+              className={`group flex items-center gap-2.5 w-full px-3 py-1.5 text-[13px] font-medium rounded-lg transition-colors text-left cursor-pointer ${navColorClass(activeItem === course.id)}`}
+            >
+              <Icon className={`w-4 h-4 shrink-0 ${color} transition-transform group-hover:scale-110`} />
+              <span className="truncate">{course.bannerTitle}</span>
+            </button>
+          );
+        })}
+      </SidebarSection>
+
       {/* Reusable Floating Hover Card for Desktop */}
       {!isMobile && anchorRect && (
         <SidebarHoverCard
           isOpen={Boolean(activeHoverItem)}
           anchorRect={anchorRect}
           sidebarRight={sidebarRight}
-          title={activeHoverItem ? navHoverData[activeHoverItem]?.title ?? "" : ""}
-          description={activeHoverItem ? navHoverData[activeHoverItem]?.description ?? "" : ""}
-          gradientClass={activeHoverItem ? navHoverData[activeHoverItem]?.gradientClass ?? "" : ""}
+          title={hoverItem?.title ?? ""}
+          description={hoverItem?.description ?? ""}
+          gradientClass={hoverItem?.gradientClass ?? ""}
           itemKey={activeHoverItem ?? undefined}
+          course={hoverItem?.course}
           showActions={!isLoggedIn}
           onMouseEnter={handlePopoverMouseEnter}
           onMouseLeave={handlePopoverMouseLeave}

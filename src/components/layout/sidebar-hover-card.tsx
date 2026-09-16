@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -14,8 +14,53 @@ import {
   LayoutDashboard,
   HelpCircle,
 } from "lucide-react";
+import type { CourseItem } from "@/data/courses";
 
-function HeroGradientObject({ itemKey }: { itemKey?: string }) {
+/**
+ * The hero object for a programme row, drawn from the catalogue entry rather
+ * than a canned mock — number, subtitle, duration and fee are the programme's
+ * own, so the card says something the row above it did not.
+ */
+function CourseHeroObject({ course }: { course: CourseItem }) {
+  return (
+    <div className="relative flex flex-col gap-1.5 px-3.5 py-2.5 rounded-[16px] bg-white/20 backdrop-blur-md border border-white/35 shadow-lg shadow-black/10 w-[186px]">
+      <div className="flex items-center justify-between gap-1.5">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="w-4 h-4 shrink-0 rounded-full bg-white/85 flex items-center justify-center text-[9px] font-extrabold text-neutral-900 shadow-xs">
+            {course.number}
+          </span>
+          <span className="text-[11px] font-semibold text-white tracking-tight truncate">
+            {course.bannerTitle}
+          </span>
+        </div>
+        <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-white/25 text-white border border-white/30">
+          {course.duration}
+        </span>
+      </div>
+
+      <span className="text-[9px] font-medium text-white/85 leading-snug line-clamp-2">
+        {course.bannerSubtitle}
+      </span>
+
+      <div className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-full bg-white/95 text-neutral-900 shadow-md text-[10px] font-bold flex items-center gap-1 border border-white/60">
+        <Sparkles className="w-2.5 h-2.5 text-amber-500" />
+        <span>{course.fee}</span>
+      </div>
+    </div>
+  );
+}
+
+function HeroGradientObject({
+  itemKey,
+  course,
+}: {
+  itemKey?: string;
+  course?: CourseItem;
+}) {
+  // A programme row has no entry in the switch below; its own catalogue data is
+  // a better subject for the hero than any canned object.
+  if (course) return <CourseHeroObject course={course} />;
+
   switch (itemKey) {
     case "dashboard":
       return (
@@ -213,6 +258,8 @@ export interface SidebarHoverCardProps {
   description: string;
   gradientClass: string;
   itemKey?: string;
+  /** Set on programme rows — the hero object is drawn from the catalogue. */
+  course?: CourseItem;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
   onLoginClick?: () => void;
@@ -229,6 +276,7 @@ export function SidebarHoverCard({
   description,
   gradientClass,
   itemKey,
+  course,
   onMouseEnter,
   onMouseLeave,
   onLoginClick,
@@ -243,7 +291,10 @@ export function SidebarHoverCard({
     description,
     gradientClass,
     itemKey,
+    course,
   });
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [cardHeight, setCardHeight] = useState(0);
 
   useEffect(() => {
     setMounted(true);
@@ -251,14 +302,30 @@ export function SidebarHoverCard({
 
   useEffect(() => {
     if (title && description) {
-      setCachedContent({ title, description, gradientClass, itemKey });
+      setCachedContent({ title, description, gradientClass, itemKey, course });
     }
-  }, [title, description, gradientClass, itemKey]);
+  }, [title, description, gradientClass, itemKey, course]);
+
+  // How tall the card ends up is down to how far the title and description wrap,
+  // which the catalogue decides — the programme with the longest copy ran off the
+  // bottom of the window when this was a fixed estimate. Measured in a layout
+  // effect so the correction lands before paint, leaving no jump on first hover.
+  useLayoutEffect(() => {
+    const height = cardRef.current?.offsetHeight ?? 0;
+    if (height) setCardHeight((prev) => (prev === height ? prev : height));
+  }, [isOpen, cachedContent]);
 
   if (!mounted || !anchorRect) return null;
 
-  // Position floating card to the right of the sidebar, vertically aligned with the trigger
-  const top = Math.max(12, Math.min(window.innerHeight - 340, anchorRect.top - 16));
+  // Position floating card to the right of the sidebar, vertically aligned with the
+  // trigger, but never far enough down to push the card past the bottom edge.
+  const top = Math.max(
+    12,
+    Math.min(
+      window.innerHeight - (cardHeight || 340) - 12,
+      anchorRect.top - 16
+    )
+  );
   const effectiveLeft = (sidebarRight ?? anchorRect.right) + 8;
 
   const content = (
@@ -274,6 +341,7 @@ export function SidebarHoverCard({
           <div className="absolute top-0 -left-2 w-2 h-full pointer-events-auto" />
 
           <motion.div
+            ref={cardRef}
             initial={{ opacity: 0, x: -6 }}
             animate={{
               opacity: 1,
@@ -330,7 +398,10 @@ export function SidebarHoverCard({
 
               {/* Floating Hero Object */}
               <div className="relative z-10 drop-shadow-md transition-transform duration-300 hover:scale-105">
-                <HeroGradientObject itemKey={cachedContent.itemKey} />
+                <HeroGradientObject
+                  itemKey={cachedContent.itemKey}
+                  course={cachedContent.course}
+                />
               </div>
             </div>
 

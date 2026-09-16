@@ -1,8 +1,18 @@
 # Netlify Configuration for Jarvis AI Academy
+#
+# `$CONTEXT` reflects the *site's* production-branch setting, which lives in the Netlify UI
+# (Site configuration → Build & deploy → Branches) and must name `production`. If that setting
+# still names `main` (now deleted), every push — including a promotion — is a branch deploy,
+# the rule below skips it, and the site silently stops updating.
 
 [build]
   command = "npm run build"
   publish = ".next"
+  # Build minutes are metered and task PRs land on `development`.
+  # Exit 0 means "skip this build", so this builds only for the production context.
+  # Trade-off: no branch or deploy-preview URLs — verify locally with `pnpm dev`.
+  # Delete this line to get preview builds back.
+  ignore = "test \"$CONTEXT\" != \"production\""
 
 # Proxy Firebase Auth Handler so OAuth popup can use your clean domain
 [[redirects]]

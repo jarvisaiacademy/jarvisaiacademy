@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { GuestHeader } from "@/components/layout/guest-header";
 import { ChatCanvas } from "@/components/chat/chat-canvas";
@@ -29,6 +29,24 @@ export default function Home() {
   // one has to outlive it to keep the nav item highlighted.
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [resetSignal, setResetSignal] = useState(0);
+  const [initialPrompt, setInitialPrompt] = useState<string | null>(null);
+
+  // The public course pages hand the conversation over through the URL: `?topic=`
+  // for a programme or section, `?q=` for a question an inline link carried. Read
+  // from `location` rather than `useSearchParams`, which would need a Suspense
+  // boundary and make this route bail out of static prerendering.
+  // ponytail: mount only. A `?topic=` change while already on `/` does not re-seed,
+  // which is fine while every link that sends one lives on another route.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const topic = params.get("topic");
+    const q = params.get("q");
+    if (topic) {
+      setActiveTopic(topic);
+      setActiveSection(topic);
+    }
+    if (q) setInitialPrompt(q);
+  }, []);
 
   const handleOpenLogin = () => setIsLoginOpen(true);
   const handleCloseLogin = () => {
@@ -160,6 +178,7 @@ export default function Home() {
               <ChatCanvas
                 activeTopic={activeTopic}
                 onTopicHandled={() => setActiveTopic(null)}
+                initialPrompt={initialPrompt}
                 resetSignal={resetSignal}
               />
             </>

@@ -8,12 +8,11 @@ import {
   RotateCcw,
   ThumbsUp,
   ThumbsDown,
-  MoreHorizontal,
-  Volume2,
 } from "lucide-react";
 import { MarkdownRenderer } from "./markdown-renderer";
 import { EnrollmentCard, EnrollmentData } from "./enrollment-card";
 import { CourseCatalogResponse } from "./course-catalog-response";
+import { AdmissionCtaCard } from "./admission-cta-card";
 import { useCourses } from "@/providers/courses-provider";
 import { useToast } from "@/components/ui/toast";
 
@@ -36,6 +35,9 @@ function ShareTrayIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+
+/** Keys the share button's tick apart from the copy button's on the same message. */
+const shareKey = (id: string) => `${id}:share`;
 
 export interface ChatMessage {
   id: string;
@@ -72,7 +74,6 @@ export function ChatMessages({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
-  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<string>("5:44 PM");
   const { showToast } = useToast();
   const editTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -109,24 +110,39 @@ export function ChatMessages({
     e.target.style.overflowY = scrollH > 400 ? "auto" : "hidden";
   };
 
-  const handleReadAloud = (text: string) => {
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(
-        text.replace(/[#*`_]/g, "")
-      );
-      window.speechSynthesis.speak(utterance);
-      showToast("Reading aloud...", "info");
-    } else {
-      showToast("Speech synthesis not supported in this browser", "info");
-    }
+  // The tick lasts two seconds; the key names which control put it there, so
+  // sharing a message does not flash the copy button above it.
+  const flashCopied = (key: string) => {
+    setCopiedId(key);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   const handleCopy = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
-    setCopiedId(id);
+    flashCopied(id);
     showToast("Copied to clipboard", "success");
-    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  /** The ask a message belongs to: its own text if it is the ask, else the one above. */
+  const askBehind = (msg: ChatMessage, idx: number) => {
+    if (msg.role === "user") return msg.content;
+    for (let i = idx - 1; i >= 0; i--) {
+      if (messages[i].role === "user") return messages[i].content;
+    }
+    return "";
+  };
+
+  // `/` reads `?q=` on mount and asks it, so a shared link reopens the same ask —
+  // and therefore the same answer — instead of the welcome screen.
+  const handleShare = (msg: ChatMessage, idx: number) => {
+    const ask = askBehind(msg, idx);
+    navigator.clipboard.writeText(
+      ask
+        ? `${window.location.origin}/?q=${encodeURIComponent(ask)}`
+        : window.location.href
+    );
+    flashCopied(shareKey(msg.id));
+    showToast("Share link copied to clipboard", "success");
   };
 
   const startEditing = (msg: ChatMessage) => {
@@ -154,6 +170,12 @@ export function ChatMessages({
         const prevMsg = idx > 0 ? messages[idx - 1] : null;
         const showTimestamp =
           idx === 0 || (prevMsg && prevMsg.role !== msg.role && isUser);
+        // The checkout is already the call to action, so the admission card below
+        // would only repeat it.
+        const showsCheckout =
+          Boolean(msg.enrollment) ||
+          msg.content.includes("Admissions & Enrollment Portal") ||
+          msg.content.includes("Enrollment Checkout");
 
         return (
           <div key={msg.id || idx} className="flex flex-col w-full">
@@ -238,15 +260,16 @@ export function ChatMessages({
                       {/* Share */}
                       <button
                         type="button"
-                        onClick={() => {
-                          handleCopy(msg.id, window.location.href);
-                          showToast("Share link copied to clipboard", "success");
-                        }}
+                        onClick={() => handleShare(msg, idx)}
                         aria-label="Share message"
                         title="Share"
                         className="p-1 rounded-md hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-white/10 transition-colors cursor-pointer"
                       >
-                        <ShareTrayIcon className="w-4 h-4" />
+                        {copiedId === shareKey(msg.id) ? (
+                          <Check className="w-4 h-4 text-emerald-500" />
+                        ) : (
+                          <ShareTrayIcon className="w-4 h-4" />
+                        )}
                       </button>
 
                       {/* Edit */}
@@ -289,39 +312,15 @@ export function ChatMessages({
 
 
 
-                {/* Quick Action Pill for Courses / Super10 (ChatGPT High-Contrast Pill) */}
-                {!msg.isStreaming &&
-                  (msg.content.includes("Full-Stack AI & Web Engineering") ||
-                    msg.content.includes("Super10 Elite Batch") ||
-                    msg.content.includes("Super10 Elite Program")) &&
-                  !msg.content.includes("Admissions & Enrollment Portal") && (
-                    <div className="pt-2">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onActionPrompt?.(
-                            "I want to enroll in the upcoming program and proceed with payment"
-                          )
-                        }
-                        className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95"
-                      >
-                        <span>⚡ Enroll Now in Upcoming Batch</span>
-                      </button>
-                    </div>
-                  )}
-
                 {/* Interactive Enrollment & Payment Module */}
-                {(msg.enrollment ||
-                  msg.content.includes("Admissions & Enrollment Portal") ||
-                  msg.content.includes("Enrollment Checkout")) &&
-                  !msg.isStreaming && (
-                    <EnrollmentCard
-                      messageId={msg.id}
-                      initialData={msg.enrollment}
-                      currentUser={currentUser}
-                      onUpdate={(data) => onUpdateEnrollment?.(msg.id, data)}
-                    />
-                  )}
+                {showsCheckout && !msg.isStreaming && (
+                  <EnrollmentCard
+                    messageId={msg.id}
+                    initialData={msg.enrollment}
+                    currentUser={currentUser}
+                    onUpdate={(data) => onUpdateEnrollment?.(msg.id, data)}
+                  />
+                )}
 
                 {/* Interactive Course Catalog Response */}
                 {(msg.showCourseCatalog ||
@@ -391,9 +390,7 @@ export function ChatMessages({
                       }}
                       aria-label="Good response"
                       className={`p-1 rounded-md hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-white/10 transition-colors cursor-pointer ${
-                        msg.feedback === "like"
-                          ? "text-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400"
-                          : ""
+                        msg.feedback === "like" ? "text-neutral-900 dark:text-white" : ""
                       }`}
                       title="Good response"
                     >
@@ -413,7 +410,7 @@ export function ChatMessages({
                       aria-label="Bad response"
                       className={`p-1 rounded-md hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-white/10 transition-colors cursor-pointer ${
                         msg.feedback === "dislike"
-                          ? "text-rose-500 hover:text-rose-600 dark:hover:text-rose-400"
+                          ? "text-neutral-900 dark:text-white"
                           : ""
                       }`}
                       title="Bad response"
@@ -424,15 +421,16 @@ export function ChatMessages({
                     {/* 3. Share (Tray with Up Arrow) */}
                     <button
                       type="button"
-                      onClick={() => {
-                        handleCopy(msg.id, window.location.href);
-                        showToast("Share link copied to clipboard", "success");
-                      }}
+                      onClick={() => handleShare(msg, idx)}
                       aria-label="Share response"
                       className="p-1 rounded-md hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-white/10 transition-colors cursor-pointer"
                       title="Share"
                     >
-                      <ShareTrayIcon className="w-4 h-4" />
+                      {copiedId === shareKey(msg.id) ? (
+                        <Check className="w-4 h-4 text-emerald-500" />
+                      ) : (
+                        <ShareTrayIcon className="w-4 h-4" />
+                      )}
                     </button>
 
                     {/* 4. Regenerate */}
@@ -448,49 +446,12 @@ export function ChatMessages({
                     >
                       <RotateCcw className="w-4 h-4" />
                     </button>
-
-                    {/* 5. More Options (...) */}
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setMenuOpenId(menuOpenId === msg.id ? null : msg.id)
-                        }
-                        aria-label="More options"
-                        className="p-1 rounded-md hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                        title="More options"
-                      >
-                        <MoreHorizontal className="w-4 h-4" />
-                      </button>
-
-                      {menuOpenId === msg.id && (
-                        <div className="absolute left-0 bottom-full mb-1.5 flex flex-col min-w-[130px] p-1 rounded-xl bg-white dark:bg-[#1e1e1e] border border-neutral-200 dark:border-white/10 shadow-xl z-20 text-xs text-neutral-800 dark:text-neutral-200">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleReadAloud(msg.content);
-                              setMenuOpenId(null);
-                            }}
-                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-white/10 text-left transition-colors cursor-pointer"
-                          >
-                            <Volume2 className="w-3.5 h-3.5" />
-                            <span>Read aloud</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleCopy(msg.id, msg.content);
-                              setMenuOpenId(null);
-                            }}
-                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-white/10 text-left transition-colors cursor-pointer"
-                          >
-                            <Copy className="w-3.5 h-3.5" />
-                            <span>Copy text</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
                   </div>
+                )}
+                {/* Admission route, closing every answer — unless the checkout is already up.
+                    Below the action bar so the copy/like/share controls stay next to the text. */}
+                {!msg.isStreaming && msg.content && !showsCheckout && (
+                  <AdmissionCtaCard onActionPrompt={onActionPrompt} />
                 )}
               </div>
             )}

@@ -22,13 +22,23 @@ This is a real application, not a static UI mockup.
 
 These rules take priority over convenience.
 
-> **CRITICAL PRODUCTION SAFEGUARD**: The `main` branch is connected to live production at **`https://jarvisaiacademy.com`** via Netlify. **NEVER** push directly to `main`. Every change must be in a separate branch and merged via a Pull Request (PR) after verification.
+> **CRITICAL PRODUCTION SAFEGUARD**: The `production` branch is connected to live production at **`https://jarvisaiacademy.com`** via Netlify. **NEVER** push directly to `production`. Every change must be in a separate branch and merged via a Pull Request (PR) after verification.
+
+> **TWO-BRANCH MODEL — `development` integrates, `production` deploys.**
+> `development` is the repository's **default branch**, so it is the base for every task PR.
+> Task branches cut from `development`, merge back into `development`, and that is the end of
+> the task. `production` moves only by promoting `development` in a single PR, and only when
+> the user asks for it — that merge is the release.
+> Every Netlify build spends the user's metered monthly minutes, and `netlify.toml` skips every
+> context except production. So do not merge a task into `production` to "see it live": it costs
+> a build, and nothing is verifiable on a preview URL — verify locally with `pnpm dev`.
 
 ### DO
 
 - **ALWAYS** check out a separate branch (`feat/...`, `fix/...`, `chore/...`) before making changes or commits.
 - **ALWAYS** verify changes with `pnpm tsc --noEmit` before raising a Pull Request.
-- **ALWAYS** push to the feature branch and raise a Pull Request (PR) against `main`.
+- **ALWAYS** push to the feature branch and raise a Pull Request (PR) against `development`.
+- **ALWAYS** cut task branches from `development`, and promote with `--base production`. Keep the promotion fast-forwardable — no rebasing `production`.
 - Inspect the existing code before modifying it.
 - Reuse existing components and utilities when appropriate.
 - Follow the existing project architecture.
@@ -49,7 +59,9 @@ These rules take priority over convenience.
 
 ### DO NOT
 
-- **Do not push directly to `main` under any circumstances** (all changes must be on feature branches and merged via PR).
+- **Do not push directly to `production` under any circumstances** (all changes must be on feature branches and merged via PR).
+- **Do not raise a task PR against `production` or merge one into it.** `production` moves only when the user asks for a promotion from `development`.
+- Do not rename or delete the `development` or `production` branches, or change the repository's default branch, without being asked — Netlify resolves its production branch by name. These two are the only long-lived branches; `main` no longer exists.
 - **Do not run `pnpm build` locally** (use `pnpm tsc --noEmit` only; Netlify performs the production build).
 - Do not replace the project's framework or stack without explicit approval.
 - Do not migrate libraries simply because another library is fashionable.
@@ -96,17 +108,26 @@ These rules take priority over convenience.
 
 # 3. SEO
 
-The public surface is two routes: `/` (indexable) and `/settings` (noindex). The admin
-dashboard has **no route** — it renders inside `/` only for an authenticated admin — so it
-is already outside SEO. Keep it that way; do not give it a URL.
+The public surface is: `/` (indexable), `/courses` and `/courses/<slug>` (indexable, one
+per `COURSES_DATA` entry), and `/settings` (noindex). The admin dashboard has **no route** —
+it renders inside `/` only for an authenticated admin — so it is already outside SEO. Keep it
+that way; do not give it a URL.
+
+The course pages are server-rendered from the same knowledge base the chat replies with
+(`src/data/academy-knowledge.ts`), so the copy a crawler reads is the copy the bot says. Each
+`/courses/<slug>` sets its own canonical — the root layout's `canonical: "/"` is inherited by
+any route that does not override it. A new catalogue entry gets a page, a sitemap entry and an
+`/llms.txt` link automatically; nothing else needs editing.
 
 Which file owns what:
 
 | Concern | File |
 | --- | --- |
 | Titles, descriptions, canonical, OG/Twitter cards, favicons | `src/app/layout.tsx` |
+| Per-course title/description/canonical | `src/app/courses/[slug]/page.tsx` |
 | Brand strings, contact details, social handles | `src/config/site.ts` |
-| JSON-LD structured data | `src/config/seo.ts` |
+| JSON-LD structured data (site + per-course) | `src/config/seo.ts` |
+| Chat replies, and the page copy lifted from them | `src/data/academy-knowledge.ts` |
 | Sitemap | `src/app/sitemap.ts` |
 | Crawl rules | `src/app/robots.ts` |
 | Web app manifest | `public/site.webmanifest` |
@@ -124,9 +145,13 @@ Which file owns what:
   metadata — that is why `src/app/settings/layout.tsx` exists. Never use a `Disallow`
   for this: it stops the crawl before the `noindex` can be read.
 - New social profile → `siteConfig.links`, which feeds both the sidebar and `sameAs`.
-- Course catalogue, fees, duration or contact details → nothing to do. `/llms.txt` is
-  generated from `COURSES_DATA` and `siteConfig`, so it tracks those changes on its own.
-  Never paste the catalogue into it by hand.
+- Course catalogue, fees, duration or contact details → nothing to do. `/llms.txt`, the
+  sitemap and the course pages are all generated from `COURSES_DATA` and `siteConfig`, so they
+  track those changes on their own. Never paste the catalogue into them by hand.
+- A new **reply** in `src/data/academy-knowledge.ts` → nothing to do unless it is a program's
+  answer, in which case add the id to `COURSE_KB_KEY` beside it or `/courses/<id>` renders
+  without its copy. `node scripts/check-course-routing.mjs` fails if the map and the chat's
+  keyword router ever disagree.
 
 Do not add `keywords` (Google ignores it). Do not add an SEO library — Next's Metadata API
 plus `robots.ts` / `sitemap.ts` cover everything here.

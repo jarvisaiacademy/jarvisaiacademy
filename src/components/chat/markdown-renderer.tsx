@@ -51,15 +51,36 @@ export function MarkdownRenderer({ content, onPromptClick }: MarkdownRendererPro
               {children}
             </blockquote>
           ),
+          img: ({ src, alt }) => (
+            // The testimonials reply puts an illustration before each name, so images
+            // here are always avatars. Plain <img>: these are remote SVGs, and
+            // next/image would need `dangerouslyAllowSVG` to serve them.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={typeof src === "string" ? src : ""}
+              alt={alt ?? ""}
+              loading="lazy"
+              className="inline-block w-7 h-7 rounded-full object-cover align-middle mr-2 bg-neutral-200 dark:bg-white/10"
+            />
+          ),
           a: ({ href, children }) => {
             if (href?.startsWith(ASK_PREFIX)) {
               const prompt = decodeURIComponent(href.slice(ASK_PREFIX.length));
+              const askClass =
+                "text-[#9d5932] dark:text-[#ea580c] hover:text-[#7c4424] dark:hover:text-[#f97316] font-medium underline underline-offset-2 cursor-pointer";
+              // No handler means this copy is being rendered outside the chat — on a
+              // public course page, where a function prop cannot cross the server
+              // boundary. The ask becomes a link that carries the question into the
+              // chat rather than a button that swallows the click.
+              if (!onPromptClick) {
+                return (
+                  <a href={`/?q=${encodeURIComponent(prompt)}`} className={askClass}>
+                    {children}
+                  </a>
+                );
+              }
               return (
-                <button
-                  type="button"
-                  onClick={() => onPromptClick?.(prompt)}
-                  className="text-[#9d5932] dark:text-[#ea580c] hover:text-[#7c4424] dark:hover:text-[#f97316] font-medium underline underline-offset-2 cursor-pointer"
-                >
+                <button type="button" onClick={() => onPromptClick(prompt)} className={askClass}>
                   {children}
                 </button>
               );

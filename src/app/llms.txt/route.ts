@@ -3,8 +3,8 @@ import { COURSES_DATA } from "@/data/courses";
 import { siteConfig } from "@/config/site";
 
 // Served at /llms.txt. Generated from COURSES_DATA so what an agent reads cannot
-// drift from what the chat UI renders — the public site has no per-course routes,
-// so the catalogue is described inline rather than linked.
+// drift from what the chat UI renders. Every track also has a public page, so the
+// catalogue is both described inline (below) and linked.
 export const dynamic = "force-static";
 
 const bullet = (c: CourseItem) =>
@@ -14,11 +14,13 @@ const isReferral = (c: CourseItem) => c.id === "referral";
 const courses = COURSES_DATA.filter((c) => !isReferral(c));
 const referral = COURSES_DATA.filter(isReferral);
 
+const courseUrl = (c: CourseItem) => `${siteConfig.url}/courses/${c.id}`;
+
 const body = `# ${siteConfig.name}
 
-> ${siteConfig.name} is a 60-day, build-first software engineering bootcamp in Pune, India. It runs ${courses.length} program tracks — full-stack AI and web, frontend, backend, generative AI, data and business analysis, DevOps, database administration, application support and Laravel — each fully sponsored at ₹0 tuition. Its Super10 Elite batch is capped at 10 seats and carries a 100% placement assurance.
+> ${siteConfig.name} is a 60-day, build-first software engineering bootcamp in Pune, India. It runs ${courses.length} program tracks — full-stack AI and web, frontend, backend, generative AI, data and business analysis, DevOps, database administration, application support and Laravel — each at ₹30,000 all-inclusive tuition. Its Super10 Elite batch is the one fully sponsored track (₹0), capped at 10 seats, and carries a 100% placement assurance.
 
-The site is an AI chat interface, not a set of articles. There are no per-course pages: the catalogue, pricing, the referral programme, testimonials and enrolment all render as replies inside a single-page chat. Treat the catalogue below as the site's authoritative content, and ${siteConfig.url}/ as its only public page. Admissions happen in the chat or by email; there is no public application form.
+The site is an AI chat interface, not a set of articles. Pricing, the referral programme, testimonials and enrolment all render as replies inside the chat at ${siteConfig.url}/. Each program additionally has a page carrying its fee, duration, curriculum and technology stack — prefer those for anything a single program owns. The catalogue below remains the authoritative index. Admissions happen in the chat or by email; there is no public application form.
 
 ## Courses
 
@@ -27,6 +29,11 @@ ${courses.map(bullet).join("\n")}
 ## Refer & Earn
 
 ${referral.map(bullet).join("\n")}
+
+## Course pages
+
+- [All courses](${siteConfig.url}/courses)
+${COURSES_DATA.map((c) => `- [${c.title}](${courseUrl(c)})`).join("\n")}
 
 ## Contact
 
@@ -37,7 +44,8 @@ ${referral.map(bullet).join("\n")}
 
 ## Links
 
-- [${siteConfig.name}](${siteConfig.url}/): the chat interface — the site's only public page
+- [${siteConfig.name}](${siteConfig.url}/): the chat interface, where admissions happen
+- [Courses](${siteConfig.url}/courses): every program on one page
 - [LinkedIn](${siteConfig.links.linkedin})
 - [Instagram](${siteConfig.links.instagram})
 - [YouTube](${siteConfig.links.youtube})

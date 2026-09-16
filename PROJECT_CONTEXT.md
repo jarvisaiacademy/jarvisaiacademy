@@ -87,14 +87,16 @@ The advisor model uses structured prompt chaining:
 
 ## 6. Production Release & Git Branching Safeguard
 
-- **Production Target**: Netlify auto-deploys `main` to **`https://jarvisaiacademy.com`**.
-- **Rule**: Direct pushes to `main` are strictly forbidden.
+- **Production Target**: Netlify auto-deploys `production` to **`https://jarvisaiacademy.com`**.
+- **Integration Target**: `development`, which is the repository's default branch.
+- **Rule**: Direct pushes to `production` and `development` are strictly forbidden.
 - **Workflow**:
-  1. Every task or feature must branch off `main` (`feat/...`, `fix/...`, `chore/...`).
+  1. Every task or feature must branch off `development` (`feat/...`, `fix/...`, `chore/...`).
   2. Verify with `pnpm tsc --noEmit` (never run `pnpm build` locally).
-  3. Push to feature branch and raise a Pull Request (PR) against `main`.
-  4. Inspect Netlify Deploy Preview.
-  5. Merge to `main` only after PR acceptance.
+  3. Push to feature branch and raise a Pull Request (PR) against `development`.
+  4. Verify locally with `pnpm dev` — Netlify preview builds are disabled to save metered build minutes.
+  5. Merge into `development`; that completes the task.
+  6. Promoting `development` → `production` is a separate single PR, raised only when the user asks. Merging it is the release.
 
 ---
 
@@ -104,3 +106,5 @@ The advisor model uses structured prompt chaining:
 | :--- | :--- | :--- |
 | **2026-09-12 23:30** | User Directive | Defined core funnel: Visitor lands on ChatGPT UI → types prompt → forced one-shot login/signup (Google / Email+Pass) → prompt auto-sent to API → conversational follow-up questions → final course recommendation based on old Codexa Classes curriculum → Rebrand all occurrences of Codexa Classes to Jarvis AI Academy → Initialized persistent `PROJECT_CONTEXT.md`. |
 | **2026-09-13 17:25** | User Directive | Site is deployed live on custom domain (`jarvisaiacademy.com`). Enforced strict production branching policy: all modifications require dedicated feature branches, verification, and Pull Requests against `main`. Direct pushes to `main` strictly prohibited. Created `RELEASE_WORKFLOW.md` and `GEMINI.md`. |
+| **2026-09-16** | User Directive | Netlify deploys are metered, so mid-task merges to the deploy branch were burning the monthly build-minute quota. Introduced `development` as the default integration branch for all task PRs, and disabled every Netlify build context except production in `netlify.toml` (no more Deploy Previews — verify with `pnpm dev`). |
+| **2026-09-17** | User Directive | Renamed the deploy branch `main` → `production` for clarity; `development` is now the repository default branch. `production` moves only by an explicit promotion PR from `development`. The old `main` branch was then deleted, once verified to be a strict ancestor of `development` (no commit or source file was unique to it). `development` and `production` are now the only long-lived branches; topic branches are deleted on merge. |
