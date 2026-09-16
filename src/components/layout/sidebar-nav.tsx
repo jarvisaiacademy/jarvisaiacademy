@@ -26,7 +26,7 @@ interface NavHoverItemData {
 const navHoverData: Record<string, NavHoverItemData> = {
   dashboard: {
     title: "Academy Admin Dashboard",
-    description: "Access real-time student admissions, revenue metrics, batch cohorts, and export student ledgers.",
+    description: "Access real-time student admissions, revenue metrics, batch programs, and export student ledgers.",
     gradientClass: "bg-gradient-to-br from-[#339af0] via-[#4dabf7] to-[#74c0fc]",
   },
   new_chat: {
@@ -55,13 +55,13 @@ const navHoverData: Record<string, NavHoverItemData> = {
     gradientClass: "bg-gradient-to-br from-[#38d9a9] via-[#20c997] to-[#12b886]",
   },
   super10: {
-    title: "Super10 Elite Cohort",
-    description: "Log in to apply for the selective 10-student cohort (60 Days / ₹0 — fully sponsored) with 100% placement assurance.",
+    title: "Super10 Elite Program",
+    description: "Log in to apply for the selective 10-student program (60 Days / ₹0 — fully sponsored) with 100% placement assurance.",
     gradientClass: "bg-gradient-to-br from-[#fcc419] via-[#ff922b] to-[#f76707]",
   },
   referral: {
     title: "Refer & Earn ₹3,000",
-    description: "Refer a peer to any 60-day cohort and receive a ₹3,000 cash reward upon their course completion.",
+    description: "Refer a peer to any 60-day program and receive a ₹3,000 cash reward upon their course completion.",
     gradientClass: "bg-gradient-to-br from-[#12b886] via-[#20c997] to-[#38d9a9]",
   },
   testimonials: {

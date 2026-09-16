@@ -38,14 +38,14 @@ interface EnrollmentCardProps {
 const COURSES_INFO = {
   fullstack: {
     id: "fullstack" as const,
-    name: "Full-Stack AI & Web Engineering Cohort",
+    name: "Full-Stack AI & Web Engineering Program",
     duration: "60 Days (2 Months)",
     baseAmount: 0,
     gstRate: 0.18,
   },
   super10: {
     id: "super10" as const,
-    name: "Super10 Elite Cohort (100% Placement Assurance)",
+    name: "Super10 Elite Program (100% Placement Assurance)",
     duration: "60 Days Intensive",
     baseAmount: 0,
     gstRate: 0.18,
@@ -129,7 +129,7 @@ export function EnrollmentCard({
       setPaidAt(now);
 
       trackAction("paid", generatedTxn, now);
-      showToast("Payment Successful! Cohort seat confirmed.", "success");
+      showToast("Payment Successful! Program seat confirmed.", "success");
 
       onUpdate?.({
         courseId: selectedCourse,
@@ -375,7 +375,7 @@ export function EnrollmentCard({
         <tr>
           <td>
             <strong>${course.name}</strong><br/>
-            <span style="font-size: 11px; color: #64748b;">Includes live cohort access, 1-on-1 CTO mentorship, code reviews & placement track.</span>
+            <span style="font-size: 11px; color: #64748b;">Includes live program access, 1-on-1 CTO mentorship, code reviews & placement track.</span>
           </td>
           <td>${course.duration}</td>
           <td class="amount-col">₹${course.baseAmount.toLocaleString("en-IN")}</td>
@@ -480,7 +480,7 @@ export function EnrollmentCard({
       {status !== "paid" ? (
         <div className="flex flex-col gap-3 mb-4">
           <label className="text-xs font-medium text-neutral-700 dark:text-neutral-300">
-            Select Learning Cohort:
+            Select Learning Program:
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button
@@ -511,7 +511,7 @@ export function EnrollmentCard({
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold">Super10 Elite Cohort</span>
+                <span className="text-xs font-semibold">Super10 Elite Program</span>
                 <span className="text-[9px] font-medium px-2 py-0.5 rounded-full bg-neutral-200/80 dark:bg-white/10 text-neutral-700 dark:text-neutral-300">
                   10 SEATS
                 </span>
@@ -607,7 +607,7 @@ export function EnrollmentCard({
           <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-500/20 text-xs text-red-700 dark:text-red-300 flex items-start gap-2">
             <XCircle className="w-4 h-4 text-red-500 dark:text-red-400 shrink-0 mt-0.5" />
             <span>
-              Payment was not completed. Your cohort seat hold is temporary. Click below to retry.
+              Payment was not completed. Your program seat hold is temporary. Click below to retry.
             </span>
           </div>
 

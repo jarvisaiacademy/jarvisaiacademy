@@ -14,9 +14,9 @@ const WELCOME_AI_RESPONSE = `Welcome to **${siteConfig.name}**! 🚀
 
 We specialize in high-impact software engineering programs engineered to take you from core programming to building and deploying production-ready AI systems:
 
-* **Fast-Track 60-Day Duration**: All cohort programs are intensive **60 days (2 months)** with build-first commercial project development.
+* **Fast-Track 60-Day Duration**: All programs are intensive **60 days (2 months)** with build-first commercial project development.
 * **Transparent Pricing**: **₹0** tuition — every seat is fully sponsored across all courses.
-* **Flagship Programs**: Comprehensive **Full-Stack AI & Web Engineering** and our signature **Super10 Elite Cohort** with 100% placement assurance.
+* **Flagship Programs**: Comprehensive **Full-Stack AI & Web Engineering** and our signature **Super10 Elite Program** with 100% placement assurance.
 * **🎁 Refer & Earn ₹3,000**: Refer a friend or colleague and receive **₹3,000** direct reward once your referred student completes the whole course!
 * **1-on-1 Mentorship**: Direct weekly architecture reviews, mock technical interviews, and resume coaching with lead software engineers.
 
@@ -24,7 +24,7 @@ What area would you like to explore first — our **Course Curriculum**, the **S
 
 const WELCOME_SUGGESTIONS = [
   "What is the fee structure for the 60-day courses?",
-  "Tell me about the Super10 Elite Cohort with 100% placement assurance",
+  "Tell me about the Super10 Elite Program with 100% placement assurance",
   "How does the ₹3,000 Refer & Earn program work?",
 ];
 
@@ -60,15 +60,15 @@ Choose a category or explore all courses below:`,
     ],
   },
   super10: {
-    text: `⚡ **Super10 Elite Batch** is our signature, high-intensity career acceleration cohort.
+    text: `⚡ **Super10 Elite Batch** is our signature, high-intensity career acceleration program.
 
 * **Duration**: **60 Days (2 Months)** high-intensity commercial training.
 * **Tuition Fee**: **₹0** — [why ₹0?](#ask:Why%20is%20the%20Super10%20tuition%20%E2%82%B90%3F)
-* **Cohort Cap**: Strictly limited to **10 selected candidates** per batch to guarantee bespoke attention.
+* **Program Cap**: Strictly limited to **10 selected candidates** per batch to guarantee bespoke attention.
 * **Format**: Hands-on live commercial projects, daily peer code reviews, and enterprise system designs.
 * **1-on-1 Mentorship**: Direct weekly architecture reviews with lead tech architects.
 * **Placement Guarantee**: 100% job placement assurance with partner tech companies across Pune and remote hubs.
-* **🎁 Referral Bonus**: Refer a peer to Super10 and earn **₹3,000** after they complete the full 60-day cohort!
+* **🎁 Referral Bonus**: Refer a peer to Super10 and earn **₹3,000** after they complete the full 60-day program!
 
 > "Super10 is engineered for ambitious learners ready to build real production-grade systems and secure senior developer packages."
 
@@ -76,7 +76,7 @@ Would you like to review the eligibility criteria or reserve a screening intervi
     suggestions: [
       "What is the fee structure for Super10?",
       "How does the 100% placement assurance work?",
-      "I want to enroll in the upcoming cohort and proceed with payment",
+      "I want to enroll in the upcoming program and proceed with payment",
     ],
   },
   sponsored: {
@@ -86,14 +86,14 @@ Every seat at **Jarvis AI Academy** is a **fully sponsored seat** — the progra
 
 * **What you pay**: **₹0**. No tuition fee, no registration fee, no GST, no certification charge.
 * **Why**: your seat is funded rather than bought, so there is no fee to recover from you.
-* **What is expected**: a full-time commitment to the **60-day** cohort — daily code reviews, live commercial projects and the capstone. A sponsored seat is released if a learner stops attending.
+* **What is expected**: a full-time commitment to the **60-day** program — daily code reviews, live commercial projects and the capstone. A sponsored seat is released if a learner stops attending.
 * **Availability**: **Super10** is capped at **10 candidates** per batch; every other track has its own intake cap.
 
 * **🎁 Refer & Earn**: unchanged — refer a friend and earn **₹3,000** once they complete the full 60-day course.
 
-Would you like to check seat availability for the upcoming cohort?`,
+Would you like to check seat availability for the upcoming program?`,
     suggestions: [
-      "I want to enroll in the upcoming cohort and proceed with payment",
+      "I want to enroll in the upcoming program and proceed with payment",
       "How does the 100% placement assurance work?",
       "What is the fee structure for Super10?",
     ],
@@ -105,7 +105,7 @@ Earn **₹3,000** direct bonus for every learner you refer to Jarvis AI Academy!
 
 ### How the Referral Program Works:
 1. **Invite a Learner**: Refer a friend, colleague, or classmate to enroll in any 60-day program.
-2. **They Enroll**: Your referred person enrolls in their chosen cohort (Program Fee: **₹0** — fully sponsored).
+2. **They Enroll**: Your referred person enrolls in their chosen program (Program Fee: **₹0** — fully sponsored).
 3. **Course Completion**: They attend classes, submit projects, and finish the full **60-day course**.
 4. **Get Rewarded**: Once the referred candidate completes the whole course, you receive **₹3,000** cash reward directly via UPI or bank transfer!
 
@@ -117,8 +117,9 @@ Earn **₹3,000** direct bonus for every learner you refer to Jarvis AI Academy!
 
 Ready to refer someone? Share their details with our admissions desk or have them mention your name during registration!`,
     suggestions: [
+      "How do I refer my friend right now?",
       "What is the course duration and fee structure?",
-      "How do I enroll in the upcoming cohort?",
+      "How do I enroll in the upcoming program?",
       "Tell me about available courses at Jarvis AI Academy",
     ],
   },
@@ -138,7 +139,7 @@ Ready to refer someone? Share their details with our admissions desk or have the
 
 * **🎁 Refer & Earn**: Refer a friend to this course and earn **₹3,000** once they complete!`,
     suggestions: [
-      "I want to enroll in the Frontend Engineering cohort and proceed with payment",
+      "I want to enroll in the Frontend Engineering program and proceed with payment",
       "What projects will I build in Frontend Engineering?",
       "Tell me about the Super10 Elite Batch with 100% placement assurance",
     ],
@@ -351,7 +352,7 @@ Drop your contact number or question here and an engineering advisor will get in
   socials: {
     text: `### 🌐 Official Social Channels — Jarvis AI Academy
 
-Connect with our community across all official channels for code walkthroughs, tech deep-dives, student success stories, and cohort announcements:
+Connect with our community across all official channels for code walkthroughs, tech deep-dives, student success stories, and program announcements:
 
 * 💼 **LinkedIn**: [@jarvisaiacademy](https://www.linkedin.com/company/jarvisaiacademy/) — *Alumni updates, hiring partner connections & official credentials*
 * 📸 **Instagram**: [@jarvisaiacademy](https://www.instagram.com/jarvisaiacademy/) — *Campus life, project showcases & bite-sized software engineering tips*
@@ -384,20 +385,20 @@ Log in to run multi-step research and save comprehensive reports to revisit late
 **Effective Date:** January 1, 2025  
 **Entity:** Jarvis AI Academy (Pune, Maharashtra, India)
 
-Welcome to **Jarvis AI Academy**! By enrolling in any cohort, accessing our engineering portals, or utilizing our curriculum resources, you agree to comply with and be bound by the following Terms & Conditions:
+Welcome to **Jarvis AI Academy**! By enrolling in any program, accessing our engineering portals, or utilizing our curriculum resources, you agree to comply with and be bound by the following Terms & Conditions:
 
 ---
 
-### 1. Admissions, Enrollment & Cohort Structure
+### 1. Admissions, Enrollment & Program Structure
 * **Duration:** All programs have an intensive **60-day duration**.
-* **Prerequisites & Screening:** Admission into specialized cohorts—specifically our **Super10 Elite Batch**—requires successful completion of our baseline programming assessment and technical screening interview.
+* **Prerequisites & Screening:** Admission into specialized programs—specifically our **Super10 Elite Batch**—requires successful completion of our baseline programming assessment and technical screening interview.
 * **Attendance & Milestone Delivery:** Candidates are expected to maintain at least **85% live attendance** and complete scheduled capstone milestones to remain eligible for placement drives.
 
 ---
 
 ### 2. Intellectual Property Rights
 * **Academy Course Materials:** All proprietary lectures, architectural blueprints, curated roadmaps, video guides, coding challenge solutions, and course frameworks are the exclusive intellectual property of Jarvis AI Academy.
-* **Learner Projects & Repositories:** Any software or capstone built individually by the learner during the cohort remains **100% the learner's intellectual property**.
+* **Learner Projects & Repositories:** Any software or capstone built individually by the learner during the program remains **100% the learner's intellectual property**.
 
 ---
 
@@ -427,7 +428,7 @@ These Terms are governed by the **laws of India**. Any disputes shall be subject
 At **Jarvis AI Academy**, we respect your personal data and are committed to transparency:
 
 * **Identity Information:** Full name, email address, phone/WhatsApp number, educational background.
-* **Academic Records:** Cohort attendance, code review feedback, assignment submissions, certificate issuance records.
+* **Academic Records:** Program attendance, code review feedback, assignment submissions, certificate issuance records.
 * **Zero Data Selling:** Jarvis AI Academy never sells, rents, or monetizes student personal data to third-party advertisers.
 * **Data Protection:** All data in transit is protected using modern **TLS 1.3** encryption. Sensitive records are encrypted with **AES-256**.
 
@@ -437,7 +438,7 @@ Contact Data Privacy Officer: [privacy@jarvisaiacademy.com](mailto:privacy@jarvi
     text: `# Payment Terms & Refund Policy — Jarvis AI Academy
 
 **Effective Date:** January 1, 2025  
-**Applies to:** Full-Stack AI & Web Engineering Cohort and Super10 Elite Batch
+**Applies to:** Full-Stack AI & Web Engineering Program and Super10 Elite Batch
 
 At **Jarvis AI Academy**, we maintain transparent, straightforward pricing with no hidden fees.
 
@@ -470,7 +471,7 @@ At **Jarvis AI Academy**, we maintain transparent, straightforward pricing with 
 
 For billing assistance: [finance@jarvisaiacademy.com](mailto:finance@jarvisaiacademy.com) | 📞 **+91 91729 11988**`,
     suggestions: [
-      "I want to enroll in the upcoming cohort and proceed with payment",
+      "I want to enroll in the upcoming program and proceed with payment",
       "Are zero-cost EMI installment plans available?",
       "How do I earn ₹3,000 by referring a friend?",
     ],
@@ -478,14 +479,14 @@ For billing assistance: [finance@jarvisaiacademy.com](mailto:finance@jarvisaiaca
   enroll: {
     text: `# Admissions & Enrollment Portal — ${siteConfig.name}
 
-Welcome to the direct admissions and enrollment portal. Confirm your seat for the upcoming cohort with our transparent pricing and **7-day 100% money-back guarantee**.
+Welcome to the direct admissions and enrollment portal. Confirm your seat for the upcoming program with our transparent pricing and **7-day 100% money-back guarantee**.
 
-### Available Cohort Tracks:
+### Available Program Tracks:
 * **Program Duration**: **60 Days (60d / 2 Months)** for all courses.
 * **Program Tuition**: **₹0** — fully sponsored, no GST applies.
 * **Tracks**:
   * **Full-Stack AI & Web Engineering** (60 Days Live)
-  * **Super10 Elite Cohort** (60 Days, 100% Placement Assurance)
+  * **Super10 Elite Program** (60 Days, 100% Placement Assurance)
 
 ---
 
@@ -692,7 +693,7 @@ export function ChatCanvas({
       lower.includes("register") ||
       lower.includes("book seat") ||
       lower.includes("join batch") ||
-      lower.includes("join cohort")
+      lower.includes("join program")
     ) {
       return academyKnowledge.enroll;
     } else if (lower.includes("super10") || lower.includes("elite")) {
@@ -775,7 +776,7 @@ export function ChatCanvas({
       text: `Thank you for your question about **"${prompt}"**!\n\nAt **Jarvis AI Academy**, our programs feature:\n* **Duration**: Fast-track **60 Days (2 Months)** build-first training.\n* **Tuition**: **₹0** — every seat is fully sponsored.\n* **🎁 Refer & Earn**: Refer a student and receive **₹3,000** cash reward once they complete the full 60-day course!\n\n🌐 **Connect With Us Online**:\n* 💼 **LinkedIn**: [@jarvisaiacademy](https://www.linkedin.com/company/jarvisaiacademy/)\n* 📸 **Instagram**: [@jarvisaiacademy](https://www.instagram.com/jarvisaiacademy/)\n* 🎥 **YouTube**: [@JarvisAIAcademy](https://www.youtube.com/@JarvisAIAcademy)\n* 𝕏 **X (Twitter)**: [@jarvisaiacademy](https://x.com/jarvisaiacademy)\n* 📘 **Facebook**: [@jarvisaiacademy](https://www.facebook.com/jarvisaiacademy/)\n\nWould you like to explore our course syllabus, the **Super10** batch, or start enrollment?`,
       suggestions: [
         "What is the fee structure for the 60-day courses?",
-        "Tell me about the Super10 Elite Cohort with 100% placement assurance",
+        "Tell me about the Super10 Elite Program with 100% placement assurance",
         "How does the ₹3,000 Refer & Earn program work?",
       ],
     };
@@ -816,7 +817,7 @@ export function ChatCanvas({
         testimonials: "Show me student reviews and placement testimonials",
         certificate: "How do I verify a certificate issued by Jarvis AI Academy?",
         enquiry: "I'd like to get in touch with an admissions counselor",
-        enroll: "I want to enroll in the upcoming cohort and proceed with payment",
+        enroll: "I want to enroll in the upcoming program and proceed with payment",
         terms: "Can you provide the Terms & Conditions of Jarvis AI Academy?",
         privacy: "What is the Privacy Policy of Jarvis AI Academy?",
         payment_terms: "What are the Payment Terms, fee structure, and refund policy at Jarvis AI Academy?",

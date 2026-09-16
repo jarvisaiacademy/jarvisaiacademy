@@ -293,14 +293,14 @@ export function ChatMessages({
                 {!msg.isStreaming &&
                   (msg.content.includes("Full-Stack AI & Web Engineering") ||
                     msg.content.includes("Super10 Elite Batch") ||
-                    msg.content.includes("Super10 Elite Cohort")) &&
+                    msg.content.includes("Super10 Elite Program")) &&
                   !msg.content.includes("Admissions & Enrollment Portal") && (
                     <div className="pt-2">
                       <button
                         type="button"
                         onClick={() =>
                           onActionPrompt?.(
-                            "I want to enroll in the upcoming cohort and proceed with payment"
+                            "I want to enroll in the upcoming program and proceed with payment"
                           )
                         }
                         className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95"

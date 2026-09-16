@@ -69,7 +69,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
                 Log in or sign up
               </h2>
               <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-2 px-2 leading-relaxed">
-                Join {siteConfig.name} to start your personalized learning roadmap, review cohorts, and access code repos.
+                Join {siteConfig.name} to start your personalized learning roadmap, review programs, and access code repos.
               </p>
             </div>
 
