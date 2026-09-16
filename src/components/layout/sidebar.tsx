@@ -130,42 +130,8 @@ export function Sidebar({
                 <SidebarLoginCTA onLoginClick={onOpenLogin} />
               </div>
             )}
-            <div className="flex items-center justify-center pt-2 pb-1">
+            <div className="flex items-center justify-center pt-2 pb-3">
               <SocialLinks />
-            </div>
-            <div className="flex flex-nowrap items-center justify-center gap-x-1.5 px-2 pt-1 pb-3 text-[10px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
-              <button
-                type="button"
-                onClick={() => {
-                  onSelectSection?.("terms");
-                  onToggle();
-                }}
-                className="whitespace-nowrap hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
-              >
-                Terms & Cond.
-              </button>
-              <span className="text-neutral-300 dark:text-neutral-700 select-none">·</span>
-              <button
-                type="button"
-                onClick={() => {
-                  onSelectSection?.("privacy");
-                  onToggle();
-                }}
-                className="whitespace-nowrap hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
-              >
-                Privacy Policy
-              </button>
-              <span className="text-neutral-300 dark:text-neutral-700 select-none">·</span>
-              <button
-                type="button"
-                onClick={() => {
-                  onSelectSection?.("payment_terms");
-                  onToggle();
-                }}
-                className="whitespace-nowrap hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
-              >
-                Payment Terms
-              </button>
             </div>
           </div>
         </motion.aside>
@@ -227,33 +193,8 @@ export function Sidebar({
             <SidebarLoginCTA onLoginClick={onOpenLogin} />
           </div>
         )}
-        <div className="flex items-center justify-center pt-2 pb-1">
+        <div className="flex items-center justify-center pt-2 pb-3.5">
           <SocialLinks />
-        </div>
-        <div className="flex flex-nowrap items-center justify-center gap-x-1.5 px-2 pt-1 pb-3.5 text-[10px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
-          <button
-            type="button"
-            onClick={() => onSelectSection?.("terms")}
-            className="whitespace-nowrap hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
-          >
-            Terms & Cond.
-          </button>
-          <span className="text-neutral-300 dark:text-neutral-700 select-none">·</span>
-          <button
-            type="button"
-            onClick={() => onSelectSection?.("privacy")}
-            className="whitespace-nowrap hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
-          >
-            Privacy Policy
-          </button>
-          <span className="text-neutral-300 dark:text-neutral-700 select-none">·</span>
-          <button
-            type="button"
-            onClick={() => onSelectSection?.("payment_terms")}
-            className="whitespace-nowrap hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
-          >
-            Payment Terms
-          </button>
         </div>
       </div>
     </motion.aside>
