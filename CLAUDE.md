@@ -108,17 +108,26 @@ These rules take priority over convenience.
 
 # 3. SEO
 
-The public surface is two routes: `/` (indexable) and `/settings` (noindex). The admin
-dashboard has **no route** — it renders inside `/` only for an authenticated admin — so it
-is already outside SEO. Keep it that way; do not give it a URL.
+The public surface is: `/` (indexable), `/courses` and `/courses/<slug>` (indexable, one
+per `COURSES_DATA` entry), and `/settings` (noindex). The admin dashboard has **no route** —
+it renders inside `/` only for an authenticated admin — so it is already outside SEO. Keep it
+that way; do not give it a URL.
+
+The course pages are server-rendered from the same knowledge base the chat replies with
+(`src/data/academy-knowledge.ts`), so the copy a crawler reads is the copy the bot says. Each
+`/courses/<slug>` sets its own canonical — the root layout's `canonical: "/"` is inherited by
+any route that does not override it. A new catalogue entry gets a page, a sitemap entry and an
+`/llms.txt` link automatically; nothing else needs editing.
 
 Which file owns what:
 
 | Concern | File |
 | --- | --- |
 | Titles, descriptions, canonical, OG/Twitter cards, favicons | `src/app/layout.tsx` |
+| Per-course title/description/canonical | `src/app/courses/[slug]/page.tsx` |
 | Brand strings, contact details, social handles | `src/config/site.ts` |
-| JSON-LD structured data | `src/config/seo.ts` |
+| JSON-LD structured data (site + per-course) | `src/config/seo.ts` |
+| Chat replies, and the page copy lifted from them | `src/data/academy-knowledge.ts` |
 | Sitemap | `src/app/sitemap.ts` |
 | Crawl rules | `src/app/robots.ts` |
 | Web app manifest | `public/site.webmanifest` |
@@ -136,9 +145,13 @@ Which file owns what:
   metadata — that is why `src/app/settings/layout.tsx` exists. Never use a `Disallow`
   for this: it stops the crawl before the `noindex` can be read.
 - New social profile → `siteConfig.links`, which feeds both the sidebar and `sameAs`.
-- Course catalogue, fees, duration or contact details → nothing to do. `/llms.txt` is
-  generated from `COURSES_DATA` and `siteConfig`, so it tracks those changes on its own.
-  Never paste the catalogue into it by hand.
+- Course catalogue, fees, duration or contact details → nothing to do. `/llms.txt`, the
+  sitemap and the course pages are all generated from `COURSES_DATA` and `siteConfig`, so they
+  track those changes on their own. Never paste the catalogue into them by hand.
+- A new **reply** in `src/data/academy-knowledge.ts` → nothing to do unless it is a program's
+  answer, in which case add the id to `COURSE_KB_KEY` beside it or `/courses/<id>` renders
+  without its copy. `node scripts/check-course-routing.mjs` fails if the map and the chat's
+  keyword router ever disagree.
 
 Do not add `keywords` (Google ignores it). Do not add an SEO library — Next's Metadata API
 plus `robots.ts` / `sitemap.ts` cover everything here.
