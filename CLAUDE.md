@@ -61,7 +61,7 @@ These rules take priority over convenience.
 
 - **Do not push directly to `production` under any circumstances** (all changes must be on feature branches and merged via PR).
 - **Do not raise a task PR against `production` or merge one into it.** `production` moves only when the user asks for a promotion from `development`.
-- Do not rename or delete the `production`, `development` or `main` branches, or change the repository's default branch, without being asked — Netlify resolves its production branch by name.
+- Do not rename or delete the `development` or `production` branches, or change the repository's default branch, without being asked — Netlify resolves its production branch by name. These two are the only long-lived branches; `main` no longer exists.
 - **Do not run `pnpm build` locally** (use `pnpm tsc --noEmit` only; Netlify performs the production build).
 - Do not replace the project's framework or stack without explicit approval.
 - Do not migrate libraries simply because another library is fashionable.
