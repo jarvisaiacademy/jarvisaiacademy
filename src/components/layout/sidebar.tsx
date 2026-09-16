@@ -194,7 +194,7 @@ export function Sidebar({
           </div>
         )}
         <div className="flex items-center justify-center pt-2 pb-3.5">
-          <SocialLinks />
+          <SocialLinks iconSize={22} gapClassName="gap-3.5" />
         </div>
       </div>
     </motion.aside>
