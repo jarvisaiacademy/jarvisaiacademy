@@ -128,9 +128,9 @@ function HeroGradientObject({
           </div>
           <div className="flex items-center gap-1.5 mt-0.5">
             <div className="flex -space-x-1.5">
-              <div className="w-4 h-4 rounded-full bg-white/90 border border-amber-300" />
-              <div className="w-4 h-4 rounded-full bg-white/80 border border-amber-300" />
-              <div className="w-4 h-4 rounded-full bg-white/70 border border-amber-300" />
+              <div className="w-4 h-4 rounded-full bg-white/90" />
+              <div className="w-4 h-4 rounded-full bg-white/80" />
+              <div className="w-4 h-4 rounded-full bg-white/70" />
               <div className="w-4 h-4 rounded-full bg-amber-300 border border-white flex items-center justify-center text-[8px] font-bold text-black">
                 +7
               </div>
