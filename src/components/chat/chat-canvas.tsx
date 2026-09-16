@@ -503,6 +503,16 @@ Please select your program below and proceed with the secure checkout. Your veri
   },
 };
 
+/** Longest the simulated stream may take, however long the reply is. A reply under
+ *  ~280 tokens keeps the original flat tick and is unaffected; past that the delay
+ *  is derived from the token count against this budget, so a 600-token answer lands
+ *  at 5s instead of the 10.8s a flat 18ms/token produced. */
+const STREAM_BUDGET_MS = 5000;
+/** The old flat delay, kept as the ceiling so no reply streams slower than before. */
+const STREAM_DELAY_MAX_MS = 18;
+/** Floor, so the longest replies still read as typing rather than appearing at once. */
+const STREAM_DELAY_MIN_MS = 8;
+
 /** Legal sections, linked under the composer. Each maps to a `academyKnowledge` key. */
 const LEGAL_LINKS = [
   { topic: "terms", label: "Terms & Conditions" },
@@ -574,19 +584,24 @@ export function ChatCanvas({
         },
       ]);
 
-      let isAborted = false;
-      abortStreamRef.current = () => {
-        isAborted = true;
-      };
-
       // Split text into tokens/words preserving spacing
       const tokens = fullText.split(/(\s+)/);
+
+      // Pace the reply against a time budget rather than a flat per-token delay.
+      // Short replies clamp to the ceiling and stream exactly as they used to;
+      // long ones clamp to the floor and finish in ~5s instead of dragging.
+      const delayMs = Math.min(
+        STREAM_DELAY_MAX_MS,
+        Math.max(STREAM_DELAY_MIN_MS, STREAM_BUDGET_MS / tokens.length)
+      );
+
       let currentIndex = 0;
       let accumulated = "";
+      let isAborted = false;
+      let timerId: ReturnType<typeof setTimeout> | null = null;
 
-      const intervalId = setInterval(() => {
+      const tick = () => {
         if (isAborted) {
-          clearInterval(intervalId);
           setIsGenerating(false);
           setMessages((prev) =>
             prev.map((msg) =>
@@ -608,8 +623,8 @@ export function ChatCanvas({
             )
           );
           scrollToBottom("auto");
+          timerId = setTimeout(tick, delayMs);
         } else {
-          clearInterval(intervalId);
           setIsGenerating(false);
           abortStreamRef.current = null;
           setMessages((prev) =>
@@ -629,7 +644,22 @@ export function ChatCanvas({
           scrollToBottom("smooth");
           onComplete?.();
         }
-      }, 18); // 18ms per token chunk
+      };
+
+      abortStreamRef.current = () => {
+        isAborted = true;
+        if (timerId) clearTimeout(timerId);
+        tick(); // unwinds immediately rather than waiting out the pending tick
+      };
+
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        // No animation: run one tick at the end of the text, so the same
+        // completion path (suggestions, smooth scroll, onComplete) still fires.
+        currentIndex = tokens.length;
+        tick();
+      } else {
+        timerId = setTimeout(tick, delayMs);
+      }
     },
     [scrollToBottom]
   );
