@@ -4,9 +4,15 @@ import { siteConfig } from "@/config/site";
 interface SocialLinksProps {
   className?: string;
   iconSize?: number;
+  /** Tailwind gap class between icons. Kept as a class, not a number, so callers stay on the project's spacing scale. */
+  gapClassName?: string;
 }
 
-export function SocialLinks({ className = "", iconSize = 18 }: SocialLinksProps) {
+export function SocialLinks({
+  className = "",
+  iconSize = 18,
+  gapClassName = "gap-2.5",
+}: SocialLinksProps) {
   const socials = [
     {
       name: "LinkedIn",
@@ -61,7 +67,7 @@ export function SocialLinks({ className = "", iconSize = 18 }: SocialLinksProps)
   ];
 
   return (
-    <div className={`flex items-center gap-2.5 ${className}`}>
+    <div className={`flex items-center ${gapClassName} ${className}`}>
       {socials.map((s) => (
         <a
           key={s.name}

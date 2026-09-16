@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, Fragment } from "react";
 import { ChatMessages, ChatMessage } from "./chat-messages";
 import { ChatComposer } from "./ChatComposer";
 import { EnrollmentData } from "./enrollment-card";
@@ -482,6 +482,13 @@ Please select your program below and proceed with the secure checkout. Your veri
   },
 };
 
+/** Legal sections, linked under the composer. Each maps to a `academyKnowledge` key. */
+const LEGAL_LINKS = [
+  { topic: "terms", label: "Terms & Conditions" },
+  { topic: "privacy", label: "Privacy Policy" },
+  { topic: "payment_terms", label: "Payment Terms" },
+] as const;
+
 interface ChatCanvasProps {
   onAttach?: () => void;
   onVoiceStart?: () => void;
@@ -776,9 +783,10 @@ export function ChatCanvas({
     [determineReply, streamAIResponse]
   );
 
-  // Handle topic click from sidebar
-  useEffect(() => {
-    if (activeTopic) {
+  // Streams a knowledge-base section as if the user had asked for it. Shared by
+  // the sidebar topics and the legal links under the composer.
+  const openSection = useCallback(
+    (topic: string) => {
       const topicPrompts: Record<string, string> = {
         courses: "Tell me about the available courses at Jarvis AI Academy",
         super10: "What is the Super10 Elite Batch and how can I qualify?",
@@ -792,7 +800,7 @@ export function ChatCanvas({
         payment_terms: "What are the Payment Terms, fee structure, and refund policy at Jarvis AI Academy?",
       };
 
-      const userText = topicPrompts[activeTopic] || `Tell me about ${activeTopic}`;
+      const userText = topicPrompts[topic] || `Tell me about ${topic}`;
       const userMsg: ChatMessage = {
         id: `user-${Date.now()}`,
         role: "user",
@@ -800,7 +808,7 @@ export function ChatCanvas({
       };
 
       setMessages((prev) => [...prev, userMsg]);
-      const data = academyKnowledge[activeTopic] || determineReply(activeTopic);
+      const data = academyKnowledge[topic] || determineReply(topic);
 
       setTimeout(() => {
         streamAIResponse(
@@ -809,10 +817,16 @@ export function ChatCanvas({
           { showCourseCatalog: data.showCourseCatalog }
         );
       }, 300);
+    },
+    [determineReply, streamAIResponse]
+  );
 
-      onTopicHandled?.();
-    }
-  }, [activeTopic, onTopicHandled, determineReply, streamAIResponse]);
+  // Handle topic click from sidebar
+  useEffect(() => {
+    if (!activeTopic) return;
+    openSection(activeTopic);
+    onTopicHandled?.();
+  }, [activeTopic, onTopicHandled, openSection]);
 
   // Handle stop generation
   const handleStop = useCallback(() => {
@@ -952,10 +966,25 @@ export function ChatCanvas({
             placeholder="Ask anything"
           />
         </div>
-        {/* Subtle Disclaimer Footer - shown on desktop screens where vertical space is ample */}
-        <p className="text-[11px] text-neutral-500 mt-1.5 text-center select-none hidden sm:block">
-          Jarvis AI can make mistakes. Verify important info.
-        </p>
+        {/* Legal links. These live here rather than in the sidebar footer, and
+            stay visible at every width so mobile keeps a route to them.
+            `pointer-events-auto` overrides the gradient wrapper's `none`. */}
+        <div className="pointer-events-auto flex flex-nowrap items-center justify-center gap-x-1.5 mt-1.5 text-[11px] text-neutral-500 select-none">
+          {LEGAL_LINKS.map(({ topic, label }, index) => (
+            <Fragment key={topic}>
+              {index > 0 && (
+                <span className="text-neutral-300 dark:text-neutral-700 select-none">·</span>
+              )}
+              <button
+                type="button"
+                onClick={() => openSection(topic)}
+                className="whitespace-nowrap hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
+              >
+                {label}
+              </button>
+            </Fragment>
+          ))}
+        </div>
       </div>
     </div>
   );
