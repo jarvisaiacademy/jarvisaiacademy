@@ -344,11 +344,6 @@ export function ChatMessages({
                   </div>
                 )}
 
-                {/* Admission route, closing every answer — unless the checkout is already up */}
-                {!msg.isStreaming && msg.content && !showsCheckout && (
-                  <AdmissionCtaCard onActionPrompt={onActionPrompt} />
-                )}
-
                 {/* Assistant Action Bar (Matching today's ChatGPT UI: Copy, Dual Thumbs, Share, Regenerate, More) */}
                 {!msg.isStreaming && msg.content && (
                   <div className="relative flex items-center gap-2.5 mt-2.5 text-neutral-400 dark:text-neutral-400 select-none">
@@ -479,6 +474,11 @@ export function ChatMessages({
                       )}
                     </div>
                   </div>
+                )}
+                {/* Admission route, closing every answer — unless the checkout is already up.
+                    Below the action bar so the copy/like/share controls stay next to the text. */}
+                {!msg.isStreaming && msg.content && !showsCheckout && (
+                  <AdmissionCtaCard onActionPrompt={onActionPrompt} />
                 )}
               </div>
             )}
