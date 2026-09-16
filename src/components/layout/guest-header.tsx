@@ -69,7 +69,7 @@ export function GuestHeader({
                 {/* Stacked under the name, not trailing it on a `·`: the inline
                     version lost half its width to truncation on narrow headers.
                     Matches the sidebar header, which has always stacked them. */}
-                <span className="truncate text-[11px] font-normal text-neutral-400 dark:text-neutral-500 leading-tight mt-0.5 select-none">
+                <span className="truncate text-[11px] font-normal text-neutral-500 dark:text-neutral-400 leading-tight mt-0.5 select-none">
                   {siteConfig.tagline}
                 </span>
               </div>
