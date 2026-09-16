@@ -58,7 +58,7 @@ export function Sidebar({
         {isOpen && (
           <div
             onClick={onToggle}
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 transition-opacity"
+            className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-40 transition-opacity"
             aria-hidden="true"
           />
         )}
@@ -69,7 +69,7 @@ export function Sidebar({
             x: isOpen ? 0 : -280,
           }}
           transition={{ type: "spring", stiffness: 350, damping: 32 }}
-          className="fixed top-0 left-0 bottom-0 w-[260px] bg-[#f9f9f9] dark:bg-[#171717] border-r border-neutral-200 dark:border-white/5 z-50 flex flex-col justify-between overflow-hidden select-none transition-colors"
+          className="md:hidden fixed top-0 left-0 bottom-0 w-[260px] bg-[#f9f9f9] dark:bg-[#171717] border-r border-neutral-200 dark:border-white/5 z-50 flex flex-col justify-between overflow-hidden select-none transition-colors"
         >
           <div className="flex flex-col flex-1 overflow-y-auto no-scrollbar">
             <SidebarHeader
@@ -149,7 +149,11 @@ export function Sidebar({
       // its full width — the "empty space" bug.
       animate={{ width: isOpen ? 260 : 0, x: 0 }}
       transition={{ type: "spring", stiffness: 350, damping: 32 }}
-      className={`relative flex flex-col justify-between h-screen bg-[#f9f9f9] dark:bg-[#171717] overflow-hidden shrink-0 select-none z-30 transition-colors ${
+      // `hidden md:flex`, not `flex`: `useSidebar` only learns it is on a phone
+      // after its mount effect, so this docked branch paints in flow for one
+      // frame first — holding its 260px, squeezing the chat, then dropping to 0
+      // when the drawer takes over. That jump was the whole mobile layout shift.
+      className={`relative hidden md:flex flex-col justify-between h-screen bg-[#f9f9f9] dark:bg-[#171717] overflow-hidden shrink-0 select-none z-30 transition-colors ${
         isOpen ? "border-r border-neutral-200 dark:border-white/5" : "border-none"
       }`}
     >
