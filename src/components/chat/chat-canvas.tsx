@@ -7,6 +7,7 @@ import { EnrollmentData } from "./enrollment-card";
 import { useAuth } from "@/providers/auth-provider";
 import { siteConfig } from "@/config/site";
 import { buildTestimonialsText } from "@/data/testimonials";
+import { COURSES_DATA } from "@/data/courses";
 
 const SAMPLE_STARTER_QUESTION = `Hi! I want to transition into AI & Full-Stack software engineering. How does ${siteConfig.name} help learners reach production-ready skills?`;
 
@@ -847,7 +848,12 @@ export function ChatCanvas({
         payment_terms: "What are the Payment Terms, fee structure, and refund policy at Jarvis AI Academy?",
       };
 
-      const userText = topicPrompts[topic] || `Tell me about ${topic}`;
+      // A course row sends a catalogue id, which is not a knowledge-base key, so ask
+      // for the programme by name and let the keyword router pick its section. The
+      // catalogue's own `actionPrompt` cannot be used: the flagship's is the checkout
+      // ask, which would open the payment portal instead of describing the programme.
+      const course = COURSES_DATA.find((c) => c.id === topic);
+      const userText = topicPrompts[topic] || `Tell me about ${course?.title ?? topic}`;
       const userMsg: ChatMessage = {
         id: `user-${Date.now()}`,
         role: "user",
@@ -855,7 +861,7 @@ export function ChatCanvas({
       };
 
       setMessages((prev) => [...prev, userMsg]);
-      const data = academyKnowledge[topic] || determineReply(topic);
+      const data = academyKnowledge[topic] || determineReply(userText);
 
       setTimeout(() => {
         streamAIResponse(
