@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, Fragment } from "react";
+import { ArrowDown } from "lucide-react";
 import { ChatMessages, ChatMessage } from "./chat-messages";
 import { ChatComposer } from "./ChatComposer";
 import { EnrollmentData } from "./enrollment-card";
@@ -79,6 +80,11 @@ export function ChatCanvas({
 }: ChatCanvasProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialConversation);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  // True until the visitor asks something of their own. While it holds, the view is
+  // pinned to the top of the welcome: a greeting is read from its first line, and
+  // following the end of it would drop them past what this place even is.
+  const onWelcomeRef = useRef(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const abortStreamRef = useRef<(() => void) | null>(null);
 
@@ -93,8 +99,25 @@ export function ChatCanvas({
   }, []);
 
   useEffect(() => {
+    if (onWelcomeRef.current) {
+      scrollContainerRef.current?.scrollTo({ top: 0 });
+      return;
+    }
     scrollToBottom("smooth");
   }, [messages, scrollToBottom]);
+
+  const handleScroll = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    setIsAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight < 48);
+  }, []);
+
+  // The container starts at the top, so no scroll event announces the welcome
+  // screen's real position — measure once after the first commit, or the button
+  // below would stay hidden on the one screen that always needs it.
+  useEffect(() => {
+    handleScroll();
+  }, [handleScroll]);
 
   // Core simulated token streamer
   const streamAIResponse = useCallback(
@@ -166,7 +189,9 @@ export function ChatCanvas({
                 : msg
             )
           );
-          scrollToBottom("auto");
+          // A streaming welcome must not drag the view down from the top it is
+          // pinned to; its own effect re-pins after every tick.
+          if (!onWelcomeRef.current) scrollToBottom("auto");
           timerId = setTimeout(tick, delayMs);
         } else {
           setIsGenerating(false);
@@ -185,7 +210,7 @@ export function ChatCanvas({
                 : msg
             )
           );
-          scrollToBottom("smooth");
+          if (!onWelcomeRef.current) scrollToBottom("smooth");
           onComplete?.();
         }
       };
@@ -211,6 +236,9 @@ export function ChatCanvas({
   // Handle New Chat reset and auto-trigger sample chat starter
   useEffect(() => {
     if (resetSignal && resetSignal > 0) {
+      // A new chat opens on the welcome again, so it is pinned to the top again.
+      onWelcomeRef.current = true;
+
       if (abortStreamRef.current) {
         abortStreamRef.current();
         abortStreamRef.current = null;
@@ -359,6 +387,8 @@ export function ChatCanvas({
   // Handle prompt submit
   const handlePromptSubmit = useCallback(
     (prompt: string) => {
+      onWelcomeRef.current = false;
+
       const userMsg: ChatMessage = {
         id: `user-${Date.now()}`,
         role: "user",
@@ -384,6 +414,8 @@ export function ChatCanvas({
   // the sidebar topics and the legal links under the composer.
   const openSection = useCallback(
     (topic: string) => {
+      onWelcomeRef.current = false;
+
       const topicPrompts: Record<string, string> = {
         courses: "Tell me about the available courses at Jarvis AI Academy",
         super10: "What is the Super10 Elite Batch and how can I qualify?",
@@ -543,6 +575,7 @@ export function ChatCanvas({
       {/* Scrollable Conversation Stream */}
       <div
         ref={scrollContainerRef}
+        onScroll={handleScroll}
         className="flex-1 overflow-y-auto no-scrollbar pb-44 sm:pb-36 pt-2 sm:pt-4 relative z-0"
       >
         <ChatMessages
@@ -558,6 +591,21 @@ export function ChatCanvas({
 
       {/* Floating Sticky Composer (Always on top with z-30) */}
       <div className="absolute bottom-0 left-0 right-0 z-30 pointer-events-none bg-gradient-to-t from-background via-background/95 to-transparent pt-6 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-3 px-3 sm:px-4 flex flex-col items-center transition-colors">
+        {/* Shown the moment the view leaves the bottom, which on the welcome screen
+            is immediately — it is pinned to the top, so this is the way down to the
+            suggestions waiting at the end of the greeting. Above the capsule rather
+            than over the stream, so it never covers the text it scrolls to. */}
+        {!isAtBottom && (
+          <button
+            type="button"
+            onClick={() => scrollToBottom("smooth")}
+            aria-label="Scroll to latest message"
+            title="Scroll to latest message"
+            className="pointer-events-auto mb-2 flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 dark:border-white/15 bg-white dark:bg-[#212121] text-neutral-600 dark:text-neutral-300 shadow-md transition-colors hover:text-neutral-900 dark:hover:text-white cursor-pointer"
+          >
+            <ArrowDown className="h-4 w-4" />
+          </button>
+        )}
         <div className="w-full max-w-3xl pointer-events-auto">
           <ChatComposer
             onSend={({ text, activeTool, attachments }) => {
