@@ -8,8 +8,6 @@ import {
   RotateCcw,
   ThumbsUp,
   ThumbsDown,
-  MoreHorizontal,
-  Volume2,
 } from "lucide-react";
 import { MarkdownRenderer } from "./markdown-renderer";
 import { EnrollmentCard, EnrollmentData } from "./enrollment-card";
@@ -73,7 +71,6 @@ export function ChatMessages({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
-  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<string>("5:44 PM");
   const { showToast } = useToast();
   const editTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -108,19 +105,6 @@ export function ChatMessages({
     const newH = Math.min(Math.max(scrollH, 40), 400);
     e.target.style.height = `${newH}px`;
     e.target.style.overflowY = scrollH > 400 ? "auto" : "hidden";
-  };
-
-  const handleReadAloud = (text: string) => {
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(
-        text.replace(/[#*`_]/g, "")
-      );
-      window.speechSynthesis.speak(utterance);
-      showToast("Reading aloud...", "info");
-    } else {
-      showToast("Speech synthesis not supported in this browser", "info");
-    }
   };
 
   const handleCopy = (id: string, text: string) => {
@@ -431,48 +415,6 @@ export function ChatMessages({
                     >
                       <RotateCcw className="w-4 h-4" />
                     </button>
-
-                    {/* 5. More Options (...) */}
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setMenuOpenId(menuOpenId === msg.id ? null : msg.id)
-                        }
-                        aria-label="More options"
-                        className="p-1 rounded-md hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                        title="More options"
-                      >
-                        <MoreHorizontal className="w-4 h-4" />
-                      </button>
-
-                      {menuOpenId === msg.id && (
-                        <div className="absolute left-0 bottom-full mb-1.5 flex flex-col min-w-[130px] p-1 rounded-xl bg-white dark:bg-[#1e1e1e] border border-neutral-200 dark:border-white/10 shadow-xl z-20 text-xs text-neutral-800 dark:text-neutral-200">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleReadAloud(msg.content);
-                              setMenuOpenId(null);
-                            }}
-                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-white/10 text-left transition-colors cursor-pointer"
-                          >
-                            <Volume2 className="w-3.5 h-3.5" />
-                            <span>Read aloud</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleCopy(msg.id, msg.content);
-                              setMenuOpenId(null);
-                            }}
-                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-white/10 text-left transition-colors cursor-pointer"
-                          >
-                            <Copy className="w-3.5 h-3.5" />
-                            <span>Copy text</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
                   </div>
                 )}
                 {/* Admission route, closing every answer — unless the checkout is already up.
