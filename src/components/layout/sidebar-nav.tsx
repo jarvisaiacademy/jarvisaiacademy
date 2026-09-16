@@ -12,6 +12,16 @@ import {
   LayoutDashboard,
   UserRound,
   GraduationCap,
+  Layers,
+  Code2,
+  Server,
+  Sparkles,
+  BarChart3,
+  ClipboardList,
+  Cloud,
+  Database,
+  Wrench,
+  Globe,
 } from "lucide-react";
 import { SidebarHoverCard } from "./sidebar-hover-card";
 import { useAuth } from "@/providers/auth-provider";
@@ -26,6 +36,27 @@ import { COURSES_DATA } from "@/data/courses";
 const DEDICATED_ROWS = new Set(["super10", "referral"]);
 
 const COURSE_ROWS = COURSES_DATA.filter((course) => !DEDICATED_ROWS.has(course.id));
+
+/**
+ * A coloured glyph per programme, so the list scans the way the catalogue grid
+ * does. Presentation only — which is why it lives here and not in COURSES_DATA,
+ * whose shape Firestore and the admin form also depend on.
+ */
+const COURSE_GLYPHS: Record<
+  string,
+  { icon: React.ComponentType<{ className?: string }>; color: string }
+> = {
+  fullstack: { icon: Layers, color: "text-sky-500 dark:text-sky-400" },
+  "frontend-react": { icon: Code2, color: "text-indigo-500 dark:text-indigo-400" },
+  "backend-python": { icon: Server, color: "text-emerald-500 dark:text-emerald-400" },
+  genai: { icon: Sparkles, color: "text-purple-500 dark:text-purple-400" },
+  "data-analyst": { icon: BarChart3, color: "text-teal-500 dark:text-teal-400" },
+  "business-analyst": { icon: ClipboardList, color: "text-amber-500 dark:text-amber-400" },
+  "devops-aws": { icon: Cloud, color: "text-orange-500 dark:text-orange-400" },
+  "database-admin": { icon: Database, color: "text-slate-500 dark:text-slate-400" },
+  "app-support": { icon: Wrench, color: "text-rose-500 dark:text-rose-400" },
+  "web-laravel": { icon: Globe, color: "text-pink-500 dark:text-pink-400" },
+};
 
 /** Hover-card copy for a course row, read off the catalogue rather than restated. */
 function courseHoverData(id: string) {
@@ -426,21 +457,36 @@ export function SidebarNav({
         className="mx-2 my-1.5 h-px bg-neutral-200 dark:bg-white/10"
       />
 
-      {COURSE_ROWS.map((course) => (
-        <button
-          key={course.id}
-          type="button"
-          onClick={() => onSelectSection?.(course.id)}
-          onMouseEnter={(e) => handleMouseEnter(course.id, e)}
-          onMouseLeave={handleMouseLeave}
-          aria-haspopup="dialog"
-          aria-expanded={activeHoverItem === course.id}
-          aria-current={activeItem === course.id ? "page" : undefined}
-          className={`group flex items-center w-full pl-9 pr-3 py-1.5 text-[13px] rounded-lg transition-colors text-left cursor-pointer ${navStateClass(activeItem === course.id)}`}
-        >
-          <span className="truncate">{course.bannerTitle}</span>
-        </button>
-      ))}
+      {/* ChatGPT's sidebar labels a group with a muted line rather than another
+          button, padded to the row glyphs so the column reads as one. */}
+      <div className="px-3 pt-1 pb-0.5 text-[11px] font-medium text-neutral-400 dark:text-neutral-500">
+        Courses
+      </div>
+
+      {COURSE_ROWS.map((course) => {
+        // A course with no glyph still gets the icon column, so its label stays
+        // on the same line as every other row's.
+        const Icon = COURSE_GLYPHS[course.id]?.icon ?? BookOpen;
+        const color =
+          COURSE_GLYPHS[course.id]?.color ?? "text-neutral-500 dark:text-neutral-400";
+
+        return (
+          <button
+            key={course.id}
+            type="button"
+            onClick={() => onSelectSection?.(course.id)}
+            onMouseEnter={(e) => handleMouseEnter(course.id, e)}
+            onMouseLeave={handleMouseLeave}
+            aria-haspopup="dialog"
+            aria-expanded={activeHoverItem === course.id}
+            aria-current={activeItem === course.id ? "page" : undefined}
+            className={`group flex items-center gap-2.5 w-full px-3 py-1.5 text-[13px] rounded-lg transition-colors text-left cursor-pointer ${navStateClass(activeItem === course.id)}`}
+          >
+            <Icon className={`w-4 h-4 shrink-0 ${color} transition-transform group-hover:scale-110`} />
+            <span className="truncate">{course.bannerTitle}</span>
+          </button>
+        );
+      })}
 
       {/* Reusable Floating Hover Card for Desktop */}
       {!isMobile && anchorRect && (
