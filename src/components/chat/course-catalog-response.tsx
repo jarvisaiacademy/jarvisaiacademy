@@ -419,12 +419,11 @@ export function CourseCatalogResponse({
                 {/* Top Row: Badge + Number */}
                 <div className="flex items-center justify-between gap-2 z-10">
                   {course.badge ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide uppercase bg-black/40 backdrop-blur-md text-amber-300 border border-amber-400/30 shadow-xs">
-                      <Sparkles className="w-2.5 h-2.5" />
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-black/40 text-white">
                       {course.badge}
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-black/30 backdrop-blur-md text-white/80 border border-white/10">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-black/40 text-white/90">
                       {course.categoryLabel}
                     </span>
                   )}
