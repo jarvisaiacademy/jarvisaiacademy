@@ -41,11 +41,19 @@ export function AdmissionCtaCard({ onActionPrompt }: AdmissionCtaCardProps) {
   // One card per reply, so the reveal needs a per-instance id to point `aria-controls` at.
   const factsId = useId();
 
+  // "Reserve my seat" opens the checkout, which defaults to this track — so this is the
+  // price the card has to quote. Super10 is listed separately because it is the one
+  // track that is free, and quoting its ₹0 as general tuition would be a false price.
+  const track = courses.find((course) => course.id === "fullstack");
   const elite = courses.find((course) => course.id === "super10");
   const facts = [
-    { icon: Sparkles, label: "Tuition", value: elite?.fee ?? "₹0" },
-    { icon: CalendarClock, label: "Duration", value: elite?.duration ?? "60 Days" },
-    { icon: ShieldCheck, label: "Placement", value: elite?.badge ?? "Assured" },
+    { icon: Sparkles, label: "Tuition", value: track?.fee ?? "₹30,000" },
+    { icon: CalendarClock, label: "Duration", value: track?.duration ?? "60 Days" },
+    {
+      icon: ShieldCheck,
+      label: "Super10 Elite",
+      value: elite ? `${elite.fee} · 10 seats` : "₹0 · 10 seats",
+    },
   ];
 
   const handleReserve = () => {

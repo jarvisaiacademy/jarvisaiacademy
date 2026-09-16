@@ -16,7 +16,7 @@ const WELCOME_AI_RESPONSE = `Welcome to **${siteConfig.name}**! 🚀
 We specialize in high-impact software engineering programs engineered to take you from core programming to building and deploying production-ready AI systems:
 
 * **Fast-Track 60-Day Duration**: All programs are intensive **60 days (2 months)** with build-first commercial project development.
-* **Transparent Pricing**: **₹0** tuition — every seat is fully sponsored across all courses.
+* **Transparent Pricing**: **₹30,000** all-inclusive tuition for our 60-day programs, with no hidden charges. The **Super10 Elite Batch** is the one fully sponsored track — **₹0**, strictly 10 seats.
 * **Flagship Programs**: Comprehensive **Full-Stack AI & Web Engineering** and our signature **Super10 Elite Program** with 100% placement assurance.
 * **🎁 Refer & Earn ₹3,000**: Refer a friend or colleague and receive **₹3,000** direct reward once your referred student completes the whole course!
 * **1-on-1 Mentorship**: Direct weekly architecture reviews, mock technical interviews, and resume coaching with lead software engineers.
@@ -64,7 +64,7 @@ Choose a category or explore all courses below:`,
     text: `⚡ **Super10 Elite Batch** is our signature, high-intensity career acceleration program.
 
 * **Duration**: **60 Days (2 Months)** high-intensity commercial training.
-* **Tuition Fee**: **₹0** — [why ₹0?](#ask:Why%20is%20the%20Super10%20tuition%20%E2%82%B90%3F)
+* **Tuition Fee**: **₹0** — [why is Super10 free?](#ask:Why%20is%20the%20Super10%20tuition%20%E2%82%B90%3F)
 * **Program Cap**: Strictly limited to **10 selected candidates** per batch to guarantee bespoke attention.
 * **Format**: Hands-on live commercial projects, daily peer code reviews, and enterprise system designs.
 * **1-on-1 Mentorship**: Direct weekly architecture reviews with lead tech architects.
@@ -81,18 +81,20 @@ Would you like to review the eligibility criteria or reserve a screening intervi
     ],
   },
   sponsored: {
-    text: `### 🎓 Why is the tuition ₹0?
+    text: `### 🎓 Why is the Super10 tuition ₹0?
 
-Every seat at **Jarvis AI Academy** is a **fully sponsored seat** — the programme cost is covered for you, so you join at **₹0** tuition.
+**Super10 Elite** is the one track at **Jarvis AI Academy** that is fully sponsored — your seat is funded rather than bought, so you join at **₹0** tuition.
 
 * **What you pay**: **₹0**. No tuition fee, no registration fee, no GST, no certification charge.
-* **Why**: your seat is funded rather than bought, so there is no fee to recover from you.
+* **Why**: the batch is funded, so there is no fee to recover from you.
 * **What is expected**: a full-time commitment to the **60-day** program — daily code reviews, live commercial projects and the capstone. A sponsored seat is released if a learner stops attending.
-* **Availability**: **Super10** is capped at **10 candidates** per batch; every other track has its own intake cap.
+* **Availability**: capped at **10 candidates** per batch, which is what makes the 1-on-1 mentorship and placement assurance possible.
+
+Every other 60-day program is **₹30,000** all-inclusive.
 
 * **🎁 Refer & Earn**: unchanged — refer a friend and earn **₹3,000** once they complete the full 60-day course.
 
-Would you like to check seat availability for the upcoming program?`,
+Would you like to check seat availability for the upcoming Super10 batch?`,
     suggestions: [
       "I want to enroll in the upcoming program and proceed with payment",
       "How does the 100% placement assurance work?",
@@ -106,7 +108,7 @@ Earn **₹3,000** direct bonus for every learner you refer to Jarvis AI Academy!
 
 ### How the Referral Program Works:
 1. **Invite a Learner**: Refer a friend, colleague, or classmate to enroll in any 60-day program.
-2. **They Enroll**: Your referred person enrolls in their chosen program (Program Fee: **₹0** — fully sponsored).
+2. **They Enroll**: Your referred person enrolls in their chosen program (Program Fee: **₹30,000** all-inclusive — or **₹0** on the fully sponsored **Super10** track).
 3. **Course Completion**: They attend classes, submit projects, and finish the full **60-day course**.
 4. **Get Rewarded**: Once the referred candidate completes the whole course, you receive **₹3,000** cash reward directly via UPI or bank transfer!
 
@@ -128,7 +130,7 @@ Ready to refer someone? Share their details with our admissions desk or have the
     text: `### ⚛️ Frontend Engineering (ReactJS + Tailwind CSS)
     
 * **Duration**: **60 Days (8 Weeks)** hands-on training.
-* **Tuition**: **₹0** — fully sponsored across all programs.
+* **Tuition**: **₹30,000** all-inclusive.
 * **Tech Stack**: React 19, Tailwind CSS, TypeScript, modern ES6+ JavaScript, HTML5 & CSS3.
 
 #### Core Modules:
@@ -149,7 +151,7 @@ Ready to refer someone? Share their details with our admissions desk or have the
     text: `### 🐍 Backend Engineering (Python + FastAPI + Django)
 
 * **Duration**: **60 Days (10 Weeks)** intensive API engineering.
-* **Tuition**: **₹0** — fully sponsored.
+* **Tuition**: **₹30,000** all-inclusive.
 * **Tech Stack**: Python, FastAPI, Django, PostgreSQL, REST APIs, JWT Auth.
 
 #### Core Modules:
@@ -170,7 +172,7 @@ Ready to refer someone? Share their details with our admissions desk or have the
     text: `### ☁️ DevOps & Cloud Engineering (AWS + Docker + CI/CD)
 
 * **Duration**: **60 Days (10 Weeks)** cloud automation.
-* **Tuition**: **₹0** — fully sponsored.
+* **Tuition**: **₹30,000** all-inclusive.
 * **Tech Stack**: AWS (EC2, S3, IAM, VPC), Docker, Kubernetes, Linux, GitHub Actions CI/CD.
 
 #### Core Modules:
@@ -191,7 +193,7 @@ Ready to refer someone? Share their details with our admissions desk or have the
     text: `### 🗄️ Database Administration (Oracle + PL/SQL + MongoDB)
 
 * **Duration**: **60 Days (8 Weeks)** enterprise database administration.
-* **Tuition**: **₹0** — fully sponsored.
+* **Tuition**: **₹30,000** all-inclusive.
 * **Tech Stack**: Oracle Database, PL/SQL, MongoDB, MySQL.
 
 #### Core Modules:
@@ -210,7 +212,7 @@ Ready to refer someone? Share their details with our admissions desk or have the
     text: `### 📊 Data Analyst (PowerBI + SQL + SAP + Python)
 
 * **Duration**: **60 Days (12 Weeks)** business intelligence & analytics.
-* **Tuition**: **₹0** — fully sponsored.
+* **Tuition**: **₹30,000** all-inclusive.
 * **Tech Stack**: Microsoft PowerBI, MySQL, Python (Pandas/NumPy), SAP BI.
 
 #### Core Modules:
@@ -229,7 +231,7 @@ Ready to refer someone? Share their details with our admissions desk or have the
     text: `### 📋 Business Analyst (PowerBI + MySQL + BRD + Jira)
 
 * **Duration**: **60 Days (8 Weeks)** strategy and requirements engineering.
-* **Tuition**: **₹0** — fully sponsored.
+* **Tuition**: **₹30,000** all-inclusive.
 * **Tech Stack**: PowerBI, MySQL, Jira Agile Boards, BRD/PRD Documentation.
 
 #### Core Modules:
@@ -247,7 +249,7 @@ Ready to refer someone? Share their details with our admissions desk or have the
     text: `### 🤖 Generative AI, RAG & Agentic Systems
 
 * **Duration**: **60 Days (2 Months)** cutting-edge AI engineering.
-* **Tuition**: **₹0** — fully sponsored.
+* **Tuition**: **₹30,000** all-inclusive.
 * **Tech Stack**: Python, OpenAI API, Gemini SDK, LangChain, Pinecone / Chroma Vector DBs, FastAPI.
 
 #### Core Modules:
@@ -265,7 +267,7 @@ Ready to refer someone? Share their details with our admissions desk or have the
     text: `### 🚀 Full-Stack Web Development (Laravel + PHP + MySQL)
 
 * **Duration**: **60 Days (10 Weeks)** enterprise PHP web development.
-* **Tuition**: **₹0** — fully sponsored.
+* **Tuition**: **₹30,000** all-inclusive.
 * **Tech Stack**: PHP, Laravel, MySQL, Bootstrap, JavaScript.
 
 #### Core Modules:
@@ -283,7 +285,7 @@ Ready to refer someone? Share their details with our admissions desk or have the
     text: `### 🛠️ Application Support & Cloud Ops (Linux + MySQL)
 
 * **Duration**: **60 Days (8 Weeks)** technical support & cloud operations.
-* **Tuition**: **₹0** — fully sponsored.
+* **Tuition**: **₹30,000** all-inclusive.
 * **Tech Stack**: Linux, MySQL, Shell Scripting, Ubuntu, Git.
 
 #### Core Modules:
@@ -439,10 +441,10 @@ At **Jarvis AI Academy**, we maintain transparent, straightforward pricing with 
 ---
 
 ### 1. Transparent Fee Structure
-* **Program Tuition:** **₹0** — every seat in all **60-day programs** is fully sponsored.
+* **Program Tuition:** **₹30,000** all-inclusive for our 60-day programs. The **Super10 Elite Batch** is the one fully sponsored track at **₹0**, capped at **10 seats**.
 * **Duration:** **60 Days (2 Months)** live intensive training.
-* **No Hidden Costs:** No examination fees, lab setup fees, or certification charges.
-* **Taxes & Invoicing:** With a **₹0** tuition there is no taxable amount, so no GST applies.
+* **No Hidden Costs:** The quoted tuition is what you pay — no examination fees, lab setup fees, or certification charges.
+* **Taxes & Invoicing:** Tuition is quoted **all-inclusive**, so no GST is added on top. A GST invoice is issued for the amount paid.
 
 ---
 
@@ -477,7 +479,7 @@ Welcome to the direct admissions and enrollment portal. Confirm your seat for th
 
 ### Available Program Tracks:
 * **Program Duration**: **60 Days (60d / 2 Months)** for all courses.
-* **Program Tuition**: **₹0** — fully sponsored, no GST applies.
+* **Program Tuition**: **₹30,000** all-inclusive for standard tracks — no GST added on top. **Super10 Elite** is fully sponsored at **₹0** (10 seats).
 * **Tracks**:
   * **Full-Stack AI & Web Engineering** (60 Days Live)
   * **Super10 Elite Program** (60 Days, 100% Placement Assurance)
@@ -797,7 +799,7 @@ export function ChatCanvas({
     }
 
     return {
-      text: `Thank you for your question about **"${prompt}"**!\n\nAt **Jarvis AI Academy**, our programs feature:\n* **Duration**: Fast-track **60 Days (2 Months)** build-first training.\n* **Tuition**: **₹0** — every seat is fully sponsored.\n* **🎁 Refer & Earn**: Refer a student and receive **₹3,000** cash reward once they complete the full 60-day course!\n\n🌐 **Connect With Us Online**:\n* 💼 **LinkedIn**: [@jarvisaiacademy](https://www.linkedin.com/company/jarvisaiacademy/)\n* 📸 **Instagram**: [@jarvisaiacademy](https://www.instagram.com/jarvisaiacademy/)\n* 🎥 **YouTube**: [@JarvisAIAcademy](https://www.youtube.com/@JarvisAIAcademy)\n* 𝕏 **X (Twitter)**: [@jarvisaiacademy](https://x.com/jarvisaiacademy)\n* 📘 **Facebook**: [@jarvisaiacademy](https://www.facebook.com/jarvisaiacademy/)\n\nWould you like to explore our course syllabus, the **Super10** batch, or start enrollment?`,
+      text: `Thank you for your question about **"${prompt}"**!\n\nAt **Jarvis AI Academy**, our programs feature:\n* **Duration**: Fast-track **60 Days (2 Months)** build-first training.\n* **Tuition**: **₹30,000** all-inclusive — the Super10 Elite track is fully sponsored at **₹0**.\n* **🎁 Refer & Earn**: Refer a student and receive **₹3,000** cash reward once they complete the full 60-day course!\n\n🌐 **Connect With Us Online**:\n* 💼 **LinkedIn**: [@jarvisaiacademy](https://www.linkedin.com/company/jarvisaiacademy/)\n* 📸 **Instagram**: [@jarvisaiacademy](https://www.instagram.com/jarvisaiacademy/)\n* 🎥 **YouTube**: [@JarvisAIAcademy](https://www.youtube.com/@JarvisAIAcademy)\n* 𝕏 **X (Twitter)**: [@jarvisaiacademy](https://x.com/jarvisaiacademy)\n* 📘 **Facebook**: [@jarvisaiacademy](https://www.facebook.com/jarvisaiacademy/)\n\nWould you like to explore our course syllabus, the **Super10** batch, or start enrollment?`,
       suggestions: [
         "What is the fee structure for the 60-day courses?",
         "Tell me about the Super10 Elite Program with 100% placement assurance",

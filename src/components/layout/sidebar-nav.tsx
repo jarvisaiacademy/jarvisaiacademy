@@ -51,7 +51,7 @@ const navHoverData: Record<string, NavHoverItemData> = {
   },
   courses: {
     title: "Explore Academy Courses",
-    description: "Log in to enroll in Full-Stack AI & Web Engineering (60 Days / ₹0 — fully sponsored), view roadmaps, and track progress.",
+    description: "Log in to enroll in Full-Stack AI & Web Engineering (60 Days / ₹30,000 all-inclusive), view roadmaps, and track progress.",
     gradientClass: "bg-gradient-to-br from-[#38d9a9] via-[#20c997] to-[#12b886]",
   },
   super10: {
