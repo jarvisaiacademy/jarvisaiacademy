@@ -27,8 +27,6 @@ interface AuthContextType {
   authError: string | null;
   /** Resolves true only when a user session was actually established. */
   loginWithGoogle: () => Promise<boolean>;
-  /** Local-only admin session, for reviewing the dashboard without Firebase. */
-  loginAsDemoAdmin: () => void;
   logout: () => Promise<void>;
   clearAuthError: () => void;
 }
@@ -101,28 +99,9 @@ function saveUserSession(mappedUser: User | null) {
   }
 }
 
-const DEMO_ADMIN_USER: User = {
-  id: "usr_admin_sugat",
-  name: "Sugatraj Sarwade",
-  email: "sugat@jarvisaiacademy.com",
-  plan: "Admin / Founder",
-  role: "admin",
-  isAdmin: true,
-};
-
 function getInitialUser(): User | null {
   if (typeof window === "undefined") return null;
   try {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (
-      urlParams.get("admin") === "1" ||
-      urlParams.get("admin") === "true" ||
-      urlParams.get("demo_admin") === "1"
-    ) {
-      saveUserSession(DEMO_ADMIN_USER);
-      return DEMO_ADMIN_USER;
-    }
-
     const stored = localStorage.getItem("jarvis_auth_user");
     if (stored && stored !== "null") {
       const parsed = JSON.parse(stored);
@@ -225,11 +204,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const clearAuthError = useCallback(() => setAuthError(null), []);
 
-  const loginAsDemoAdmin = useCallback(() => {
-    setUser(DEMO_ADMIN_USER);
-    saveUserSession(DEMO_ADMIN_USER);
-  }, []);
-
   const logout = useCallback(async () => {
     if (isFirebaseConfigured && auth) {
       try {
@@ -252,7 +226,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAdmin,
         authError,
         loginWithGoogle,
-        loginAsDemoAdmin,
         logout,
         clearAuthError,
       }}

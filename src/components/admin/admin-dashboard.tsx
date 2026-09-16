@@ -987,9 +987,9 @@ export function AdminDashboard({
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    ₹{(totalPaidStudents * 5000).toLocaleString("en-IN")}
+                    ₹{(totalPaidStudents * 3000).toLocaleString("en-IN")}
                   </span>
-                  <span className="text-xs text-purple-600 dark:text-purple-400">₹5K / student</span>
+                  <span className="text-xs text-purple-600 dark:text-purple-400">₹3K / student</span>
                 </div>
                 <span className="text-[11px] text-neutral-500">Upon 60-day completion</span>
               </div>

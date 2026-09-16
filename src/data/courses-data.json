@@ -315,29 +315,29 @@
   {
     "id": "referral",
     "number": "12",
-    "title": "Refer & Earn ₹5,000 Program",
-    "bannerTitle": "Refer & Earn ₹5,000",
+    "title": "Refer & Earn ₹3,000 Program",
+    "bannerTitle": "Refer & Earn ₹3,000",
     "bannerSubtitle": "Direct Cash Reward per Enrolled Candidate",
-    "description": "Know someone aiming to break into software engineering? Refer them to any 60-day cohort at Jarvis AI Academy and earn ₹5,000 cash reward once they complete the course.",
+    "description": "Know someone aiming to break into software engineering? Refer them to any 60-day cohort at Jarvis AI Academy and earn ₹3,000 cash reward once they complete the course.",
     "category": "elite",
     "categoryLabel": "Super10 Elite",
-    "badge": "🎁 ₹5,000 Reward",
+    "badge": "🎁 ₹3,000 Reward",
     "badgeType": "popular",
     "duration": "All 60-Day Cohorts",
     "level": "Open to Everyone",
-    "fee": "₹5,000 Reward",
-    "amount": 5000,
+    "fee": "₹3,000 Reward",
+    "amount": 3000,
     "gradient": "from-[#042f2e] via-[#115e59] to-[#059669]",
     "accentColor": "text-teal-300",
     "techStack": ["Instant UPI Transfer", "No Referral Caps", "Direct Payout"],
     "techIcons": [],
     "topics": [
-      "₹5,000 Cash Reward per Referral",
+      "₹3,000 Cash Reward per Referral",
       "Disbursed upon Course Completion",
       "No Cap on Number of Referrals",
       "Direct UPI or Bank Account Transfer",
       "Transparent Tracking via Admissions"
     ],
-    "actionPrompt": "How does the ₹5,000 Refer & Earn program work?"
+    "actionPrompt": "How does the ₹3,000 Refer & Earn program work?"
   }
 ]
