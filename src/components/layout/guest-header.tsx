@@ -6,6 +6,7 @@ import { siteConfig } from "@/config/site";
 
 import { ThemeSwitcher } from "./theme-switcher";
 import { UserProfile } from "./user-profile";
+import { SocialLinks } from "@/components/common/social-links";
 import { User } from "@/providers/auth-provider";
 
 interface GuestHeaderProps {
@@ -70,6 +71,15 @@ export function GuestHeader({
             </div>
           </div>
         )}
+      </div>
+
+      {/* Social links, centred in the row. A flex-1 middle rather than an absolute
+          overlay: it can only ever use the space left and right have not taken, so
+          a long title truncates instead of sliding under the icons. Desktop only —
+          below md the row already carries the sidebar toggle, the title, the theme
+          switcher and the log-in CTA, and the sidebar footer has the same links. */}
+      <div className="hidden md:flex flex-1 items-center justify-center min-w-0">
+        <SocialLinks iconSize={16} gapClassName="gap-2" className="shrink-0" />
       </div>
 
       {/* Right controls: theme, then the signed-in identity chip or one log-in CTA.
