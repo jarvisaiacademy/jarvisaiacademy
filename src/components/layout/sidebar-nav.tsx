@@ -16,6 +16,27 @@ import {
 import { SidebarHoverCard } from "./sidebar-hover-card";
 import { useAuth } from "@/providers/auth-provider";
 import { useStudentEnrollments } from "@/hooks/use-student-enrollments";
+import { COURSES_DATA } from "@/data/courses";
+
+/**
+ * The two catalogue entries that already have a nav row of their own — Super10
+ * has its own item and the referral entry is a reward, not a programme — so the
+ * course list below does not repeat them.
+ */
+const DEDICATED_ROWS = new Set(["super10", "referral"]);
+
+const COURSE_ROWS = COURSES_DATA.filter((course) => !DEDICATED_ROWS.has(course.id));
+
+/** Hover-card copy for a course row, read off the catalogue rather than restated. */
+function courseHoverData(id: string) {
+  const course = COURSE_ROWS.find((c) => c.id === id);
+  if (!course) return undefined;
+  return {
+    title: course.title,
+    description: `${course.duration} · ${course.fee}. ${course.description}`,
+    gradientClass: `bg-gradient-to-br ${course.gradient}`,
+  };
+}
 
 interface NavHoverItemData {
   title: string;
@@ -197,6 +218,11 @@ export function SidebarNav({
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
+
+  // Course rows are not in `navHoverData`, so the card falls back to the catalogue.
+  const hoverItem = activeHoverItem
+    ? navHoverData[activeHoverItem] ?? courseHoverData(activeHoverItem)
+    : undefined;
 
   return (
     <nav
@@ -393,15 +419,38 @@ export function SidebarNav({
         <span>Enquiry</span>
       </button>
 
+      {/* Every 60-day programme, so one can be opened without going through the
+          catalogue. Clicks go to the chat, which answers with that programme. */}
+      <div
+        role="separator"
+        className="mx-2 my-1.5 h-px bg-neutral-200 dark:bg-white/10"
+      />
+
+      {COURSE_ROWS.map((course) => (
+        <button
+          key={course.id}
+          type="button"
+          onClick={() => onSelectSection?.(course.id)}
+          onMouseEnter={(e) => handleMouseEnter(course.id, e)}
+          onMouseLeave={handleMouseLeave}
+          aria-haspopup="dialog"
+          aria-expanded={activeHoverItem === course.id}
+          aria-current={activeItem === course.id ? "page" : undefined}
+          className={`group flex items-center w-full pl-9 pr-3 py-1.5 text-[13px] rounded-lg transition-colors text-left cursor-pointer ${navStateClass(activeItem === course.id)}`}
+        >
+          <span className="truncate">{course.bannerTitle}</span>
+        </button>
+      ))}
+
       {/* Reusable Floating Hover Card for Desktop */}
       {!isMobile && anchorRect && (
         <SidebarHoverCard
           isOpen={Boolean(activeHoverItem)}
           anchorRect={anchorRect}
           sidebarRight={sidebarRight}
-          title={activeHoverItem ? navHoverData[activeHoverItem]?.title ?? "" : ""}
-          description={activeHoverItem ? navHoverData[activeHoverItem]?.description ?? "" : ""}
-          gradientClass={activeHoverItem ? navHoverData[activeHoverItem]?.gradientClass ?? "" : ""}
+          title={hoverItem?.title ?? ""}
+          description={hoverItem?.description ?? ""}
+          gradientClass={hoverItem?.gradientClass ?? ""}
           itemKey={activeHoverItem ?? undefined}
           showActions={!isLoggedIn}
           onMouseEnter={handlePopoverMouseEnter}
