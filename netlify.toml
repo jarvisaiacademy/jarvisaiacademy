@@ -3,6 +3,11 @@
 [build]
   command = "npm run build"
   publish = ".next"
+  # Build minutes are metered and task branches land on `development`, not `main`.
+  # Exit 0 means "skip this build", so this builds only for the production context.
+  # Trade-off: no branch or deploy-preview URLs — verify locally with `pnpm dev`.
+  # Delete this line to get preview builds back.
+  ignore = "test \"$CONTEXT\" != \"production\""
 
 # Proxy Firebase Auth Handler so OAuth popup can use your clean domain
 [[redirects]]

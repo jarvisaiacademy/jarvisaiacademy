@@ -24,11 +24,17 @@ These rules take priority over convenience.
 
 > **CRITICAL PRODUCTION SAFEGUARD**: The `main` branch is connected to live production at **`https://jarvisaiacademy.com`** via Netlify. **NEVER** push directly to `main`. Every change must be in a separate branch and merged via a Pull Request (PR) after verification.
 
+> **INTEGRATION BRANCH**: task PRs target **`development`**, not `main`. `development` is
+> promoted to `main` as a single PR only when the user asks for it. Every build is metered by
+> Netlify, and `netlify.toml` skips every context except production — so do not merge a task
+> into `main` to "see it live"; it costs a build and ships unreviewed work to customers.
+
 ### DO
 
 - **ALWAYS** check out a separate branch (`feat/...`, `fix/...`, `chore/...`) before making changes or commits.
 - **ALWAYS** verify changes with `pnpm tsc --noEmit` before raising a Pull Request.
-- **ALWAYS** push to the feature branch and raise a Pull Request (PR) against `main`.
+- **ALWAYS** push to the feature branch and raise a Pull Request (PR) against `development`.
+- **ALWAYS** branch `development` off `main` (or `main` off `development` at promotion) with a merge commit, never a rebase — the branches must stay fast-forwardable.
 - Inspect the existing code before modifying it.
 - Reuse existing components and utilities when appropriate.
 - Follow the existing project architecture.
@@ -50,6 +56,7 @@ These rules take priority over convenience.
 ### DO NOT
 
 - **Do not push directly to `main` under any circumstances** (all changes must be on feature branches and merged via PR).
+- **Do not raise a task PR against `main` or merge one into it.** `main` moves only when the user asks for a promotion from `development`.
 - **Do not run `pnpm build` locally** (use `pnpm tsc --noEmit` only; Netlify performs the production build).
 - Do not replace the project's framework or stack without explicit approval.
 - Do not migrate libraries simply because another library is fashionable.
