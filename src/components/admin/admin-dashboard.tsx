@@ -67,7 +67,7 @@ const DEFAULT_RECORDS: EnrollmentRecord[] = [
     action: "paid",
     courseId: "super10",
     courseName: "Super10 Elite Cohort (100% Placement Assurance)",
-    amount: 35400,
+    amount: 0,
     transactionId: "TXN-JARVIS-918231",
     studentName: "Sugatraj Sarwade",
     studentEmail: "sugat@jarvisaiacademy.com",
@@ -77,7 +77,7 @@ const DEFAULT_RECORDS: EnrollmentRecord[] = [
     action: "paid",
     courseId: "fullstack",
     courseName: "Full-Stack AI & Web Engineering Cohort",
-    amount: 35400,
+    amount: 0,
     transactionId: "TXN-JARVIS-847291",
     studentName: "Aditya Verma",
     studentEmail: "aditya.v@example.com",
@@ -87,7 +87,7 @@ const DEFAULT_RECORDS: EnrollmentRecord[] = [
     action: "paid",
     courseId: "fullstack",
     courseName: "Full-Stack AI & Web Engineering Cohort",
-    amount: 35400,
+    amount: 0,
     transactionId: "TXN-JARVIS-762910",
     studentName: "Pooja Sharma",
     studentEmail: "pooja.sharma@example.com",
@@ -97,7 +97,7 @@ const DEFAULT_RECORDS: EnrollmentRecord[] = [
     action: "pending",
     courseId: "super10",
     courseName: "Super10 Elite Cohort",
-    amount: 35400,
+    amount: 0,
     transactionId: "TXN-JARVIS-PENDING",
     studentName: "Rohan Kulkarni",
     studentEmail: "rohan.k@example.com",
@@ -161,8 +161,8 @@ export function AdminDashboard({
   const [formBadgeType, setFormBadgeType] = useState<CourseItem["badgeType"] | "">("");
   const [formDuration, setFormDuration] = useState("60 Days (2 Months)");
   const [formLevel, setFormLevel] = useState("Beginner to Adv");
-  const [formFee, setFormFee] = useState("₹30,000");
-  const [formAmount, setFormAmount] = useState<number>(30000);
+  const [formFee, setFormFee] = useState("₹0");
+  const [formAmount, setFormAmount] = useState<number>(0);
   const [formTechStack, setFormTechStack] = useState("");
   const [formTechIcons, setFormTechIcons] = useState("");
   const [formTopics, setFormTopics] = useState("");
@@ -224,7 +224,7 @@ export function AdminDashboard({
 
   const totalPaidRevenue = records
     .filter((r) => r.action === "paid")
-    .reduce((acc, curr) => acc + (curr.amount || 35400), 0);
+    .reduce((acc, curr) => acc + (curr.amount || 0), 0);
 
   const totalPaidStudents = records.filter((r) => r.action === "paid").length;
   const super10Count = records.filter(
@@ -280,8 +280,8 @@ export function AdminDashboard({
     setFormBadgeType("");
     setFormDuration("60 Days (2 Months)");
     setFormLevel("Beginner to Adv");
-    setFormFee("₹30,000");
-    setFormAmount(30000);
+    setFormFee("₹0");
+    setFormAmount(0);
     setFormTechStack("Next.js, React, FastAPI, Python, PostgreSQL");
     setFormTechIcons("nextjs, react, fastapi, python, postgresql");
     setFormTopics("Module 1: Architecture\nModule 2: Real-time APIs\nModule 3: Cloud Deployment");
@@ -304,8 +304,8 @@ export function AdminDashboard({
     setFormBadgeType(course.badgeType || "");
     setFormDuration(course.duration || "60 Days");
     setFormLevel(course.level || "Beginner to Adv");
-    setFormFee(course.fee || "₹30,000");
-    setFormAmount(course.amount || 30000);
+    setFormFee(course.fee || "₹0");
+    setFormAmount(course.amount || 0);
     setFormTechStack((course.techStack || []).join(", "));
     setFormTechIcons((course.techIcons || []).join(", "));
     setFormTopics((course.topics || []).join("\n"));
@@ -352,7 +352,7 @@ export function AdminDashboard({
           duration: formDuration.trim(),
           level: formLevel.trim(),
           fee: formFee.trim(),
-          amount: Number(formAmount) || 30000,
+          amount: Number(formAmount) || 0,
           techStack: techStackArr,
           techIcons: techIconsArr,
           topics: topicsArr,
@@ -375,7 +375,7 @@ export function AdminDashboard({
           duration: formDuration.trim(),
           level: formLevel.trim(),
           fee: formFee.trim(),
-          amount: Number(formAmount) || 30000,
+          amount: Number(formAmount) || 0,
           techStack: techStackArr,
           techIcons: techIconsArr,
           topics: topicsArr,
@@ -856,7 +856,7 @@ export function AdminDashboard({
                           </td>
 
                           <td className="py-3.5 px-4 sm:px-6 font-semibold text-neutral-900 dark:text-white">
-                            ₹{(rec.amount || 35400).toLocaleString("en-IN")}
+                            ₹{(rec.amount || 0).toLocaleString("en-IN")}
                           </td>
 
                           <td className="py-3.5 px-4 sm:px-6">
@@ -1041,7 +1041,7 @@ export function AdminDashboard({
                   <div className="flex justify-between py-1">
                     <span className="text-neutral-500">Avg Invoiced Ticket:</span>
                     <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                      ₹{totalPaidStudents > 0 ? Math.round(totalPaidRevenue / totalPaidStudents).toLocaleString("en-IN") : "35,400"}
+                      ₹{totalPaidStudents > 0 ? Math.round(totalPaidRevenue / totalPaidStudents).toLocaleString("en-IN") : "0"}
                     </span>
                   </div>
                 </div>
@@ -1327,14 +1327,14 @@ export function AdminDashboard({
                       type="text"
                       value={formFee}
                       onChange={(e) => setFormFee(e.target.value)}
-                      placeholder="₹30,000"
+                      placeholder="₹0"
                       className="w-1/2 px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white font-semibold"
                     />
                     <input
                       type="number"
                       value={formAmount}
                       onChange={(e) => setFormAmount(Number(e.target.value))}
-                      placeholder="30000"
+                      placeholder="0"
                       className="w-1/2 px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
                     />
                   </div>

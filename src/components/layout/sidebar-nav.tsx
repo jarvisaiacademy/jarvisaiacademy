@@ -51,12 +51,12 @@ const navHoverData: Record<string, NavHoverItemData> = {
   },
   courses: {
     title: "Explore Academy Courses",
-    description: "Log in to enroll in Full-Stack AI & Web Engineering (60 Days / ₹30K), view roadmaps, and track progress.",
+    description: "Log in to enroll in Full-Stack AI & Web Engineering (60 Days / ₹0 — fully sponsored), view roadmaps, and track progress.",
     gradientClass: "bg-gradient-to-br from-[#38d9a9] via-[#20c997] to-[#12b886]",
   },
   super10: {
     title: "Super10 Elite Cohort",
-    description: "Log in to apply for the selective 10-student cohort (60 Days / ₹30K) with 100% placement assurance.",
+    description: "Log in to apply for the selective 10-student cohort (60 Days / ₹0 — fully sponsored) with 100% placement assurance.",
     gradientClass: "bg-gradient-to-br from-[#fcc419] via-[#ff922b] to-[#f76707]",
   },
   referral: {
