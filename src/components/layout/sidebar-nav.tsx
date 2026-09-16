@@ -26,7 +26,7 @@ import {
 import { SidebarHoverCard } from "./sidebar-hover-card";
 import { useAuth } from "@/providers/auth-provider";
 import { useStudentEnrollments } from "@/hooks/use-student-enrollments";
-import { COURSES_DATA } from "@/data/courses";
+import { COURSES_DATA, type CourseItem } from "@/data/courses";
 
 /**
  * The two catalogue entries that already have a nav row of their own — Super10
@@ -64,8 +64,11 @@ function courseHoverData(id: string) {
   if (!course) return undefined;
   return {
     title: course.title,
-    description: `${course.duration} · ${course.fee}. ${course.description}`,
+    // Duration and fee are already on the card's hero object, so the body copy is
+    // only the description.
+    description: course.description,
     gradientClass: `bg-gradient-to-br ${course.gradient}`,
+    course,
   };
 }
 
@@ -73,6 +76,8 @@ interface NavHoverItemData {
   title: string;
   description: string;
   gradientClass: string;
+  /** Programme rows carry the entry itself, which drives the hero object. */
+  course?: CourseItem;
 }
 
 const navHoverData: Record<string, NavHoverItemData> = {
@@ -498,6 +503,7 @@ export function SidebarNav({
           description={hoverItem?.description ?? ""}
           gradientClass={hoverItem?.gradientClass ?? ""}
           itemKey={activeHoverItem ?? undefined}
+          course={hoverItem?.course}
           showActions={!isLoggedIn}
           onMouseEnter={handlePopoverMouseEnter}
           onMouseLeave={handlePopoverMouseLeave}
