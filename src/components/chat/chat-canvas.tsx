@@ -314,9 +314,7 @@ Every graduate from **Jarvis AI Academy** earns an industry-recognized, cryptogr
 * **Tamper-Proof Credential**: Each certificate carries a unique Certificate ID and QR code backed by digital signature verification.
 * **LinkedIn Compatible**: One-click addition to your LinkedIn Licenses & Certifications profile.
 * **Employer Instant Verification**: Recruiters and engineering leads can instantly validate completed capstones, course curricula, and evaluated competencies.
-* **ID Format**: e.g., \`JAA-2026-XXXX\` printed on the bottom of your official credential.
-
-Do you have a certificate ID you would like to verify right now?`,
+* **ID Format**: e.g., \`JAA-2026-XXXX\` printed on the bottom of your official credential.`,
   },
   enquiry: {
     text: `📞 **Get in Touch with Admissions**:
