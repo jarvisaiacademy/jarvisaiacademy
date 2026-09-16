@@ -59,7 +59,7 @@ const ICON_MAP: Record<string, string> = {
   docker: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/docker/docker-original.svg",
   kubernetes: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/kubernetes/kubernetes-plain.svg",
   linux: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/linux/linux-original.svg",
-  ubuntu: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/ubuntu/ubuntu-plain.svg",
+  ubuntu: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/ubuntu/ubuntu-original.svg",
   git: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/git/git-original.svg",
   github: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/github/github-original.svg",
   jira: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/jira/jira-original.svg",
@@ -72,6 +72,32 @@ const ICON_MAP: Record<string, string> = {
   numpy: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/numpy/numpy-original.svg",
   powerbi: "/powerbi-logo.png",
   jupyter: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/jupyter/jupyter-original.svg",
+};
+
+/**
+ * Some marks vanish on a dark surface. Devicon ships no white variants, so each
+ * gets a CSS filter, chosen by how the asset is actually drawn:
+ *
+ *   "invert dark:invert-0"            white mark        -> black on light
+ *   "dark:brightness-0 dark:invert"   flat black mark   -> white on dark
+ *   "dark:invert"                     black mark with light detail -> swap
+ *
+ * `brightness-0` ahead of the invert is what makes the second case pure white.
+ * A bare invert leaves AWS's #252f3e a washed-out lavender and turns its #f90
+ * smile blue. It also flattens the *whole* mark, so it cannot be used where the
+ * detail is drawn in a lighter colour over the dark field — that detail goes
+ * white and disappears, which is why nextjs is the third case and not the
+ * second. Coloured marks are absent on purpose: inverting repaints the brand.
+ */
+const ICON_TONE: Record<string, string> = {
+  django: "invert dark:invert-0",
+  laravel: "invert dark:invert-0",
+  aws: "dark:brightness-0 dark:invert",
+  github: "dark:brightness-0 dark:invert",
+  flask: "dark:brightness-0 dark:invert",
+  express: "dark:brightness-0 dark:invert",
+  pandas: "dark:brightness-0 dark:invert",
+  nextjs: "dark:invert",
 };
 
 export const DevIcon: React.FC<DevIconProps> = ({
@@ -134,17 +160,15 @@ export const DevIcon: React.FC<DevIconProps> = ({
     );
   }
 
+  const toneClass = ICON_TONE[normalizedKey] ?? "";
+
   return (
     <img
       src={iconSrc}
       alt={`${name} logo`}
       width={size}
       height={size}
-      className={`inline-block shrink-0 object-contain transition-transform duration-200 ${
-        normalizedKey === "django" || normalizedKey === "laravel"
-          ? "invert dark:invert-0"
-          : ""
-      } ${className}`.trim()}
+      className={`inline-block shrink-0 object-contain transition-transform duration-200 ${toneClass} ${className}`.trim()}
       title={name}
       onError={(e) => {
         // graceful fallback if CDN fails
