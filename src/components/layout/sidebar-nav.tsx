@@ -92,6 +92,18 @@ const navStateClass = (isActive: boolean) =>
     ? "font-medium text-neutral-900 dark:text-white bg-neutral-200/80 dark:bg-white/10"
     : "font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5";
 
+/**
+ * Lifts and tilts on row hover. Keyed off the row's `group` for both the colour
+ * and the transform, so `transition` covers both and one class string serves
+ * every nav item. CSS rather than Motion: the hover target is the whole row, not
+ * the 16px glyph, and ten rows are not worth ten rAF loops.
+ */
+function NavIcon({ icon: Icon }: { icon: React.ComponentType<{ className?: string }> }) {
+  return (
+    <Icon className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition group-hover:scale-110 group-hover:-rotate-6" />
+  );
+}
+
 export function SidebarNav({
   onNewChat,
   onSelectSection,
@@ -192,7 +204,7 @@ export function SidebarNav({
         onMouseLeave={handleMouseLeave}
         className={`group flex items-center gap-2.5 w-full px-3 py-2 text-sm rounded-lg transition-colors text-left cursor-pointer ${navStateClass(false)}`}
       >
-        <SquarePen className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors" />
+        <NavIcon icon={SquarePen} />
         <span>New chat</span>
       </button>
 
@@ -209,7 +221,7 @@ export function SidebarNav({
           className={`group flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg transition-colors text-left cursor-pointer ${navStateClass(activeItem === "dashboard")}`}
         >
           <div className="flex items-center gap-2.5">
-            <LayoutDashboard className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors" />
+            <NavIcon icon={LayoutDashboard} />
             <span>Dashboard</span>
           </div>
           <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-neutral-200/80 dark:bg-white/10 text-neutral-600 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
@@ -231,7 +243,7 @@ export function SidebarNav({
             aria-current={activeItem === "my_profile" ? "page" : undefined}
             className={`group flex items-center gap-2.5 w-full px-3 py-2 text-sm rounded-lg transition-colors text-left cursor-pointer ${navStateClass(activeItem === "my_profile")}`}
           >
-            <UserRound className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors" />
+            <NavIcon icon={UserRound} />
             <span>My Profile</span>
           </button>
 
@@ -246,7 +258,7 @@ export function SidebarNav({
             className={`group flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg transition-colors text-left cursor-pointer ${navStateClass(activeItem === "my_courses")}`}
           >
             <div className="flex items-center gap-2.5">
-              <GraduationCap className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors" />
+              <NavIcon icon={GraduationCap} />
               <span>My Courses</span>
             </div>
             {enrollmentCount > 0 && (
@@ -268,7 +280,7 @@ export function SidebarNav({
         aria-expanded={activeHoverItem === "courses"}
         className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
       >
-        <BookOpen className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors" />
+        <NavIcon icon={BookOpen} />
         <span>Courses</span>
       </button>
 
@@ -283,7 +295,7 @@ export function SidebarNav({
         className="group flex items-center justify-between w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
       >
         <div className="flex items-center gap-2.5">
-          <Zap className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors" />
+          <NavIcon icon={Zap} />
           <span>Super10</span>
         </div>
         <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-neutral-200/80 dark:bg-white/10 text-neutral-600 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
@@ -302,7 +314,7 @@ export function SidebarNav({
         className="group flex items-center justify-between w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
       >
         <div className="flex items-center gap-2.5">
-          <Gift className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors" />
+          <NavIcon icon={Gift} />
           <span>Refer &amp; Earn</span>
         </div>
         <span className="text-[10px] font-medium tracking-wide px-2 py-0.5 rounded-full bg-neutral-200/80 dark:bg-white/10 text-neutral-600 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
@@ -320,7 +332,7 @@ export function SidebarNav({
         aria-expanded={activeHoverItem === "testimonials"}
         className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
       >
-        <MessageSquareQuote className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors" />
+        <NavIcon icon={MessageSquareQuote} />
         <span>Testimonials</span>
       </button>
 
@@ -334,7 +346,7 @@ export function SidebarNav({
         aria-expanded={activeHoverItem === "certificate"}
         className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
       >
-        <Award className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors" />
+        <NavIcon icon={Award} />
         <span>Certificate</span>
       </button>
 
@@ -348,7 +360,7 @@ export function SidebarNav({
         aria-expanded={activeHoverItem === "enquiry"}
         className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
       >
-        <HelpCircle className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors" />
+        <NavIcon icon={HelpCircle} />
         <span>Enquiry</span>
       </button>
 
