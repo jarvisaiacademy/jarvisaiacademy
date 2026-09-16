@@ -16,6 +16,7 @@ const geistMono = Geist_Mono({
 import { ThemeProvider } from "@/providers/theme-provider";
 import { LanguageProvider } from "@/providers/language-provider";
 import { AuthProvider } from "@/providers/auth-provider";
+import { ShortcutGuide } from "@/components/ui/shortcut-guide";
 
 import { siteConfig } from "@/config/site";
 import { structuredData } from "@/config/seo";
@@ -88,22 +89,12 @@ export default function RootLayout({
       className={`${inter.variable} ${geistMono.variable} dark h-full antialiased font-sans`}
     >
       <head>
-        {/* Anti-flash theme script executed before initial paint */}
+        {/* Anti-flash auth script executed before initial paint. The theme class is
+            next-themes' own pre-paint script, injected by ThemeProvider. */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                try {
-                  var saved = localStorage.getItem('theme') || 'system';
-                  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  var isDark = saved === 'dark' || (saved === 'system' && prefersDark);
-                  if (isDark) {
-                    document.documentElement.classList.add('dark');
-                  } else {
-                    document.documentElement.classList.remove('dark');
-                  }
-                } catch (e) {}
-
                 try {
                   var user = localStorage.getItem('jarvis_auth_user');
                   if (user && user !== 'null') {
@@ -124,7 +115,11 @@ export default function RootLayout({
       <body className="h-full bg-background text-foreground antialiased overflow-hidden selection:bg-[#9d5932] selection:text-white font-sans transition-colors duration-150">
         <ThemeProvider>
           <LanguageProvider>
-            <AuthProvider>{children}</AuthProvider>
+            <AuthProvider>
+              {children}
+              {/* Renders nothing until opened, so it adds no markup to the HTML. */}
+              <ShortcutGuide />
+            </AuthProvider>
           </LanguageProvider>
         </ThemeProvider>
       </body>

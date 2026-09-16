@@ -18,6 +18,8 @@ interface SidebarProps {
   onOpenLogin?: () => void;
   onOpenSettings?: () => void;
   onOpenDashboard?: () => void;
+  onOpenStudentView?: (view: "profile" | "courses") => void;
+  activeItem?: string | null;
   isLoggedIn?: boolean;
   user?: User | null;
   onLogout?: () => void;
@@ -32,6 +34,8 @@ export function Sidebar({
   onOpenLogin,
   onOpenSettings,
   onOpenDashboard,
+  onOpenStudentView,
+  activeItem,
   isLoggedIn = false,
   user,
   onLogout,
@@ -48,6 +52,7 @@ export function Sidebar({
           />
         )}
         <motion.aside
+          key="sidebar-drawer"
           initial={false}
           animate={{
             x: isOpen ? 0 : -280,
@@ -72,6 +77,11 @@ export function Sidebar({
                 onOpenDashboard?.();
                 onToggle();
               }}
+              onOpenStudentView={(view) => {
+                onOpenStudentView?.(view);
+                onToggle();
+              }}
+              activeItem={activeItem}
               isMobile={true}
             />
           </div>
@@ -134,11 +144,13 @@ export function Sidebar({
 
   return (
     <motion.aside
+      key="sidebar-docked"
       initial={false}
-      animate={{
-        width: isOpen ? 260 : 0,
-        opacity: isOpen ? 1 : 0,
-      }}
+      // Motion only writes the properties named in `animate`. Without the
+      // explicit `x`, the drawer's `translateX(-280px)` survives on this node
+      // and parks the docked sidebar 280px off-screen while it still occupies
+      // its full width — the "empty space" bug.
+      animate={{ width: isOpen ? 260 : 0, x: 0 }}
       transition={{ type: "spring", stiffness: 350, damping: 32 }}
       className={`relative flex flex-col justify-between h-screen bg-[#f9f9f9] dark:bg-[#171717] overflow-hidden shrink-0 select-none z-30 transition-colors ${
         isOpen ? "border-r border-neutral-200 dark:border-white/5" : "border-none"
@@ -155,6 +167,8 @@ export function Sidebar({
           onSelectSection={onSelectSection}
           onOpenLogin={onOpenLogin}
           onOpenDashboard={onOpenDashboard}
+          onOpenStudentView={onOpenStudentView}
+          activeItem={activeItem}
           isMobile={false}
         />
       </div>

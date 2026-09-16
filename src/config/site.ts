@@ -5,6 +5,8 @@ export const siteConfig = {
   description:
     "60-day build-first AI & full-stack engineering program in Pune. 1-on-1 mentorship, real portfolio projects, and 100% placement assurance on the Super10 Elite batch.",
   url: "https://jarvisaiacademy.com",
+  /** Square brand mark, transparent so it sits on both themes. */
+  logo: "/logo-mark.png",
   contact: {
     email: "admissions@jarvisaiacademy.com",
     financeEmail: "finance@jarvisaiacademy.com",

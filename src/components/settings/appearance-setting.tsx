@@ -6,16 +6,10 @@ import { useTheme, type Theme } from "@/providers/theme-provider";
 import { motion, AnimatePresence } from "motion/react";
 
 export function AppearanceSetting() {
-  const { theme, setTheme } = useTheme();
+  const { theme, resolvedTheme, systemTheme, setTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
 
   const themeOptions: { value: Theme; label: string; description: string; icon: React.ReactNode }[] = [
-    {
-      value: "system",
-      label: "System",
-      description: "Match your operating system appearance",
-      icon: <Laptop className="w-5 h-5 text-muted-foreground" />,
-    },
     {
       value: "light",
       label: "Light",
@@ -30,11 +24,14 @@ export function AppearanceSetting() {
     },
   ];
 
+  // next-themes reports `undefined` until it mounts; the default is "system".
+  const effective = theme ?? "system";
+
   const currentLabel =
-    theme === "system" ? "System" : theme === "light" ? "Light" : "Dark";
+    effective === "system" ? "System" : effective === "light" ? "Light" : "Dark";
 
   const CurrentIcon =
-    theme === "system" ? Laptop : theme === "light" ? Sun : Moon;
+    effective === "system" ? Laptop : effective === "light" ? Sun : Moon;
 
   return (
     <>
@@ -107,13 +104,13 @@ export function AppearanceSetting() {
 
               <div className="flex flex-col gap-1.5 pt-1">
                 {themeOptions.map((opt) => {
-                  const isSelected = theme === opt.value;
+                  const isSelected = resolvedTheme === opt.value;
                   return (
                     <button
                       key={opt.value}
                       type="button"
                       onClick={() => {
-                        setTheme(opt.value);
+                        setTheme(opt.value === systemTheme ? "system" : opt.value);
                         setIsOpen(false);
                       }}
                       className={`flex items-center justify-between w-full px-3.5 py-3 rounded-xl transition-colors text-left cursor-pointer ${
