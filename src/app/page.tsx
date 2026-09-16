@@ -24,6 +24,10 @@ export default function Home() {
   const [isLearningOpen, setIsLearningOpen] = useState(false);
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>("courses");
   const [activeTopic, setActiveTopic] = useState<string | null>(null);
+  // Which sidebar section was last opened. Kept apart from `activeTopic`
+  // because ChatCanvas clears that one once it has handled the topic — this
+  // one has to outlive it to keep the nav item highlighted.
+  const [activeSection, setActiveSection] = useState<string | null>(null);
   const [resetSignal, setResetSignal] = useState(0);
 
   const handleOpenLogin = () => setIsLoginOpen(true);
@@ -35,6 +39,7 @@ export default function Home() {
     setIsDashboardOpen(false);
     setStudentView(null);
     setIsLearningOpen(false);
+    setActiveSection(null);
     setIsSettingsOpen(true);
   };
   const handleCloseSettings = () => setIsSettingsOpen(false);
@@ -42,6 +47,7 @@ export default function Home() {
     setIsSettingsOpen(false);
     setStudentView(null);
     setIsLearningOpen(false);
+    setActiveSection(null);
     setIsDashboardOpen(true);
   };
   const handleCloseDashboard = () => setIsDashboardOpen(false);
@@ -49,6 +55,7 @@ export default function Home() {
     setIsSettingsOpen(false);
     setIsDashboardOpen(false);
     setStudentView(null);
+    setActiveSection(null);
     setIsLearningOpen(true);
   };
   const handleCloseLearning = () => setIsLearningOpen(false);
@@ -56,6 +63,7 @@ export default function Home() {
     setIsDashboardOpen(false);
     setStudentView(null);
     setIsLearningOpen(false);
+    setActiveSection(null);
     logout();
   };
 
@@ -75,6 +83,7 @@ export default function Home() {
             setIsDashboardOpen(false);
             setStudentView(null);
             setIsLearningOpen(false);
+            setActiveSection(topic);
             setActiveTopic(topic);
           }}
           onNewChat={() => {
@@ -82,6 +91,7 @@ export default function Home() {
             setIsDashboardOpen(false);
             setStudentView(null);
             setIsLearningOpen(false);
+            setActiveSection(null);
             setActiveTopic(null);
             setResetSignal((prev) => prev + 1);
           }}
@@ -101,7 +111,7 @@ export default function Home() {
                 ? "learning"
                 : studentView
                   ? `my_${studentView}`
-                  : null
+                  : activeSection
           }
         />
 
@@ -123,6 +133,7 @@ export default function Home() {
               onBack={() => setStudentView(null)}
               onBrowseCourses={() => {
                 setStudentView(null);
+                setActiveSection("courses");
                 setActiveTopic("courses");
               }}
             />
