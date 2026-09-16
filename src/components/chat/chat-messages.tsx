@@ -358,9 +358,7 @@ export function ChatMessages({
                       }}
                       aria-label="Good response"
                       className={`p-1 rounded-md hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-white/10 transition-colors cursor-pointer ${
-                        msg.feedback === "like"
-                          ? "text-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400"
-                          : ""
+                        msg.feedback === "like" ? "text-neutral-900 dark:text-white" : ""
                       }`}
                       title="Good response"
                     >
@@ -380,7 +378,7 @@ export function ChatMessages({
                       aria-label="Bad response"
                       className={`p-1 rounded-md hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-white/10 transition-colors cursor-pointer ${
                         msg.feedback === "dislike"
-                          ? "text-rose-500 hover:text-rose-600 dark:hover:text-rose-400"
+                          ? "text-neutral-900 dark:text-white"
                           : ""
                       }`}
                       title="Bad response"
