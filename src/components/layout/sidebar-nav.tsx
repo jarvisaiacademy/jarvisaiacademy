@@ -151,10 +151,13 @@ interface SidebarNavProps {
 }
 
 /** Colour-only variant, so each item keeps its own layout classes. */
-const navStateClass = (isActive: boolean) =>
+const navColorClass = (isActive: boolean) =>
   isActive
-    ? "font-medium text-neutral-900 dark:text-white bg-neutral-200/80 dark:bg-white/10"
-    : "font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5";
+    ? "text-neutral-900 dark:text-white bg-neutral-200/80 dark:bg-white/10"
+    : "text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5";
+
+const navStateClass = (isActive: boolean) =>
+  `${isActive ? "font-medium" : "font-normal"} ${navColorClass(isActive)}`;
 
 /**
  * Lifts and tilts on row hover. Keyed off the row's `group` for both the colour
@@ -481,7 +484,7 @@ export function SidebarNav({
               aria-haspopup="dialog"
               aria-expanded={activeHoverItem === course.id}
               aria-current={activeItem === course.id ? "page" : undefined}
-              className={`group flex items-center gap-2.5 w-full px-3 py-1.5 text-[13px] rounded-lg transition-colors text-left cursor-pointer ${navStateClass(activeItem === course.id)}`}
+              className={`group flex items-center gap-2.5 w-full px-3 py-1.5 text-[13px] font-medium rounded-lg transition-colors text-left cursor-pointer ${navColorClass(activeItem === course.id)}`}
             >
               <Icon className={`w-4 h-4 shrink-0 ${color} transition-transform group-hover:scale-110`} />
               <span className="truncate">{course.bannerTitle}</span>
