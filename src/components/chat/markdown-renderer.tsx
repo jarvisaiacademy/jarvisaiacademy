@@ -51,6 +51,18 @@ export function MarkdownRenderer({ content, onPromptClick }: MarkdownRendererPro
               {children}
             </blockquote>
           ),
+          img: ({ src, alt }) => (
+            // The testimonials reply puts an illustration before each name, so images
+            // here are always avatars. Plain <img>: these are remote SVGs, and
+            // next/image would need `dangerouslyAllowSVG` to serve them.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={typeof src === "string" ? src : ""}
+              alt={alt ?? ""}
+              loading="lazy"
+              className="inline-block w-7 h-7 rounded-full object-cover align-middle mr-2 bg-neutral-200 dark:bg-white/10"
+            />
+          ),
           a: ({ href, children }) => {
             if (href?.startsWith(ASK_PREFIX)) {
               const prompt = decodeURIComponent(href.slice(ASK_PREFIX.length));

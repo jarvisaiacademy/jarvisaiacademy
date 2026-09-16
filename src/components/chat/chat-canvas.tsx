@@ -6,6 +6,7 @@ import { ChatComposer } from "./ChatComposer";
 import { EnrollmentData } from "./enrollment-card";
 import { useAuth } from "@/providers/auth-provider";
 import { siteConfig } from "@/config/site";
+import { buildTestimonialsText } from "@/data/testimonials";
 
 const SAMPLE_STARTER_QUESTION = `Hi! I want to transition into AI & Full-Stack software engineering. How does ${siteConfig.name} help learners reach production-ready skills?`;
 
@@ -297,18 +298,11 @@ Ready to refer someone? Share their details with our admissions desk or have the
     ],
   },
   testimonials: {
-    text: `🏆 **Student Success Stories & Placements**:
-
-Our alumni have achieved remarkable career transitions into software and AI engineering:
-
-* *"Transitioned from a non-IT background to Full Stack Developer in 60 days. The practical mentorship and live project experience made all the difference!"*  
-  — **Pooja S.** (Software Engineer, Pune)
-* *"The Super10 program helped me crack a 12 LPA backend engineering offer with top tech firms. The system design mock interviews were invaluable."*  
-  — **Rahul M.** (Backend AI Engineer)
-* *"Outstanding hands-on curriculum. Unlike regular courses, we wrote production code from week one."*  
-  — **Amit K.** (Full Stack Developer)
-
-Would you like to connect with an alumnus or see our hiring partner companies?`,
+    // A getter, not a fixed string: each read draws a fresh random sample of people,
+    // so asking for testimonials twice does not show the same faces again.
+    get text() {
+      return buildTestimonialsText();
+    },
   },
   certificate: {
     text: `🛡️ **Digital Credential & Certificate Verification**:
