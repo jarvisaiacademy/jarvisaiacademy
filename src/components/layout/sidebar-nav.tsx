@@ -301,7 +301,8 @@ export function SidebarNav({
         onMouseLeave={handleMouseLeave}
         aria-haspopup="dialog"
         aria-expanded={activeHoverItem === "courses"}
-        className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
+        aria-current={activeItem === "courses" ? "page" : undefined}
+        className={`group flex items-center gap-2.5 w-full px-3 py-2 text-sm rounded-lg transition-colors text-left cursor-pointer ${navStateClass(activeItem === "courses")}`}
       >
         <NavIcon icon={BookOpen} />
         <span>Courses</span>
@@ -315,7 +316,8 @@ export function SidebarNav({
         onMouseLeave={handleMouseLeave}
         aria-haspopup="dialog"
         aria-expanded={activeHoverItem === "super10"}
-        className="group flex items-center justify-between w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
+        aria-current={activeItem === "super10" ? "page" : undefined}
+        className={`group flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg transition-colors text-left cursor-pointer ${navStateClass(activeItem === "super10")}`}
       >
         <div className="flex items-center gap-2.5">
           <NavIcon icon={Zap} />
@@ -334,7 +336,8 @@ export function SidebarNav({
         onMouseLeave={handleMouseLeave}
         aria-haspopup="dialog"
         aria-expanded={activeHoverItem === "referral"}
-        className="group flex items-center justify-between w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
+        aria-current={activeItem === "referral" ? "page" : undefined}
+        className={`group flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg transition-colors text-left cursor-pointer ${navStateClass(activeItem === "referral")}`}
       >
         <div className="flex items-center gap-2.5">
           <NavIcon icon={Gift} />
@@ -353,7 +356,8 @@ export function SidebarNav({
         onMouseLeave={handleMouseLeave}
         aria-haspopup="dialog"
         aria-expanded={activeHoverItem === "testimonials"}
-        className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
+        aria-current={activeItem === "testimonials" ? "page" : undefined}
+        className={`group flex items-center gap-2.5 w-full px-3 py-2 text-sm rounded-lg transition-colors text-left cursor-pointer ${navStateClass(activeItem === "testimonials")}`}
       >
         <NavIcon icon={MessageSquareQuote} />
         <span>Testimonials</span>
@@ -367,7 +371,8 @@ export function SidebarNav({
         onMouseLeave={handleMouseLeave}
         aria-haspopup="dialog"
         aria-expanded={activeHoverItem === "certificate"}
-        className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
+        aria-current={activeItem === "certificate" ? "page" : undefined}
+        className={`group flex items-center gap-2.5 w-full px-3 py-2 text-sm rounded-lg transition-colors text-left cursor-pointer ${navStateClass(activeItem === "certificate")}`}
       >
         <NavIcon icon={Award} />
         <span>Certificate</span>
@@ -381,7 +386,8 @@ export function SidebarNav({
         onMouseLeave={handleMouseLeave}
         aria-haspopup="dialog"
         aria-expanded={activeHoverItem === "enquiry"}
-        className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 rounded-lg transition-colors text-left cursor-pointer"
+        aria-current={activeItem === "enquiry" ? "page" : undefined}
+        className={`group flex items-center gap-2.5 w-full px-3 py-2 text-sm rounded-lg transition-colors text-left cursor-pointer ${navStateClass(activeItem === "enquiry")}`}
       >
         <NavIcon icon={HelpCircle} />
         <span>Enquiry</span>
