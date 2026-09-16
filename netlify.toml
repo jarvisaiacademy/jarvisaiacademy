@@ -2,8 +2,8 @@
 #
 # `$CONTEXT` reflects the *site's* production-branch setting, which lives in the Netlify UI
 # (Site configuration → Build & deploy → Branches) and must name `production`. If that setting
-# still says `main`, every push — including a promotion — is a branch deploy, the rule below
-# skips it, and the site silently stops updating.
+# still names `main` (now deleted), every push — including a promotion — is a branch deploy,
+# the rule below skips it, and the site silently stops updating.
 
 [build]
   command = "npm run build"
