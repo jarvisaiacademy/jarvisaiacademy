@@ -32,7 +32,7 @@ export const SHORTCUTS: ShortcutEntry[] = [
     group: "global",
     tokens: ["Esc"],
     keys: [{ key: "escape" }],
-    description: "Close the guide or an open card",
+    description: "Close the guide, a dialog or an open card",
   },
   {
     id: "sidebar",
