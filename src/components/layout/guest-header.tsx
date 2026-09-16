@@ -62,12 +62,17 @@ export function GuestHeader({
                 height={28}
                 className="w-7 h-7 shrink-0 object-contain"
               />
-              <span className="truncate whitespace-nowrap max-w-[160px] sm:max-w-none">
-                {modelName}
-              </span>
-              <span className="hidden sm:inline-block text-xs font-normal text-neutral-400 dark:text-neutral-500 truncate select-none">
-                · {siteConfig.tagline}
-              </span>
+              <div className="flex flex-col min-w-0">
+                <span className="truncate whitespace-nowrap max-w-[160px] sm:max-w-none leading-tight">
+                  {modelName}
+                </span>
+                {/* Stacked under the name, not trailing it on a `·`: the inline
+                    version lost half its width to truncation on narrow headers.
+                    Matches the sidebar header, which has always stacked them. */}
+                <span className="truncate text-[11px] font-normal text-neutral-400 dark:text-neutral-500 leading-tight mt-0.5 select-none">
+                  {siteConfig.tagline}
+                </span>
+              </div>
             </div>
           </div>
         )}
