@@ -14,6 +14,7 @@ import {
 import { MarkdownRenderer } from "./markdown-renderer";
 import { EnrollmentCard, EnrollmentData } from "./enrollment-card";
 import { CourseCatalogResponse } from "./course-catalog-response";
+import { AdmissionCtaCard } from "./admission-cta-card";
 import { useCourses } from "@/providers/courses-provider";
 import { useToast } from "@/components/ui/toast";
 
@@ -154,6 +155,12 @@ export function ChatMessages({
         const prevMsg = idx > 0 ? messages[idx - 1] : null;
         const showTimestamp =
           idx === 0 || (prevMsg && prevMsg.role !== msg.role && isUser);
+        // The checkout is already the call to action, so the admission card below
+        // would only repeat it.
+        const showsCheckout =
+          Boolean(msg.enrollment) ||
+          msg.content.includes("Admissions & Enrollment Portal") ||
+          msg.content.includes("Enrollment Checkout");
 
         return (
           <div key={msg.id || idx} className="flex flex-col w-full">
@@ -289,39 +296,15 @@ export function ChatMessages({
 
 
 
-                {/* Quick Action Pill for Courses / Super10 (ChatGPT High-Contrast Pill) */}
-                {!msg.isStreaming &&
-                  (msg.content.includes("Full-Stack AI & Web Engineering") ||
-                    msg.content.includes("Super10 Elite Batch") ||
-                    msg.content.includes("Super10 Elite Program")) &&
-                  !msg.content.includes("Admissions & Enrollment Portal") && (
-                    <div className="pt-2">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onActionPrompt?.(
-                            "I want to enroll in the upcoming program and proceed with payment"
-                          )
-                        }
-                        className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95"
-                      >
-                        <span>⚡ Enroll Now in Upcoming Batch</span>
-                      </button>
-                    </div>
-                  )}
-
                 {/* Interactive Enrollment & Payment Module */}
-                {(msg.enrollment ||
-                  msg.content.includes("Admissions & Enrollment Portal") ||
-                  msg.content.includes("Enrollment Checkout")) &&
-                  !msg.isStreaming && (
-                    <EnrollmentCard
-                      messageId={msg.id}
-                      initialData={msg.enrollment}
-                      currentUser={currentUser}
-                      onUpdate={(data) => onUpdateEnrollment?.(msg.id, data)}
-                    />
-                  )}
+                {showsCheckout && !msg.isStreaming && (
+                  <EnrollmentCard
+                    messageId={msg.id}
+                    initialData={msg.enrollment}
+                    currentUser={currentUser}
+                    onUpdate={(data) => onUpdateEnrollment?.(msg.id, data)}
+                  />
+                )}
 
                 {/* Interactive Course Catalog Response */}
                 {(msg.showCourseCatalog ||
@@ -359,6 +342,11 @@ export function ChatMessages({
                       </button>
                     ))}
                   </div>
+                )}
+
+                {/* Admission route, closing every answer — unless the checkout is already up */}
+                {!msg.isStreaming && msg.content && !showsCheckout && (
+                  <AdmissionCtaCard onActionPrompt={onActionPrompt} />
                 )}
 
                 {/* Assistant Action Bar (Matching today's ChatGPT UI: Copy, Dual Thumbs, Share, Regenerate, More) */}
