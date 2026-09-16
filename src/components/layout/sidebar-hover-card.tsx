@@ -62,7 +62,7 @@ function HeroGradientObject({ itemKey }: { itemKey?: string }) {
           </div>
           <div className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-full bg-white/95 text-emerald-950 shadow-md text-[10px] font-semibold flex items-center gap-1 border border-white/60">
             <BookOpen className="w-2.5 h-2.5 text-emerald-600" />
-            <span>60-Day Cohort</span>
+            <span>60-Day Program</span>
           </div>
         </div>
       );

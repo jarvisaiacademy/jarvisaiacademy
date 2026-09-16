@@ -66,7 +66,7 @@ const DEFAULT_RECORDS: EnrollmentRecord[] = [
   {
     action: "paid",
     courseId: "super10",
-    courseName: "Super10 Elite Cohort (100% Placement Assurance)",
+    courseName: "Super10 Elite Program (100% Placement Assurance)",
     amount: 0,
     transactionId: "TXN-JARVIS-918231",
     studentName: "Sugatraj Sarwade",
@@ -76,7 +76,7 @@ const DEFAULT_RECORDS: EnrollmentRecord[] = [
   {
     action: "paid",
     courseId: "fullstack",
-    courseName: "Full-Stack AI & Web Engineering Cohort",
+    courseName: "Full-Stack AI & Web Engineering Program",
     amount: 0,
     transactionId: "TXN-JARVIS-847291",
     studentName: "Aditya Verma",
@@ -86,7 +86,7 @@ const DEFAULT_RECORDS: EnrollmentRecord[] = [
   {
     action: "paid",
     courseId: "fullstack",
-    courseName: "Full-Stack AI & Web Engineering Cohort",
+    courseName: "Full-Stack AI & Web Engineering Program",
     amount: 0,
     transactionId: "TXN-JARVIS-762910",
     studentName: "Pooja Sharma",
@@ -96,7 +96,7 @@ const DEFAULT_RECORDS: EnrollmentRecord[] = [
   {
     action: "pending",
     courseId: "super10",
-    courseName: "Super10 Elite Cohort",
+    courseName: "Super10 Elite Program",
     amount: 0,
     transactionId: "TXN-JARVIS-PENDING",
     studentName: "Rohan Kulkarni",
@@ -729,7 +729,7 @@ export function AdminDashboard({
                   Learners &amp; Student Admissions
                 </h2>
                 <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
-                  Manage enrolled candidates, transaction IDs, payment verification, and cohort access.
+                  Manage enrolled candidates, transaction IDs, payment verification, and program access.
                 </p>
               </div>
               <div className="flex items-center gap-2 text-xs">
@@ -905,7 +905,7 @@ export function AdminDashboard({
                   Revenue &amp; Enrollment Analytics
                 </h2>
                 <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
-                  Comprehensive performance breakdown, gross revenue, and cohort capacity for {siteConfig.name}.
+                  Comprehensive performance breakdown, gross revenue, and program capacity for {siteConfig.name}.
                 </p>
               </div>
               <div className="flex items-center gap-2 text-xs">
@@ -1023,11 +1023,11 @@ export function AdminDashboard({
 
               <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-3">
                 <h4 className="text-sm font-semibold text-neutral-900 dark:text-white">
-                  Cohort Metrics
+                  Program Metrics
                 </h4>
                 <div className="flex flex-col gap-2 text-xs">
                   <div className="flex justify-between py-1 border-b border-neutral-100 dark:border-white/5">
-                    <span className="text-neutral-500">Full-Stack AI Engineering Cohort:</span>
+                    <span className="text-neutral-500">Full-Stack AI Engineering Program:</span>
                     <span className="font-semibold">
                       {records.filter((r) => r.courseId === "fullstack" && r.action === "paid").length} Students
                     </span>
