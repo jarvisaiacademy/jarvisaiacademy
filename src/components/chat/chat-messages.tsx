@@ -36,6 +36,9 @@ function ShareTrayIcon({ className }: { className?: string }) {
   );
 }
 
+/** Keys the share button's tick apart from the copy button's on the same message. */
+const shareKey = (id: string) => `${id}:share`;
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
@@ -107,11 +110,39 @@ export function ChatMessages({
     e.target.style.overflowY = scrollH > 400 ? "auto" : "hidden";
   };
 
+  // The tick lasts two seconds; the key names which control put it there, so
+  // sharing a message does not flash the copy button above it.
+  const flashCopied = (key: string) => {
+    setCopiedId(key);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
   const handleCopy = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
-    setCopiedId(id);
+    flashCopied(id);
     showToast("Copied to clipboard", "success");
-    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  /** The ask a message belongs to: its own text if it is the ask, else the one above. */
+  const askBehind = (msg: ChatMessage, idx: number) => {
+    if (msg.role === "user") return msg.content;
+    for (let i = idx - 1; i >= 0; i--) {
+      if (messages[i].role === "user") return messages[i].content;
+    }
+    return "";
+  };
+
+  // `/` reads `?q=` on mount and asks it, so a shared link reopens the same ask —
+  // and therefore the same answer — instead of the welcome screen.
+  const handleShare = (msg: ChatMessage, idx: number) => {
+    const ask = askBehind(msg, idx);
+    navigator.clipboard.writeText(
+      ask
+        ? `${window.location.origin}/?q=${encodeURIComponent(ask)}`
+        : window.location.href
+    );
+    flashCopied(shareKey(msg.id));
+    showToast("Share link copied to clipboard", "success");
   };
 
   const startEditing = (msg: ChatMessage) => {
@@ -145,15 +176,6 @@ export function ChatMessages({
           Boolean(msg.enrollment) ||
           msg.content.includes("Admissions & Enrollment Portal") ||
           msg.content.includes("Enrollment Checkout");
-        // The question this answer replies to, carried into the share link so a
-        // fresh browser opens on the same ask instead of the welcome screen.
-        let sharePrompt = "";
-        for (let i = idx - 1; i >= 0; i--) {
-          if (messages[i].role === "user") {
-            sharePrompt = messages[i].content;
-            break;
-          }
-        }
 
         return (
           <div key={msg.id || idx} className="flex flex-col w-full">
@@ -238,15 +260,16 @@ export function ChatMessages({
                       {/* Share */}
                       <button
                         type="button"
-                        onClick={() => {
-                          handleCopy(msg.id, window.location.href);
-                          showToast("Share link copied to clipboard", "success");
-                        }}
+                        onClick={() => handleShare(msg, idx)}
                         aria-label="Share message"
                         title="Share"
                         className="p-1 rounded-md hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-white/10 transition-colors cursor-pointer"
                       >
-                        <ShareTrayIcon className="w-4 h-4" />
+                        {copiedId === shareKey(msg.id) ? (
+                          <Check className="w-4 h-4 text-emerald-500" />
+                        ) : (
+                          <ShareTrayIcon className="w-4 h-4" />
+                        )}
                       </button>
 
                       {/* Edit */}
@@ -400,18 +423,16 @@ export function ChatMessages({
                     {/* 3. Share (Tray with Up Arrow) */}
                     <button
                       type="button"
-                      onClick={() => {
-                        const url = sharePrompt
-                          ? `${window.location.origin}/?q=${encodeURIComponent(sharePrompt)}`
-                          : window.location.href;
-                        navigator.clipboard.writeText(url);
-                        showToast("Share link copied to clipboard", "success");
-                      }}
+                      onClick={() => handleShare(msg, idx)}
                       aria-label="Share response"
                       className="p-1 rounded-md hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-white/10 transition-colors cursor-pointer"
                       title="Share"
                     >
-                      <ShareTrayIcon className="w-4 h-4" />
+                      {copiedId === shareKey(msg.id) ? (
+                        <Check className="w-4 h-4 text-emerald-500" />
+                      ) : (
+                        <ShareTrayIcon className="w-4 h-4" />
+                      )}
                     </button>
 
                     {/* 4. Regenerate */}
