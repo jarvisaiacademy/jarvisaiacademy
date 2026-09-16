@@ -40,15 +40,17 @@ const COURSES_INFO = {
     id: "fullstack" as const,
     name: "Full-Stack AI & Web Engineering Program",
     duration: "60 Days (2 Months)",
-    baseAmount: 0,
-    gstRate: 0.18,
+    /** All-inclusive: the quoted ₹30,000 is what the candidate pays. */
+    baseAmount: 30000,
+    gstRate: 0,
   },
   super10: {
     id: "super10" as const,
     name: "Super10 Elite Program (100% Placement Assurance)",
     duration: "60 Days Intensive",
+    /** The one fully sponsored track — strictly 10 seats. */
     baseAmount: 0,
-    gstRate: 0.18,
+    gstRate: 0,
   },
 };
 
@@ -388,14 +390,18 @@ export function EnrollmentCard({
         <span>Subtotal:</span>
         <span>₹${course.baseAmount.toLocaleString("en-IN")}</span>
       </div>
-      <div class="totals-row">
+      ${
+        gstAmount > 0
+          ? `<div class="totals-row">
         <span>Statutory CGST (9%):</span>
         <span>₹${Math.round(gstAmount / 2).toLocaleString("en-IN")}</span>
       </div>
       <div class="totals-row">
         <span>Statutory SGST (9%):</span>
         <span>₹${Math.round(gstAmount / 2).toLocaleString("en-IN")}</span>
-      </div>
+      </div>`
+          : ""
+      }
       <div class="totals-row grand">
         <span>Total Paid:</span>
         <span>₹${totalAmount.toLocaleString("en-IN")}</span>
@@ -497,7 +503,7 @@ export function EnrollmentCard({
                 60 Days (2 Months) · Next.js 15 &amp; Python GenAI
               </span>
               <span className="text-sm font-bold text-neutral-900 dark:text-white mt-2">
-                ₹0 <span className="text-[10px] font-normal text-neutral-500 dark:text-neutral-400">Fully sponsored</span>
+                ₹30,000 <span className="text-[10px] font-normal text-neutral-500 dark:text-neutral-400">all-in</span>
               </span>
             </button>
 
@@ -520,7 +526,7 @@ export function EnrollmentCard({
                 60 Days · 100% Placement Assurance
               </span>
               <span className="text-sm font-bold text-neutral-900 dark:text-white mt-2">
-                ₹0 <span className="text-[10px] font-normal text-neutral-500 dark:text-neutral-400">Fully sponsored</span>
+                ₹0 <span className="text-[10px] font-normal text-neutral-500 dark:text-neutral-400">fully sponsored</span>
               </span>
             </button>
           </div>
@@ -559,10 +565,12 @@ export function EnrollmentCard({
           <span>Program Tuition:</span>
           <span className="text-neutral-900 dark:text-neutral-200">₹{course.baseAmount.toLocaleString("en-IN")}</span>
         </div>
-        <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
-          <span>Statutory 18% GST (CGST 9% + SGST 9%):</span>
-          <span className="text-neutral-900 dark:text-neutral-200">₹{gstAmount.toLocaleString("en-IN")}</span>
-        </div>
+        {gstAmount > 0 && (
+          <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
+            <span>Statutory 18% GST (CGST 9% + SGST 9%):</span>
+            <span className="text-neutral-900 dark:text-neutral-200">₹{gstAmount.toLocaleString("en-IN")}</span>
+          </div>
+        )}
         <div className="flex justify-between font-semibold text-neutral-900 dark:text-white text-sm pt-2 border-t border-neutral-200 dark:border-white/10 mt-1">
           <span>Total Payable:</span>
           <span className="text-neutral-900 dark:text-white font-bold">₹{totalAmount.toLocaleString("en-IN")}</span>

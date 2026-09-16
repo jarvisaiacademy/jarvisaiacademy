@@ -124,8 +124,10 @@ export async function createCourseInFirestore(
     badgeType: course.badgeType || undefined,
     duration: course.duration || "60 Days",
     level: course.level || "All Levels",
-    fee: course.fee || "₹0",
-    amount: course.amount || 0,
+    // A doc that omits the fee must not read as free — ₹30,000 is the standard tuition,
+    // and Super10's ₹0 arrives as the string "₹0", which is truthy and passes through.
+    fee: course.fee || "₹30,000",
+    amount: course.amount ?? 30000,
     gradient: course.gradient || "from-slate-900 via-indigo-950 to-blue-900",
     accentColor: course.accentColor || "text-blue-400",
     techStack: course.techStack || [],

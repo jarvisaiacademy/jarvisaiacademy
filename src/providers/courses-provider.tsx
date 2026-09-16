@@ -150,8 +150,10 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
       badgeType: course.badgeType || undefined,
       duration: course.duration || "60 Days (2 Months)",
       level: course.level || "Beginner to Adv",
-      fee: course.fee || "₹0",
-      amount: course.amount || 0,
+      // A doc that omits the fee must not read as free — ₹30,000 is the standard tuition,
+      // and Super10's ₹0 arrives as the string "₹0", which is truthy and passes through.
+      fee: course.fee || "₹30,000",
+      amount: course.amount ?? 30000,
       gradient: course.gradient || "from-[#0f172a] via-[#1e1b4b] to-[#0284c7]",
       accentColor: course.accentColor || "text-blue-400",
       techStack: course.techStack || [],

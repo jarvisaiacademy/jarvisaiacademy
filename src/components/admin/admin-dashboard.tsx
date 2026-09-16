@@ -161,7 +161,7 @@ export function AdminDashboard({
   const [formBadgeType, setFormBadgeType] = useState<CourseItem["badgeType"] | "">("");
   const [formDuration, setFormDuration] = useState("60 Days (2 Months)");
   const [formLevel, setFormLevel] = useState("Beginner to Adv");
-  const [formFee, setFormFee] = useState("₹0");
+  const [formFee, setFormFee] = useState("₹30,000");
   const [formAmount, setFormAmount] = useState<number>(0);
   const [formTechStack, setFormTechStack] = useState("");
   const [formTechIcons, setFormTechIcons] = useState("");
@@ -280,8 +280,8 @@ export function AdminDashboard({
     setFormBadgeType("");
     setFormDuration("60 Days (2 Months)");
     setFormLevel("Beginner to Adv");
-    setFormFee("₹0");
-    setFormAmount(0);
+    setFormFee("₹30,000");
+    setFormAmount(30000);
     setFormTechStack("Next.js, React, FastAPI, Python, PostgreSQL");
     setFormTechIcons("nextjs, react, fastapi, python, postgresql");
     setFormTopics("Module 1: Architecture\nModule 2: Real-time APIs\nModule 3: Cloud Deployment");
@@ -304,8 +304,8 @@ export function AdminDashboard({
     setFormBadgeType(course.badgeType || "");
     setFormDuration(course.duration || "60 Days");
     setFormLevel(course.level || "Beginner to Adv");
-    setFormFee(course.fee || "₹0");
-    setFormAmount(course.amount || 0);
+    setFormFee(course.fee || "₹30,000");
+    setFormAmount(course.amount ?? 30000);
     setFormTechStack((course.techStack || []).join(", "));
     setFormTechIcons((course.techIcons || []).join(", "));
     setFormTopics((course.topics || []).join("\n"));
@@ -1327,7 +1327,7 @@ export function AdminDashboard({
                       type="text"
                       value={formFee}
                       onChange={(e) => setFormFee(e.target.value)}
-                      placeholder="₹0"
+                      placeholder="₹30,000"
                       className="w-1/2 px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white font-semibold"
                     />
                     <input
