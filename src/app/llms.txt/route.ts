@@ -16,7 +16,7 @@ const referral = COURSES_DATA.filter(isReferral);
 
 const body = `# ${siteConfig.name}
 
-> ${siteConfig.name} is a 60-day, build-first software engineering bootcamp in Pune, India. It runs ${courses.length} cohort tracks — full-stack AI and web, frontend, backend, generative AI, data and business analysis, DevOps, database administration, application support and Laravel — each priced at ₹30,000. Its Super10 Elite batch is capped at 10 seats and carries a 100% placement assurance.
+> ${siteConfig.name} is a 60-day, build-first software engineering bootcamp in Pune, India. It runs ${courses.length} cohort tracks — full-stack AI and web, frontend, backend, generative AI, data and business analysis, DevOps, database administration, application support and Laravel — each fully sponsored at ₹0 tuition. Its Super10 Elite batch is capped at 10 seats and carries a 100% placement assurance.
 
 The site is an AI chat interface, not a set of articles. There are no per-course pages: the catalogue, pricing, the referral programme, testimonials and enrolment all render as replies inside a single-page chat. Treat the catalogue below as the site's authoritative content, and ${siteConfig.url}/ as its only public page. Admissions happen in the chat or by email; there is no public application form.
 

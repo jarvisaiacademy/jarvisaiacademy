@@ -40,14 +40,14 @@ const COURSES_INFO = {
     id: "fullstack" as const,
     name: "Full-Stack AI & Web Engineering Cohort",
     duration: "60 Days (2 Months)",
-    baseAmount: 30000,
+    baseAmount: 0,
     gstRate: 0.18,
   },
   super10: {
     id: "super10" as const,
     name: "Super10 Elite Cohort (100% Placement Assurance)",
     duration: "60 Days Intensive",
-    baseAmount: 30000,
+    baseAmount: 0,
     gstRate: 0.18,
   },
 };
@@ -497,7 +497,7 @@ export function EnrollmentCard({
                 60 Days (2 Months) · Next.js 15 &amp; Python GenAI
               </span>
               <span className="text-sm font-bold text-neutral-900 dark:text-white mt-2">
-                ₹30,000 <span className="text-[10px] font-normal text-neutral-500 dark:text-neutral-400">+ 18% GST</span>
+                ₹0 <span className="text-[10px] font-normal text-neutral-500 dark:text-neutral-400">Fully sponsored</span>
               </span>
             </button>
 
@@ -520,7 +520,7 @@ export function EnrollmentCard({
                 60 Days · 100% Placement Assurance
               </span>
               <span className="text-sm font-bold text-neutral-900 dark:text-white mt-2">
-                ₹30,000 <span className="text-[10px] font-normal text-neutral-500 dark:text-neutral-400">+ 18% GST</span>
+                ₹0 <span className="text-[10px] font-normal text-neutral-500 dark:text-neutral-400">Fully sponsored</span>
               </span>
             </button>
           </div>

@@ -268,7 +268,7 @@ export function ChatMessages({
                 {/* Assistant Message Content with Markdown & Streaming indicator */}
                 <div className="relative">
                   {msg.content ? (
-                    <MarkdownRenderer content={msg.content} />
+                    <MarkdownRenderer content={msg.content} onPromptClick={onActionPrompt} />
                   ) : msg.isStreaming ? (
                     /* Loading/Thinking Skeleton dots before first token */
                     <div className="flex items-center gap-1.5 py-2">

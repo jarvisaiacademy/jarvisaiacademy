@@ -7,10 +7,15 @@ import { Copy, Check, ExternalLink } from "lucide-react";
 
 interface MarkdownRendererProps {
   content: string;
-  onCitationClick?: (citationId: string) => void;
+  /** Runs an inline `#ask:` link — the href carries the prompt to send. */
+  onPromptClick?: (prompt: string) => void;
 }
 
-export function MarkdownRenderer({ content }: MarkdownRendererProps) {
+/** Prefix for in-message links that send a prompt instead of navigating.
+ *  Relative, so react-markdown's url transform leaves it intact. */
+const ASK_PREFIX = "#ask:";
+
+export function MarkdownRenderer({ content, onPromptClick }: MarkdownRendererProps) {
   return (
     <div className="prose dark:prose-invert max-w-none text-neutral-800 dark:text-neutral-200 text-[15px] leading-relaxed break-words space-y-3">
       <ReactMarkdown
@@ -47,6 +52,18 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
             </blockquote>
           ),
           a: ({ href, children }) => {
+            if (href?.startsWith(ASK_PREFIX)) {
+              const prompt = decodeURIComponent(href.slice(ASK_PREFIX.length));
+              return (
+                <button
+                  type="button"
+                  onClick={() => onPromptClick?.(prompt)}
+                  className="text-[#9d5932] dark:text-[#ea580c] hover:text-[#7c4424] dark:hover:text-[#f97316] font-medium underline underline-offset-2 cursor-pointer"
+                >
+                  {children}
+                </button>
+              );
+            }
             const isMailto = href?.startsWith("mailto:");
             return (
               <a
