@@ -22,19 +22,23 @@ This is a real application, not a static UI mockup.
 
 These rules take priority over convenience.
 
-> **CRITICAL PRODUCTION SAFEGUARD**: The `main` branch is connected to live production at **`https://jarvisaiacademy.com`** via Netlify. **NEVER** push directly to `main`. Every change must be in a separate branch and merged via a Pull Request (PR) after verification.
+> **CRITICAL PRODUCTION SAFEGUARD**: The `production` branch is connected to live production at **`https://jarvisaiacademy.com`** via Netlify. **NEVER** push directly to `production`. Every change must be in a separate branch and merged via a Pull Request (PR) after verification.
 
-> **INTEGRATION BRANCH**: task PRs target **`development`**, not `main`. `development` is
-> promoted to `main` as a single PR only when the user asks for it. Every build is metered by
-> Netlify, and `netlify.toml` skips every context except production — so do not merge a task
-> into `main` to "see it live"; it costs a build and ships unreviewed work to customers.
+> **TWO-BRANCH MODEL — `development` integrates, `production` deploys.**
+> `development` is the repository's **default branch**, so it is the base for every task PR.
+> Task branches cut from `development`, merge back into `development`, and that is the end of
+> the task. `production` moves only by promoting `development` in a single PR, and only when
+> the user asks for it — that merge is the release.
+> Every Netlify build spends the user's metered monthly minutes, and `netlify.toml` skips every
+> context except production. So do not merge a task into `production` to "see it live": it costs
+> a build, and nothing is verifiable on a preview URL — verify locally with `pnpm dev`.
 
 ### DO
 
 - **ALWAYS** check out a separate branch (`feat/...`, `fix/...`, `chore/...`) before making changes or commits.
 - **ALWAYS** verify changes with `pnpm tsc --noEmit` before raising a Pull Request.
 - **ALWAYS** push to the feature branch and raise a Pull Request (PR) against `development`.
-- **ALWAYS** branch `development` off `main` (or `main` off `development` at promotion) with a merge commit, never a rebase — the branches must stay fast-forwardable.
+- **ALWAYS** cut task branches from `development`, and promote with `--base production`. Keep the promotion fast-forwardable — no rebasing `production`.
 - Inspect the existing code before modifying it.
 - Reuse existing components and utilities when appropriate.
 - Follow the existing project architecture.
@@ -55,8 +59,9 @@ These rules take priority over convenience.
 
 ### DO NOT
 
-- **Do not push directly to `main` under any circumstances** (all changes must be on feature branches and merged via PR).
-- **Do not raise a task PR against `main` or merge one into it.** `main` moves only when the user asks for a promotion from `development`.
+- **Do not push directly to `production` under any circumstances** (all changes must be on feature branches and merged via PR).
+- **Do not raise a task PR against `production` or merge one into it.** `production` moves only when the user asks for a promotion from `development`.
+- Do not rename or delete the `production`, `development` or `main` branches, or change the repository's default branch, without being asked — Netlify resolves its production branch by name.
 - **Do not run `pnpm build` locally** (use `pnpm tsc --noEmit` only; Netlify performs the production build).
 - Do not replace the project's framework or stack without explicit approval.
 - Do not migrate libraries simply because another library is fashionable.
