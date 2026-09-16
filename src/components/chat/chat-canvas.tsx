@@ -110,7 +110,7 @@ Earn **₹3,000** direct bonus for every learner you refer to Jarvis AI Academy!
 4. **Get Rewarded**: Once the referred candidate completes the whole course, you receive **₹3,000** cash reward directly via UPI or bank transfer!
 
 ### Key Program Details:
-* **Reward Amount**: **₹3,000** per successful student completion.
+* **Reward Amount**: **₹3,000** per student on successful course completion.
 * **Disbursement**: Prompt payout upon verification of course completion.
 * **No Caps**: Refer 5 peers and earn **₹25,000**!
 
