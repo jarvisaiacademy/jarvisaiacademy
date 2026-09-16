@@ -1,13 +1,12 @@
 /**
  * The alumni shown by the testimonials reply.
  *
- * These are illustrative, not real graduates — the reply prints the disclaimer below
- * alongside them, and that disclaimer is what keeps the block honest. If the academy
- * collects real graduates (with consent for their photo and their employer's name),
- * replace the pool and the disclaimer can go.
+ * These are placeholders, pending the academy's real graduates. When those arrive, replace
+ * the pool with their names, roles and employers, and point `avatarUrl` at their photos
+ * instead of DiceBear.
  *
- * Avatars are DiceBear illustrations derived from the name, so no real person's
- * likeness is used and there is no image licence to track.
+ * Until then the avatars are DiceBear illustrations derived from the name, so no real
+ * person's likeness is used and there is no image licence to track.
  */
 export interface TestimonialPerson {
   name: string;
@@ -185,8 +184,6 @@ export function buildTestimonialsText(count = 3): string {
 
   return [
     `🏆 **Student Success Stories & Placements**:`,
-    ``,
-    `*(Illustrative examples — avatars and names are placeholders, not real alumni.)*`,
     ``,
     `Our alumni have moved into software and AI engineering roles across the UK and US:`,
     ``,
