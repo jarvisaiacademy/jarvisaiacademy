@@ -30,7 +30,6 @@ import {
 } from "lucide-react";
 import { MobileMenuIcon } from "@/components/ui/mobile-menu-icon";
 import { siteConfig } from "@/config/site";
-import { useAuth } from "@/providers/auth-provider";
 import { useCourses } from "@/providers/courses-provider";
 import { useStudents } from "@/providers/students-provider";
 import { CourseItem, COURSE_CATEGORIES, CourseCategoryId } from "@/data/courses";
@@ -83,7 +82,6 @@ export function AdminDashboard({
   sidebarOpen = true,
   onToggleSidebar,
 }: AdminDashboardProps) {
-  const { user } = useAuth();
   const { showToast } = useToast();
   const {
     students,
@@ -435,18 +433,6 @@ export function AdminDashboard({
 
       {/* Main Container */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
-        {/* Welcome Banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-600/10 border border-blue-500/20 shadow-xs">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
-              Welcome back, {user?.name?.split(" ")[0] || "Director"}
-            </h2>
-            <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
-              Real-time admissions, revenue analytics, and student management for {siteConfig.name}.
-            </p>
-          </div>
-        </div>
-
         {/* TAB 1: COURSE MANAGEMENT (CRUD) */}
         {activeTab === "courses" && (
           <div className="flex flex-col gap-6">
