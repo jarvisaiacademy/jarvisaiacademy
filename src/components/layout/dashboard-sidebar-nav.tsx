@@ -62,7 +62,7 @@ export function DashboardSidebarNav({
                 isLiveFromFirebase ? "bg-emerald-500 animate-pulse" : "bg-blue-500"
               }`}
             />
-            {isLiveFromFirebase ? "Live Cloud" : "Local Store"}
+            {isLiveFromFirebase ? "Live Cloud" : "Built-in Catalog"}
           </span>
         </div>
 

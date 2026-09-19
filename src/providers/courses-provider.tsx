@@ -12,8 +12,6 @@ import {
 } from "@/services/courses-service";
 import { useAuth } from "@/providers/auth-provider";
 
-const LOCAL_STORAGE_KEY = "jarvis_courses_data";
-
 interface CoursesContextType {
   courses: CourseItem[];
   loading: boolean;
@@ -23,7 +21,6 @@ interface CoursesContextType {
   editCourse: (courseId: string, updates: Partial<CourseItem>) => Promise<void>;
   removeCourse: (courseId: string) => Promise<void>;
   seedCourses: () => Promise<{ count: number; courses: CourseItem[] }>;
-  resetToDefaults: () => Promise<void>;
   refreshCourses: () => Promise<void>;
 }
 
@@ -31,37 +28,14 @@ const CoursesContext = createContext<CoursesContextType | undefined>(undefined);
 
 export function CoursesProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [courses, setCourses] = useState<CourseItem[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed;
-          }
-        }
-      } catch {
-        // ignore parse error
-      }
-    }
-    return COURSES_DATA;
-  });
+  // Firestore is the store of record. Until it answers — and if it never does — the built-in
+  // COURSES_DATA seed is shown, but it is never written back to localStorage. An earlier version
+  // kept a localStorage copy and treated it as a database, so an edit that failed to reach
+  // Firestore still survived the reload and looked saved.
+  const [courses, setCourses] = useState<CourseItem[]>(COURSES_DATA);
   const [loading, setLoading] = useState(true);
   const [isLiveFromFirebase, setIsLiveFromFirebase] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Sync state changes to localStorage for offline persistence
-  const saveToLocal = (newCourses: CourseItem[]) => {
-    setCourses(newCourses);
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newCourses));
-      } catch {
-        // ignore storage error
-      }
-    }
-  };
 
   useEffect(() => {
     let isMounted = true;
@@ -70,7 +44,7 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
       (firestoreCourses) => {
         if (!isMounted) return;
         if (firestoreCourses && firestoreCourses.length > 0) {
-          saveToLocal(firestoreCourses);
+          setCourses(firestoreCourses);
           setIsLiveFromFirebase(true);
         } else {
           // Keep current courses or fall back to default COURSES_DATA
@@ -107,7 +81,7 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
     try {
       const data = await getCoursesFromFirestore();
       if (data && data.length > 0) {
-        saveToLocal(data);
+        setCourses(data);
         setIsLiveFromFirebase(true);
       } else {
         setIsLiveFromFirebase(false);
@@ -162,11 +136,11 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
       actionPrompt: course.actionPrompt || `Tell me about the ${course.title} course`,
     };
 
-    // Save locally first
+    // Optimistic update; the Firestore write below is what actually persists it.
     const updated = [...courses.filter((c) => c.id !== newCourse.id), newCourse].sort(
       (a, b) => (a.number || "").localeCompare(b.number || "")
     );
-    saveToLocal(updated);
+    setCourses(updated);
 
     // Sync to Firestore
     try {
@@ -185,7 +159,7 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
     }
 
     const updated = courses.map((c) => (c.id === courseId ? { ...c, ...updates } : c));
-    saveToLocal(updated);
+    setCourses(updated);
 
     try {
       await updateCourseInFirestore(courseId, updates, user.email);
@@ -201,7 +175,7 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
     }
 
     const updated = courses.filter((c) => c.id !== courseId);
-    saveToLocal(updated);
+    setCourses(updated);
 
     try {
       await deleteCourseInFirestore(courseId, user.email);
@@ -215,23 +189,13 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
       throw new Error("Unauthorized: Only verified admins can seed courses.");
     }
 
-    saveToLocal(COURSES_DATA);
+    setCourses(COURSES_DATA);
 
-    try {
-      const result = await seedDefaultCoursesToFirestore(user.email);
-      setIsLiveFromFirebase(true);
-      return result;
-    } catch (err) {
-      console.warn("[CoursesProvider] Cloud Firestore seeding warning, seeded locally:", err);
-      return { count: COURSES_DATA.length, courses: COURSES_DATA };
-    }
-  };
-
-  const resetToDefaults = async () => {
-    if (!user?.isAdmin) {
-      throw new Error("Unauthorized: Only verified admins can reset courses.");
-    }
-    saveToLocal(COURSES_DATA);
+    // Only claim success if Firestore accepted the write. The old catch returned the default
+    // catalogue as if it had seeded, which was half a lie propped up by the localStorage copy.
+    const result = await seedDefaultCoursesToFirestore(user.email);
+    setIsLiveFromFirebase(true);
+    return result;
   };
 
   return (
@@ -245,7 +209,6 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
         editCourse,
         removeCourse,
         seedCourses,
-        resetToDefaults,
         refreshCourses,
       }}
     >
@@ -274,7 +237,6 @@ export function useCourses() {
       seedCourses: async () => {
         throw new Error("useCourses must be used within a CoursesProvider");
       },
-      resetToDefaults: async () => {},
       refreshCourses: async () => {},
     };
   }

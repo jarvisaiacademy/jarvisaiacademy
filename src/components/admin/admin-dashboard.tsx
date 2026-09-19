@@ -23,7 +23,6 @@ import {
   BookOpen,
   Layers,
   X,
-  RotateCcw,
   AlertCircle,
   Cloud,
   Check,
@@ -123,7 +122,6 @@ export function AdminDashboard({
     editCourse,
     removeCourse,
     seedCourses,
-    resetToDefaults,
   } = useCourses();
 
   const [localTab, setLocalTab] = useState<DashboardTab>("courses");
@@ -406,9 +404,9 @@ export function AdminDashboard({
     }
   };
 
-  // Seed / Reset Courses to Default
+  // Seed the built-in course catalogue into Firestore
   const handleSeedCourses = async () => {
-    if (!confirm("Feed and sync the 12 verified courses into Firebase Firestore & local storage?")) {
+    if (!confirm("Feed the 12 built-in verified courses into Firestore?")) {
       return;
     }
     setIsSeeding(true);
@@ -558,7 +556,7 @@ export function AdminDashboard({
                   disabled={isSeeding}
                   onClick={handleSeedCourses}
                   className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-neutral-300 dark:border-white/15 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-white/10 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
-                  title="Feed verified courses into Firebase and reset local catalog"
+                  title="Feed the built-in verified courses into Firestore"
                 >
                   <Database className="w-3.5 h-3.5 text-blue-500" />
                   <span>{isSeeding ? "Feeding..." : "Feed 12 Verified Courses"}</span>
@@ -1078,48 +1076,12 @@ export function AdminDashboard({
                 ) : (
                   <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-300 font-medium">
                     <span className="w-2 h-2 rounded-full bg-blue-500" />
-                    Local Storage Active
+                    Built-in Catalog
                   </span>
                 )}
               </div>
             </div>
 
-            {/* Actions Card */}
-            <div className="p-6 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-4">
-              <h3 className="text-base font-semibold text-neutral-900 dark:text-white">
-                Course Catalog Seeding &amp; Recovery
-              </h3>
-              <p className="text-xs text-neutral-600 dark:text-neutral-400 max-w-2xl leading-relaxed">
-                You can feed the complete 12 verified courses into Cloud Firestore with one click.
-                If Cloud Firestore is enabled in your Firebase console, the courses are permanently saved in the cloud. If Firestore is offline, courses are safely preserved in local storage.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-3 pt-2">
-                <button
-                  type="button"
-                  disabled={isSeeding}
-                  onClick={handleSeedCourses}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  <Database className="w-4 h-4" />
-                  <span>{isSeeding ? "Feeding..." : "Feed 12 Verified Courses to Firestore"}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (confirm("Reset catalog back to the initial 12 course default state?")) {
-                      await resetToDefaults();
-                      showToast("Catalog reset to defaults", "info");
-                    }
-                  }}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-white/15 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/5 font-semibold text-xs transition-colors cursor-pointer"
-                >
-                  <RotateCcw className="w-3.5 h-3.5 text-neutral-400" />
-                  <span>Reset to Factory Defaults</span>
-                </button>
-              </div>
-            </div>
           </div>
         )}
       </main>
