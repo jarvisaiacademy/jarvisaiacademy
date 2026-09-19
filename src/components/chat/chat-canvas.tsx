@@ -351,6 +351,11 @@ export function ChatCanvas({
       lower.includes("testimonial")
     ) {
       return academyKnowledge.testimonials;
+    } else if (lower.includes("alumn") || lower.includes("hiring partner")) {
+      // The two follow-ups the testimonials reply offers. Neither has a section of its own, so
+      // both land on admissions — the people who can make the introduction, or name the
+      // companies. Give each its own entry here once there is copy for it.
+      return academyKnowledge.enquiry;
     } else if (lower.includes("certificate") || lower.includes("verify")) {
       return academyKnowledge.certificate;
     } else if (

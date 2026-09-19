@@ -148,6 +148,10 @@ function shuffle<T>(items: T[]): T[] {
  * The portrait is markdown image syntax; `MarkdownRenderer` styles it into a circle.
  * Empty alt text on purpose — the name follows in bold, so the image would only
  * repeat it to a screen reader.
+ *
+ * Ends on the people, with no closing question — the offers that follow are the entry's
+ * `suggestions`, rendered as follow-up chips. A question in the body here reads as part of
+ * the answer and cannot be tapped.
  */
 export function buildTestimonialsText(count = 3): string {
   const people = shuffle(TESTIMONIAL_POOL).slice(0, count);
@@ -161,7 +165,5 @@ export function buildTestimonialsText(count = 3): string {
       (person) =>
         `* ![](${person.photo}) **${person.name}** - ${person.role}, ${person.company} · ${person.location}  \n  *"${person.quote}"*`
     ),
-    ``,
-    `Would you like to connect with an alumnus or see our hiring partner companies?`,
   ].join("\n");
 }
