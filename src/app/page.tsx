@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { GuestHeader } from "@/components/layout/guest-header";
 import { ChatCanvas } from "@/components/chat/chat-canvas";
@@ -48,11 +48,31 @@ export default function Home() {
     if (q) setInitialPrompt(q);
   }, []);
 
+  // The one gate every guest-facing action goes through: signed-in visitors run the
+  // action straight away, guests get the login modal and the action is replayed the
+  // moment it reports success. Wrapping each entry point rather than the handlers
+  // themselves keeps the transcript's own on-mount answers (a `/?topic=` or `/?q=`
+  // link from a public course page) working for a guest who follows one in.
+  const pendingActionRef = useRef<(() => void) | null>(null);
+  const requireLogin = useCallback(
+    (action: () => void) => {
+      if (isLoggedIn) {
+        action();
+        return;
+      }
+      pendingActionRef.current = action;
+      setIsLoginOpen(true);
+    },
+    [isLoggedIn]
+  );
+
   const handleOpenLogin = () => setIsLoginOpen(true);
   const handleCloseLogin = () => {
     setIsLoginOpen(false);
     clearAuthError();
+    pendingActionRef.current = null;
   };
+
   const handleOpenSettings = () => {
     setIsDashboardOpen(false);
     setStudentView(null);
@@ -96,28 +116,32 @@ export default function Home() {
           isLoggedIn={isLoggedIn}
           user={user}
           onLogout={handleLogout}
-          onSelectSection={(topic) => {
-            setIsSettingsOpen(false);
-            setIsDashboardOpen(false);
-            setStudentView(null);
-            setIsLearningOpen(false);
-            setActiveSection(topic);
-            setActiveTopic(topic);
-          }}
-          onNewChat={() => {
-            setIsSettingsOpen(false);
-            setIsDashboardOpen(false);
-            setStudentView(null);
-            setIsLearningOpen(false);
-            setActiveSection(null);
-            setActiveTopic(null);
-            setResetSignal((prev) => prev + 1);
-          }}
+          onSelectSection={(topic) =>
+            requireLogin(() => {
+              setIsSettingsOpen(false);
+              setIsDashboardOpen(false);
+              setStudentView(null);
+              setIsLearningOpen(false);
+              setActiveSection(topic);
+              setActiveTopic(topic);
+            })
+          }
+          onNewChat={() =>
+            requireLogin(() => {
+              setIsSettingsOpen(false);
+              setIsDashboardOpen(false);
+              setStudentView(null);
+              setIsLearningOpen(false);
+              setActiveSection(null);
+              setActiveTopic(null);
+              setResetSignal((prev) => prev + 1);
+            })
+          }
           onOpenLogin={handleOpenLogin}
-          onOpenSettings={handleOpenSettings}
-          onOpenDashboard={handleOpenDashboard}
-          onOpenStudentView={setStudentView}
-          onOpenLearning={handleOpenLearning}
+          onOpenSettings={() => requireLogin(handleOpenSettings)}
+          onOpenDashboard={() => requireLogin(handleOpenDashboard)}
+          onOpenStudentView={(view) => requireLogin(() => setStudentView(view))}
+          onOpenLearning={() => requireLogin(handleOpenLearning)}
           isDashboardOpen={isDashboardOpen && !!user?.isAdmin}
           activeDashboardTab={dashboardTab}
           onSelectDashboardTab={setDashboardTab}
@@ -180,6 +204,7 @@ export default function Home() {
                 onTopicHandled={() => setActiveTopic(null)}
                 initialPrompt={initialPrompt}
                 resetSignal={resetSignal}
+                onRequireLogin={requireLogin}
               />
             </>
           )}
@@ -190,8 +215,12 @@ export default function Home() {
           isOpen={isLoginOpen}
           onClose={handleCloseLogin}
           onSuccess={() => {
-            console.log("Logged in successfully");
             setIsLoginOpen(false);
+            // Replay whatever the guest was blocked on. Read through the ref, not the
+            // gate, so it runs even though `isLoggedIn` has not re-rendered yet.
+            const pending = pendingActionRef.current;
+            pendingActionRef.current = null;
+            pending?.();
           }}
         />
       </div>

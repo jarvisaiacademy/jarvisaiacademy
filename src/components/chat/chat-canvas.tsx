@@ -70,6 +70,12 @@ interface ChatCanvasProps {
   resetSignal?: number;
   /** A full question to answer on mount, for links that carry one — `/?q=`. */
   initialPrompt?: string | null;
+  /**
+   * Runs the action straight away for a signed-in visitor, or opens the login modal
+   * and replays it afterwards for a guest. Every callback handed to the chat's
+   * children is wrapped in it, so a guest cannot act on any of them without an account.
+   */
+  onRequireLogin?: (action: () => void) => void;
 }
 
 export function ChatCanvas({
@@ -77,6 +83,7 @@ export function ChatCanvas({
   onTopicHandled,
   resetSignal,
   initialPrompt,
+  onRequireLogin,
 }: ChatCanvasProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialConversation);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -580,11 +587,14 @@ export function ChatCanvas({
       >
         <ChatMessages
           messages={messages}
-          onRegenerate={handleRegenerate}
-          onEditSubmit={handleEditSubmit}
-          onFeedback={handleFeedback}
+          onRegenerate={(id) => onRequireLogin?.(() => handleRegenerate(id))}
+          onEditSubmit={(id, content) =>
+            onRequireLogin?.(() => handleEditSubmit(id, content))
+          }
+          onFeedback={(id, type) => onRequireLogin?.(() => handleFeedback(id, type))}
           onUpdateEnrollment={handleUpdateEnrollment}
-          onActionPrompt={handleActionPrompt}
+          onActionPrompt={(prompt) => onRequireLogin?.(() => handleActionPrompt(prompt))}
+          onRequireLogin={onRequireLogin}
           currentUser={user}
         />
       </div>
@@ -608,7 +618,8 @@ export function ChatCanvas({
         )}
         <div className="w-full max-w-3xl pointer-events-auto">
           <ChatComposer
-            onSend={({ text, activeTool, attachments }) => {
+            onSend={(data) => onRequireLogin?.(() => {
+              const { text, activeTool, attachments } = data;
               let prompt = text;
               if (activeTool === "web_search") prompt = `[Web Search] ${text}`;
               if (activeTool === "create_image") prompt = `[Create Image] ${text}`;
@@ -617,7 +628,7 @@ export function ChatCanvas({
                 prompt = `${prompt ? prompt + "\n" : ""}[Attached ${attachments.length} file(s): ${attachments.map(a => a.name).join(", ")}]`;
               }
               handlePromptSubmit(prompt);
-            }}
+            })}
             onStop={handleStop}
             isGenerating={isGenerating}
             placeholder="Ask anything"
@@ -634,8 +645,8 @@ export function ChatCanvas({
               )}
               <button
                 type="button"
-                onClick={() => openSection(topic)}
-                className="whitespace-nowrap hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline transition-colors cursor-pointer"
+                onClick={() => onRequireLogin?.(() => openSection(topic))}
+                className="whitespace-nowrap hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors cursor-pointer"
               >
                 {label}
               </button>
