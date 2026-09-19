@@ -58,6 +58,9 @@ interface ChatMessagesProps {
   onFeedback?: (messageId: string, type: "like" | "dislike") => void;
   onUpdateEnrollment?: (messageId: string, data: EnrollmentData) => void;
   onActionPrompt?: (prompt: string) => void;
+  /** Forwarded to the checkout, whose buttons are the one action here that does not
+   *  route through `onActionPrompt` and so would otherwise escape the login gate. */
+  onRequireLogin?: (action: () => void) => void;
   currentUser?: { name?: string; email?: string } | null;
 }
 
@@ -68,6 +71,7 @@ export function ChatMessages({
   onFeedback,
   onUpdateEnrollment,
   onActionPrompt,
+  onRequireLogin,
   currentUser,
 }: ChatMessagesProps) {
   const { courses } = useCourses();
@@ -319,6 +323,7 @@ export function ChatMessages({
                     initialData={msg.enrollment}
                     currentUser={currentUser}
                     onUpdate={(data) => onUpdateEnrollment?.(msg.id, data)}
+                    onRequireLogin={onRequireLogin}
                   />
                 )}
 

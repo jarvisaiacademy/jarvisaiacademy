@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { GuestHeader } from "@/components/layout/guest-header";
 import { ChatCanvas } from "@/components/chat/chat-canvas";
@@ -48,11 +48,35 @@ export default function Home() {
     if (q) setInitialPrompt(q);
   }, []);
 
+  // The gate behind every guest-facing action: signed-in visitors run the action
+  // straight away, guests get the login modal and the action is replayed the moment
+  // it reports success.
+  //
+  // Browsing is deliberately outside it. The sidebar's sections and course rows, a
+  // question carried in on `/?topic=` or `/?q=`, and typing in the composer all work
+  // for a guest, so the site can be read before there is an account to make. What the
+  // gate covers is acting on what you read — sending, the follow-up chips, the review
+  // buttons, and the checkout.
+  const pendingActionRef = useRef<(() => void) | null>(null);
+  const requireLogin = useCallback(
+    (action: () => void) => {
+      if (isLoggedIn) {
+        action();
+        return;
+      }
+      pendingActionRef.current = action;
+      setIsLoginOpen(true);
+    },
+    [isLoggedIn]
+  );
+
   const handleOpenLogin = () => setIsLoginOpen(true);
   const handleCloseLogin = () => {
     setIsLoginOpen(false);
     clearAuthError();
+    pendingActionRef.current = null;
   };
+
   const handleOpenSettings = () => {
     setIsDashboardOpen(false);
     setStudentView(null);
@@ -114,10 +138,10 @@ export default function Home() {
             setResetSignal((prev) => prev + 1);
           }}
           onOpenLogin={handleOpenLogin}
-          onOpenSettings={handleOpenSettings}
-          onOpenDashboard={handleOpenDashboard}
-          onOpenStudentView={setStudentView}
-          onOpenLearning={handleOpenLearning}
+          onOpenSettings={() => requireLogin(handleOpenSettings)}
+          onOpenDashboard={() => requireLogin(handleOpenDashboard)}
+          onOpenStudentView={(view) => requireLogin(() => setStudentView(view))}
+          onOpenLearning={() => requireLogin(handleOpenLearning)}
           isDashboardOpen={isDashboardOpen && !!user?.isAdmin}
           activeDashboardTab={dashboardTab}
           onSelectDashboardTab={setDashboardTab}
@@ -180,6 +204,7 @@ export default function Home() {
                 onTopicHandled={() => setActiveTopic(null)}
                 initialPrompt={initialPrompt}
                 resetSignal={resetSignal}
+                onRequireLogin={requireLogin}
               />
             </>
           )}
@@ -190,8 +215,12 @@ export default function Home() {
           isOpen={isLoginOpen}
           onClose={handleCloseLogin}
           onSuccess={() => {
-            console.log("Logged in successfully");
             setIsLoginOpen(false);
+            // Replay whatever the guest was blocked on. Read through the ref, not the
+            // gate, so it runs even though `isLoggedIn` has not re-rendered yet.
+            const pending = pendingActionRef.current;
+            pendingActionRef.current = null;
+            pending?.();
           }}
         />
       </div>
