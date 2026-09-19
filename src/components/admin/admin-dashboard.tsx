@@ -30,7 +30,6 @@ import {
   PanelLeft,
 } from "lucide-react";
 import { MobileMenuIcon } from "@/components/ui/mobile-menu-icon";
-import { firebaseConfig } from "@/lib/firebase";
 import { siteConfig } from "@/config/site";
 import { useAuth } from "@/providers/auth-provider";
 import { useCourses } from "@/providers/courses-provider";
@@ -1082,33 +1081,6 @@ export function AdminDashboard({
                     Local Storage Active
                   </span>
                 )}
-              </div>
-            </div>
-
-            {/* Cloud Configuration Details */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-2">
-                <span className="text-xs text-neutral-500">Firebase Project ID</span>
-                <span className="font-mono text-sm font-bold text-neutral-900 dark:text-white truncate">
-                  {firebaseConfig.projectId || "Not configured"}
-                </span>
-                <span className="text-[11px] text-neutral-400">Firestore Cloud Database</span>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-2">
-                <span className="text-xs text-neutral-500">Firestore Target Collection</span>
-                <span className="font-mono text-sm font-bold text-blue-600 dark:text-blue-400">
-                  &quot;courses&quot;
-                </span>
-                <span className="text-[11px] text-neutral-400">{courses.length} courses loaded</span>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-2">
-                <span className="text-xs text-neutral-500">CLI Seeder Command</span>
-                <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-neutral-100 dark:bg-white/5 px-2 py-1 rounded">
-                  pnpm seed:courses
-                </span>
-                <span className="text-[11px] text-neutral-400">or node scripts/seed-courses.mjs</span>
               </div>
             </div>
 
