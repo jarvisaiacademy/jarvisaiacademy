@@ -9,14 +9,26 @@ import {
 } from "firebase/auth";
 import { getFirestore, Firestore, connectFirestoreEmulator } from "firebase/firestore";
 
+/**
+ * Firebase web config, read from the environment and nothing else.
+ *
+ * These values are public. The `NEXT_PUBLIC_` prefix makes Next inline them into the
+ * client bundle, so every visitor can read this block — which is by design, and why the
+ * web API key is not treated as a secret here. What protects the data is
+ * `firestore.rules`, plus the key restrictions set in Google Cloud.
+ *
+ * No hardcoded fallbacks on purpose. They previously named a decommissioned project, so a
+ * missing variable connected to a dead backend instead of failing; `isFirebaseConfigured`
+ * below is what turns an empty environment into a visible error.
+ */
 export const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyABWBeFX9nHxWzCpxhu4iCmS1TeaTHijMg",
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "jarvisaiacademy-580a7.firebaseapp.com",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "jarvisaiacademy-580a7",
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "jarvisaiacademy-580a7.firebasestorage.app",
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "864804438661",
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:864804438661:web:5842fc7c5b6acbaa55dfec",
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-J5RQ9DQQF7",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? "",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ?? "",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ?? "",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ?? "",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? "",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID ?? "",
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID ?? "",
 };
 
 export const isFirebaseConfigured = Boolean(

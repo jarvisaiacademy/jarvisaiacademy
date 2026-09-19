@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed:courses": "node scripts/seed-courses.mjs"
+    "seed:courses": "node scripts/seed-courses.mjs",
+    "check:rules": "node scripts/check-firestore-rules.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
