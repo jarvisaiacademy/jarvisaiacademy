@@ -51,9 +51,8 @@ const CARD_EFFECTS: { id: AdmissionCardEffect; label: string }[] = [
 
 /**
  * The picker is scaffolding for choosing between the candidates, so it is off in the shipped UI.
- * The choice itself is not: it lives in localStorage, so whoever settled on one keeps seeing it
- * with the control out of the way. Everyone else gets `DEFAULT_EFFECT`. Set this back to true to
- * put the comparison in front of a reviewer again.
+ * The choice is no longer kept per browser — `DEFAULT_EFFECT` in the effect store is what ships,
+ * for everybody. Set this back to true to put the comparison in front of a reviewer again.
  */
 const SHOW_EFFECT_SWITCH = false;
 
