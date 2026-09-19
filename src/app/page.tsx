@@ -48,11 +48,15 @@ export default function Home() {
     if (q) setInitialPrompt(q);
   }, []);
 
-  // The one gate every guest-facing action goes through: signed-in visitors run the
-  // action straight away, guests get the login modal and the action is replayed the
-  // moment it reports success. Wrapping each entry point rather than the handlers
-  // themselves keeps the transcript's own on-mount answers (a `/?topic=` or `/?q=`
-  // link from a public course page) working for a guest who follows one in.
+  // The gate behind every guest-facing action: signed-in visitors run the action
+  // straight away, guests get the login modal and the action is replayed the moment
+  // it reports success.
+  //
+  // Browsing is deliberately outside it. The sidebar's sections and course rows, a
+  // question carried in on `/?topic=` or `/?q=`, and typing in the composer all work
+  // for a guest, so the site can be read before there is an account to make. What the
+  // gate covers is acting on what you read — sending, the follow-up chips, the review
+  // buttons, and the checkout.
   const pendingActionRef = useRef<(() => void) | null>(null);
   const requireLogin = useCallback(
     (action: () => void) => {
@@ -116,27 +120,23 @@ export default function Home() {
           isLoggedIn={isLoggedIn}
           user={user}
           onLogout={handleLogout}
-          onSelectSection={(topic) =>
-            requireLogin(() => {
-              setIsSettingsOpen(false);
-              setIsDashboardOpen(false);
-              setStudentView(null);
-              setIsLearningOpen(false);
-              setActiveSection(topic);
-              setActiveTopic(topic);
-            })
-          }
-          onNewChat={() =>
-            requireLogin(() => {
-              setIsSettingsOpen(false);
-              setIsDashboardOpen(false);
-              setStudentView(null);
-              setIsLearningOpen(false);
-              setActiveSection(null);
-              setActiveTopic(null);
-              setResetSignal((prev) => prev + 1);
-            })
-          }
+          onSelectSection={(topic) => {
+            setIsSettingsOpen(false);
+            setIsDashboardOpen(false);
+            setStudentView(null);
+            setIsLearningOpen(false);
+            setActiveSection(topic);
+            setActiveTopic(topic);
+          }}
+          onNewChat={() => {
+            setIsSettingsOpen(false);
+            setIsDashboardOpen(false);
+            setStudentView(null);
+            setIsLearningOpen(false);
+            setActiveSection(null);
+            setActiveTopic(null);
+            setResetSignal((prev) => prev + 1);
+          }}
           onOpenLogin={handleOpenLogin}
           onOpenSettings={() => requireLogin(handleOpenSettings)}
           onOpenDashboard={() => requireLogin(handleOpenDashboard)}

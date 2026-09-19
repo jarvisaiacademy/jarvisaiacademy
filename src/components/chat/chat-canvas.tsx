@@ -72,8 +72,9 @@ interface ChatCanvasProps {
   initialPrompt?: string | null;
   /**
    * Runs the action straight away for a signed-in visitor, or opens the login modal
-   * and replays it afterwards for a guest. Every callback handed to the chat's
-   * children is wrapped in it, so a guest cannot act on any of them without an account.
+   * and replays it afterwards for a guest. Wraps what acts on an answer — sending,
+   * the follow-up chips, feedback, regenerate, edit, the checkout — while reading
+   * stays open to everyone.
    */
   onRequireLogin?: (action: () => void) => void;
 }
@@ -645,7 +646,7 @@ export function ChatCanvas({
               )}
               <button
                 type="button"
-                onClick={() => onRequireLogin?.(() => openSection(topic))}
+                onClick={() => openSection(topic)}
                 className="whitespace-nowrap hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors cursor-pointer"
               >
                 {label}

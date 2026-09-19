@@ -106,7 +106,7 @@ export function AdmissionCtaCard({ onActionPrompt }: AdmissionCtaCardProps) {
 
         <a
           href={`tel:${siteConfig.contact.phone.replace(/\s+/g, "")}`}
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-neutral-200 bg-neutral-100 px-3.5 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-200/80 hover:text-neutral-900 dark:border-white/10 dark:bg-white/5 dark:text-neutral-300 dark:hover:bg-white/10 dark:hover:text-white"
+          className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-neutral-900 px-3.5 py-2 text-xs font-medium text-white shadow-xs transition-colors hover:bg-neutral-800 active:scale-98 dark:bg-white dark:text-black dark:hover:bg-neutral-200 sm:text-[13px]"
         >
           <Phone className="h-3.5 w-3.5" />
           <span>Talk to admissions</span>
