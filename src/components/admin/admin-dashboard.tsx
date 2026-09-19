@@ -30,7 +30,6 @@ import {
 } from "lucide-react";
 import { MobileMenuIcon } from "@/components/ui/mobile-menu-icon";
 import { siteConfig } from "@/config/site";
-import { useAuth } from "@/providers/auth-provider";
 import { useCourses } from "@/providers/courses-provider";
 import { useStudents } from "@/providers/students-provider";
 import { CourseItem, COURSE_CATEGORIES, CourseCategoryId } from "@/data/courses";
@@ -83,7 +82,6 @@ export function AdminDashboard({
   sidebarOpen = true,
   onToggleSidebar,
 }: AdminDashboardProps) {
-  const { user } = useAuth();
   const { showToast } = useToast();
   const {
     students,
@@ -99,6 +97,11 @@ export function AdminDashboard({
     removeCourse,
     seedCourses,
   } = useCourses();
+
+  // Seeding overwrites the live catalogue from the built-in one, which is a development
+  // action, not something to leave armed on the deployed site. `next dev` is the only
+  // context where this is true; Netlify builds with NODE_ENV=production.
+  const canSeed = process.env.NODE_ENV === "development";
 
   const [localTab, setLocalTab] = useState<DashboardTab>("courses");
   const activeTab: DashboardTab = controlledTab || localTab;
@@ -429,18 +432,6 @@ export function AdminDashboard({
 
       {/* Main Container */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
-        {/* Welcome Banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-600/10 border border-blue-500/20 shadow-xs">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
-              Welcome back, {user?.name?.split(" ")[0] || "Director"}
-            </h2>
-            <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
-              Real-time admissions, revenue analytics, and student management for {siteConfig.name}.
-            </p>
-          </div>
-        </div>
-
         {/* TAB 1: COURSE MANAGEMENT (CRUD) */}
         {activeTab === "courses" && (
           <div className="flex flex-col gap-6">
@@ -524,35 +515,39 @@ export function AdminDashboard({
               </div>
 
               <div className="flex items-center gap-2 self-end lg:self-auto">
-                {seedConfirm ? (
-                  <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-500/10 p-1 rounded-lg border border-blue-200 dark:border-blue-500/30">
-                    <button
-                      type="button"
-                      onClick={handleSeedCourses}
-                      className="px-2 py-0.5 text-[10px] font-bold bg-blue-600 text-white rounded cursor-pointer"
-                      title="Feed the 12 built-in verified courses into Firestore"
-                    >
-                      Confirm
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSeedConfirm(false)}
-                      className="px-1 text-[10px] text-neutral-500 cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    disabled={isSeeding}
-                    onClick={() => setSeedConfirm(true)}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-neutral-300 dark:border-white/15 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-white/10 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
-                    title="Feed the built-in verified courses into Firestore"
-                  >
-                    <Database className="w-3.5 h-3.5 text-blue-500" />
-                    <span>{isSeeding ? "Feeding..." : "Feed 12 Verified Courses"}</span>
-                  </button>
+                {canSeed && (
+                  <>
+                    {seedConfirm ? (
+                      <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-500/10 p-1 rounded-lg border border-blue-200 dark:border-blue-500/30">
+                        <button
+                          type="button"
+                          onClick={handleSeedCourses}
+                          className="px-2 py-0.5 text-[10px] font-bold bg-blue-600 text-white rounded cursor-pointer"
+                          title="Feed the 12 built-in verified courses into Firestore"
+                        >
+                          Confirm
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSeedConfirm(false)}
+                          className="px-1 text-[10px] text-neutral-500 cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={isSeeding}
+                        onClick={() => setSeedConfirm(true)}
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-neutral-300 dark:border-white/15 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-white/10 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                        title="Feed the built-in verified courses into Firestore"
+                      >
+                        <Database className="w-3.5 h-3.5 text-blue-500" />
+                        <span>{isSeeding ? "Feeding..." : "Feed 12 Verified Courses"}</span>
+                      </button>
+                    )}
+                  </>
                 )}
 
                 <button
@@ -1159,7 +1154,7 @@ export function AdminDashboard({
         )}
 
         {/* TAB 4: FIREBASE CLOUD SYNC & SEEDER */}
-        {activeTab === "cloud" && (
+        {activeTab === "cloud" && canSeed && (
           <div className="flex flex-col gap-6">
             {/* Cloud Status Banner */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-purple-600/10 via-blue-600/10 to-indigo-600/10 border border-purple-500/20 shadow-xs">
