@@ -5,7 +5,7 @@
  *
  *   pnpm db pull               # every collection -> db-backups/<collection>.json
  *   pnpm db pull courses       # just one collection
- *   pnpm db push --yes         # db-backups/<collection>.json -> Firestore
+ *   pnpm db push --yes         # every backup file -> Firestore
  *
  * Credentials come from `.env.local` (see `.env.example`). This talks to Firestore with the
  * Admin SDK, so `firestore.rules` does not apply and it can write anything — that is the point
@@ -25,7 +25,6 @@ import { initializeApp, cert, applicationDefault } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const COLLECTIONS = ["courses", "users", "assignments"];
 const BACKUP_DIR = path.join(projectRoot, "db-backups");
 
 function loadEnv() {
@@ -49,17 +48,42 @@ function loadEnv() {
   return null;
 }
 
+// Every collection in the database, discovered rather than listed, so one added later is backed
+// up without editing this file. Root collections only: nothing here uses subcollections, and
+// finding them would cost an extra call per document. Extend if one ever appears.
+async function allCollections() {
+  const refs = await db.listCollections();
+  return refs.map((ref) => ref.id).sort();
+}
+
+// The inverse of allCollections(), read off the backup directory: whatever pull wrote, push
+// restores. This keeps a full backup a full restore without a second list to keep in step.
+function backedUpCollections() {
+  if (!fs.existsSync(BACKUP_DIR)) return [];
+  return fs
+    .readdirSync(BACKUP_DIR)
+    .filter((file) => file.endsWith(".json"))
+    .map((file) => path.basename(file, ".json"))
+    .sort();
+}
+
 function usage() {
   console.log(`Usage:
-  pnpm db pull [collection ...]     Firestore -> db-backups/<collection>.json
+  pnpm db pull [collection ...]         Firestore -> db-backups/<collection>.json
   pnpm db push [collection ...] --yes   db-backups/<collection>.json -> Firestore
 
-Collections default to: ${COLLECTIONS.join(", ")}`);
+With no collection named, pull backs up every collection in the database and push
+restores every backup file it finds.`);
 }
 
 async function pull(names) {
+  const targets = names.length > 0 ? names : await allCollections();
+  if (targets.length === 0) {
+    console.error("No collections in the database — nothing to back up.");
+    process.exit(1);
+  }
   fs.mkdirSync(BACKUP_DIR, { recursive: true });
-  for (const name of names) {
+  for (const name of targets) {
     const snapshot = await db.collection(name).get();
     const docs = {};
     snapshot.forEach((doc) => {
@@ -74,8 +98,9 @@ async function pull(names) {
 }
 
 async function push(names, confirmed) {
+  const targets = names.length > 0 ? names : backedUpCollections();
   const jobs = [];
-  for (const name of names) {
+  for (const name of targets) {
     const file = path.join(BACKUP_DIR, `${name}.json`);
     if (!fs.existsSync(file)) continue;
     jobs.push({ name, file, docs: JSON.parse(fs.readFileSync(file, "utf-8")) });
@@ -121,7 +146,6 @@ if (command !== "pull" && command !== "push") {
 }
 
 const names = rest.filter((arg) => !arg.startsWith("-"));
-const targets = names.length > 0 ? names : COLLECTIONS;
 
 if (!projectId) {
   console.error("Missing project id. Set NEXT_PUBLIC_FIREBASE_PROJECT_ID in .env.local.");
@@ -153,9 +177,9 @@ console.log(`Target: ${projectId}${emulator ? ` (emulator ${emulator})` : ""}`);
 
 try {
   if (command === "pull") {
-    await pull(targets);
+    await pull(names);
   } else {
-    await push(targets, rest.includes("--yes"));
+    await push(names, rest.includes("--yes"));
   }
 } catch (err) {
   console.error(`\n✗ ${err.message || err}`);
