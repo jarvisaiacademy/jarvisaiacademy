@@ -100,6 +100,11 @@ export function AdminDashboard({
     seedCourses,
   } = useCourses();
 
+  // Seeding overwrites the live catalogue from the built-in one, which is a development
+  // action, not something to leave armed on the deployed site. `next dev` is the only
+  // context where this is true; Netlify builds with NODE_ENV=production.
+  const canSeed = process.env.NODE_ENV === "development";
+
   const [localTab, setLocalTab] = useState<DashboardTab>("courses");
   const activeTab: DashboardTab = controlledTab || localTab;
   const setActiveTab = (tab: DashboardTab) => {
@@ -523,16 +528,18 @@ export function AdminDashboard({
               </div>
 
               <div className="flex items-center gap-2 self-end lg:self-auto">
-                <button
-                  type="button"
-                  disabled={isSeeding}
-                  onClick={handleSeedCourses}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-neutral-300 dark:border-white/15 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-white/10 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
-                  title="Feed the built-in verified courses into Firestore"
-                >
-                  <Database className="w-3.5 h-3.5 text-blue-500" />
-                  <span>{isSeeding ? "Feeding..." : "Feed 12 Verified Courses"}</span>
-                </button>
+                {canSeed && (
+                  <button
+                    type="button"
+                    disabled={isSeeding}
+                    onClick={handleSeedCourses}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-neutral-300 dark:border-white/15 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-white/10 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                    title="Feed the built-in verified courses into Firestore"
+                  >
+                    <Database className="w-3.5 h-3.5 text-blue-500" />
+                    <span>{isSeeding ? "Feeding..." : "Feed 12 Verified Courses"}</span>
+                  </button>
+                )}
 
                 <button
                   type="button"
@@ -1138,7 +1145,7 @@ export function AdminDashboard({
         )}
 
         {/* TAB 4: FIREBASE CLOUD SYNC & SEEDER */}
-        {activeTab === "cloud" && (
+        {activeTab === "cloud" && canSeed && (
           <div className="flex flex-col gap-6">
             {/* Cloud Status Banner */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-purple-600/10 via-blue-600/10 to-indigo-600/10 border border-purple-500/20 shadow-xs">
