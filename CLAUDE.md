@@ -70,6 +70,7 @@ These rules take priority over convenience.
 - Do not introduce another UI component library without explicit approval.
 - Do not mix multiple primitive ecosystems unnecessarily.
 - Do not create duplicate components when an existing component can be extended.
+- **Do not render a control whose chrome the browser draws itself** — `<select>`/`<option>`, `<datalist>`, or a native checkbox, radio, date/time/colour picker, range slider, file input or dialog. That chrome cannot be themed, so it arrives in the OS's own colours and breaks the interface. Use the matching primitive in `src/components/ui/` (the dropdown is `src/components/ui/select.tsx`), or wrap the equivalent `@base-ui/react` component the way that file does. A Tailwind-styled `<input>`, `<textarea>` or `<button>` is fine — the offence is the platform's rendering, not the tag.
 - Do not rewrite unrelated files.
 - Do not perform broad refactors during feature work unless required.
 - Do not change package versions unnecessarily.
