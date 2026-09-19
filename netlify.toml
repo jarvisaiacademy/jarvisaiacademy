@@ -24,3 +24,37 @@
   to = "https://jarvisaiacademy-a94b6.firebaseapp.com/__/auth/:splat"
   status = 200
   force = true
+
+# Security headers, applied to every response.
+#
+# The app renders no <iframe>, <object> or <embed>, and its one <form> submits to itself,
+# so the framing and form directives below cannot affect anything it currently does.
+# `nosniff` stops a mistyped Content-Type from being re-interpreted as script.
+#
+# Deliberately absent: Cross-Origin-Opener-Policy. `signInWithPopup` needs the popup to keep
+# its `window.opener` link back to this page, and COOP: same-origin severs exactly that —
+# it is the header most likely to silently break Google sign-in.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Strict-Transport-Security = "max-age=31536000"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), clipboard-write=(self)"
+
+    # Report-only, so it changes nothing a visitor experiences — it only logs violations to
+    # the browser console. It is here to be proven, not trusted: load the site, sign in with
+    # Google, send a chat message and open /courses with DevTools open, and read the
+    # "Content Security Policy" entries. Anything listed there is a directive that is still
+    # too tight; fix that directive, then rename this key to `Content-Security-Policy` to
+    # start enforcing it. The origins below are the ones the app actually loads:
+    # cdn.jsdelivr.net for language icons, lh3.googleusercontent.com for Google profile
+    # photos, and *.googleapis.com / *.firebaseapp.com for Auth and Firestore.
+    #
+    # 'unsafe-inline' in script-src is not laziness: src/app/layout.tsx injects two inline
+    # scripts (the anti-flash auth script and the JSON-LD block). Enforcing a strict
+    # script-src requires nonces, which in Next.js means a middleware.ts that stamps every
+    # response. That is a real change with real risk to sign-in; this file is not the place
+    # for it, so the header stays report-only until that work is done deliberately.
+    Content-Security-Policy-Report-Only = "default-src 'self'; script-src 'self' 'unsafe-inline' https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://cdn.jsdelivr.net https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; connect-src 'self' https://*.googleapis.com https://*.firebaseapp.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://apis.google.com; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
