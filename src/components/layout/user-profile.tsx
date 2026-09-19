@@ -6,18 +6,12 @@ import { User } from "@/providers/auth-provider";
 
 interface UserProfileProps {
   user?: User | null;
-  onProfileClick?: () => void;
   onLogout?: () => void;
   /** "sidebar" is the footer row; "compact" is the inline header chip. */
   variant?: "sidebar" | "compact";
 }
 
-export function UserProfile({
-  user,
-  onProfileClick,
-  onLogout,
-  variant = "sidebar",
-}: UserProfileProps) {
+export function UserProfile({ user, onLogout, variant = "sidebar" }: UserProfileProps) {
   const name = user?.name || "Jarvis Member";
   const plan = user?.plan || "Pro";
   const initials = user?.name ? user.name.slice(0, 2).toUpperCase() : "JA";
@@ -32,14 +26,10 @@ export function UserProfile({
           : "justify-between p-3 border-t border-neutral-200 dark:border-white/5 bg-transparent"
       )}
     >
-      <button
-        type="button"
-        onClick={onProfileClick}
-        className={cn(
-          "flex items-center gap-2.5 min-w-0 rounded-lg hover:bg-neutral-200/50 dark:hover:bg-white/5 transition-colors text-left cursor-pointer",
-          compact ? "p-1" : "p-1 -m-1"
-        )}
-      >
+      {/* An identity display, not a control. It used to open Settings on click,
+          which made the avatar the app's only route there — a destructive-looking
+          row where a profile was expected. Log out is the only action left. */}
+      <div className={cn("flex items-center gap-2.5 min-w-0", compact ? "p-1" : "p-1 -m-1")}>
         {user?.picture ? (
           <img
             src={user.picture}
@@ -59,7 +49,7 @@ export function UserProfile({
             {user?.email || plan}
           </span>
         </div>
-      </button>
+      </div>
 
       {onLogout && (
         <button
