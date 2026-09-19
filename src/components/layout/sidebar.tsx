@@ -16,6 +16,8 @@ interface SidebarProps {
   onSelectSection?: (section: string) => void;
   onNewChat?: () => void;
   onOpenLogin?: () => void;
+  /** The footer identity chip — opens the dashboard for the user's role. */
+  onOpenProfile: () => void;
   onOpenDashboard?: () => void;
   onOpenStudentView?: (view: "profile" | "courses") => void;
   onOpenLearning?: () => void;
@@ -36,6 +38,7 @@ export function Sidebar({
   onSelectSection,
   onNewChat,
   onOpenLogin,
+  onOpenProfile,
   onOpenDashboard,
   onOpenStudentView,
   onOpenLearning,
@@ -116,7 +119,16 @@ export function Sidebar({
 
           <div suppressHydrationWarning className="flex flex-col border-t border-neutral-200 dark:border-white/5">
             {isLoggedIn ? (
-              <UserProfile user={user} onLogout={onLogout} />
+              <UserProfile
+                user={user}
+                onProfileClick={() => {
+                  onOpenProfile();
+                  // The drawer covers the main area, so the dashboard it just opened
+                  // would be hidden behind it.
+                  onToggle();
+                }}
+                onLogout={onLogout}
+              />
             ) : (
               <div className="guest-cta-block">
                 <SidebarLoginCTA onLoginClick={onOpenLogin} />
@@ -178,7 +190,7 @@ export function Sidebar({
       </div>
       <div suppressHydrationWarning className="w-[260px] flex flex-col border-t border-neutral-200 dark:border-white/5">
         {isLoggedIn ? (
-          <UserProfile user={user} onLogout={onLogout} />
+          <UserProfile user={user} onProfileClick={onOpenProfile} onLogout={onLogout} />
         ) : (
           <div className="guest-cta-block">
             <SidebarLoginCTA onLoginClick={onOpenLogin} />
