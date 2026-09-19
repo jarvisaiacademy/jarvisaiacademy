@@ -39,6 +39,7 @@ import { DevIcon } from "@/components/ui/dev-icon";
 import { useToast } from "@/components/ui/toast";
 
 import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
+import { ThemeSwitcher } from "@/components/layout/theme-switcher";
 import { AdminAssignments } from "@/components/admin/admin-assignments";
 import { Select } from "@/components/ui/select";
 import { shortcutById } from "@/data/shortcuts";
@@ -427,7 +428,7 @@ export function AdminDashboard({
     <div className="flex flex-col min-h-screen w-full bg-neutral-50 dark:bg-[#121212] text-neutral-900 dark:text-neutral-100 overflow-y-auto">
       {/* Top Header */}
       <header className="sticky top-0 z-30 flex shrink-0 items-center justify-between px-3 sm:px-6 h-14 bg-white/90 dark:bg-[#181818]/90 backdrop-blur-md border-b border-neutral-200 dark:border-white/10 select-none">
-        <div className="flex items-center min-w-[40px]">
+        <div className="flex flex-1 items-center min-w-[40px]">
           {!sidebarOpen && onToggleSidebar && (
             <button
               type="button"
@@ -450,7 +451,12 @@ export function AdminDashboard({
           Admin Control Center
         </h1>
 
-        <div className="min-w-[40px]" />
+        {/* The theme control lives here, as it does in the guest header. Both outer
+            groups are flex-1 so the title stays centred whatever width the control
+            takes — the old fixed-width spacer only balanced a 36px button. */}
+        <div className="flex flex-1 items-center justify-end min-w-[40px]">
+          <ThemeSwitcher className="shrink-0" />
+        </div>
       </header>
 
       {/* Main Container */}
