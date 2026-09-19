@@ -67,7 +67,7 @@ function describeAuthError(error: { code?: string; message?: string }): string {
 
 const ADMIN_EMAILS = (
   process.env.NEXT_PUBLIC_ADMIN_EMAILS ||
-  "sugat@jarvisaiacademy.com,jarvisaiacademy@gmail.com,sugatraj.2106@gmail.com"
+  "sugatraj.2106@gmail.com,hivirajkadam@gmail.com"
 )
   .split(",")
   .map((e) => e.trim().toLowerCase());
@@ -77,19 +77,19 @@ export function checkIsAdmin(email?: string | null): boolean {
   return ADMIN_EMAILS.includes(email.toLowerCase());
 }
 
+// The session lives in localStorage only. It was mirrored into a `jarvis_auth_user` cookie
+// that nothing read — no middleware, no server component, no route handler — so it put a
+// name and email address in every visitor's cookie jar for no reason. Do not add it back
+// without a server-side reader.
 function saveUserSession(mappedUser: User | null) {
   try {
     if (mappedUser) {
       localStorage.setItem("jarvis_auth_user", JSON.stringify(mappedUser));
-      document.cookie = `jarvis_auth_user=${encodeURIComponent(
-        JSON.stringify(mappedUser)
-      )}; path=/; max-age=31536000; SameSite=Lax`;
       if (typeof document !== "undefined") {
         document.documentElement.classList.add("is-auth");
       }
     } else {
       localStorage.removeItem("jarvis_auth_user");
-      document.cookie = "jarvis_auth_user=; path=/; max-age=0; SameSite=Lax";
       if (typeof document !== "undefined") {
         document.documentElement.classList.remove("is-auth");
       }

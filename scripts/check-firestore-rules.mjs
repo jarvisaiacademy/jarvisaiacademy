@@ -20,7 +20,7 @@ const PROJECT = process.env.GCLOUD_PROJECT || "demo-jarvis-local";
 const HOST = process.env.FIRESTORE_EMULATOR_HOST || "127.0.0.1:8080";
 const BASE = `http://${HOST}/v1/projects/${PROJECT}/databases/(default)/documents`;
 
-const ADMIN_EMAIL = "sugat@jarvisaiacademy.com";
+const ADMIN_EMAIL = "sugatraj.2106@gmail.com";
 
 const b64 = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
 const now = Math.floor(Date.now() / 1000);
