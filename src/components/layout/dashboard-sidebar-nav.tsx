@@ -29,10 +29,14 @@ export function DashboardSidebarNav({
   onBackToChat,
   isMobile,
 }: DashboardSidebarNavProps) {
-  const { courses, isLiveFromFirebase } = useCourses();
+  const { courses } = useCourses();
   const { assignments } = useAssignments();
 
   const activeGrantCount = assignments.filter((a) => a.status === "active").length;
+
+  // Cloud & Seeder is a development tool — seeding overwrites the live catalogue. Kept in
+  // step with `canSeed` in admin-dashboard.tsx, which gates the same tab's content.
+  const canSeed = process.env.NODE_ENV === "development";
 
   const handleSelect = (tab: DashboardTab) => {
     onSelectTab(tab);
@@ -52,17 +56,9 @@ export function DashboardSidebarNav({
 
       {/* Navigation Section */}
       <div className="flex flex-col gap-1">
-        <div className="flex items-center justify-between px-2 pb-1.5">
+        <div className="flex items-center px-2 pb-1.5">
           <span className="text-[10px] font-bold tracking-wider text-neutral-400 dark:text-neutral-500 uppercase">
             Admin Management
-          </span>
-          <span className="flex items-center gap-1 text-[9px] font-medium text-emerald-600 dark:text-emerald-400">
-            <span
-              className={`w-1.5 h-1.5 rounded-full ${
-                isLiveFromFirebase ? "bg-emerald-500 animate-pulse" : "bg-blue-500"
-              }`}
-            />
-            {isLiveFromFirebase ? "Live Cloud" : "Local Store"}
           </span>
         </div>
 
@@ -190,36 +186,38 @@ export function DashboardSidebarNav({
           </span>
         </button>
 
-        {/* 5. Firebase Cloud Sync */}
-        <button
-          type="button"
-          onClick={() => handleSelect("cloud")}
-          className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-            activeTab === "cloud"
-              ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-xs"
-              : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/5"
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <Database
-              className={`w-4 h-4 ${
-                activeTab === "cloud"
-                  ? "text-purple-400 dark:text-purple-600"
-                  : "text-neutral-500"
-              }`}
-            />
-            <span>Cloud &amp; Seeder</span>
-          </div>
-          <span
-            className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+        {/* 5. Firebase Cloud Sync — development only */}
+        {canSeed && (
+          <button
+            type="button"
+            onClick={() => handleSelect("cloud")}
+            className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               activeTab === "cloud"
-                ? "bg-white/20 dark:bg-black/15 text-white dark:text-neutral-900"
-                : "bg-neutral-200/70 dark:bg-white/10 text-neutral-600 dark:text-neutral-300"
+                ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-xs"
+                : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/5"
             }`}
           >
-            Sync
-          </span>
-        </button>
+            <div className="flex items-center gap-2.5">
+              <Database
+                className={`w-4 h-4 ${
+                  activeTab === "cloud"
+                    ? "text-purple-400 dark:text-purple-600"
+                    : "text-neutral-500"
+                }`}
+              />
+              <span>Cloud &amp; Seeder</span>
+            </div>
+            <span
+              className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                activeTab === "cloud"
+                  ? "bg-white/20 dark:bg-black/15 text-white dark:text-neutral-900"
+                  : "bg-neutral-200/70 dark:bg-white/10 text-neutral-600 dark:text-neutral-300"
+              }`}
+            >
+              Sync
+            </span>
+          </button>
+        )}
       </div>
     </div>
   );

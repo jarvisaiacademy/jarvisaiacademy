@@ -17,6 +17,7 @@ import { useStudents } from "@/providers/students-provider";
 import { useCourses } from "@/providers/courses-provider";
 import { useAssignments } from "@/providers/assignments-provider";
 import { useToast } from "@/components/ui/toast";
+import { Select } from "@/components/ui/select";
 
 export function AdminAssignments() {
   const { students, loading: studentsLoading } = useStudents();
@@ -140,33 +141,30 @@ export function AdminAssignments() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_auto] gap-3">
-            <select
+            <Select
+              label="Select learner"
               value={selectedStudentId}
-              onChange={(e) => setSelectedStudentId(e.target.value)}
-              className="py-2 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs focus:outline-hidden focus:ring-1 focus:ring-blue-500 cursor-pointer"
-            >
-              <option value="">
-                {studentsLoading ? "Loading learners..." : "Select learner..."}
-              </option>
-              {students.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} — {s.email}
-                </option>
-              ))}
-            </select>
+              onValueChange={setSelectedStudentId}
+              options={[
+                {
+                  value: "",
+                  label: studentsLoading ? "Loading learners..." : "Select learner...",
+                },
+                ...students.map((s) => ({ value: s.id, label: `${s.name} — ${s.email}` })),
+              ]}
+              className="py-2 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+            />
 
-            <select
+            <Select
+              label="Select course"
               value={selectedCourseId}
-              onChange={(e) => setSelectedCourseId(e.target.value)}
-              className="py-2 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs focus:outline-hidden focus:ring-1 focus:ring-blue-500 cursor-pointer"
-            >
-              <option value="">Select course...</option>
-              {courses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.title}
-                </option>
-              ))}
-            </select>
+              onValueChange={setSelectedCourseId}
+              options={[
+                { value: "", label: "Select course..." },
+                ...courses.map((c) => ({ value: c.id, label: c.title })),
+              ]}
+              className="py-2 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+            />
 
             <button
               type="button"

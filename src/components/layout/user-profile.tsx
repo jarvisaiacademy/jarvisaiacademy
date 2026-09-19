@@ -6,7 +6,8 @@ import { User } from "@/providers/auth-provider";
 
 interface UserProfileProps {
   user?: User | null;
-  onProfileClick?: () => void;
+  /** Opens the dashboard for this user's role — academy admin, or student. */
+  onProfileClick: () => void;
   onLogout?: () => void;
   /** "sidebar" is the footer row; "compact" is the inline header chip. */
   variant?: "sidebar" | "compact";
@@ -32,9 +33,13 @@ export function UserProfile({
           : "justify-between p-3 border-t border-neutral-200 dark:border-white/5 bg-transparent"
       )}
     >
+      {/* The chip's accessible name is its content, so the action is spelled out in
+          the tooltip rather than overridden with an aria-label that would drop the
+          email a screen reader currently reads. */}
       <button
         type="button"
         onClick={onProfileClick}
+        title="Open dashboard"
         className={cn(
           "flex items-center gap-2.5 min-w-0 rounded-lg hover:bg-neutral-200/50 dark:hover:bg-white/5 transition-colors text-left cursor-pointer",
           compact ? "p-1" : "p-1 -m-1"

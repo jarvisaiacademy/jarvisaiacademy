@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "seed:courses": "node scripts/seed-courses.mjs",
-    "check:rules": "node scripts/check-firestore-rules.mjs"
+    "check:rules": "node scripts/check-firestore-rules.mjs",
+    "db": "node scripts/db-data.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
@@ -34,6 +35,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
+    "firebase-admin": "^14.4.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   },

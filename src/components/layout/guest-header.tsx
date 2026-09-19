@@ -14,7 +14,8 @@ interface GuestHeaderProps {
   onToggleSidebar: () => void;
   onOpenLogin: () => void;
   onLogout?: () => void;
-  onOpenProfile?: () => void;
+  /** The identity chip — opens the dashboard for the user's role. */
+  onOpenProfile: () => void;
   modelName?: string;
   isMobile?: boolean;
   user?: User | null;
@@ -97,8 +98,8 @@ export function GuestHeader({
           <UserProfile
             user={user}
             variant="compact"
-            onLogout={onLogout}
             onProfileClick={onOpenProfile}
+            onLogout={onLogout}
           />
         ) : (
           <div suppressHydrationWarning className="guest-cta-block flex items-center gap-1.5 sm:gap-2.5 shrink-0">

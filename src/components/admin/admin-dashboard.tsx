@@ -23,22 +23,21 @@ import {
   BookOpen,
   Layers,
   X,
-  RotateCcw,
   AlertCircle,
   Cloud,
   Check,
   PanelLeft,
 } from "lucide-react";
 import { MobileMenuIcon } from "@/components/ui/mobile-menu-icon";
-import { firebaseConfig } from "@/lib/firebase";
 import { siteConfig } from "@/config/site";
-import { useAuth } from "@/providers/auth-provider";
 import { useCourses } from "@/providers/courses-provider";
+import { useStudents } from "@/providers/students-provider";
 import { CourseItem, COURSE_CATEGORIES, CourseCategoryId } from "@/data/courses";
 import { DevIcon } from "@/components/ui/dev-icon";
 import { useToast } from "@/components/ui/toast";
 
 import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
+import { ThemeSwitcher } from "@/components/layout/theme-switcher";
 import { AdminAssignments } from "@/components/admin/admin-assignments";
 import { Select } from "@/components/ui/select";
 import { shortcutById } from "@/data/shortcuts";
@@ -55,6 +54,19 @@ interface EnrollmentRecord {
   timestamp: string;
 }
 
+/** Roster rows carry the ISO string written at sign-in; show it like the ledger's dates. */
+function formatSignIn(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 interface AdminDashboardProps {
   onBackToChat: () => void;
   activeTab?: DashboardTab;
@@ -63,49 +75,6 @@ interface AdminDashboardProps {
   onToggleSidebar?: () => void;
 }
 
-const DEFAULT_RECORDS: EnrollmentRecord[] = [
-  {
-    action: "paid",
-    courseId: "super10",
-    courseName: "Super10 Elite Program (100% Placement Assurance)",
-    amount: 0,
-    transactionId: "TXN-JARVIS-918231",
-    studentName: "Sugatraj Sarwade",
-    studentEmail: "sugat@jarvisaiacademy.com",
-    timestamp: "12 Sep 2026, 04:30 PM",
-  },
-  {
-    action: "paid",
-    courseId: "fullstack",
-    courseName: "Full-Stack AI & Web Engineering Program",
-    amount: 0,
-    transactionId: "TXN-JARVIS-847291",
-    studentName: "Aditya Verma",
-    studentEmail: "aditya.v@example.com",
-    timestamp: "11 Sep 2026, 02:15 PM",
-  },
-  {
-    action: "paid",
-    courseId: "fullstack",
-    courseName: "Full-Stack AI & Web Engineering Program",
-    amount: 0,
-    transactionId: "TXN-JARVIS-762910",
-    studentName: "Pooja Sharma",
-    studentEmail: "pooja.sharma@example.com",
-    timestamp: "10 Sep 2026, 11:45 AM",
-  },
-  {
-    action: "pending",
-    courseId: "super10",
-    courseName: "Super10 Elite Program",
-    amount: 0,
-    transactionId: "TXN-JARVIS-PENDING",
-    studentName: "Rohan Kulkarni",
-    studentEmail: "rohan.k@example.com",
-    timestamp: "09 Sep 2026, 06:10 PM",
-  },
-];
-
 export function AdminDashboard({
   onBackToChat,
   activeTab: controlledTab,
@@ -113,8 +82,12 @@ export function AdminDashboard({
   sidebarOpen = true,
   onToggleSidebar,
 }: AdminDashboardProps) {
-  const { user } = useAuth();
   const { showToast } = useToast();
+  const {
+    students,
+    loading: studentsLoading,
+    error: studentsError,
+  } = useStudents();
   const {
     courses,
     isLiveFromFirebase,
@@ -123,8 +96,12 @@ export function AdminDashboard({
     editCourse,
     removeCourse,
     seedCourses,
-    resetToDefaults,
   } = useCourses();
+
+  // Seeding overwrites the live catalogue from the built-in one, which is a development
+  // action, not something to leave armed on the deployed site. `next dev` is the only
+  // context where this is true; Netlify builds with NODE_ENV=production.
+  const canSeed = process.env.NODE_ENV === "development";
 
   const [localTab, setLocalTab] = useState<DashboardTab>("courses");
   const activeTab: DashboardTab = controlledTab || localTab;
@@ -134,7 +111,7 @@ export function AdminDashboard({
   };
 
   // Admissions state
-  const [records, setRecords] = useState<EnrollmentRecord[]>(DEFAULT_RECORDS);
+  const [records, setRecords] = useState<EnrollmentRecord[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -148,6 +125,7 @@ export function AdminDashboard({
   const [isSaving, setIsSaving] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [seedConfirm, setSeedConfirm] = useState(false);
 
   // Form states for Add / Edit modal
   const [formId, setFormId] = useState("");
@@ -169,19 +147,15 @@ export function AdminDashboard({
   const [formTopics, setFormTopics] = useState("");
   const [formActionPrompt, setFormActionPrompt] = useState("");
 
+  // The ledger is the enrolments that actually happened, read back from the tracker
+  // the chat writes. A hardcoded set of demo students used to be merged in here, which
+  // showed fabricated registrations as though they were real ones.
   useEffect(() => {
     try {
       const stored = localStorage.getItem("jarvis_enrollment_tracker");
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const seenTxns = new Set(parsed.map((p) => p.transactionId));
-          const merged = [
-            ...parsed,
-            ...DEFAULT_RECORDS.filter((r) => !seenTxns.has(r.transactionId)),
-          ];
-          setRecords(merged);
-        }
+        if (Array.isArray(parsed) && parsed.length > 0) setRecords(parsed);
       }
     } catch {
       // ignore
@@ -406,11 +380,9 @@ export function AdminDashboard({
     }
   };
 
-  // Seed / Reset Courses to Default
+  // Seed the built-in course catalogue into Firestore
   const handleSeedCourses = async () => {
-    if (!confirm("Feed and sync the 12 verified courses into Firebase Firestore & local storage?")) {
-      return;
-    }
+    setSeedConfirm(false);
     setIsSeeding(true);
     try {
       const res = await seedCourses();
@@ -426,8 +398,8 @@ export function AdminDashboard({
   return (
     <div className="flex flex-col min-h-screen w-full bg-neutral-50 dark:bg-[#121212] text-neutral-900 dark:text-neutral-100 overflow-y-auto">
       {/* Top Header */}
-      <header className="sticky top-0 z-30 flex items-center justify-between px-3 sm:px-6 h-14 bg-white/90 dark:bg-[#181818]/90 backdrop-blur-md border-b border-neutral-200 dark:border-white/10 select-none">
-        <div className="flex items-center min-w-[40px]">
+      <header className="sticky top-0 z-30 flex shrink-0 items-center justify-between px-3 sm:px-6 h-14 bg-white/90 dark:bg-[#181818]/90 backdrop-blur-md border-b border-neutral-200 dark:border-white/10 select-none">
+        <div className="flex flex-1 items-center min-w-[40px]">
           {!sidebarOpen && onToggleSidebar && (
             <button
               type="button"
@@ -450,23 +422,16 @@ export function AdminDashboard({
           Admin Control Center
         </h1>
 
-        <div className="min-w-[40px]" />
+        {/* The theme control lives here, as it does in the guest header. Both outer
+            groups are flex-1 so the title stays centred whatever width the control
+            takes — the old fixed-width spacer only balanced a 36px button. */}
+        <div className="flex flex-1 items-center justify-end min-w-[40px]">
+          <ThemeSwitcher className="shrink-0" />
+        </div>
       </header>
 
       {/* Main Container */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
-        {/* Welcome Banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-600/10 border border-blue-500/20 shadow-xs">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
-              Welcome back, {user?.name?.split(" ")[0] || "Director"}
-            </h2>
-            <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
-              Real-time admissions, revenue analytics, and student management for {siteConfig.name}.
-            </p>
-          </div>
-        </div>
-
         {/* TAB 1: COURSE MANAGEMENT (CRUD) */}
         {activeTab === "courses" && (
           <div className="flex flex-col gap-6">
@@ -533,31 +498,57 @@ export function AdminDashboard({
                   />
                 </div>
 
-                <select
+                <Select
+                  label="Filter by category"
                   value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs focus:outline-hidden cursor-pointer"
-                >
-                  <option value="all">All Categories</option>
-                  <option value="web">Web &amp; Full-Stack</option>
-                  <option value="ai">AI &amp; Data Science</option>
-                  <option value="devops">DevOps &amp; Cloud</option>
-                  <option value="database">Database &amp; Systems</option>
-                  <option value="elite">Super10 Elite</option>
-                </select>
+                  onValueChange={setCategoryFilter}
+                  options={[
+                    { value: "all", label: "All Categories" },
+                    { value: "web", label: "Web & Full-Stack" },
+                    { value: "ai", label: "AI & Data Science" },
+                    { value: "devops", label: "DevOps & Cloud" },
+                    { value: "database", label: "Database & Systems" },
+                    { value: "elite", label: "Super10 Elite" },
+                  ]}
+                  className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+                />
               </div>
 
               <div className="flex items-center gap-2 self-end lg:self-auto">
-                <button
-                  type="button"
-                  disabled={isSeeding}
-                  onClick={handleSeedCourses}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-neutral-300 dark:border-white/15 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-white/10 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
-                  title="Feed verified courses into Firebase and reset local catalog"
-                >
-                  <Database className="w-3.5 h-3.5 text-blue-500" />
-                  <span>{isSeeding ? "Feeding..." : "Feed 12 Verified Courses"}</span>
-                </button>
+                {canSeed && (
+                  <>
+                    {seedConfirm ? (
+                      <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-500/10 p-1 rounded-lg border border-blue-200 dark:border-blue-500/30">
+                        <button
+                          type="button"
+                          onClick={handleSeedCourses}
+                          className="px-2 py-0.5 text-[10px] font-bold bg-blue-600 text-white rounded cursor-pointer"
+                          title="Feed the 12 built-in verified courses into Firestore"
+                        >
+                          Confirm
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSeedConfirm(false)}
+                          className="px-1 text-[10px] text-neutral-500 cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={isSeeding}
+                        onClick={() => setSeedConfirm(true)}
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-neutral-300 dark:border-white/15 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-white/10 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                        title="Feed the built-in verified courses into Firestore"
+                      >
+                        <Database className="w-3.5 h-3.5 text-blue-500" />
+                        <span>{isSeeding ? "Feeding..." : "Feed 12 Verified Courses"}</span>
+                      </button>
+                    )}
+                  </>
+                )}
 
                 <button
                   type="button"
@@ -890,6 +881,117 @@ export function AdminDashboard({
                 </table>
               </div>
             </div>
+
+            {/* Who has an account, as distinct from who has paid for something. Every
+                row here is a Google sign-in — `upsertStudentRecord` writes one doc per
+                account on auth state change — so a learner can appear here having never
+                enrolled, and that is the point of the list. */}
+            <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden flex flex-col">
+              <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-200 dark:border-white/10">
+                <div>
+                  <h3 className="text-base font-semibold text-neutral-900 dark:text-white">
+                    Registered Students
+                  </h3>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    Accounts created by signing in with Google.
+                  </p>
+                </div>
+                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 text-xs font-medium self-start sm:self-auto">
+                  <Users className="w-3.5 h-3.5" />
+                  {students.length} {students.length === 1 ? "Account" : "Accounts"}
+                </span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-neutral-50 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 border-b border-neutral-200 dark:border-white/10 font-medium">
+                      <th className="py-3 px-4 sm:px-6">Student Learner</th>
+                      <th className="py-3 px-4 sm:px-6">Role</th>
+                      <th className="py-3 px-4 sm:px-6">Plan</th>
+                      <th className="py-3 px-4 sm:px-6">Last Sign-in</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-200 dark:divide-white/5">
+                    {studentsLoading ? (
+                      <tr>
+                        <td colSpan={4} className="text-center py-8 text-neutral-400">
+                          Loading registered students...
+                        </td>
+                      </tr>
+                    ) : studentsError ? (
+                      <tr>
+                        <td colSpan={4} className="text-center py-8 text-amber-600 dark:text-amber-400">
+                          Could not load the roster right now.
+                        </td>
+                      </tr>
+                    ) : students.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="text-center py-8 text-neutral-400">
+                          No accounts yet — nobody has signed in with Google.
+                        </td>
+                      </tr>
+                    ) : (
+                      students.map((student) => (
+                        <tr
+                          key={student.id}
+                          className="hover:bg-neutral-50/80 dark:hover:bg-white/5 transition-colors"
+                        >
+                          <td className="py-3.5 px-4 sm:px-6">
+                            <div className="flex items-center gap-3">
+                              {student.picture ? (
+                                <img
+                                  src={student.picture}
+                                  alt=""
+                                  className="w-7 h-7 rounded-full border border-neutral-200 dark:border-white/10 object-cover shrink-0"
+                                />
+                              ) : (
+                                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-neutral-700 text-neutral-200 text-[10px] font-semibold shrink-0">
+                                  {(student.name || student.email || "?").slice(0, 2).toUpperCase()}
+                                </div>
+                              )}
+                              <div className="flex flex-col min-w-0">
+                                <span className="font-semibold text-neutral-900 dark:text-white truncate">
+                                  {student.name || "—"}
+                                </span>
+                                <span className="text-[11px] text-neutral-500 truncate">
+                                  {student.email}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="py-3.5 px-4 sm:px-6">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
+                                student.role === "admin"
+                                  ? "bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-500/30"
+                                  : "bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-white/10"
+                              }`}
+                            >
+                              {student.role === "admin" ? (
+                                <ShieldCheck className="w-3 h-3" />
+                              ) : (
+                                <GraduationCap className="w-3 h-3" />
+                              )}
+                              {student.role === "admin" ? "Admin" : "Student"}
+                            </span>
+                          </td>
+
+                          <td className="py-3.5 px-4 sm:px-6 text-neutral-600 dark:text-neutral-400">
+                            {student.plan || "—"}
+                          </td>
+
+                          <td className="py-3.5 px-4 sm:px-6 text-neutral-500 text-[11px]">
+                            {formatSignIn(student.lastLoginAt)}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
 
@@ -1052,7 +1154,7 @@ export function AdminDashboard({
         )}
 
         {/* TAB 4: FIREBASE CLOUD SYNC & SEEDER */}
-        {activeTab === "cloud" && (
+        {activeTab === "cloud" && canSeed && (
           <div className="flex flex-col gap-6">
             {/* Cloud Status Banner */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-purple-600/10 via-blue-600/10 to-indigo-600/10 border border-purple-500/20 shadow-xs">
@@ -1073,75 +1175,12 @@ export function AdminDashboard({
                 ) : (
                   <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-300 font-medium">
                     <span className="w-2 h-2 rounded-full bg-blue-500" />
-                    Local Storage Active
+                    Built-in Catalog
                   </span>
                 )}
               </div>
             </div>
 
-            {/* Cloud Configuration Details */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-2">
-                <span className="text-xs text-neutral-500">Firebase Project ID</span>
-                <span className="font-mono text-sm font-bold text-neutral-900 dark:text-white truncate">
-                  {firebaseConfig.projectId || "Not configured"}
-                </span>
-                <span className="text-[11px] text-neutral-400">Firestore Cloud Database</span>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-2">
-                <span className="text-xs text-neutral-500">Firestore Target Collection</span>
-                <span className="font-mono text-sm font-bold text-blue-600 dark:text-blue-400">
-                  &quot;courses&quot;
-                </span>
-                <span className="text-[11px] text-neutral-400">{courses.length} courses loaded</span>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-2">
-                <span className="text-xs text-neutral-500">CLI Seeder Command</span>
-                <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-neutral-100 dark:bg-white/5 px-2 py-1 rounded">
-                  pnpm seed:courses
-                </span>
-                <span className="text-[11px] text-neutral-400">or node scripts/seed-courses.mjs</span>
-              </div>
-            </div>
-
-            {/* Actions Card */}
-            <div className="p-6 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-4">
-              <h3 className="text-base font-semibold text-neutral-900 dark:text-white">
-                Course Catalog Seeding &amp; Recovery
-              </h3>
-              <p className="text-xs text-neutral-600 dark:text-neutral-400 max-w-2xl leading-relaxed">
-                You can feed the complete 12 verified courses into Cloud Firestore with one click.
-                If Cloud Firestore is enabled in your Firebase console, the courses are permanently saved in the cloud. If Firestore is offline, courses are safely preserved in local storage.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-3 pt-2">
-                <button
-                  type="button"
-                  disabled={isSeeding}
-                  onClick={handleSeedCourses}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  <Database className="w-4 h-4" />
-                  <span>{isSeeding ? "Feeding..." : "Feed 12 Verified Courses to Firestore"}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (confirm("Reset catalog back to the initial 12 course default state?")) {
-                      await resetToDefaults();
-                      showToast("Catalog reset to defaults", "info");
-                    }
-                  }}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-white/15 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/5 font-semibold text-xs transition-colors cursor-pointer"
-                >
-                  <RotateCcw className="w-3.5 h-3.5 text-neutral-400" />
-                  <span>Reset to Factory Defaults</span>
-                </button>
-              </div>
-            </div>
           </div>
         )}
       </main>
@@ -1253,10 +1292,11 @@ export function AdminDashboard({
                   <label className="font-semibold text-neutral-700 dark:text-neutral-300">
                     Category *
                   </label>
-                  <select
+                  <Select
+                    label="Category"
                     value={formCategory}
-                    onChange={(e) => {
-                      const cat = e.target.value as CourseItem["category"];
+                    onValueChange={(value) => {
+                      const cat = value as CourseItem["category"];
                       setFormCategory(cat);
                       if (cat === "web") setFormCategoryLabel("Web & Full-Stack");
                       else if (cat === "ai") setFormCategoryLabel("AI & Data Science");
@@ -1264,14 +1304,15 @@ export function AdminDashboard({
                       else if (cat === "database") setFormCategoryLabel("Database & Systems");
                       else if (cat === "elite") setFormCategoryLabel("Super10 Elite");
                     }}
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white cursor-pointer"
-                  >
-                    <option value="web">Web &amp; Full-Stack</option>
-                    <option value="ai">AI &amp; Data Science</option>
-                    <option value="devops">DevOps &amp; Cloud</option>
-                    <option value="database">Database &amp; Systems</option>
-                    <option value="elite">Super10 Elite</option>
-                  </select>
+                    options={[
+                      { value: "web", label: "Web & Full-Stack" },
+                      { value: "ai", label: "AI & Data Science" },
+                      { value: "devops", label: "DevOps & Cloud" },
+                      { value: "database", label: "Database & Systems" },
+                      { value: "elite", label: "Super10 Elite" },
+                    ]}
+                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
+                  />
                 </div>
 
                 {/* Category Label */}
@@ -1362,17 +1403,21 @@ export function AdminDashboard({
                   <label className="font-semibold text-neutral-700 dark:text-neutral-300">
                     Badge Style
                   </label>
-                  <select
-                    value={formBadgeType}
-                    onChange={(e) => setFormBadgeType(e.target.value as CourseItem["badgeType"])}
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white cursor-pointer"
-                  >
-                    <option value="">None</option>
-                    <option value="bestseller">Bestseller (Cyan/Blue)</option>
-                    <option value="elite">Elite (Gold/Amber)</option>
-                    <option value="popular">Popular (Indigo/Purple)</option>
-                    <option value="ai">AI Special (Violet/Magenta)</option>
-                  </select>
+                  <Select
+                    label="Badge Style"
+                    value={formBadgeType ?? ""}
+                    onValueChange={(value) =>
+                      setFormBadgeType(value as CourseItem["badgeType"] | "")
+                    }
+                    options={[
+                      { value: "", label: "None" },
+                      { value: "bestseller", label: "Bestseller (Cyan/Blue)" },
+                      { value: "elite", label: "Elite (Gold/Amber)" },
+                      { value: "popular", label: "Popular (Indigo/Purple)" },
+                      { value: "ai", label: "AI Special (Violet/Magenta)" },
+                    ]}
+                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
+                  />
                 </div>
               </div>
 

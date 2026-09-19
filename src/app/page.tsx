@@ -77,6 +77,9 @@ export default function Home() {
     pendingActionRef.current = null;
   };
 
+  // Kept, but deliberately unreachable: Settings used to hang off the profile chip,
+  // which made a name-and-avatar row the app's only route there. The page and its
+  // /settings route still exist for whenever it gets a proper entry point.
   const handleOpenSettings = () => {
     setIsDashboardOpen(false);
     setStudentView(null);
@@ -101,6 +104,11 @@ export default function Home() {
     setIsLearningOpen(true);
   };
   const handleCloseLearning = () => setIsLearningOpen(false);
+  // The identity chip opens "the dashboard", which is not the same place twice: an
+  // academy admin lands on the metrics dashboard, a student on the courses an admin
+  // granted them. Only reachable while signed in — both chips render only for a user.
+  const handleOpenProfile = () =>
+    user?.isAdmin ? handleOpenDashboard() : handleOpenLearning();
   const handleLogout = () => {
     setIsDashboardOpen(false);
     setStudentView(null);
@@ -138,7 +146,7 @@ export default function Home() {
             setResetSignal((prev) => prev + 1);
           }}
           onOpenLogin={handleOpenLogin}
-          onOpenSettings={() => requireLogin(handleOpenSettings)}
+          onOpenProfile={handleOpenProfile}
           onOpenDashboard={() => requireLogin(handleOpenDashboard)}
           onOpenStudentView={(view) => requireLogin(() => setStudentView(view))}
           onOpenLearning={() => requireLogin(handleOpenLearning)}
@@ -194,7 +202,7 @@ export default function Home() {
                 onToggleSidebar={toggle}
                 onOpenLogin={handleOpenLogin}
                 onLogout={handleLogout}
-                onOpenProfile={handleOpenSettings}
+                onOpenProfile={handleOpenProfile}
                 isMobile={isMobile}
                 user={user}
               />
