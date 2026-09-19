@@ -29,7 +29,7 @@ export function DashboardSidebarNav({
   onBackToChat,
   isMobile,
 }: DashboardSidebarNavProps) {
-  const { courses, isLiveFromFirebase } = useCourses();
+  const { courses } = useCourses();
   const { assignments } = useAssignments();
 
   const activeGrantCount = assignments.filter((a) => a.status === "active").length;
@@ -52,17 +52,9 @@ export function DashboardSidebarNav({
 
       {/* Navigation Section */}
       <div className="flex flex-col gap-1">
-        <div className="flex items-center justify-between px-2 pb-1.5">
+        <div className="flex items-center px-2 pb-1.5">
           <span className="text-[10px] font-bold tracking-wider text-neutral-400 dark:text-neutral-500 uppercase">
             Admin Management
-          </span>
-          <span className="flex items-center gap-1 text-[9px] font-medium text-emerald-600 dark:text-emerald-400">
-            {/* <span
-              className={`w-1.5 h-1.5 rounded-full ${
-                isLiveFromFirebase ? "bg-emerald-500 animate-pulse" : "bg-blue-500"
-              }`}
-            />
-            {isLiveFromFirebase ? "Live Cloud" : "Built-in Catalog"} */}
           </span>
         </div>
 
