@@ -9,10 +9,23 @@ import { SettingsPage } from "@/components/settings/settings-page";
 import { AdminDashboard } from "@/components/admin/admin-dashboard";
 import { StudentPanel, type StudentView } from "@/components/student/student-panel";
 import { MyLearningPage } from "@/components/learning/my-learning-page";
-import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
+import { DASHBOARD_TABS, DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
 import { ToastProvider } from "@/components/ui/toast";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useAuth } from "@/providers/auth-provider";
+
+/**
+ * Where the open admin view is remembered across a refresh.
+ *
+ * Not in the URL: `/?view=admin` would survive the refresh too, but it advertises that an admin
+ * surface exists and what its tabs are called, to anyone who reads the address bar or is handed
+ * the link. sessionStorage keeps it out of the URL and dies with the tab, so it covers the
+ * refresh without making every later visit to `/` land an admin in the dashboard.
+ *
+ * This is not access control. The dashboard draws only for `user?.isAdmin`, and the data behind
+ * it is gated by `firestore.rules` — this key only decides which view to draw.
+ */
+const DASHBOARD_VIEW_KEY = "jarvis:admin-view";
 
 export default function Home() {
   const { isOpen, toggle, isMobile } = useSidebar(true);
@@ -47,6 +60,35 @@ export default function Home() {
     }
     if (q) setInitialPrompt(q);
   }, []);
+
+  // Put the admin back where they were. An effect rather than a lazy `useState` initializer:
+  // this route is prerendered, so the server has no `sessionStorage` and reading it during
+  // render would mismatch on hydration.
+  useEffect(() => {
+    try {
+      const saved = window.sessionStorage.getItem(DASHBOARD_VIEW_KEY);
+      if (!saved) return;
+      const { open, tab } = JSON.parse(saved) as { open?: boolean; tab?: string };
+      if (open) setIsDashboardOpen(true);
+      // Validated: a tab this build no longer has would draw an empty dashboard.
+      if (tab && (DASHBOARD_TABS as readonly string[]).includes(tab)) {
+        setDashboardTab(tab as DashboardTab);
+      }
+    } catch {
+      // Blocked store or unreadable value: the chat is the default anyway.
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.sessionStorage.setItem(
+        DASHBOARD_VIEW_KEY,
+        JSON.stringify({ open: isDashboardOpen, tab: dashboardTab })
+      );
+    } catch {
+      // Private mode or a blocked store: the view just will not outlive the refresh.
+    }
+  }, [isDashboardOpen, dashboardTab]);
 
   // The gate behind every guest-facing action: signed-in visitors run the action
   // straight away, guests get the login modal and the action is replayed the moment
@@ -110,6 +152,11 @@ export default function Home() {
   const handleOpenProfile = () =>
     user?.isAdmin ? handleOpenDashboard() : handleOpenLearning();
   const handleLogout = () => {
+    try {
+      window.sessionStorage.removeItem(DASHBOARD_VIEW_KEY);
+    } catch {
+      // Nothing to clear if the store is unavailable.
+    }
     setIsDashboardOpen(false);
     setStudentView(null);
     setIsLearningOpen(false);

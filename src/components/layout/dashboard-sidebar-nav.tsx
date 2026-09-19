@@ -14,7 +14,19 @@ import {
 import { useCourses } from "@/providers/courses-provider";
 import { useAssignments } from "@/providers/assignments-provider";
 
-export type DashboardTab = "courses" | "users" | "assignments" | "analytics" | "cloud";
+/**
+ * The tabs a dashboard can be showing. The list is the source of truth and the type is read off
+ * it, so the two cannot drift — a tab restored from storage is checked against the array itself.
+ */
+export const DASHBOARD_TABS = [
+  "courses",
+  "users",
+  "assignments",
+  "analytics",
+  "cloud",
+] as const;
+
+export type DashboardTab = (typeof DASHBOARD_TABS)[number];
 
 interface DashboardSidebarNavProps {
   activeTab: DashboardTab;
