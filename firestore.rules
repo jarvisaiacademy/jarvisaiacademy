@@ -58,10 +58,17 @@ service cloud.firestore {
 
     // The catalogue is public content, so reads are open and writes are not.
     //
-    // Note for whoever re-seeds a new project: scripts/seed-courses.mjs writes with the
-    // client SDK and no credentials, so these rules deny it. Seed through the emulator or
-    // the console's import, or give the script an admin session.
+    // Note for whoever re-seeds a new project: `pnpm seed:content` (scripts/seed-content.mjs)
+    // authenticates with the Admin SDK, which bypasses these rules by design — that is what
+    // lets it seed a project where no admin has signed in yet.
     match /courses/{courseId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // The alumni pool behind the testimonials reply. Public for the same reason the
+    // catalogue is; the chat reads it, and it carries nothing private.
+    match /testimonials/{testimonialId} {
       allow read: if true;
       allow write: if isAdmin();
     }

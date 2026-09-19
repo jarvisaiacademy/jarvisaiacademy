@@ -1,53 +1,66 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { COURSES_DATA } from "@/data/courses";
+import { CourseItem } from "@/data/courses";
+import { getPublicCourses } from "@/lib/courses-server";
 import { siteConfig } from "@/config/site";
 
-// The catalogue is a plain module, so this page is fully static and the crawler
-// reads the same facts the chat renders. ponytail: build-time data — a course an
-// admin adds in Firestore gets its page on the next deploy, not immediately.
+// The catalogue is admin-editable in Firestore, so this page revalidates instead of
+// freezing at build. Read it through getPublicCourses() — never COURSES_DATA, which is
+// only that helper's fallback.
+export const revalidate = 300;
+
 const COURSES_URL = `${siteConfig.url}/courses`;
 
 // Derived from the catalogue rather than written into the copy, so a price change
-// is one edit in courses.ts. The referral entry is not a track with tuition, and
+// is one edit in Firestore. The referral entry is not a track with tuition, and
 // `Set` keeps this honest if the paid tracks ever stop sharing one fee.
-const paidFees = [
-  ...new Set(
-    COURSES_DATA.filter((c) => c.id !== "referral" && c.amount > 0).map((c) => c.fee)
-  ),
-].join(" / ");
-const sponsored = COURSES_DATA.find((c) => c.amount === 0);
-const trackCount = COURSES_DATA.filter((c) => c.id !== "referral").length;
+//
+// A function, not module-scope constants: those evaluate once, and a static
+// `metadata` object is frozen at build, so neither would follow a Firestore edit.
+function summarise(courses: CourseItem[]) {
+  return {
+    paidFees: [
+      ...new Set(courses.filter((c) => c.id !== "referral" && c.amount > 0).map((c) => c.fee)),
+    ].join(" / "),
+    sponsored: courses.find((c) => c.amount === 0),
+    // Every entry except the referral reward scheme.
+    trackCount: courses.filter((c) => c.id !== "referral").length,
+    total: courses.length,
+  };
+}
 
-export const metadata: Metadata = {
-  title: "Courses",
-  // Every number here comes from the catalogue, so a fee change cannot leave the
-  // result snippet advertising the old one.
-  description: `${trackCount} build-first programs at ${siteConfig.name}, Pune. Tuition ${paidFees} all-inclusive — fees, duration, curriculum and tech stack for every track.`,
-  alternates: { canonical: "/courses" },
-  openGraph: {
-    title: `Courses | ${siteConfig.name}`,
-    description: `${COURSES_DATA.length} build-first programs — see fees, duration and curriculum for each.`,
-    url: COURSES_URL,
-    siteName: siteConfig.name,
-    images: [
-      {
-        url: `${siteConfig.url}/og-image.png`,
-        width: 1200,
-        height: 630,
-        alt: siteConfig.name,
-      },
-    ],
-    locale: "en_US",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: `Courses | ${siteConfig.name}`,
-    description: `${COURSES_DATA.length} build-first programs — see fees, duration and curriculum for each.`,
-    images: [`${siteConfig.url}/og-image.png`],
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { paidFees, trackCount, total } = summarise(await getPublicCourses());
+  return {
+    title: "Courses",
+    // Every number here comes from the catalogue, so a fee change cannot leave the
+    // result snippet advertising the old one.
+    description: `${trackCount} build-first programs at ${siteConfig.name}, Pune. Tuition ${paidFees} all-inclusive — fees, duration, curriculum and tech stack for every track.`,
+    alternates: { canonical: "/courses" },
+    openGraph: {
+      title: `Courses | ${siteConfig.name}`,
+      description: `${total} build-first programs — see fees, duration and curriculum for each.`,
+      url: COURSES_URL,
+      siteName: siteConfig.name,
+      images: [
+        {
+          url: `${siteConfig.url}/og-image.png`,
+          width: 1200,
+          height: 630,
+          alt: siteConfig.name,
+        },
+      ],
+      locale: "en_US",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `Courses | ${siteConfig.name}`,
+      description: `${total} build-first programs — see fees, duration and curriculum for each.`,
+      images: [`${siteConfig.url}/og-image.png`],
+    },
+  };
+}
 
 function FactPill({ children, strong }: { children: React.ReactNode; strong?: boolean }) {
   return (
@@ -63,7 +76,10 @@ function FactPill({ children, strong }: { children: React.ReactNode; strong?: bo
   );
 }
 
-export default function CoursesIndexPage() {
+export default async function CoursesIndexPage() {
+  const courses = await getPublicCourses();
+  const { paidFees, sponsored } = summarise(courses);
+
   return (
     <main className="mx-auto w-full max-w-5xl px-4 sm:px-6 pt-10 sm:pt-14">
       <h1 className="text-2xl sm:text-4xl font-semibold tracking-tight">
@@ -90,7 +106,7 @@ export default function CoursesIndexPage() {
       </p>
 
       <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {COURSES_DATA.map((course) => (
+        {courses.map((course) => (
           <Link
             key={course.id}
             href={`/courses/${course.id}`}
