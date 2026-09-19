@@ -1,0 +1,72 @@
+rules_version = '2';
+
+// Access control for the collections the app touches.
+//
+// This file, not the browser, is what protects the data. Anything that ships in the bundle
+// can be edited by whoever is holding the browser: the client's `isAdmin` comes from a
+// `NEXT_PUBLIC_` email list and is cached in localStorage, so a visitor can set it to true
+// and render the admin dashboard. That gets them a dashboard and permission-denied on every
+// read below, which is the intended outcome.
+//
+// Deploy with: firebase deploy --only firestore:rules
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // The same three addresses as NEXT_PUBLIC_ADMIN_EMAILS — keep the two in step.
+    //
+    // `token.email` is read from the signed ID token, so it cannot be forged. That is why
+    // the identical check is safe here and unsafe in the client. Revisit this if a sign-in
+    // method that can carry an unverified email address is ever added: `token.email_verified`
+    // would need to be part of the test.
+    //
+    // Moving to a document per admin (/admins/{uid}) would drop the redeploy needed to add
+    // one, at the cost of a bootstrapping step. Not worth it at this size.
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email in [
+        'sugat@jarvisaiacademy.com',
+        'jarvisaiacademy@gmail.com',
+        'sugatraj.2106@gmail.com'
+      ];
+    }
+
+    function isSelf(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // The roster. A learner owns their row and sees no one else's; only an admin sees the rest.
+    match /users/{uid} {
+      allow read: if isSelf(uid) || isAdmin();
+
+      // The extra clause stops a learner promoting themselves. The client writes `role` from
+      // its own email check, so without it a visitor could store role: 'admin' on their own
+      // record and misreport themselves to the dashboard. No access is derived from that
+      // field — the rules here are what grant access — but it should not be writable either.
+      allow create, update: if isSelf(uid)
+        && (isAdmin() || request.resource.data.role == 'student');
+
+      allow delete: if isAdmin();
+    }
+
+    // Course assignments. A learner reads the ones addressed to them, which is the
+    // `where('studentId', '==', uid)` the client already uses, so the query stays provable.
+    match /assignments/{assignmentId} {
+      allow read: if isAdmin() || isSelf(resource.data.studentId);
+      allow write: if isAdmin();
+    }
+
+    // The catalogue is public content, so reads are open and writes are not.
+    //
+    // Note for whoever re-seeds a new project: scripts/seed-courses.mjs writes with the
+    // client SDK and no credentials, so these rules deny it. Seed through the emulator or
+    // the console's import, or give the script an admin session.
+    match /courses/{courseId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Nothing else is reachable, including any collection added later without a rule here.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

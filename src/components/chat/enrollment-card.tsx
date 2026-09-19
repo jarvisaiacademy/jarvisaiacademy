@@ -33,6 +33,8 @@ interface EnrollmentCardProps {
   initialData?: Partial<EnrollmentData>;
   onUpdate?: (updated: EnrollmentData) => void;
   currentUser?: { name?: string; email?: string } | null;
+  /** Gates the checkout buttons — a guest reaches this card but cannot act on it. */
+  onRequireLogin?: (action: () => void) => void;
 }
 
 const COURSES_INFO = {
@@ -59,6 +61,7 @@ export function EnrollmentCard({
   initialData,
   onUpdate,
   currentUser,
+  onRequireLogin,
 }: EnrollmentCardProps) {
   const { showToast } = useToast();
   const [selectedCourse, setSelectedCourse] = useState<"fullstack" | "super10">(
@@ -583,7 +586,7 @@ export function EnrollmentCard({
           <button
             type="button"
             disabled={isProcessing}
-            onClick={handleSimulatePayment}
+            onClick={() => onRequireLogin?.(handleSimulatePayment)}
             className="flex-1 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:hover:bg-neutral-200 dark:text-neutral-900 text-xs sm:text-sm font-medium transition-all shadow-xs active:scale-98 cursor-pointer disabled:opacity-50"
           >
             {isProcessing ? (
@@ -602,7 +605,7 @@ export function EnrollmentCard({
           <button
             type="button"
             disabled={isProcessing}
-            onClick={handleSimulateFailure}
+            onClick={() => onRequireLogin?.(handleSimulateFailure)}
             className="w-full sm:w-auto py-2.5 px-4 rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-neutral-800/60 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs font-medium transition-colors cursor-pointer"
           >
             Cancel / Failed
@@ -621,7 +624,7 @@ export function EnrollmentCard({
 
           <button
             type="button"
-            onClick={handleRetry}
+            onClick={() => onRequireLogin?.(handleRetry)}
             className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:hover:bg-neutral-200 dark:text-neutral-900 text-xs sm:text-sm font-medium transition-all shadow-xs active:scale-98 cursor-pointer"
           >
             <RotateCcw className="w-4 h-4" />
@@ -634,7 +637,7 @@ export function EnrollmentCard({
         <div className="flex flex-col sm:flex-row items-center gap-3">
           <button
             type="button"
-            onClick={() => handleDownloadReceipt("download")}
+            onClick={() => onRequireLogin?.(() => handleDownloadReceipt("download"))}
             className="flex-1 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:hover:bg-neutral-200 dark:text-neutral-900 text-xs sm:text-sm font-medium transition-all shadow-xs active:scale-98 cursor-pointer"
           >
             <Download className="w-4 h-4" />
@@ -643,7 +646,7 @@ export function EnrollmentCard({
 
           <button
             type="button"
-            onClick={() => handleDownloadReceipt("print")}
+            onClick={() => onRequireLogin?.(() => handleDownloadReceipt("print"))}
             className="w-full sm:w-auto flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-full border border-neutral-300 dark:border-white/15 bg-neutral-100 dark:bg-neutral-800/80 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-800 dark:text-white text-xs font-medium transition-colors cursor-pointer"
           >
             <FileText className="w-3.5 h-3.5" />

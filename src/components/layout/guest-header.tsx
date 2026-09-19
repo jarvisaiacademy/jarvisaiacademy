@@ -84,7 +84,7 @@ export function GuestHeader({
           below md the row already carries the sidebar toggle, the title, the theme
           switcher and the log-in CTA, and the sidebar footer has the same links. */}
       <div className="hidden md:flex flex-1 items-center justify-center min-w-0">
-        <SocialLinks iconSize={16} gapClassName="gap-2" className="shrink-0" />
+        <SocialLinks className="shrink-0" />
       </div>
 
       {/* Right controls: theme, then the signed-in identity chip or one log-in CTA.

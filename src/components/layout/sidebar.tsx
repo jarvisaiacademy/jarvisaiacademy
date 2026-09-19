@@ -5,7 +5,6 @@ import { SidebarHeader } from "./sidebar-header";
 import { SidebarNav } from "./sidebar-nav";
 import { UserProfile } from "./user-profile";
 import { SidebarLoginCTA } from "./sidebar-login-cta";
-import { ThemeSwitcher } from "./theme-switcher";
 import { SocialLinks } from "@/components/common/social-links";
 
 import { User } from "@/providers/auth-provider";
@@ -118,7 +117,6 @@ export function Sidebar({
           </div>
 
           <div suppressHydrationWarning className="flex flex-col border-t border-neutral-200 dark:border-white/5">
-            <ThemeSwitcher />
             {isLoggedIn ? (
               <UserProfile
                 user={user}
@@ -185,7 +183,6 @@ export function Sidebar({
         )}
       </div>
       <div suppressHydrationWarning className="w-[260px] flex flex-col border-t border-neutral-200 dark:border-white/5">
-        <ThemeSwitcher />
         {isLoggedIn ? (
           <UserProfile
             user={user}
@@ -198,7 +195,7 @@ export function Sidebar({
           </div>
         )}
         <div className="flex items-center justify-center pt-2 pb-3.5">
-          <SocialLinks iconSize={22} gapClassName="gap-3.5" />
+          <SocialLinks />
         </div>
       </div>
     </motion.aside>

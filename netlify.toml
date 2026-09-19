@@ -14,9 +14,13 @@
   # Delete this line to get preview builds back.
   ignore = "test \"$CONTEXT\" != \"production\""
 
-# Proxy Firebase Auth Handler so OAuth popup can use your clean domain
+# Proxy the Firebase Auth handler so the OAuth popup can use the clean domain.
+# Only reachable when NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN is the custom domain; with it set to
+# `*.firebaseapp.com` the popup goes straight to Google and this rule never fires. Kept
+# pointing at the live project regardless — it named the decommissioned `jarvisaiacademy-580a7`,
+# which would have broken sign-in the moment anyone set the custom domain.
 [[redirects]]
   from = "/__/auth/*"
-  to = "https://jarvisaiacademy-580a7.firebaseapp.com/__/auth/:splat"
+  to = "https://jarvisaiacademy-a94b6.firebaseapp.com/__/auth/:splat"
   status = 200
   force = true

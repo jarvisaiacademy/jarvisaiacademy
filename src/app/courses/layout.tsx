@@ -55,7 +55,7 @@ export default function CoursesLayout({
       {children}
 
       <footer className="mt-16 px-4 sm:px-6 py-10 border-t border-neutral-200 dark:border-white/10 flex flex-col items-center gap-4 text-center">
-        <SocialLinks iconSize={18} gapClassName="gap-3" />
+        <SocialLinks />
         <div className="flex flex-wrap justify-center gap-x-5 gap-y-1 text-xs text-neutral-500 dark:text-neutral-400">
           <a href={`mailto:${siteConfig.contact.email}`} className="hover:underline">
             {siteConfig.contact.email}

@@ -553,7 +553,7 @@ export function CourseCatalogResponse({
         <button
           type="button"
           onClick={handleViewAll}
-          className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-neutral-100 dark:bg-neutral-800/80 hover:bg-neutral-200/90 dark:hover:bg-neutral-700/90 border border-neutral-200 dark:border-white/10 text-neutral-800 dark:text-neutral-200 text-xs sm:text-[13px] font-semibold transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
+          className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white hover:bg-neutral-50 border border-neutral-200 dark:border-white/10 text-neutral-900 text-xs sm:text-[13px] font-semibold transition-all cursor-pointer shadow-xs hover:shadow-sm active:scale-98"
         >
           <Layers className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
           <span>

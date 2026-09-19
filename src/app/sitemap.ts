@@ -3,8 +3,9 @@ import { siteConfig } from "@/config/site";
 import { COURSES_DATA } from "@/data/courses";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  // The chat, the course index and one page per catalogue entry. /settings is
-  // account UI and stays out.
+  // The chat, the course index, one page per catalogue entry, and the privacy policy
+  // (which Google's consent screen requires to be reachable). /settings is account UI
+  // and stays out.
   return [
     {
       url: siteConfig.url,
@@ -24,5 +25,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly" as const,
       priority: 0.8,
     })),
+    {
+      url: `${siteConfig.url}/privacy`,
+      lastModified: new Date(),
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
   ];
 }
