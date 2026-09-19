@@ -62,49 +62,6 @@ interface AdminDashboardProps {
   onToggleSidebar?: () => void;
 }
 
-const DEFAULT_RECORDS: EnrollmentRecord[] = [
-  {
-    action: "paid",
-    courseId: "super10",
-    courseName: "Super10 Elite Program (100% Placement Assurance)",
-    amount: 0,
-    transactionId: "TXN-JARVIS-918231",
-    studentName: "Sugatraj Sarwade",
-    studentEmail: "sugat@jarvisaiacademy.com",
-    timestamp: "12 Sep 2026, 04:30 PM",
-  },
-  {
-    action: "paid",
-    courseId: "fullstack",
-    courseName: "Full-Stack AI & Web Engineering Program",
-    amount: 0,
-    transactionId: "TXN-JARVIS-847291",
-    studentName: "Aditya Verma",
-    studentEmail: "aditya.v@example.com",
-    timestamp: "11 Sep 2026, 02:15 PM",
-  },
-  {
-    action: "paid",
-    courseId: "fullstack",
-    courseName: "Full-Stack AI & Web Engineering Program",
-    amount: 0,
-    transactionId: "TXN-JARVIS-762910",
-    studentName: "Pooja Sharma",
-    studentEmail: "pooja.sharma@example.com",
-    timestamp: "10 Sep 2026, 11:45 AM",
-  },
-  {
-    action: "pending",
-    courseId: "super10",
-    courseName: "Super10 Elite Program",
-    amount: 0,
-    transactionId: "TXN-JARVIS-PENDING",
-    studentName: "Rohan Kulkarni",
-    studentEmail: "rohan.k@example.com",
-    timestamp: "09 Sep 2026, 06:10 PM",
-  },
-];
-
 export function AdminDashboard({
   onBackToChat,
   activeTab: controlledTab,
@@ -132,7 +89,7 @@ export function AdminDashboard({
   };
 
   // Admissions state
-  const [records, setRecords] = useState<EnrollmentRecord[]>(DEFAULT_RECORDS);
+  const [records, setRecords] = useState<EnrollmentRecord[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -167,19 +124,15 @@ export function AdminDashboard({
   const [formTopics, setFormTopics] = useState("");
   const [formActionPrompt, setFormActionPrompt] = useState("");
 
+  // The ledger is the enrolments that actually happened, read back from the tracker
+  // the chat writes. A hardcoded set of demo students used to be merged in here, which
+  // showed fabricated registrations as though they were real ones.
   useEffect(() => {
     try {
       const stored = localStorage.getItem("jarvis_enrollment_tracker");
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const seenTxns = new Set(parsed.map((p) => p.transactionId));
-          const merged = [
-            ...parsed,
-            ...DEFAULT_RECORDS.filter((r) => !seenTxns.has(r.transactionId)),
-          ];
-          setRecords(merged);
-        }
+        if (Array.isArray(parsed) && parsed.length > 0) setRecords(parsed);
       }
     } catch {
       // ignore
