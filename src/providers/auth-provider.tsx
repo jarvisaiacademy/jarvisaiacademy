@@ -67,7 +67,7 @@ function describeAuthError(error: { code?: string; message?: string }): string {
 
 const ADMIN_EMAILS = (
   process.env.NEXT_PUBLIC_ADMIN_EMAILS ||
-  "sugat@jarvisaiacademy.com,jarvisaiacademy@gmail.com,sugatraj.2106@gmail.com"
+  "sugatraj.2106@gmail.com,hivirajkadam@gmail.com"
 )
   .split(",")
   .map((e) => e.trim().toLowerCase());

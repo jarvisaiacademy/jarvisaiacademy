@@ -12,7 +12,10 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // The same three addresses as NEXT_PUBLIC_ADMIN_EMAILS — keep the two in step.
+    // The same two addresses as NEXT_PUBLIC_ADMIN_EMAILS — keep the two in step.
+    //
+    // An address in NEXT_PUBLIC_ADMIN_EMAILS but not here gets a dashboard and then
+    // permission-denied on every read, so the client list must always be a subset of this one.
     //
     // `token.email` is read from the signed ID token, so it cannot be forged. That is why
     // the identical check is safe here and unsafe in the client. Revisit this if a sign-in
@@ -23,9 +26,8 @@ service cloud.firestore {
     // one, at the cost of a bootstrapping step. Not worth it at this size.
     function isAdmin() {
       return request.auth != null && request.auth.token.email in [
-        'sugat@jarvisaiacademy.com',
-        'jarvisaiacademy@gmail.com',
-        'sugatraj.2106@gmail.com'
+        'sugatraj.2106@gmail.com',
+        'hivirajkadam@gmail.com'
       ];
     }
 
