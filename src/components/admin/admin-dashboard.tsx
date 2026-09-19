@@ -122,6 +122,7 @@ export function AdminDashboard({
   const [isSaving, setIsSaving] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [seedConfirm, setSeedConfirm] = useState(false);
 
   // Form states for Add / Edit modal
   const [formId, setFormId] = useState("");
@@ -378,9 +379,7 @@ export function AdminDashboard({
 
   // Seed the built-in course catalogue into Firestore
   const handleSeedCourses = async () => {
-    if (!confirm("Feed the 12 built-in verified courses into Firestore?")) {
-      return;
-    }
+    setSeedConfirm(false);
     setIsSeeding(true);
     try {
       const res = await seedCourses();
@@ -525,16 +524,36 @@ export function AdminDashboard({
               </div>
 
               <div className="flex items-center gap-2 self-end lg:self-auto">
-                <button
-                  type="button"
-                  disabled={isSeeding}
-                  onClick={handleSeedCourses}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-neutral-300 dark:border-white/15 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-white/10 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
-                  title="Feed the built-in verified courses into Firestore"
-                >
-                  <Database className="w-3.5 h-3.5 text-blue-500" />
-                  <span>{isSeeding ? "Feeding..." : "Feed 12 Verified Courses"}</span>
-                </button>
+                {seedConfirm ? (
+                  <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-500/10 p-1 rounded-lg border border-blue-200 dark:border-blue-500/30">
+                    <button
+                      type="button"
+                      onClick={handleSeedCourses}
+                      className="px-2 py-0.5 text-[10px] font-bold bg-blue-600 text-white rounded cursor-pointer"
+                      title="Feed the 12 built-in verified courses into Firestore"
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSeedConfirm(false)}
+                      className="px-1 text-[10px] text-neutral-500 cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={isSeeding}
+                    onClick={() => setSeedConfirm(true)}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-neutral-300 dark:border-white/15 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-white/10 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                    title="Feed the built-in verified courses into Firestore"
+                  >
+                    <Database className="w-3.5 h-3.5 text-blue-500" />
+                    <span>{isSeeding ? "Feeding..." : "Feed 12 Verified Courses"}</span>
+                  </button>
+                )}
 
                 <button
                   type="button"
