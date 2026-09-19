@@ -1,15 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/sidebar";
 import { GuestHeader } from "@/components/layout/guest-header";
 import { ChatCanvas } from "@/components/chat/chat-canvas";
 import { LoginModal } from "@/components/auth/login-modal";
 import { SettingsPage } from "@/components/settings/settings-page";
-import { AdminDashboard } from "@/components/admin/admin-dashboard";
 import { StudentPanel, type StudentView } from "@/components/student/student-panel";
 import { MyLearningPage } from "@/components/learning/my-learning-page";
-import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
 import { ToastProvider } from "@/components/ui/toast";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useAuth } from "@/providers/auth-provider";
@@ -17,12 +16,11 @@ import { useAuth } from "@/providers/auth-provider";
 export default function Home() {
   const { isOpen, toggle, isMobile } = useSidebar(true);
   const { user, isLoggedIn, logout, clearAuthError } = useAuth();
+  const router = useRouter();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [studentView, setStudentView] = useState<StudentView | null>(null);
   const [isLearningOpen, setIsLearningOpen] = useState(false);
-  const [dashboardTab, setDashboardTab] = useState<DashboardTab>("courses");
   const [activeTopic, setActiveTopic] = useState<string | null>(null);
   // Which sidebar section was last opened. Kept apart from `activeTopic`
   // because ChatCanvas clears that one once it has handled the topic — this
@@ -81,36 +79,25 @@ export default function Home() {
   // which made a name-and-avatar row the app's only route there. The page and its
   // /settings route still exist for whenever it gets a proper entry point.
   const handleOpenSettings = () => {
-    setIsDashboardOpen(false);
     setStudentView(null);
     setIsLearningOpen(false);
     setActiveSection(null);
     setIsSettingsOpen(true);
   };
   const handleCloseSettings = () => setIsSettingsOpen(false);
-  const handleOpenDashboard = () => {
-    setIsSettingsOpen(false);
-    setStudentView(null);
-    setIsLearningOpen(false);
-    setActiveSection(null);
-    setIsDashboardOpen(true);
-  };
-  const handleCloseDashboard = () => setIsDashboardOpen(false);
   const handleOpenLearning = () => {
     setIsSettingsOpen(false);
-    setIsDashboardOpen(false);
     setStudentView(null);
     setActiveSection(null);
     setIsLearningOpen(true);
   };
   const handleCloseLearning = () => setIsLearningOpen(false);
   // The identity chip opens "the dashboard", which is not the same place twice: an
-  // academy admin lands on the metrics dashboard, a student on the courses an admin
+  // academy admin lands on the admin route, a student on the courses an admin
   // granted them. Only reachable while signed in — both chips render only for a user.
   const handleOpenProfile = () =>
-    user?.isAdmin ? handleOpenDashboard() : handleOpenLearning();
+    user?.isAdmin ? router.push("/admin") : handleOpenLearning();
   const handleLogout = () => {
-    setIsDashboardOpen(false);
     setStudentView(null);
     setIsLearningOpen(false);
     setActiveSection(null);
@@ -130,7 +117,6 @@ export default function Home() {
           onLogout={handleLogout}
           onSelectSection={(topic) => {
             setIsSettingsOpen(false);
-            setIsDashboardOpen(false);
             setStudentView(null);
             setIsLearningOpen(false);
             setActiveSection(topic);
@@ -138,7 +124,6 @@ export default function Home() {
           }}
           onNewChat={() => {
             setIsSettingsOpen(false);
-            setIsDashboardOpen(false);
             setStudentView(null);
             setIsLearningOpen(false);
             setActiveSection(null);
@@ -147,35 +132,23 @@ export default function Home() {
           }}
           onOpenLogin={handleOpenLogin}
           onOpenProfile={handleOpenProfile}
-          onOpenDashboard={() => requireLogin(handleOpenDashboard)}
+          // The admin Dashboard item renders only for an admin, so it goes
+          // straight there rather than through the login gate.
+          onOpenDashboard={() => router.push("/admin")}
           onOpenStudentView={(view) => requireLogin(() => setStudentView(view))}
           onOpenLearning={() => requireLogin(handleOpenLearning)}
-          isDashboardOpen={isDashboardOpen && !!user?.isAdmin}
-          activeDashboardTab={dashboardTab}
-          onSelectDashboardTab={setDashboardTab}
-          onBackToChat={handleCloseDashboard}
           activeItem={
-            isDashboardOpen && user?.isAdmin
-              ? "dashboard"
-              : isLearningOpen
-                ? "learning"
-                : studentView
-                  ? `my_${studentView}`
-                  : activeSection
+            isLearningOpen
+              ? "learning"
+              : studentView
+                ? `my_${studentView}`
+                : activeSection
           }
         />
 
-        {/* Main Canvas Area, Settings Page, or Admin Dashboard */}
+        {/* Main Canvas Area, Settings Page, Student Panel or My Learning */}
         <main className="flex-1 flex flex-col h-full min-h-0 min-w-0 bg-background relative overflow-hidden transition-colors duration-150">
-          {isDashboardOpen && user?.isAdmin ? (
-            <AdminDashboard
-              activeTab={dashboardTab}
-              onChangeTab={setDashboardTab}
-              onBackToChat={handleCloseDashboard}
-              sidebarOpen={isOpen}
-              onToggleSidebar={toggle}
-            />
-          ) : isSettingsOpen ? (
+          {isSettingsOpen ? (
             <SettingsPage onBack={handleCloseSettings} />
           ) : studentView ? (
             <StudentPanel

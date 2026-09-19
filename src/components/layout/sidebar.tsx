@@ -72,12 +72,7 @@ export function Sidebar({
           className="md:hidden fixed top-0 left-0 bottom-0 w-[260px] bg-[#f9f9f9] dark:bg-[#171717] border-r border-neutral-200 dark:border-white/5 z-50 flex flex-col justify-between overflow-hidden select-none transition-colors"
         >
           <div className="flex flex-col flex-1 overflow-y-auto no-scrollbar">
-            <SidebarHeader
-              onToggle={onToggle}
-              onOpenLogin={onOpenLogin}
-              isMobile={true}
-              isDashboardOpen={isDashboardOpen}
-            />
+            <SidebarHeader onToggle={onToggle} onOpenLogin={onOpenLogin} isMobile={true} />
             {isDashboardOpen ? (
               <DashboardSidebarNav
                 activeTab={activeDashboardTab}
@@ -162,12 +157,7 @@ export function Sidebar({
       }`}
     >
       <div className="w-[260px] flex flex-col flex-1 overflow-y-auto overflow-x-hidden no-scrollbar">
-        <SidebarHeader
-          onToggle={onToggle}
-          onOpenLogin={onOpenLogin}
-          isMobile={false}
-          isDashboardOpen={isDashboardOpen}
-        />
+        <SidebarHeader onToggle={onToggle} onOpenLogin={onOpenLogin} isMobile={false} />
         {isDashboardOpen ? (
           <DashboardSidebarNav
             activeTab={activeDashboardTab}
