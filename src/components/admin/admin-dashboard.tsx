@@ -508,18 +508,20 @@ export function AdminDashboard({
                   />
                 </div>
 
-                <select
+                <Select
+                  label="Filter by category"
                   value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs focus:outline-hidden cursor-pointer"
-                >
-                  <option value="all">All Categories</option>
-                  <option value="web">Web &amp; Full-Stack</option>
-                  <option value="ai">AI &amp; Data Science</option>
-                  <option value="devops">DevOps &amp; Cloud</option>
-                  <option value="database">Database &amp; Systems</option>
-                  <option value="elite">Super10 Elite</option>
-                </select>
+                  onValueChange={setCategoryFilter}
+                  options={[
+                    { value: "all", label: "All Categories" },
+                    { value: "web", label: "Web & Full-Stack" },
+                    { value: "ai", label: "AI & Data Science" },
+                    { value: "devops", label: "DevOps & Cloud" },
+                    { value: "database", label: "Database & Systems" },
+                    { value: "elite", label: "Super10 Elite" },
+                  ]}
+                  className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+                />
               </div>
 
               <div className="flex items-center gap-2 self-end lg:self-auto">
@@ -1276,10 +1278,11 @@ export function AdminDashboard({
                   <label className="font-semibold text-neutral-700 dark:text-neutral-300">
                     Category *
                   </label>
-                  <select
+                  <Select
+                    label="Category"
                     value={formCategory}
-                    onChange={(e) => {
-                      const cat = e.target.value as CourseItem["category"];
+                    onValueChange={(value) => {
+                      const cat = value as CourseItem["category"];
                       setFormCategory(cat);
                       if (cat === "web") setFormCategoryLabel("Web & Full-Stack");
                       else if (cat === "ai") setFormCategoryLabel("AI & Data Science");
@@ -1287,14 +1290,15 @@ export function AdminDashboard({
                       else if (cat === "database") setFormCategoryLabel("Database & Systems");
                       else if (cat === "elite") setFormCategoryLabel("Super10 Elite");
                     }}
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white cursor-pointer"
-                  >
-                    <option value="web">Web &amp; Full-Stack</option>
-                    <option value="ai">AI &amp; Data Science</option>
-                    <option value="devops">DevOps &amp; Cloud</option>
-                    <option value="database">Database &amp; Systems</option>
-                    <option value="elite">Super10 Elite</option>
-                  </select>
+                    options={[
+                      { value: "web", label: "Web & Full-Stack" },
+                      { value: "ai", label: "AI & Data Science" },
+                      { value: "devops", label: "DevOps & Cloud" },
+                      { value: "database", label: "Database & Systems" },
+                      { value: "elite", label: "Super10 Elite" },
+                    ]}
+                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
+                  />
                 </div>
 
                 {/* Category Label */}
@@ -1385,17 +1389,21 @@ export function AdminDashboard({
                   <label className="font-semibold text-neutral-700 dark:text-neutral-300">
                     Badge Style
                   </label>
-                  <select
-                    value={formBadgeType}
-                    onChange={(e) => setFormBadgeType(e.target.value as CourseItem["badgeType"])}
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white cursor-pointer"
-                  >
-                    <option value="">None</option>
-                    <option value="bestseller">Bestseller (Cyan/Blue)</option>
-                    <option value="elite">Elite (Gold/Amber)</option>
-                    <option value="popular">Popular (Indigo/Purple)</option>
-                    <option value="ai">AI Special (Violet/Magenta)</option>
-                  </select>
+                  <Select
+                    label="Badge Style"
+                    value={formBadgeType ?? ""}
+                    onValueChange={(value) =>
+                      setFormBadgeType(value as CourseItem["badgeType"] | "")
+                    }
+                    options={[
+                      { value: "", label: "None" },
+                      { value: "bestseller", label: "Bestseller (Cyan/Blue)" },
+                      { value: "elite", label: "Elite (Gold/Amber)" },
+                      { value: "popular", label: "Popular (Indigo/Purple)" },
+                      { value: "ai", label: "AI Special (Violet/Magenta)" },
+                    ]}
+                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
+                  />
                 </div>
               </div>
 
