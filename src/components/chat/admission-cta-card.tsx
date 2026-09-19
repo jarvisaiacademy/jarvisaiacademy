@@ -1,11 +1,8 @@
 "use client";
 
-import { useId, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowRight,
   CalendarClock,
-  ChevronDown,
   GraduationCap,
   Phone,
   ShieldCheck,
@@ -31,15 +28,11 @@ interface AdmissionCtaCardProps {
  * Styled as a quiet inline card rather than a banner — flat surface, hairline border,
  * monochrome primary button — so it reads as part of the transcript instead of an
  * advertisement dropped into it. Every number it shows comes from the course
- * catalogue rather than being restated here, and the details stay folded away until
- * someone asks, which keeps the resting state to three lines.
+ * catalogue rather than being restated here, so it cannot drift from the courses page.
  */
 export function AdmissionCtaCard({ onActionPrompt }: AdmissionCtaCardProps) {
   const { courses } = useCourses();
   const { showToast } = useToast();
-  const [isOpen, setIsOpen] = useState(false);
-  // One card per reply, so the reveal needs a per-instance id to point `aria-controls` at.
-  const factsId = useId();
 
   // "Reserve my seat" opens the checkout, which defaults to this track — so this is the
   // price the card has to quote. Super10 is listed separately because it is the one
@@ -64,7 +57,7 @@ export function AdmissionCtaCard({ onActionPrompt }: AdmissionCtaCardProps) {
   return (
     <section
       aria-label="Admissions"
-      className="mx-auto mt-4 w-full max-w-xl rounded-3xl border border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-[#191919]"
+      className="mt-4 w-full rounded-3xl border border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-[#191919]"
     >
       <div className="flex items-start gap-3">
         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-neutral-200/70 bg-neutral-100 text-neutral-600 shadow-2xs dark:border-white/10 dark:bg-white/5 dark:text-neutral-300">
@@ -82,54 +75,24 @@ export function AdmissionCtaCard({ onActionPrompt }: AdmissionCtaCardProps) {
         </div>
       </div>
 
-      {/* Details stay folded away until someone wants them */}
-      <button
-        type="button"
-        onClick={() => setIsOpen((open) => !open)}
-        aria-expanded={isOpen}
-        aria-controls={factsId}
-        className="mt-3 flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-[11px] font-medium text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-400 dark:hover:bg-white/5 dark:hover:text-neutral-200"
-      >
-        <span>What you get</span>
-        <ChevronDown
-          className={`h-3.5 w-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-        />
-      </button>
-
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            id={factsId}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="overflow-hidden"
+      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+        {facts.map((fact) => (
+          <div
+            key={fact.label}
+            className="flex items-center gap-2 rounded-xl border border-neutral-200/50 bg-neutral-50/80 px-3 py-2 dark:border-white/5 dark:bg-white/[0.02]"
           >
-            <div className="grid grid-cols-1 gap-2 pt-1 sm:grid-cols-3">
-              {facts.map((fact, index) => (
-                <motion.div
-                  key={fact.label}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: index * 0.04, duration: 0.18 }}
-                  className="flex items-center gap-2 rounded-xl border border-neutral-200/50 bg-neutral-50/80 px-3 py-2 dark:border-white/5 dark:bg-white/[0.02]"
-                >
-                  <fact.icon className="h-3.5 w-3.5 shrink-0 text-neutral-400 dark:text-neutral-500" />
-                  <div className="min-w-0">
-                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                      {fact.label}
-                    </p>
-                    <p className="truncate text-xs font-medium text-neutral-800 dark:text-neutral-200">
-                      {fact.value}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
+            <fact.icon className="h-3.5 w-3.5 shrink-0 text-neutral-400 dark:text-neutral-500" />
+            <div className="min-w-0">
+              <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                {fact.label}
+              </p>
+              <p className="truncate text-xs font-medium text-neutral-800 dark:text-neutral-200">
+                {fact.value}
+              </p>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        ))}
+      </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <button
