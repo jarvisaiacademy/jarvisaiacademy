@@ -30,6 +30,7 @@ import {
   PanelLeft,
 } from "lucide-react";
 import { MobileMenuIcon } from "@/components/ui/mobile-menu-icon";
+import { firebaseConfig } from "@/lib/firebase";
 import { siteConfig } from "@/config/site";
 import { useAuth } from "@/providers/auth-provider";
 import { useCourses } from "@/providers/courses-provider";
@@ -1083,7 +1084,7 @@ export function AdminDashboard({
               <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-2">
                 <span className="text-xs text-neutral-500">Firebase Project ID</span>
                 <span className="font-mono text-sm font-bold text-neutral-900 dark:text-white truncate">
-                  jarvisaiacademy-580a7
+                  {firebaseConfig.projectId || "Not configured"}
                 </span>
                 <span className="text-[11px] text-neutral-400">Firestore Cloud Database</span>
               </div>
