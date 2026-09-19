@@ -40,19 +40,30 @@ let auth: Auth | null = null;
 let db: Firestore | null = null;
 let googleProvider: GoogleAuthProvider | null = null;
 
-if (typeof window !== "undefined" && isFirebaseConfigured) {
+// Firestore initialises in both runtimes so server components can read the public
+// collections. Auth does not: `getAuth` and `setPersistence` throw in Node, so that
+// half stays behind the browser check.
+const isBrowser = typeof window !== "undefined";
+
+if (isFirebaseConfigured) {
   try {
     app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    // Use browserLocalPersistence for instant synchronous token restoration
-    setPersistence(auth, browserLocalPersistence).catch(() => {});
     db = getFirestore(app);
-    googleProvider = new GoogleAuthProvider();
-    googleProvider.setCustomParameters({ prompt: "select_account" });
+
+    if (isBrowser) {
+      auth = getAuth(app);
+      // Use browserLocalPersistence for instant synchronous token restoration
+      setPersistence(auth, browserLocalPersistence).catch(() => {});
+      googleProvider = new GoogleAuthProvider();
+      googleProvider.setCustomParameters({ prompt: "select_account" });
+    }
 
     // Point at the local Emulator Suite. Needs no real project, API key, or login.
+    // Kept last because connect*Emulator throws when it runs twice on one instance,
+    // and HMR re-evaluates this module while `getApp()` hands back the same one.
+    // Anything above is already assigned by the time that could happen.
     if (process.env.NEXT_PUBLIC_FIREBASE_EMULATOR === "1") {
-      connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+      if (auth) connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
       connectFirestoreEmulator(db, "127.0.0.1", 8080);
     }
   } catch (err) {

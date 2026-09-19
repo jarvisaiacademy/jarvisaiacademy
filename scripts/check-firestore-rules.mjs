@@ -171,6 +171,15 @@ await check("learner writes the catalogue", false, () =>
   patch(docPath("courses", "fullstack"), { title: { stringValue: "vandalised" } }, studentOne)
 );
 
+// --- testimonials: as public as the catalogue ---
+await check("guest reads a testimonial", true, () => get(docPath("testimonials", "gurpreet-kaur"), guest));
+await check("learner writes a testimonial", false, () =>
+  patch(docPath("testimonials", "gurpreet-kaur"), { quote: { stringValue: "vandalised" } }, studentOne)
+);
+await check("guest writes a testimonial", false, () =>
+  patch(docPath("testimonials", "intruder"), { name: { stringValue: "x" } }, guest)
+);
+
 console.log(`\n${passed} passed, ${failures.length} failed`);
 if (failures.length) {
   for (const failure of failures) console.log(`  - ${failure}`);

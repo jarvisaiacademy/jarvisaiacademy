@@ -131,6 +131,28 @@ export const TESTIMONIAL_POOL: TestimonialPerson[] = [
   },
 ];
 
+/** The Firestore document id for a person — the pool carries no id of its own. */
+export function testimonialId(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/**
+ * The live pool, swapped in by TestimonialsProvider once Firestore has answered.
+ *
+ * A mutable module variable rather than a parameter because `buildTestimonialsText` is
+ * called synchronously from a getter in `academy-knowledge.ts`. This is the same
+ * store shape as `src/lib/admission-card-effect.ts`.
+ */
+let pool: TestimonialPerson[] = TESTIMONIAL_POOL;
+
+export function setTestimonialPool(next: TestimonialPerson[]): void {
+  // An empty collection means "not seeded yet", not "no testimonials" — keep the seed.
+  if (next.length > 0) pool = next;
+}
+
 /** Fisher-Yates, so a fresh sample can come out in a different order every time. */
 function shuffle<T>(items: T[]): T[] {
   const out = [...items];
@@ -154,7 +176,7 @@ function shuffle<T>(items: T[]): T[] {
  * the answer and cannot be tapped.
  */
 export function buildTestimonialsText(count = 3): string {
-  const people = shuffle(TESTIMONIAL_POOL).slice(0, count);
+  const people = shuffle(pool).slice(0, count);
 
   return [
     `🏆 **Student Success Stories & Placements**:`,
