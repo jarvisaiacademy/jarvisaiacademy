@@ -32,6 +32,7 @@ import { MobileMenuIcon } from "@/components/ui/mobile-menu-icon";
 import { siteConfig } from "@/config/site";
 import { useAuth } from "@/providers/auth-provider";
 import { useCourses } from "@/providers/courses-provider";
+import { useStudents } from "@/providers/students-provider";
 import { CourseItem, COURSE_CATEGORIES, CourseCategoryId } from "@/data/courses";
 import { DevIcon } from "@/components/ui/dev-icon";
 import { useToast } from "@/components/ui/toast";
@@ -54,6 +55,19 @@ interface EnrollmentRecord {
   timestamp: string;
 }
 
+/** Roster rows carry the ISO string written at sign-in; show it like the ledger's dates. */
+function formatSignIn(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 interface AdminDashboardProps {
   onBackToChat: () => void;
   activeTab?: DashboardTab;
@@ -71,6 +85,11 @@ export function AdminDashboard({
 }: AdminDashboardProps) {
   const { user } = useAuth();
   const { showToast } = useToast();
+  const {
+    students,
+    loading: studentsLoading,
+    error: studentsError,
+  } = useStudents();
   const {
     courses,
     isLiveFromFirebase,
@@ -841,6 +860,117 @@ export function AdminDashboard({
                           No enrollment records found matching your filters.
                         </td>
                       </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Who has an account, as distinct from who has paid for something. Every
+                row here is a Google sign-in — `upsertStudentRecord` writes one doc per
+                account on auth state change — so a learner can appear here having never
+                enrolled, and that is the point of the list. */}
+            <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden flex flex-col">
+              <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-200 dark:border-white/10">
+                <div>
+                  <h3 className="text-base font-semibold text-neutral-900 dark:text-white">
+                    Registered Students
+                  </h3>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    Accounts created by signing in with Google.
+                  </p>
+                </div>
+                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 text-xs font-medium self-start sm:self-auto">
+                  <Users className="w-3.5 h-3.5" />
+                  {students.length} {students.length === 1 ? "Account" : "Accounts"}
+                </span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-neutral-50 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 border-b border-neutral-200 dark:border-white/10 font-medium">
+                      <th className="py-3 px-4 sm:px-6">Student Learner</th>
+                      <th className="py-3 px-4 sm:px-6">Role</th>
+                      <th className="py-3 px-4 sm:px-6">Plan</th>
+                      <th className="py-3 px-4 sm:px-6">Last Sign-in</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-200 dark:divide-white/5">
+                    {studentsLoading ? (
+                      <tr>
+                        <td colSpan={4} className="text-center py-8 text-neutral-400">
+                          Loading registered students...
+                        </td>
+                      </tr>
+                    ) : studentsError ? (
+                      <tr>
+                        <td colSpan={4} className="text-center py-8 text-amber-600 dark:text-amber-400">
+                          Could not load the roster right now.
+                        </td>
+                      </tr>
+                    ) : students.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="text-center py-8 text-neutral-400">
+                          No accounts yet — nobody has signed in with Google.
+                        </td>
+                      </tr>
+                    ) : (
+                      students.map((student) => (
+                        <tr
+                          key={student.id}
+                          className="hover:bg-neutral-50/80 dark:hover:bg-white/5 transition-colors"
+                        >
+                          <td className="py-3.5 px-4 sm:px-6">
+                            <div className="flex items-center gap-3">
+                              {student.picture ? (
+                                <img
+                                  src={student.picture}
+                                  alt=""
+                                  className="w-7 h-7 rounded-full border border-neutral-200 dark:border-white/10 object-cover shrink-0"
+                                />
+                              ) : (
+                                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-neutral-700 text-neutral-200 text-[10px] font-semibold shrink-0">
+                                  {(student.name || student.email || "?").slice(0, 2).toUpperCase()}
+                                </div>
+                              )}
+                              <div className="flex flex-col min-w-0">
+                                <span className="font-semibold text-neutral-900 dark:text-white truncate">
+                                  {student.name || "—"}
+                                </span>
+                                <span className="text-[11px] text-neutral-500 truncate">
+                                  {student.email}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="py-3.5 px-4 sm:px-6">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
+                                student.role === "admin"
+                                  ? "bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-500/30"
+                                  : "bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-white/10"
+                              }`}
+                            >
+                              {student.role === "admin" ? (
+                                <ShieldCheck className="w-3 h-3" />
+                              ) : (
+                                <GraduationCap className="w-3 h-3" />
+                              )}
+                              {student.role === "admin" ? "Admin" : "Student"}
+                            </span>
+                          </td>
+
+                          <td className="py-3.5 px-4 sm:px-6 text-neutral-600 dark:text-neutral-400">
+                            {student.plan || "—"}
+                          </td>
+
+                          <td className="py-3.5 px-4 sm:px-6 text-neutral-500 text-[11px]">
+                            {formatSignIn(student.lastLoginAt)}
+                          </td>
+                        </tr>
+                      ))
                     )}
                   </tbody>
                 </table>

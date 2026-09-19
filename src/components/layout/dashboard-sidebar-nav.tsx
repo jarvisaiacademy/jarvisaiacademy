@@ -57,12 +57,12 @@ export function DashboardSidebarNav({
             Admin Management
           </span>
           <span className="flex items-center gap-1 text-[9px] font-medium text-emerald-600 dark:text-emerald-400">
-            <span
+            {/* <span
               className={`w-1.5 h-1.5 rounded-full ${
                 isLiveFromFirebase ? "bg-emerald-500 animate-pulse" : "bg-blue-500"
               }`}
             />
-            {isLiveFromFirebase ? "Live Cloud" : "Built-in Catalog"}
+            {isLiveFromFirebase ? "Live Cloud" : "Built-in Catalog"} */}
           </span>
         </div>
 
