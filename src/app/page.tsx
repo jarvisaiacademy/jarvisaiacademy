@@ -104,6 +104,11 @@ export default function Home() {
     setIsLearningOpen(true);
   };
   const handleCloseLearning = () => setIsLearningOpen(false);
+  // The identity chip opens "the dashboard", which is not the same place twice: an
+  // academy admin lands on the metrics dashboard, a student on the courses an admin
+  // granted them. Only reachable while signed in — both chips render only for a user.
+  const handleOpenProfile = () =>
+    user?.isAdmin ? handleOpenDashboard() : handleOpenLearning();
   const handleLogout = () => {
     setIsDashboardOpen(false);
     setStudentView(null);
@@ -141,6 +146,7 @@ export default function Home() {
             setResetSignal((prev) => prev + 1);
           }}
           onOpenLogin={handleOpenLogin}
+          onOpenProfile={handleOpenProfile}
           onOpenDashboard={() => requireLogin(handleOpenDashboard)}
           onOpenStudentView={(view) => requireLogin(() => setStudentView(view))}
           onOpenLearning={() => requireLogin(handleOpenLearning)}
@@ -196,6 +202,7 @@ export default function Home() {
                 onToggleSidebar={toggle}
                 onOpenLogin={handleOpenLogin}
                 onLogout={handleLogout}
+                onOpenProfile={handleOpenProfile}
                 isMobile={isMobile}
                 user={user}
               />
