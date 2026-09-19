@@ -14,7 +14,6 @@ interface GuestHeaderProps {
   onToggleSidebar: () => void;
   onOpenLogin: () => void;
   onLogout?: () => void;
-  onOpenProfile?: () => void;
   modelName?: string;
   isMobile?: boolean;
   user?: User | null;
@@ -25,7 +24,6 @@ export function GuestHeader({
   onToggleSidebar,
   onOpenLogin,
   onLogout,
-  onOpenProfile,
   modelName = siteConfig.name,
   user,
 }: GuestHeaderProps) {
@@ -94,12 +92,7 @@ export function GuestHeader({
         <ThemeSwitcher className="shrink-0" />
 
         {user ? (
-          <UserProfile
-            user={user}
-            variant="compact"
-            onLogout={onLogout}
-            onProfileClick={onOpenProfile}
-          />
+          <UserProfile user={user} variant="compact" onLogout={onLogout} />
         ) : (
           <div suppressHydrationWarning className="guest-cta-block flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             <button
