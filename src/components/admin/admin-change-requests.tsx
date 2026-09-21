@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   CheckCircle2,
   CircleDashed,
+  Copy,
   ExternalLink,
   FileText,
   Info,
@@ -34,6 +35,75 @@ const inputClass =
 const selectClass =
   "w-full py-2 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs";
 const labelClass = "text-[11px] font-semibold text-neutral-600 dark:text-neutral-400";
+
+/**
+ * The wording a reply has right now, read straight out of the bundle.
+ *
+ * A request never had to store this: the current copy is in `academyKnowledge` at the moment
+ * the card renders, so the old and new wordings sit beside each other without a schema field
+ * to keep in step. Undefined means there is nothing to compare against — a reply assembled by
+ * code, or a key that has since been renamed away.
+ */
+function currentWordingFor(replyKey: string): string | undefined {
+  if (GENERATED_REPLY_KEYS.has(replyKey)) return undefined;
+  return academyKnowledge[replyKey]?.text;
+}
+
+/**
+ * The prompt a developer pastes into their editor or their agent. Everything the code change
+ * needs is in here — the file, the key, both wordings — plus the two traps that make a wording
+ * change more than a find-and-replace: `text` is a template literal, and a course-mapped reply
+ * is public page copy that owes the SEO pass in CLAUDE.md §3.
+ */
+function buildDevPrompt(
+  request: ChangeRequest,
+  currentText: string | undefined,
+  pages: string[]
+): string {
+  const lines: string[] = [];
+
+  if (GENERATED_REPLY_KEYS.has(request.replyKey)) {
+    lines.push(
+      `Change the alumni wording behind the \`${request.replyKey}\` reply.`,
+      "",
+      "That reply is assembled at runtime from the pool in src/data/testimonials.ts, so the",
+      "change belongs there rather than in src/data/academy-knowledge.ts.",
+      "",
+      "What it should say:",
+      "",
+      request.requestedText
+    );
+  } else {
+    lines.push(`In src/data/academy-knowledge.ts, change the \`${request.replyKey}\` reply.`, "");
+
+    if (currentText) {
+      lines.push("It currently says:", "", currentText, "", "Change it to:", "", request.requestedText);
+    } else {
+      lines.push(
+        `That reply is not in that file under \`${request.replyKey}\` — find where its wording`,
+        "lives now.",
+        "",
+        "Change it to:",
+        "",
+        request.requestedText
+      );
+    }
+
+    lines.push("", "`text` is a template literal, so escape any backtick or ${ you introduce.");
+  }
+
+  if (pages.length > 0) {
+    lines.push(
+      "",
+      `This reply is also the programme copy on ${pages.join(", ")}, so the public page and`,
+      "its SEO values need the same edit (CLAUDE.md §3)."
+    );
+  }
+
+  if (request.note) lines.push("", `Context from the requester: ${request.note}`);
+
+  return lines.join("\n");
+}
 
 function formatWhen(iso: string): string {
   const date = new Date(iso);
@@ -161,69 +231,144 @@ export function AdminChangeRequests() {
     }
   };
 
+  const handleCopyPrompt = async (request: ChangeRequest) => {
+    const prompt = buildDevPrompt(
+      request,
+      currentWordingFor(request.replyKey),
+      replyPages(request.replyKey)
+    );
+    try {
+      await navigator.clipboard.writeText(prompt);
+      showToast("Prompt copied — paste it to whoever makes the change", "success");
+    } catch {
+      showToast("Could not copy the prompt", "error");
+    }
+  };
+
   // One request, as a card. Used by both sections, so a closed card keeps the layout it had
   // while it was pending and only dims.
-  const renderCard = (request: ChangeRequest) => (
-    <div
-      key={request.id}
-      className={`p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-3 ${
-        request.done ? "opacity-60" : ""
-      }`}
-    >
-      <div className="flex flex-wrap items-center gap-2">
-        {request.done ? (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
-            <CheckCircle2 className="w-3 h-3" />
-            Done
+  const renderCard = (request: ChangeRequest) => {
+    const oldText = currentWordingFor(request.replyKey);
+    // A closed request has usually been applied, and the reply on disk is now the requested
+    // text — showing two identical wordings as a before/after would read as a diff that is
+    // not there.
+    const alreadyMatches = oldText !== undefined && oldText.trim() === request.requestedText.trim();
+
+    return (
+      <div
+        key={request.id}
+        className={`p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-3 ${
+          request.done ? "opacity-60" : ""
+        }`}
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          {request.done ? (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
+              <CheckCircle2 className="w-3 h-3" />
+              Done
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-violet-50 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-500/30">
+              <CircleDashed className="w-3 h-3" />
+              Open
+            </span>
+          )}
+          <code className="px-2 py-0.5 rounded-lg bg-neutral-100 dark:bg-white/10 text-[11px] font-semibold text-neutral-700 dark:text-neutral-200">
+            {request.replyKey}
+          </code>
+          <span className="text-[10px] text-neutral-500">
+            {request.requestedBy || "—"} · {formatWhen(request.createdAt)}
           </span>
-        ) : (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-violet-50 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-500/30">
-            <CircleDashed className="w-3 h-3" />
-            Open
-          </span>
+        </div>
+
+        {/* Old beside new, so the change is legible without reading both paragraphs twice.
+            The block on the right is always the wording being asked for. */}
+        <div className={`grid grid-cols-1 gap-3 ${oldText && !alreadyMatches ? "lg:grid-cols-2" : ""}`}>
+          {oldText && !alreadyMatches && (
+            <div className="flex flex-col gap-1.5">
+              <span className={labelClass}>Old</span>
+              <p className="p-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-xs text-neutral-500 dark:text-neutral-400 whitespace-pre-wrap">
+                {oldText}
+              </p>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-1.5">
+            {alreadyMatches ? (
+              <span className={labelClass}>Wording</span>
+            ) : (
+              <span className="text-[11px] font-semibold text-violet-600 dark:text-violet-400">
+                New
+              </span>
+            )}
+            <p
+              className={`p-3 rounded-xl text-xs text-neutral-800 dark:text-neutral-200 whitespace-pre-wrap ${
+                alreadyMatches
+                  ? "bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10"
+                  : "bg-violet-50 dark:bg-violet-500/10 border border-violet-500/30"
+              }`}
+            >
+              {request.requestedText}
+            </p>
+          </div>
+        </div>
+
+        {alreadyMatches && (
+          <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
+            The reply in the code already reads this way — the request looks applied.
+          </p>
         )}
-        <code className="px-2 py-0.5 rounded-lg bg-neutral-100 dark:bg-white/10 text-[11px] font-semibold text-neutral-700 dark:text-neutral-200">
-          {request.replyKey}
-        </code>
-        <span className="text-[10px] text-neutral-500">
-          {request.requestedBy || "—"} · {formatWhen(request.createdAt)}
-        </span>
-      </div>
 
-      <p className="p-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-xs text-neutral-800 dark:text-neutral-200 whitespace-pre-wrap">
-        {request.requestedText}
-      </p>
-
-      {request.note && (
-        <p className="text-[11px] text-neutral-500 dark:text-neutral-400">{request.note}</p>
-      )}
-
-      <div className="flex items-center justify-between gap-2">
-        {request.screenshotUrl ? (
-          <a
-            href={request.screenshotUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-[11px] font-semibold text-violet-600 dark:text-violet-400 hover:underline"
-          >
-            <ExternalLink className="w-3 h-3" />
-            Screenshot
-          </a>
-        ) : (
-          <span />
+        {oldText === undefined && (
+          <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
+            {GENERATED_REPLY_KEYS.has(request.replyKey)
+              ? "No old wording to compare — this reply is assembled from the alumni pool in src/data/testimonials.ts."
+              : "No old wording to compare — nothing is keyed this way in the code right now."}
+          </p>
         )}
 
-        <button
-          type="button"
-          disabled={busyId === request.id}
-          onClick={() => handleToggleDone(request)}
-          className="px-3 py-1.5 rounded-lg text-[11px] font-semibold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/5 border border-neutral-200 dark:border-white/10 transition-colors cursor-pointer disabled:opacity-50"
-        >
-          {busyId === request.id ? "Saving..." : request.done ? "Reopen" : "Mark done"}
-        </button>
+        {request.note && (
+          <p className="text-[11px] text-neutral-500 dark:text-neutral-400">{request.note}</p>
+        )}
+
+        <div className="flex items-center justify-between gap-2">
+          {request.screenshotUrl ? (
+            <a
+              href={request.screenshotUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-violet-600 dark:text-violet-400 hover:underline"
+            >
+              <ExternalLink className="w-3 h-3" />
+              Screenshot
+            </a>
+          ) : (
+            <span />
+          )}
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleCopyPrompt(request)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 border border-violet-500/30 transition-colors cursor-pointer"
+            >
+              <Copy className="w-3 h-3" />
+              Copy prompt
+            </button>
+
+            <button
+              type="button"
+              disabled={busyId === request.id}
+              onClick={() => handleToggleDone(request)}
+              className="px-3 py-1.5 rounded-lg text-[11px] font-semibold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/5 border border-neutral-200 dark:border-white/10 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              {busyId === request.id ? "Saving..." : request.done ? "Reopen" : "Mark done"}
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -237,7 +382,9 @@ export function AdminChangeRequests() {
           <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
             Wording changes to copy that lives in the code — the assistant&apos;s replies, which
             the dashboard cannot edit. Write the exact wording you want; a developer makes the
-            change and ships it, then ticks the request off here.
+            change and ships it, then ticks the request off here. Each card shows the old
+            wording beside the new one, and <span className="font-semibold">Copy prompt</span>{" "}
+            hands the developer the file, both versions and the traps in one paste.
           </p>
         </div>
         <button

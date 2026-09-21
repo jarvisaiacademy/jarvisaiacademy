@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import Link from "next/link";
 import {
   Users,
   IndianRupee,
@@ -41,6 +42,7 @@ import { CandidateStatus, StudentRecord } from "@/data/assignments";
 import { CourseItem, COURSE_CATEGORIES, CourseCategoryId, CourseStatus } from "@/data/courses";
 import { DevIcon } from "@/components/ui/dev-icon";
 import { StatusSwitch } from "@/components/ui/switch";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { useToast } from "@/components/ui/toast";
 
 import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
@@ -142,6 +144,18 @@ export function AdminDashboard({
     seedCourses,
   } = useCourses();
   const { teachers } = useTeachers();
+
+  // Firestore has no joins, so the courses table assembles its own. A teacher is the user its
+  // uid names, which is why the picture comes off `users` and not off the faculty record.
+  const teachersById = useMemo(() => {
+    const map = new Map(teachers.map((t) => [t.id, t] as const));
+    return map;
+  }, [teachers]);
+
+  const studentsById = useMemo(() => {
+    const map = new Map(students.map((s) => [s.id, s] as const));
+    return map;
+  }, [students]);
 
   // Seeding overwrites the live catalogue from the built-in one, which is a development
   // action, not something to leave armed on the deployed site. `next dev` is the only
@@ -338,6 +352,59 @@ export function AdminDashboard({
 
     return matchesSearch && matchesCategory;
   });
+
+  // The teacher cell. `course.teacherIds` is only ids, so each one is resolved against the
+  // roster for the name and the account for the picture. A course with none says so rather
+  // than showing an empty cell, which reads as a rendering fault.
+  const renderTeacherCell = (course: CourseItem) => {
+    const assigned = (course.teacherIds ?? [])
+      .map((id) => {
+        const teacher = teachersById.get(id);
+        const user = studentsById.get(id);
+        if (!teacher && !user) return null;
+        return {
+          id,
+          name: user?.name || teacher?.name || "Unnamed",
+          email: user?.email,
+          picture: user?.picture,
+        };
+      })
+      .filter((t): t is NonNullable<typeof t> => t !== null);
+
+    if (assigned.length === 0) {
+      return <span className="text-[11px] text-neutral-400">Unassigned</span>;
+    }
+
+    const [first, ...rest] = assigned;
+
+    return (
+      <div className="flex items-center gap-2.5">
+        <div className="flex -space-x-2 shrink-0">
+          {assigned.slice(0, 3).map((teacher) => (
+            <Link
+              key={teacher.id}
+              href={`/admin/teachers/${teacher.id}`}
+              title={teacher.name}
+              className="rounded-full ring-2 ring-white dark:ring-[#1c1c1c] transition-transform hover:z-10 hover:-translate-y-0.5"
+            >
+              <UserAvatar user={teacher} size="sm" />
+            </Link>
+          ))}
+        </div>
+        <div className="flex flex-col min-w-0">
+          <Link
+            href={`/admin/teachers/${first.id}`}
+            className="font-semibold text-neutral-900 dark:text-white hover:text-amber-600 dark:hover:text-amber-400 truncate transition-colors"
+          >
+            {first.name}
+          </Link>
+          {rest.length > 0 && (
+            <span className="text-[10px] text-neutral-500">+{rest.length} more</span>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   // Open modal for new course
   const handleOpenAdd = () => {
@@ -546,11 +613,13 @@ export function AdminDashboard({
   // recomputed from the admin allowlist on every sign-in (see `src/data/teachers.ts`), so a
   // stored "teacher" would revert on that person's next visit. Deriving the third role from
   // the roster the Teachers tab already owns is also what stops the two tabs disagreeing.
-  const teacherIds = new Set(teachers.map((teacher) => teacher.id));
-
   const renderRole = (student: StudentRecord) => {
     const role: keyof typeof ROLE_BADGE =
-      student.role === "admin" ? "admin" : teacherIds.has(student.id) ? "teacher" : "student";
+      student.role === "admin"
+        ? "admin"
+        : teachersById.has(student.id)
+          ? "teacher"
+          : "student";
     const { label, icon: Icon, badge } = ROLE_BADGE[role];
 
     return (
@@ -741,6 +810,7 @@ export function AdminDashboard({
                       <th className="py-3 px-4 sm:px-6 w-16">#</th>
                       <th className="py-3 px-4 sm:px-6">Course Offering</th>
                       <th className="py-3 px-4 sm:px-6">Category</th>
+                      <th className="py-3 px-4 sm:px-6">Teacher</th>
                       <th className="py-3 px-4 sm:px-6">Tech Stack</th>
                       <th className="py-3 px-4 sm:px-6">Duration &amp; Fee</th>
                       <th className="py-3 px-4 sm:px-6 text-right">Actions</th>
@@ -793,6 +863,10 @@ export function AdminDashboard({
                               {course.categoryLabel || course.category}
                             </span>
                           </td>
+
+                          {/* Assigned Teacher — the face first, because that is what an admin
+                              recognises the row by. */}
+                          <td className="py-3.5 px-4 sm:px-6">{renderTeacherCell(course)}</td>
 
                           {/* Tech Stack */}
                           <td className="py-3.5 px-4 sm:px-6">
@@ -880,7 +954,7 @@ export function AdminDashboard({
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={6} className="text-center py-10 text-neutral-400">
+                        <td colSpan={7} className="text-center py-10 text-neutral-400">
                           {/* An empty store and an empty filter read the same in the table and
                               mean opposite things, so they are not given the same sentence. */}
                           {courses.length === 0
@@ -1126,17 +1200,7 @@ export function AdminDashboard({
                         >
                           <td className="py-3.5 px-4 sm:px-6">
                             <div className="flex items-center gap-3">
-                              {student.picture ? (
-                                <img
-                                  src={student.picture}
-                                  alt=""
-                                  className="w-7 h-7 rounded-full border border-neutral-200 dark:border-white/10 object-cover shrink-0"
-                                />
-                              ) : (
-                                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-neutral-700 text-neutral-200 text-[10px] font-semibold shrink-0">
-                                  {(student.name || student.email || "?").slice(0, 2).toUpperCase()}
-                                </div>
-                              )}
+                              <UserAvatar user={student} />
                               <div className="flex flex-col min-w-0">
                                 <span className="font-semibold text-neutral-900 dark:text-white truncate">
                                   {student.name || "—"}
