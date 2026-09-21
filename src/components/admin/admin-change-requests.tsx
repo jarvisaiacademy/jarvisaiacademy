@@ -8,8 +8,10 @@ import {
   FileText,
   Info,
   Loader2,
+  Plus,
   Send,
   TriangleAlert,
+  X,
 } from "lucide-react";
 import {
   academyKnowledge,
@@ -64,6 +66,9 @@ export function AdminChangeRequests() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
+  // Closed by default: the queue is what an admin comes here to read, and a blank form in
+  // front of it hides the thing they came for.
+  const [formOpen, setFormOpen] = useState(false);
   const [replyKey, setReplyKey] = useState("");
   const [requestedText, setRequestedText] = useState("");
   const [note, setNote] = useState("");
@@ -104,7 +109,9 @@ export function AdminChangeRequests() {
   const isGenerated = GENERATED_REPLY_KEYS.has(replyKey);
   const currentText = replyKey && !isGenerated ? academyKnowledge[replyKey]?.text : undefined;
 
-  const openCount = requests.filter((r) => !r.done).length;
+  // Already sorted open-first by the subscription, so each group keeps newest-first order.
+  const pending = requests.filter((r) => !r.done);
+  const closed = requests.filter((r) => r.done);
 
   const resetForm = () => {
     setReplyKey("");
@@ -131,6 +138,7 @@ export function AdminChangeRequests() {
       );
       showToast("Request filed — a developer will pick it up", "success");
       resetForm();
+      setFormOpen(false);
     } catch (err: unknown) {
       showToast(err instanceof Error ? err.message : "Failed to file the request", "error");
     } finally {
@@ -153,19 +161,93 @@ export function AdminChangeRequests() {
     }
   };
 
+  // One request, as a card. Used by both sections, so a closed card keeps the layout it had
+  // while it was pending and only dims.
+  const renderCard = (request: ChangeRequest) => (
+    <div
+      key={request.id}
+      className={`p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-3 ${
+        request.done ? "opacity-60" : ""
+      }`}
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        {request.done ? (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
+            <CheckCircle2 className="w-3 h-3" />
+            Done
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-violet-50 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-500/30">
+            <CircleDashed className="w-3 h-3" />
+            Open
+          </span>
+        )}
+        <code className="px-2 py-0.5 rounded-lg bg-neutral-100 dark:bg-white/10 text-[11px] font-semibold text-neutral-700 dark:text-neutral-200">
+          {request.replyKey}
+        </code>
+        <span className="text-[10px] text-neutral-500">
+          {request.requestedBy || "—"} · {formatWhen(request.createdAt)}
+        </span>
+      </div>
+
+      <p className="p-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-xs text-neutral-800 dark:text-neutral-200 whitespace-pre-wrap">
+        {request.requestedText}
+      </p>
+
+      {request.note && (
+        <p className="text-[11px] text-neutral-500 dark:text-neutral-400">{request.note}</p>
+      )}
+
+      <div className="flex items-center justify-between gap-2">
+        {request.screenshotUrl ? (
+          <a
+            href={request.screenshotUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[11px] font-semibold text-violet-600 dark:text-violet-400 hover:underline"
+          >
+            <ExternalLink className="w-3 h-3" />
+            Screenshot
+          </a>
+        ) : (
+          <span />
+        )}
+
+        <button
+          type="button"
+          disabled={busyId === request.id}
+          onClick={() => handleToggleDone(request)}
+          className="px-3 py-1.5 rounded-lg text-[11px] font-semibold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/5 border border-neutral-200 dark:border-white/10 transition-colors cursor-pointer disabled:opacity-50"
+        >
+          {busyId === request.id ? "Saving..." : request.done ? "Reopen" : "Mark done"}
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex flex-col gap-6">
       {/* Header Banner */}
-      <div className="flex flex-col gap-1 p-5 rounded-2xl bg-gradient-to-r from-violet-600/10 via-fuchsia-600/10 to-violet-600/10 border border-violet-500/20 shadow-xs">
-        <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-          <FileText className="w-5 h-5 text-violet-500" />
-          Change Requests
-        </h2>
-        <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
-          Wording changes to copy that lives in the code — the assistant&apos;s replies, which
-          the dashboard cannot edit. Write the exact wording you want; a developer makes the
-          change and ships it, then ticks the request off here.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-violet-600/10 via-fuchsia-600/10 to-violet-600/10 border border-violet-500/20 shadow-xs">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+            <FileText className="w-5 h-5 text-violet-500" />
+            Change Requests
+          </h2>
+          <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
+            Wording changes to copy that lives in the code — the assistant&apos;s replies, which
+            the dashboard cannot edit. Write the exact wording you want; a developer makes the
+            change and ships it, then ticks the request off here.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setFormOpen(true)}
+          className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer shrink-0"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          <span>New Request</span>
+        </button>
       </div>
 
       {/* The boundary. Without it this reads as a bug tracker and collects requests the
@@ -182,233 +264,194 @@ export function AdminChangeRequests() {
         </p>
       </div>
 
-      {/* New Request */}
-      <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-4">
-        <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">
-          What should it say?
-        </h3>
-
-        <div className="flex flex-col gap-1.5">
-          <span className={labelClass}>Reply</span>
-          <Select
-            label="Which reply this request is about"
-            value={replyKey}
-            onValueChange={setReplyKey}
-            options={options}
-            className={selectClass}
-          />
-          <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
-            {replyKey ? `src/data/academy-knowledge.ts → ${replyKey}` : "Pick the answer to change."}
-          </span>
-        </div>
-
-        {/* The one reply that is not a string, so it cannot be pasted over. Saying so is
-            cheaper than a requester wondering why their request changed nothing. */}
-        {isGenerated && (
-          <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-500/25">
-            <TriangleAlert className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-            <p className="text-[11px] text-amber-800 dark:text-amber-200">
-              This reply is assembled by code on every read, from the alumni list in{" "}
-              <code className="px-1 py-0.5 rounded bg-amber-500/15 text-[10px]">
-                src/data/testimonials.ts
-              </code>
-              . Write the wording or the change you want and a developer will make it there.
-            </p>
+      {/* New Request — opened from the header button, so the queue is what the page shows
+          first. */}
+      {formOpen && (
+        <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">
+              What should it say?
+            </h3>
+            <button
+              type="button"
+              onClick={() => setFormOpen(false)}
+              aria-label="Close form"
+              className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-        )}
 
-        {/* Editing one of these also rewrites a public page, which owes an SEO pass
-            (CLAUDE.md §3). The developer has to know that before touching it. */}
-        {pages.length > 0 && (
-          <div className="flex items-start gap-2 p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-500/25">
-            <TriangleAlert className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 mt-0.5 shrink-0" />
-            <p className="text-[11px] text-indigo-800 dark:text-indigo-200">
-              This reply is also the programme copy on {pages.join(", ")}, so the change lands
-              on the public page too.
-            </p>
-          </div>
-        )}
-
-        {currentText && (
           <div className="flex flex-col gap-1.5">
-            <span className={labelClass}>Current wording</span>
-            <p className="max-h-32 overflow-y-auto p-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-[11px] text-neutral-600 dark:text-neutral-400 whitespace-pre-wrap">
-              {currentText}
-            </p>
+            <span className={labelClass}>Reply</span>
+            <Select
+              label="Which reply this request is about"
+              value={replyKey}
+              onValueChange={setReplyKey}
+              options={options}
+              className={selectClass}
+            />
+            <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
+              {replyKey ? `src/data/academy-knowledge.ts → ${replyKey}` : "Pick the answer to change."}
+            </span>
           </div>
-        )}
 
-        <div className="flex flex-col gap-1.5">
-          <label className={labelClass} htmlFor="cr-text">
-            Replacement wording
-          </label>
-          <textarea
-            id="cr-text"
-            rows={5}
-            value={requestedText}
-            onChange={(e) => setRequestedText(e.target.value)}
-            placeholder="Paste the exact text you want the answer to use."
-            className={`${inputClass} resize-y`}
-          />
-        </div>
+          {/* The one reply that is not a string, so it cannot be pasted over. Saying so is
+              cheaper than a requester wondering why their request changed nothing. */}
+          {isGenerated && (
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-500/25">
+              <TriangleAlert className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+              <p className="text-[11px] text-amber-800 dark:text-amber-200">
+                This reply is assembled by code on every read, from the alumni list in{" "}
+                <code className="px-1 py-0.5 rounded bg-amber-500/15 text-[10px]">
+                  src/data/testimonials.ts
+                </code>
+                . Write the wording or the change you want and a developer will make it there.
+              </p>
+            </div>
+          )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          {/* Editing one of these also rewrites a public page, which owes an SEO pass
+              (CLAUDE.md §3). The developer has to know that before touching it. */}
+          {pages.length > 0 && (
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-500/25">
+              <TriangleAlert className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 mt-0.5 shrink-0" />
+              <p className="text-[11px] text-indigo-800 dark:text-indigo-200">
+                This reply is also the programme copy on {pages.join(", ")}, so the change lands
+                on the public page too.
+              </p>
+            </div>
+          )}
+
+          {currentText && (
+            <div className="flex flex-col gap-1.5">
+              <span className={labelClass}>Current wording</span>
+              <p className="max-h-32 overflow-y-auto p-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-[11px] text-neutral-600 dark:text-neutral-400 whitespace-pre-wrap">
+                {currentText}
+              </p>
+            </div>
+          )}
+
           <div className="flex flex-col gap-1.5">
-            <label className={labelClass} htmlFor="cr-note">
-              Why (optional)
+            <label className={labelClass} htmlFor="cr-text">
+              Replacement wording
             </label>
-            <input
-              id="cr-note"
-              type="text"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="e.g. the fee changed on 1 September"
-              className={inputClass}
+            <textarea
+              id="cr-text"
+              rows={5}
+              value={requestedText}
+              onChange={(e) => setRequestedText(e.target.value)}
+              placeholder="Paste the exact text you want the answer to use."
+              className={`${inputClass} resize-y`}
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className={labelClass} htmlFor="cr-shot">
-              Screenshot link (optional)
-            </label>
-            <input
-              id="cr-shot"
-              type="url"
-              value={screenshotUrl}
-              onChange={(e) => setScreenshotUrl(e.target.value)}
-              placeholder="https://..."
-              className={inputClass}
-            />
-          </div>
-        </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className={labelClass} htmlFor="cr-note">
+                Why (optional)
+              </label>
+              <input
+                id="cr-note"
+                type="text"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="e.g. the fee changed on 1 September"
+                className={inputClass}
+              />
+            </div>
 
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
-            Filed as {user?.email || "—"}
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={resetForm}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/5 transition-colors cursor-pointer"
-            >
-              Clear
-            </button>
-            <button
-              type="button"
-              disabled={isSaving}
-              onClick={handleSubmit}
-              className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSaving ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Send className="w-3.5 h-3.5" />
-              )}
-              <span>File Request</span>
-            </button>
+            <div className="flex flex-col gap-1.5">
+              <label className={labelClass} htmlFor="cr-shot">
+                Screenshot link (optional)
+              </label>
+              <input
+                id="cr-shot"
+                type="url"
+                value={screenshotUrl}
+                onChange={(e) => setScreenshotUrl(e.target.value)}
+                placeholder="https://..."
+                className={inputClass}
+              />
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* The list */}
-      <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden">
-        <div className="p-4 sm:p-5 border-b border-neutral-200 dark:border-white/10">
-          <h3 className="text-base font-semibold text-neutral-900 dark:text-white">
-            Requested changes
-          </h3>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-            {requests.length === 0
-              ? "Nothing requested yet"
-              : `${openCount} open · ${requests.length - openCount} done`}
-          </p>
-        </div>
-
-        {loading ? (
-          <div className="py-10 text-center text-neutral-400">
-            <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
-            Loading requests...
-          </div>
-        ) : loadError ? (
-          <p className="py-10 text-center text-xs text-neutral-400">
-            Could not read the queue: {loadError}
-          </p>
-        ) : requests.length === 0 ? (
-          <p className="py-10 text-center text-xs text-neutral-400">
-            No change requests yet. File one above and a developer will pick it up.
-          </p>
-        ) : (
-          <div className="divide-y divide-neutral-200 dark:divide-white/5">
-            {requests.map((request) => (
-              <div
-                key={request.id}
-                className={`p-4 sm:p-5 flex flex-col gap-3 ${
-                  request.done ? "opacity-60" : ""
-                }`}
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
+              Filed as {user?.email || "—"}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={resetForm}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/5 transition-colors cursor-pointer"
               >
-                <div className="flex flex-wrap items-center gap-2">
-                  {request.done ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
-                      <CheckCircle2 className="w-3 h-3" />
-                      Done
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-violet-50 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-500/30">
-                      <CircleDashed className="w-3 h-3" />
-                      Open
-                    </span>
-                  )}
-                  <code className="px-2 py-0.5 rounded-lg bg-neutral-100 dark:bg-white/10 text-[11px] font-semibold text-neutral-700 dark:text-neutral-200">
-                    {request.replyKey}
-                  </code>
-                  <span className="text-[10px] text-neutral-500">
-                    {request.requestedBy || "—"} · {formatWhen(request.createdAt)}
-                  </span>
-                </div>
-
-                <p className="p-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-xs text-neutral-800 dark:text-neutral-200 whitespace-pre-wrap">
-                  {request.requestedText}
-                </p>
-
-                {request.note && (
-                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                    {request.note}
-                  </p>
+                Clear
+              </button>
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={handleSubmit}
+                className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSaving ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Send className="w-3.5 h-3.5" />
                 )}
-
-                <div className="flex items-center justify-between gap-2">
-                  {request.screenshotUrl ? (
-                    <a
-                      href={request.screenshotUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-violet-600 dark:text-violet-400 hover:underline"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      Screenshot
-                    </a>
-                  ) : (
-                    <span />
-                  )}
-
-                  <button
-                    type="button"
-                    disabled={busyId === request.id}
-                    onClick={() => handleToggleDone(request)}
-                    className="px-3 py-1.5 rounded-lg text-[11px] font-semibold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/5 border border-neutral-200 dark:border-white/10 transition-colors cursor-pointer disabled:opacity-50"
-                  >
-                    {busyId === request.id
-                      ? "Saving..."
-                      : request.done
-                        ? "Reopen"
-                        : "Mark done"}
-                  </button>
-                </div>
-              </div>
-            ))}
+                <span>File Request</span>
+              </button>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* The queue, as cards — what is still waiting first, then what has shipped and was
+          ticked off. */}
+      {loading ? (
+        <div className="py-10 text-center text-neutral-400">
+          <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
+          Loading requests...
+        </div>
+      ) : loadError ? (
+        <p className="py-10 text-center text-xs text-neutral-400">
+          Could not read the queue: {loadError}
+        </p>
+      ) : (
+        <div className="flex flex-col gap-6">
+          <section className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">
+                Pending
+              </h3>
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-violet-50 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-500/30">
+                {pending.length}
+              </span>
+            </div>
+            {pending.length === 0 ? (
+              <p className="py-8 text-center text-xs text-neutral-400 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10">
+                Nothing waiting. Use New Request to file a change.
+              </p>
+            ) : (
+              pending.map(renderCard)
+            )}
+          </section>
+
+          {closed.length > 0 && (
+            <section className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">
+                  Closed
+                </h3>
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
+                  {closed.length}
+                </span>
+              </div>
+              {closed.map(renderCard)}
+            </section>
+          )}
+        </div>
+      )}
     </div>
   );
 }
