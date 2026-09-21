@@ -17,6 +17,13 @@ interface CoursesContextType {
   loading: boolean;
   isLiveFromFirebase: boolean;
   error: string | null;
+  /**
+   * Only the documents that exist, with no fallback. The admin dashboard reads this and
+   * nothing else: a course the fallback invents is one the database cannot be edited
+   * through, which is what made every save fail with "No document to update: courses/<id>"
+   * while the twelve built-in ones were on screen.
+   */
+  firestoreCourses: CourseItem[];
   addCourse: (course: Partial<CourseItem> & { title: string; category: CourseItem["category"] }) => Promise<CourseItem>;
   editCourse: (courseId: string, updates: Partial<CourseItem>) => Promise<void>;
   removeCourse: (courseId: string) => Promise<void>;
@@ -33,6 +40,10 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
   // kept a localStorage copy and treated it as a database, so an edit that failed to reach
   // Firestore still survived the reload and looked saved.
   const [courses, setCourses] = useState<CourseItem[]>(COURSES_DATA);
+  // The same read without that fallback. Empty until the first snapshot, and empty for good on
+  // a project where the catalogue has never been seeded — which is the truth the dashboard
+  // should be showing.
+  const [firestoreCourses, setFirestoreCourses] = useState<CourseItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLiveFromFirebase, setIsLiveFromFirebase] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,10 +52,11 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
     let isMounted = true;
 
     const unsubscribe = subscribeCoursesFromFirestore(
-      (firestoreCourses) => {
+      (stored) => {
         if (!isMounted) return;
-        if (firestoreCourses && firestoreCourses.length > 0) {
-          setCourses(firestoreCourses);
+        setFirestoreCourses(stored ?? []);
+        if (stored && stored.length > 0) {
+          setCourses(stored);
           setIsLiveFromFirebase(true);
         } else {
           // Keep current courses or fall back to default COURSES_DATA
@@ -80,6 +92,7 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       const data = await getCoursesFromFirestore();
+      setFirestoreCourses(data ?? []);
       if (data && data.length > 0) {
         setCourses(data);
         setIsLiveFromFirebase(true);
@@ -204,6 +217,7 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
     <CoursesContext.Provider
       value={{
         courses,
+        firestoreCourses,
         loading,
         isLiveFromFirebase,
         error,
@@ -224,6 +238,8 @@ export function useCourses() {
   if (!context) {
     return {
       courses: COURSES_DATA,
+      // Nothing was read, so nothing is known to exist.
+      firestoreCourses: [],
       loading: false,
       isLiveFromFirebase: false,
       error: null,

@@ -21,7 +21,9 @@ import { Select } from "@/components/ui/select";
 
 export function AdminAssignments() {
   const { students, loading: studentsLoading } = useStudents();
-  const { courses } = useCourses();
+  // Only stored courses can be assigned — the fallback would offer a course the write cannot
+  // reach. See `firestoreCourses` in the provider.
+  const { firestoreCourses: courses } = useCourses();
   const {
     assignments,
     loading: assignmentsLoading,

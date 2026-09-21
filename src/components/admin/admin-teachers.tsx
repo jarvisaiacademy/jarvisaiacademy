@@ -75,7 +75,10 @@ function UserAvatar({ user, size }: { user: StudentRecord; size: "sm" | "md" }) 
 export function AdminTeachers() {
   const { teachers, loading, addTeacher, editTeacher, removeTeacher, setTeacherStatus } =
     useTeachers();
-  const { courses } = useCourses();
+  // The course picker assigns to documents, so it lists only documents. With the fallback in,
+  // its twelve built-in options each wrote `arrayUnion` to a course that does not exist and
+  // failed the whole batch — the error Sugat hit adding a teacher.
+  const { firestoreCourses: courses } = useCourses();
   const { students } = useStudents();
   const { showToast } = useToast();
 
@@ -398,9 +401,13 @@ export function AdminTeachers() {
                 className={selectClass}
               />
               <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
-                {formCourseIds.length === 0
-                  ? "No courses assigned yet."
-                  : formCourseIds.map(courseTitle).join(", ")}
+                {/* The picker is empty until the catalogue is stored, and an empty dropdown
+                    with no explanation reads as a bug. */}
+                {courses.length === 0
+                  ? "No courses are stored yet, so there is nothing to assign."
+                  : formCourseIds.length === 0
+                    ? "No courses assigned yet."
+                    : formCourseIds.map(courseTitle).join(", ")}
               </span>
             </div>
 
