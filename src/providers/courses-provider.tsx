@@ -11,12 +11,20 @@ import {
   seedDefaultCoursesToFirestore,
 } from "@/services/courses-service";
 import { useAuth } from "@/providers/auth-provider";
+import { fetchPublicContent } from "@/lib/public-content";
 
 interface CoursesContextType {
   courses: CourseItem[];
   loading: boolean;
   isLiveFromFirebase: boolean;
   error: string | null;
+  /**
+   * Only the documents that exist, with no fallback. The admin dashboard reads this and
+   * nothing else: a course the fallback invents is one the database cannot be edited
+   * through, which is what made every save fail with "No document to update: courses/<id>"
+   * while the twelve built-in ones were on screen.
+   */
+  firestoreCourses: CourseItem[];
   addCourse: (course: Partial<CourseItem> & { title: string; category: CourseItem["category"] }) => Promise<CourseItem>;
   editCourse: (courseId: string, updates: Partial<CourseItem>) => Promise<void>;
   removeCourse: (courseId: string) => Promise<void>;
@@ -33,53 +41,90 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
   // kept a localStorage copy and treated it as a database, so an edit that failed to reach
   // Firestore still survived the reload and looked saved.
   const [courses, setCourses] = useState<CourseItem[]>(COURSES_DATA);
+  // The same read without that fallback. Empty until the first snapshot, and empty for good on
+  // a project where the catalogue has never been seeded — which is the truth the dashboard
+  // should be showing.
+  const [firestoreCourses, setFirestoreCourses] = useState<CourseItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLiveFromFirebase, setIsLiveFromFirebase] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isAdmin = !!user?.isAdmin;
+
   useEffect(() => {
     let isMounted = true;
 
-    const unsubscribe = subscribeCoursesFromFirestore(
-      (firestoreCourses) => {
-        if (!isMounted) return;
-        if (firestoreCourses && firestoreCourses.length > 0) {
-          setCourses(firestoreCourses);
-          setIsLiveFromFirebase(true);
-        } else {
-          // Keep current courses or fall back to default COURSES_DATA
-          setCourses((prev) => (prev.length > 0 ? prev : COURSES_DATA));
+    // An admin keeps the live subscription: the Courses tab has to show the course it just
+    // saved, and a value the cache has not caught up with reads as a failed save. Everyone
+    // else takes the cached payload below, which is one Firestore read per window instead of
+    // one per visitor.
+    if (isAdmin) {
+      const unsubscribe = subscribeCoursesFromFirestore(
+        (stored) => {
+          if (!isMounted) return;
+          setFirestoreCourses(stored ?? []);
+          if (stored && stored.length > 0) {
+            setCourses(stored);
+            setIsLiveFromFirebase(true);
+          } else {
+            // Keep current courses or fall back to default COURSES_DATA
+            setCourses((prev) => (prev.length > 0 ? prev : COURSES_DATA));
+            setIsLiveFromFirebase(false);
+          }
+          setLoading(false);
+          setError(null);
+        },
+        (err) => {
+          if (!isMounted) return;
+          console.warn("[CoursesProvider] Real-time subscription error, using local state:", err);
+          setError(err.message);
           setIsLiveFromFirebase(false);
+          setLoading(false);
         }
-        setLoading(false);
-        setError(null);
-      },
-      (err) => {
-        if (!isMounted) return;
-        console.warn("[CoursesProvider] Real-time subscription error, using local state:", err);
-        setError(err.message);
+      );
+
+      if (!unsubscribe) {
         setIsLiveFromFirebase(false);
         setLoading(false);
       }
-    );
 
-    if (!unsubscribe) {
-      setIsLiveFromFirebase(false);
-      setLoading(false);
+      return () => {
+        isMounted = false;
+        unsubscribe?.();
+      };
     }
+
+    fetchPublicContent()
+      .then((payload) => {
+        if (!isMounted) return;
+        // `firestoreCourses` is left alone on purpose. This payload cannot say whether a
+        // course is stored or is the server's built-in fallback, and that list means "what is
+        // in the database" — only the subscription above, which reads the collection itself,
+        // may fill it.
+        if (payload.courses?.length) setCourses(payload.courses);
+        setIsLiveFromFirebase(false);
+        setLoading(false);
+        setError(null);
+      })
+      .catch((err: unknown) => {
+        if (!isMounted) return;
+        // COURSES_DATA stays on screen: it is the same catalogue the server would have sent.
+        console.warn("[CoursesProvider] Cached read failed, using the built-in catalogue:", err);
+        setError(err instanceof Error ? err.message : "Failed to load the catalogue");
+        setIsLiveFromFirebase(false);
+        setLoading(false);
+      });
 
     return () => {
       isMounted = false;
-      if (unsubscribe) {
-        unsubscribe();
-      }
     };
-  }, []);
+  }, [isAdmin]);
 
   const refreshCourses = async () => {
     setLoading(true);
     try {
       const data = await getCoursesFromFirestore();
+      setFirestoreCourses(data ?? []);
       if (data && data.length > 0) {
         setCourses(data);
         setIsLiveFromFirebase(true);
@@ -204,6 +249,7 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
     <CoursesContext.Provider
       value={{
         courses,
+        firestoreCourses,
         loading,
         isLiveFromFirebase,
         error,
@@ -224,6 +270,8 @@ export function useCourses() {
   if (!context) {
     return {
       courses: COURSES_DATA,
+      // Nothing was read, so nothing is known to exist.
+      firestoreCourses: [],
       loading: false,
       isLiveFromFirebase: false,
       error: null,

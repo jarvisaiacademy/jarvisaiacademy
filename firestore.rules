@@ -72,6 +72,16 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // Change requests — wording changes an admin wants made to copy that is hard-coded in
+    // `src/`. Admin-only even for reads: a request is an internal note about unreleased
+    // wording, and a requester's screenshot link is nobody else's business.
+    //
+    // The app only stores and displays these. Applying one is a code change, and nothing
+    // written here reaches the site until a developer ships it.
+    match /changeRequests/{requestId} {
+      allow read, write: if isAdmin();
+    }
+
     // Course assignments. A learner reads the ones addressed to them, which is the
     // `where('studentId', '==', uid)` the client already uses, so the query stays provable.
     match /assignments/{assignmentId} {
@@ -89,12 +99,10 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // The alumni pool behind the testimonials reply. Public for the same reason the
-    // catalogue is; the chat reads it, and it carries nothing private.
-    match /testimonials/{testimonialId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
+    // There is deliberately no stanza for `testimonials`: the alumni are hard-coded in
+    // `src/data/testimonials.ts` and no longer read from or written to Firestore, so the
+    // catch-all below denies the collection outright. Re-adding a stanza here is part of
+    // putting them back in the database.
 
     // The academy's settings — referral reward, Super10 seat cap, GST rate, GSTIN, the
     // money-back window. Public read because every one of these is already advertised: the

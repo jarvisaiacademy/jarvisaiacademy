@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import Link from "next/link";
 import {
   Users,
   IndianRupee,
@@ -27,6 +28,7 @@ import {
   Check,
   PanelLeft,
   Star,
+  Briefcase,
 } from "lucide-react";
 import { MobileMenuIcon } from "@/components/ui/mobile-menu-icon";
 import { siteConfig } from "@/config/site";
@@ -36,9 +38,11 @@ import { useStudents } from "@/providers/students-provider";
 import { useTeachers } from "@/providers/teachers-provider";
 import { useAuth } from "@/providers/auth-provider";
 import { updateCandidateInFirestore } from "@/services/students-service";
-import { CandidateStatus } from "@/data/assignments";
+import { CandidateStatus, StudentRecord } from "@/data/assignments";
 import { CourseItem, COURSE_CATEGORIES, CourseCategoryId, CourseStatus } from "@/data/courses";
 import { DevIcon } from "@/components/ui/dev-icon";
+import { StatusSwitch } from "@/components/ui/switch";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { useToast } from "@/components/ui/toast";
 
 import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
@@ -47,6 +51,7 @@ import { UserProfile } from "@/components/layout/user-profile";
 import { AdminAssignments } from "@/components/admin/admin-assignments";
 import { AdminTeachers } from "@/components/admin/admin-teachers";
 import { AdminKnowledge } from "@/components/admin/admin-knowledge";
+import { AdminChangeRequests } from "@/components/admin/admin-change-requests";
 import { AdminSettings } from "@/components/admin/admin-settings";
 import { Select } from "@/components/ui/select";
 import { shortcutById } from "@/data/shortcuts";
@@ -76,6 +81,33 @@ function formatSignIn(iso: string): string {
   });
 }
 
+/**
+ * The three roles a person can hold on this site, and how each one's badge reads.
+ *
+ * Teacher is not stored anywhere — see `renderRole`. Sky rather than amber because amber
+ * already means Super10 in this same table, and one row must not carry two amber chips.
+ */
+const ROLE_BADGE = {
+  admin: {
+    label: "Admin",
+    icon: ShieldCheck,
+    badge:
+      "bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-500/30",
+  },
+  teacher: {
+    label: "Teacher",
+    icon: Briefcase,
+    badge:
+      "bg-sky-50 dark:bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-500/30",
+  },
+  student: {
+    label: "Student",
+    icon: GraduationCap,
+    badge:
+      "bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-white/10",
+  },
+} as const;
+
 interface AdminDashboardProps {
   onBackToChat: () => void;
   activeTab?: DashboardTab;
@@ -99,8 +131,11 @@ export function AdminDashboard({
     loading: studentsLoading,
     error: studentsError,
   } = useStudents();
+  // `firestoreCourses`, not `courses`: this tab lists what is in the database. With the
+  // COURSES_DATA fallback in front of it the twelve built-in courses appeared here as if they
+  // were stored, and saving one failed the write because no such document existed.
   const {
-    courses,
+    firestoreCourses: courses,
     isLiveFromFirebase,
     loading: coursesLoading,
     addCourse,
@@ -109,6 +144,18 @@ export function AdminDashboard({
     seedCourses,
   } = useCourses();
   const { teachers } = useTeachers();
+
+  // Firestore has no joins, so the courses table assembles its own. A teacher is the user its
+  // uid names, which is why the picture comes off `users` and not off the faculty record.
+  const teachersById = useMemo(() => {
+    const map = new Map(teachers.map((t) => [t.id, t] as const));
+    return map;
+  }, [teachers]);
+
+  const studentsById = useMemo(() => {
+    const map = new Map(students.map((s) => [s.id, s] as const));
+    return map;
+  }, [students]);
 
   // Seeding overwrites the live catalogue from the built-in one, which is a development
   // action, not something to leave armed on the deployed site. `next dev` is the only
@@ -174,6 +221,20 @@ export function AdminDashboard({
       showToast(err instanceof Error ? err.message : "Failed to update candidate", "error");
     } finally {
       setBusyCandidateId(null);
+    }
+  };
+
+  // Flipped from the table row rather than only from the editor: hiding a course is the one
+  // course change an admin makes in a hurry, and opening a modal to make it was the long way.
+  const handleCourseStatus = async (course: CourseItem, status: CourseStatus) => {
+    try {
+      await editCourse(course.id, { status });
+      showToast(
+        status === "active" ? `"${course.title}" is listed publicly` : `"${course.title}" is hidden`,
+        "success"
+      );
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : "Failed to update the course", "error");
     }
   };
 
@@ -291,6 +352,59 @@ export function AdminDashboard({
 
     return matchesSearch && matchesCategory;
   });
+
+  // The teacher cell. `course.teacherIds` is only ids, so each one is resolved against the
+  // roster for the name and the account for the picture. A course with none says so rather
+  // than showing an empty cell, which reads as a rendering fault.
+  const renderTeacherCell = (course: CourseItem) => {
+    const assigned = (course.teacherIds ?? [])
+      .map((id) => {
+        const teacher = teachersById.get(id);
+        const user = studentsById.get(id);
+        if (!teacher && !user) return null;
+        return {
+          id,
+          name: user?.name || teacher?.name || "Unnamed",
+          email: user?.email,
+          picture: user?.picture,
+        };
+      })
+      .filter((t): t is NonNullable<typeof t> => t !== null);
+
+    if (assigned.length === 0) {
+      return <span className="text-[11px] text-neutral-400">Unassigned</span>;
+    }
+
+    const [first, ...rest] = assigned;
+
+    return (
+      <div className="flex items-center gap-2.5">
+        <div className="flex -space-x-2 shrink-0">
+          {assigned.slice(0, 3).map((teacher) => (
+            <Link
+              key={teacher.id}
+              href={`/admin/teachers/${teacher.id}`}
+              title={teacher.name}
+              className="rounded-full ring-2 ring-white dark:ring-[#1c1c1c] transition-transform hover:z-10 hover:-translate-y-0.5"
+            >
+              <UserAvatar user={teacher} size="sm" />
+            </Link>
+          ))}
+        </div>
+        <div className="flex flex-col min-w-0">
+          <Link
+            href={`/admin/teachers/${first.id}`}
+            className="font-semibold text-neutral-900 dark:text-white hover:text-amber-600 dark:hover:text-amber-400 truncate transition-colors"
+          >
+            {first.name}
+          </Link>
+          {rest.length > 0 && (
+            <span className="text-[10px] text-neutral-500">+{rest.length} more</span>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   // Open modal for new course
   const handleOpenAdd = () => {
@@ -455,6 +569,69 @@ export function AdminDashboard({
     }
   };
 
+  // A candidate's status cell. Three states in two controls, and only an admin can move them:
+  // the `users` rule pins both fields to their stored values for a self-write, so a banned
+  // candidate cannot clear their own ban.
+  //
+  // A ban is not the same thing as an inactivity, so it is not the same click. While banned the
+  // switch is disabled and reads "Banned" — a block a stray flick could lift would be no block
+  // at all — and Unban is the way back.
+  const renderCandidateStatus = (student: StudentRecord) => {
+    const isBanned = student.status === "banned";
+    // Absent means active. The sign-in upsert deliberately never writes `status`, so treating a
+    // missing one as anything but active would paint the whole roster red.
+    const isActive = (student.status ?? "active") === "active";
+    const busy = busyCandidateId === student.id;
+    const who = student.name || student.email;
+
+    return (
+      <div className="flex items-center gap-3">
+        <StatusSwitch
+          checked={isActive}
+          offLabel={isBanned ? "Banned" : "Inactive"}
+          disabled={busy || isBanned}
+          onCheckedChange={(next) => handleCandidateStatus(student.id, next ? "active" : "inactive")}
+          label={`Active status for ${who}`}
+        />
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => handleCandidateStatus(student.id, isBanned ? "active" : "banned")}
+          className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold border transition-colors cursor-pointer disabled:opacity-50 ${
+            isBanned
+              ? "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/15 border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-500/25"
+              : "text-neutral-600 dark:text-neutral-300 bg-white dark:bg-white/5 border-neutral-200 dark:border-white/10 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-500/30"
+          }`}
+        >
+          {isBanned ? "Unban" : "Ban"}
+        </button>
+      </div>
+    );
+  };
+
+  // Faculty membership is a `teachers/{uid}` document, not a value on `users`: `role` is
+  // recomputed from the admin allowlist on every sign-in (see `src/data/teachers.ts`), so a
+  // stored "teacher" would revert on that person's next visit. Deriving the third role from
+  // the roster the Teachers tab already owns is also what stops the two tabs disagreeing.
+  const renderRole = (student: StudentRecord) => {
+    const role: keyof typeof ROLE_BADGE =
+      student.role === "admin"
+        ? "admin"
+        : teachersById.has(student.id)
+          ? "teacher"
+          : "student";
+    const { label, icon: Icon, badge } = ROLE_BADGE[role];
+
+    return (
+      <span
+        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${badge}`}
+      >
+        <Icon className="w-3 h-3" />
+        {label}
+      </span>
+    );
+  };
+
   return (
     <div className="flex flex-col min-h-screen w-full bg-neutral-50 dark:bg-[#121212] text-neutral-900 dark:text-neutral-100 overflow-y-auto">
       {/* Top Header */}
@@ -509,7 +686,7 @@ export function AdminDashboard({
                   {courses.length} Offerings
                 </div>
                 <span className="text-[11px] text-neutral-400">
-                  Synchronized across chat and catalog
+                  {courses.length > 0 ? "Stored in Firestore" : "Nothing stored yet"}
                 </span>
               </div>
 
@@ -633,6 +810,7 @@ export function AdminDashboard({
                       <th className="py-3 px-4 sm:px-6 w-16">#</th>
                       <th className="py-3 px-4 sm:px-6">Course Offering</th>
                       <th className="py-3 px-4 sm:px-6">Category</th>
+                      <th className="py-3 px-4 sm:px-6">Teacher</th>
                       <th className="py-3 px-4 sm:px-6">Tech Stack</th>
                       <th className="py-3 px-4 sm:px-6">Duration &amp; Fee</th>
                       <th className="py-3 px-4 sm:px-6 text-right">Actions</th>
@@ -662,13 +840,16 @@ export function AdminDashboard({
                                     {course.badge}
                                   </span>
                                 )}
-                                {/* Absent means active, so only the exception is worth
-                                    a badge — a row of "Active" pills says nothing. */}
-                                {(course.status ?? "active") === "inactive" && (
-                                  <span className="px-2 py-0.2 rounded-full text-[10px] font-semibold bg-neutral-200 dark:bg-white/10 text-neutral-600 dark:text-neutral-300 border border-neutral-300 dark:border-white/10">
-                                    Inactive
-                                  </span>
-                                )}
+                                {/* A static pill said nothing on a row that was fine and left the
+                                    one hiding a course from the site looking like every other
+                                    row. The switch says both, and flips it where it is read. */}
+                                <StatusSwitch
+                                  checked={(course.status ?? "active") === "active"}
+                                  onCheckedChange={(next) =>
+                                    handleCourseStatus(course, next ? "active" : "inactive")
+                                  }
+                                  label={`Visibility of ${course.title}`}
+                                />
                               </div>
                               <span className="text-[11px] text-neutral-500 font-mono">
                                 id: {course.id}
@@ -682,6 +863,10 @@ export function AdminDashboard({
                               {course.categoryLabel || course.category}
                             </span>
                           </td>
+
+                          {/* Assigned Teacher — the face first, because that is what an admin
+                              recognises the row by. */}
+                          <td className="py-3.5 px-4 sm:px-6">{renderTeacherCell(course)}</td>
 
                           {/* Tech Stack */}
                           <td className="py-3.5 px-4 sm:px-6">
@@ -769,8 +954,12 @@ export function AdminDashboard({
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={6} className="text-center py-10 text-neutral-400">
-                          No courses found matching your criteria.
+                        <td colSpan={7} className="text-center py-10 text-neutral-400">
+                          {/* An empty store and an empty filter read the same in the table and
+                              mean opposite things, so they are not given the same sentence. */}
+                          {courses.length === 0
+                            ? "No courses are stored yet. Add one here, or seed the catalogue."
+                            : "No courses found matching your criteria."}
                         </td>
                       </tr>
                     )}
@@ -1011,17 +1200,7 @@ export function AdminDashboard({
                         >
                           <td className="py-3.5 px-4 sm:px-6">
                             <div className="flex items-center gap-3">
-                              {student.picture ? (
-                                <img
-                                  src={student.picture}
-                                  alt=""
-                                  className="w-7 h-7 rounded-full border border-neutral-200 dark:border-white/10 object-cover shrink-0"
-                                />
-                              ) : (
-                                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-neutral-700 text-neutral-200 text-[10px] font-semibold shrink-0">
-                                  {(student.name || student.email || "?").slice(0, 2).toUpperCase()}
-                                </div>
-                              )}
+                              <UserAvatar user={student} />
                               <div className="flex flex-col min-w-0">
                                 <span className="font-semibold text-neutral-900 dark:text-white truncate">
                                   {student.name || "—"}
@@ -1047,51 +1226,13 @@ export function AdminDashboard({
                             </div>
                           </td>
 
-                          <td className="py-3.5 px-4 sm:px-6">
-                            <span
-                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
-                                student.role === "admin"
-                                  ? "bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-500/30"
-                                  : "bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-white/10"
-                              }`}
-                            >
-                              {student.role === "admin" ? (
-                                <ShieldCheck className="w-3 h-3" />
-                              ) : (
-                                <GraduationCap className="w-3 h-3" />
-                              )}
-                              {student.role === "admin" ? "Admin" : "Student"}
-                            </span>
-                          </td>
+                          <td className="py-3.5 px-4 sm:px-6">{renderRole(student)}</td>
 
                           <td className="py-3.5 px-4 sm:px-6 text-neutral-600 dark:text-neutral-400">
                             {student.plan || "—"}
                           </td>
 
-                          {/* Three states, and only an admin can move them: the `users`
-                              rule pins both fields to their stored values for a self-write,
-                              so a banned candidate cannot clear their own ban. */}
-                          <td className="py-3.5 px-4 sm:px-6">
-                            <Select
-                              label={`Status for ${student.name || student.email}`}
-                              value={student.status ?? "active"}
-                              onValueChange={(next) =>
-                                handleCandidateStatus(student.id, next as CandidateStatus)
-                              }
-                              options={[
-                                { value: "active", label: "Active" },
-                                { value: "inactive", label: "Inactive" },
-                                { value: "banned", label: "Banned" },
-                              ]}
-                              className={`py-1 px-2 rounded-lg border text-[11px] ${
-                                student.status === "banned"
-                                  ? "bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300 border-red-200 dark:border-red-500/30"
-                                  : student.status === "inactive"
-                                    ? "bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-white/10"
-                                    : "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30"
-                              }`}
-                            />
-                          </td>
+                          <td className="py-3.5 px-4 sm:px-6">{renderCandidateStatus(student)}</td>
 
                           <td className="py-3.5 px-4 sm:px-6">
                             <button
@@ -1135,6 +1276,9 @@ export function AdminDashboard({
 
         {/* ANSWER BOOK — what the assistant replies with, read-only */}
         {activeTab === "knowledge" && <AdminKnowledge />}
+
+        {/* CHANGE REQUESTS — wording changes to copy that is hard-coded in src/ */}
+        {activeTab === "changeRequests" && <AdminChangeRequests />}
 
         {/* ACADEMY SETTINGS — the figures the site quotes */}
         {activeTab === "settings" && <AdminSettings />}
@@ -1636,16 +1780,15 @@ export function AdminDashboard({
                   <label className="font-semibold text-neutral-700 dark:text-neutral-300">
                     Status
                   </label>
-                  <Select
+                  <StatusSwitch
+                    checked={formStatus === "active"}
+                    onCheckedChange={(next) => setFormStatus(next ? "active" : "inactive")}
                     label="Course status"
-                    value={formStatus}
-                    onValueChange={(next) => setFormStatus(next as CourseStatus)}
-                    options={[
-                      { value: "active", label: "Active — listed publicly" },
-                      { value: "inactive", label: "Inactive — hidden everywhere" },
-                    ]}
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
                   />
+                  <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                    Active lists it publicly; inactive hides it from the catalogue, the sitemap
+                    and /llms.txt, and its page 404s.
+                  </span>
                 </div>
 
                 <div className="flex flex-col gap-1.5">

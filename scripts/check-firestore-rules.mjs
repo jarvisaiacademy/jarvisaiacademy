@@ -234,6 +234,37 @@ await check("learner writes a teacher", false, () =>
   patch(docPath("teachers", "t1"), { mobile: { stringValue: "9111111111" } }, studentOne)
 );
 
+// --- change requests: admin-only, because a request is internal wording nobody has shipped ---
+await check("admin files a change request", true, () =>
+  patch(
+    docPath("changeRequests", "cr1"),
+    {
+      replyKey: { stringValue: "courses" },
+      requestedText: { stringValue: "The wording we want instead." },
+      requestedBy: { stringValue: "admin@jarvisaiacademy.com" },
+      done: { booleanValue: false },
+    },
+    admin
+  )
+);
+await check("admin closes a change request", true, () =>
+  patch(docPath("changeRequests", "cr1"), { done: { booleanValue: true } }, admin)
+);
+await check("admin reads a change request", true, () => get(docPath("changeRequests", "cr1"), admin));
+await check("learner reads a change request", false, () =>
+  get(docPath("changeRequests", "cr1"), studentOne)
+);
+await check("guest reads a change request", false, () =>
+  get(docPath("changeRequests", "cr1"), guest)
+);
+await check("learner files a change request", false, () =>
+  patch(
+    docPath("changeRequests", "cr2"),
+    { replyKey: { stringValue: "courses" }, requestedText: { stringValue: "vandalised" } },
+    studentOne
+  )
+);
+
 // --- guests ---
 await check("guest reads the public catalogue", true, () => get(docPath("courses", "fullstack"), guest));
 await check("guest reads a roster row", false, () => get(docPath("users", "student-two"), guest));
@@ -249,13 +280,15 @@ await check("learner writes the catalogue", false, () =>
   patch(docPath("courses", "fullstack"), { title: { stringValue: "vandalised" } }, studentOne)
 );
 
-// --- testimonials: as public as the catalogue ---
-await check("guest reads a testimonial", true, () => get(docPath("testimonials", "gurpreet-kaur"), guest));
+// --- testimonials: closed on purpose ---
+// The alumni live in `src/data/testimonials.ts` and are never read from Firestore, so the
+// collection falls to the catch-all. If someone later puts them back in the database, these
+// two flip and should be rewritten as the public-read pair they were before.
+await check("guest reads a testimonial", false, () =>
+  get(docPath("testimonials", "gurpreet-kaur"), guest)
+);
 await check("learner writes a testimonial", false, () =>
   patch(docPath("testimonials", "gurpreet-kaur"), { quote: { stringValue: "vandalised" } }, studentOne)
-);
-await check("guest writes a testimonial", false, () =>
-  patch(docPath("testimonials", "intruder"), { name: { stringValue: "x" } }, guest)
 );
 
 // --- settings: every value in it is advertised publicly, so reads are open and writes are not ---

@@ -5,9 +5,6 @@ import {
   GraduationCap,
   Search,
   UserPlus,
-  CheckCircle2,
-  XCircle,
-  RotateCcw,
   Users,
   BookOpen,
   Loader2,
@@ -18,10 +15,14 @@ import { useCourses } from "@/providers/courses-provider";
 import { useAssignments } from "@/providers/assignments-provider";
 import { useToast } from "@/components/ui/toast";
 import { Select } from "@/components/ui/select";
+import { StatusSwitch } from "@/components/ui/switch";
+import { AssignmentRecord } from "@/data/assignments";
 
 export function AdminAssignments() {
   const { students, loading: studentsLoading } = useStudents();
-  const { courses } = useCourses();
+  // Only stored courses can be assigned — the fallback would offer a course the write cannot
+  // reach. See `firestoreCourses` in the provider.
+  const { firestoreCourses: courses } = useCourses();
   const {
     assignments,
     loading: assignmentsLoading,
@@ -35,7 +36,6 @@ export function AdminAssignments() {
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [isAssigning, setIsAssigning] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [revokeConfirmId, setRevokeConfirmId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   const activeCount = assignments.filter((a) => a.status === "active").length;
@@ -73,27 +73,17 @@ export function AdminAssignments() {
     }
   };
 
-  const handleRevoke = async (id: string) => {
-    setBusyId(id);
+  // One grant, one control: the switch is the state and the action at once, the way it is on
+  // courses, teachers and candidates. Revoking used to need a confirm because Revoke and
+  // Restore were separate buttons; a toggle that restores the grant in the same click is its
+  // own undo, so the confirm only ever guarded one direction.
+  const handleStatus = async (a: AssignmentRecord, next: boolean) => {
+    setBusyId(a.id);
     try {
-      await revokeAssignment(id);
-      setRevokeConfirmId(null);
-      showToast("Access revoked", "success");
+      await (next ? restoreAssignment(a.id) : revokeAssignment(a.id));
+      showToast(next ? "Access restored" : "Access revoked", "success");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to revoke access";
-      showToast(msg, "error");
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  const handleRestore = async (id: string) => {
-    setBusyId(id);
-    try {
-      await restoreAssignment(id);
-      showToast("Access restored", "success");
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to restore access";
+      const msg = err instanceof Error ? err.message : "Failed to update access";
       showToast(msg, "error");
     } finally {
       setBusyId(null);
@@ -214,13 +204,12 @@ export function AdminAssignments() {
                 <th className="py-3 px-4 sm:px-6">Course</th>
                 <th className="py-3 px-4 sm:px-6">Assigned By</th>
                 <th className="py-3 px-4 sm:px-6">Status</th>
-                <th className="py-3 px-4 sm:px-6 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-200 dark:divide-white/5">
               {assignmentsLoading && assignments.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-10 text-neutral-400">
+                  <td colSpan={4} className="text-center py-10 text-neutral-400">
                     <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
                     Loading assignments...
                   </td>
@@ -262,69 +251,20 @@ export function AdminAssignments() {
                       </td>
 
                       <td className="py-3.5 px-4 sm:px-6">
-                        {a.status === "active" ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
-                            <CheckCircle2 className="w-3 h-3" />
-                            Active
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-500/30">
-                            <XCircle className="w-3 h-3" />
-                            Revoked
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="py-3.5 px-4 sm:px-6 text-right">
-                        {a.status === "active" ? (
-                          busyId === a.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin text-neutral-400 inline" />
-                          ) : revokeConfirmId === a.id ? (
-                            <div className="flex items-center justify-end gap-1 bg-red-50 dark:bg-red-500/10 p-1 rounded-lg border border-red-200 dark:border-red-500/30">
-                              <button
-                                type="button"
-                                onClick={() => handleRevoke(a.id)}
-                                className="px-2 py-0.5 text-[10px] font-bold bg-red-600 text-white rounded cursor-pointer"
-                              >
-                                Confirm
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setRevokeConfirmId(null)}
-                                className="px-1 text-[10px] text-neutral-500 cursor-pointer"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => setRevokeConfirmId(a.id)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors cursor-pointer"
-                            >
-                              <XCircle className="w-3.5 h-3.5" />
-                              Revoke
-                            </button>
-                          )
-                        ) : busyId === a.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin text-neutral-400 inline" />
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleRestore(a.id)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors cursor-pointer"
-                          >
-                            <RotateCcw className="w-3.5 h-3.5" />
-                            Restore
-                          </button>
-                        )}
+                        <StatusSwitch
+                          checked={a.status === "active"}
+                          offLabel="Revoked"
+                          disabled={busyId === a.id}
+                          onCheckedChange={(next) => handleStatus(a, next)}
+                          label={`Course access for ${a.studentName} in ${a.courseTitle}`}
+                        />
                       </td>
                     </tr>
                   );
                 })
               ) : (
                 <tr>
-                  <td colSpan={5} className="text-center py-10 text-neutral-400">
+                  <td colSpan={4} className="text-center py-10 text-neutral-400">
                     <BookOpen className="w-5 h-5 mx-auto mb-2 opacity-60" />
                     No assignments yet. Assign a course above to grant access.
                   </td>

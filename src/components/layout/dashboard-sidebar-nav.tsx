@@ -11,6 +11,7 @@ import {
   Sparkles,
   GraduationCap,
   Contact,
+  GitPullRequest,
   Settings as SettingsIcon,
 } from "lucide-react";
 import { useCourses } from "@/providers/courses-provider";
@@ -22,6 +23,7 @@ export type DashboardTab =
   | "courses"
   | "teachers"
   | "knowledge"
+  | "changeRequests"
   | "settings"
   | "users"
   | "assignments"
@@ -41,7 +43,8 @@ export function DashboardSidebarNav({
   onBackToChat,
   isMobile,
 }: DashboardSidebarNavProps) {
-  const { courses } = useCourses();
+  // The count has to match the table it labels, so it is the stored count, not the fallback's.
+  const { firestoreCourses: courses } = useCourses();
   const { assignments } = useAssignments();
   const { teachers } = useTeachers();
 
@@ -167,6 +170,38 @@ export function DashboardSidebarNav({
             }`}
           >
             {Object.keys(academyKnowledge).length}
+          </span>
+        </button>
+
+        {/* Change Requests. Sits with the Answer Book because it is about the same thing —
+            the replies — but it is a queue, not a reference view: this one takes input. */}
+        <button
+          type="button"
+          onClick={() => handleSelect("changeRequests")}
+          className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            activeTab === "changeRequests"
+              ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-xs"
+              : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/5"
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <GitPullRequest
+              className={`w-4 h-4 ${
+                activeTab === "changeRequests"
+                  ? "text-violet-400 dark:text-violet-600"
+                  : "text-neutral-500"
+              }`}
+            />
+            <span>Change Requests</span>
+          </div>
+          <span
+            className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+              activeTab === "changeRequests"
+                ? "bg-white/20 dark:bg-black/15 text-white dark:text-neutral-900"
+                : "bg-neutral-200/70 dark:bg-white/10 text-neutral-600 dark:text-neutral-300"
+            }`}
+          >
+            Queue
           </span>
         </button>
 
