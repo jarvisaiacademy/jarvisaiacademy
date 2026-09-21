@@ -36,9 +36,10 @@ import { useStudents } from "@/providers/students-provider";
 import { useTeachers } from "@/providers/teachers-provider";
 import { useAuth } from "@/providers/auth-provider";
 import { updateCandidateInFirestore } from "@/services/students-service";
-import { CandidateStatus } from "@/data/assignments";
+import { CandidateStatus, StudentRecord } from "@/data/assignments";
 import { CourseItem, COURSE_CATEGORIES, CourseCategoryId, CourseStatus } from "@/data/courses";
 import { DevIcon } from "@/components/ui/dev-icon";
+import { StatusSwitch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast";
 
 import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
@@ -178,6 +179,20 @@ export function AdminDashboard({
       showToast(err instanceof Error ? err.message : "Failed to update candidate", "error");
     } finally {
       setBusyCandidateId(null);
+    }
+  };
+
+  // Flipped from the table row rather than only from the editor: hiding a course is the one
+  // course change an admin makes in a hurry, and opening a modal to make it was the long way.
+  const handleCourseStatus = async (course: CourseItem, status: CourseStatus) => {
+    try {
+      await editCourse(course.id, { status });
+      showToast(
+        status === "active" ? `"${course.title}" is listed publicly` : `"${course.title}" is hidden`,
+        "success"
+      );
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : "Failed to update the course", "error");
     }
   };
 
@@ -459,6 +474,46 @@ export function AdminDashboard({
     }
   };
 
+  // A candidate's status cell. Three states in two controls, and only an admin can move them:
+  // the `users` rule pins both fields to their stored values for a self-write, so a banned
+  // candidate cannot clear their own ban.
+  //
+  // A ban is not the same thing as an inactivity, so it is not the same click. While banned the
+  // switch is disabled and reads "Banned" — a block a stray flick could lift would be no block
+  // at all — and Unban is the way back.
+  const renderCandidateStatus = (student: StudentRecord) => {
+    const isBanned = student.status === "banned";
+    // Absent means active. The sign-in upsert deliberately never writes `status`, so treating a
+    // missing one as anything but active would paint the whole roster red.
+    const isActive = (student.status ?? "active") === "active";
+    const busy = busyCandidateId === student.id;
+    const who = student.name || student.email;
+
+    return (
+      <div className="flex items-center gap-3">
+        <StatusSwitch
+          checked={isActive}
+          offLabel={isBanned ? "Banned" : "Inactive"}
+          disabled={busy || isBanned}
+          onCheckedChange={(next) => handleCandidateStatus(student.id, next ? "active" : "inactive")}
+          label={`Active status for ${who}`}
+        />
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => handleCandidateStatus(student.id, isBanned ? "active" : "banned")}
+          className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold border transition-colors cursor-pointer disabled:opacity-50 ${
+            isBanned
+              ? "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/15 border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-500/25"
+              : "text-neutral-600 dark:text-neutral-300 bg-white dark:bg-white/5 border-neutral-200 dark:border-white/10 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-500/30"
+          }`}
+        >
+          {isBanned ? "Unban" : "Ban"}
+        </button>
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col min-h-screen w-full bg-neutral-50 dark:bg-[#121212] text-neutral-900 dark:text-neutral-100 overflow-y-auto">
       {/* Top Header */}
@@ -666,13 +721,16 @@ export function AdminDashboard({
                                     {course.badge}
                                   </span>
                                 )}
-                                {/* Absent means active, so only the exception is worth
-                                    a badge — a row of "Active" pills says nothing. */}
-                                {(course.status ?? "active") === "inactive" && (
-                                  <span className="px-2 py-0.2 rounded-full text-[10px] font-semibold bg-neutral-200 dark:bg-white/10 text-neutral-600 dark:text-neutral-300 border border-neutral-300 dark:border-white/10">
-                                    Inactive
-                                  </span>
-                                )}
+                                {/* A static pill said nothing on a row that was fine and left the
+                                    one hiding a course from the site looking like every other
+                                    row. The switch says both, and flips it where it is read. */}
+                                <StatusSwitch
+                                  checked={(course.status ?? "active") === "active"}
+                                  onCheckedChange={(next) =>
+                                    handleCourseStatus(course, next ? "active" : "inactive")
+                                  }
+                                  label={`Visibility of ${course.title}`}
+                                />
                               </div>
                               <span className="text-[11px] text-neutral-500 font-mono">
                                 id: {course.id}
@@ -1076,30 +1134,7 @@ export function AdminDashboard({
                             {student.plan || "—"}
                           </td>
 
-                          {/* Three states, and only an admin can move them: the `users`
-                              rule pins both fields to their stored values for a self-write,
-                              so a banned candidate cannot clear their own ban. */}
-                          <td className="py-3.5 px-4 sm:px-6">
-                            <Select
-                              label={`Status for ${student.name || student.email}`}
-                              value={student.status ?? "active"}
-                              onValueChange={(next) =>
-                                handleCandidateStatus(student.id, next as CandidateStatus)
-                              }
-                              options={[
-                                { value: "active", label: "Active" },
-                                { value: "inactive", label: "Inactive" },
-                                { value: "banned", label: "Banned" },
-                              ]}
-                              className={`py-1 px-2 rounded-lg border text-[11px] ${
-                                student.status === "banned"
-                                  ? "bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300 border-red-200 dark:border-red-500/30"
-                                  : student.status === "inactive"
-                                    ? "bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-white/10"
-                                    : "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30"
-                              }`}
-                            />
-                          </td>
+                          <td className="py-3.5 px-4 sm:px-6">{renderCandidateStatus(student)}</td>
 
                           <td className="py-3.5 px-4 sm:px-6">
                             <button
@@ -1647,16 +1682,15 @@ export function AdminDashboard({
                   <label className="font-semibold text-neutral-700 dark:text-neutral-300">
                     Status
                   </label>
-                  <Select
+                  <StatusSwitch
+                    checked={formStatus === "active"}
+                    onCheckedChange={(next) => setFormStatus(next ? "active" : "inactive")}
                     label="Course status"
-                    value={formStatus}
-                    onValueChange={(next) => setFormStatus(next as CourseStatus)}
-                    options={[
-                      { value: "active", label: "Active — listed publicly" },
-                      { value: "inactive", label: "Inactive — hidden everywhere" },
-                    ]}
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
                   />
+                  <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                    Active lists it publicly; inactive hides it from the catalogue, the sitemap
+                    and /llms.txt, and its page 404s.
+                  </span>
                 </div>
 
                 <div className="flex flex-col gap-1.5">

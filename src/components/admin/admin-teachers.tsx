@@ -17,7 +17,7 @@ import { useCourses } from "@/providers/courses-provider";
 import { useStudents } from "@/providers/students-provider";
 import { useToast } from "@/components/ui/toast";
 import { Select } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+import { StatusSwitch } from "@/components/ui/switch";
 import { TeacherRecord, TeacherStatus } from "@/data/teachers";
 import { StudentRecord } from "@/data/assignments";
 
@@ -26,11 +26,6 @@ const inputClass =
 const selectClass =
   "w-full py-2 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs";
 const labelClass = "text-[11px] font-semibold text-neutral-600 dark:text-neutral-400";
-
-const STATUS_OPTIONS = [
-  { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
-];
 
 // Enough to scroll through without putting a thousand rows in the DOM.
 const PICKER_LIMIT = 50;
@@ -390,12 +385,10 @@ export function AdminTeachers() {
 
             <div className="flex flex-col gap-1.5">
               <span className={labelClass}>Status</span>
-              <Select
+              <StatusSwitch
+                checked={formStatus === "active"}
+                onCheckedChange={(next) => setFormStatus(next ? "active" : "inactive")}
                 label="Teacher status"
-                value={formStatus}
-                onValueChange={(next) => setFormStatus(next as TeacherStatus)}
-                options={STATUS_OPTIONS}
-                className={selectClass}
               />
             </div>
 
@@ -566,25 +559,14 @@ export function AdminTeachers() {
                       </td>
 
                       <td className="py-3.5 px-4 sm:px-6">
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={isActive}
-                            onCheckedChange={(next) =>
-                              handleToggleStatus(teacher, next ? "active" : "inactive")
-                            }
-                            disabled={busyId === teacher.id}
-                            label={`Make ${displayName} ${isActive ? "inactive" : "active"}`}
-                          />
-                          <span
-                            className={`text-[11px] font-semibold ${
-                              isActive
-                                ? "text-emerald-600 dark:text-emerald-400"
-                                : "text-neutral-500 dark:text-neutral-400"
-                            }`}
-                          >
-                            {isActive ? "Active" : "Inactive"}
-                          </span>
-                        </div>
+                        <StatusSwitch
+                          checked={isActive}
+                          onCheckedChange={(next) =>
+                            handleToggleStatus(teacher, next ? "active" : "inactive")
+                          }
+                          disabled={busyId === teacher.id}
+                          label={`Make ${displayName} ${isActive ? "inactive" : "active"}`}
+                        />
                       </td>
 
                       <td className="py-3.5 px-4 sm:px-6 text-right">
