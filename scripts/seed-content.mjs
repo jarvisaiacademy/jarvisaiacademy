@@ -7,11 +7,11 @@
  *   pnpm seed:content --dry-run    # print the plan and write nothing (no credentials needed)
  *   pnpm seed:content --force      # overwrite docs that already exist
  *
- * `src/data/courses.ts` and `scripts/seed-data/testimonials.mjs` are the seed. The courses
- * are also the fallback the app renders when Firestore is empty; the testimonials are not,
- * because they are invented people, so this script is the only route by which they reach
- * the site at all. Both are keyed so the admin dashboard and the public pages address the
- * identical documents. The third target is the single `settings/app` document.
+ * `src/data/courses.ts` is the seed, keyed so the admin dashboard and the public pages
+ * address the identical documents. The second target is the single `settings/app` document.
+ *
+ * Testimonials are deliberately not here: they are hard-coded in `src/data/testimonials.ts`
+ * and never read from Firestore, so the twelve invented graduates never reach a collection.
  *
  * Create-only is the default on purpose: `--force` against the real project discards
  * whatever an admin has since edited in the dashboard. Run `--dry-run` first.
@@ -55,7 +55,7 @@ function loadEnv() {
 }
 
 function usage() {
-  console.log(`Seed the courses and testimonials collections from src/data.
+  console.log(`Seed the courses collection and the settings document from src/data.
 
   pnpm seed:content              create missing docs only
   pnpm seed:content --dry-run    list what would be written, write nothing
@@ -74,14 +74,9 @@ const dryRun = argv.includes("--dry-run");
 const force = argv.includes("--force");
 
 // Node strips the types natively, so the courses come from the real source file rather than
-// a copy that can drift from it. The testimonials come from `scripts/seed-data/`, because
-// they are invented placeholder people and must not sit in `src/` looking like content the
-// app owns. Both modules are import-free, which is what makes the first one work.
+// a copy that can drift from it. The module is import-free, which is what makes that work.
 const fromData = (rel) => pathToFileURL(path.join(projectRoot, rel)).href;
 const { COURSES_DATA } = await import(fromData("src/data/courses.ts"));
-const { TESTIMONIAL_POOL, testimonialId } = await import(
-  fromData("scripts/seed-data/testimonials.mjs")
-);
 // The academy's business values — the Settings tab in /admin edits this document. Seeding it
 // is what makes those values exist in a fresh project; until it does, the app renders
 // DEFAULT_APP_SETTINGS, which is the same object.
@@ -94,11 +89,6 @@ const targets = [
     collection: "courses",
     id: course.id,
     data: course,
-  })),
-  ...TESTIMONIAL_POOL.map((person) => ({
-    collection: "testimonials",
-    id: testimonialId(person.name),
-    data: person,
   })),
   { collection: SETTINGS_COLLECTION, id: SETTINGS_DOC_ID, data: DEFAULT_APP_SETTINGS },
 ];
@@ -119,7 +109,7 @@ if (duplicates.length) {
 
 const courseCount = COURSES_DATA.length;
 console.log(
-  `${courseCount} courses + ${TESTIMONIAL_POOL.length} testimonials + 1 settings → ` +
+  `${courseCount} courses + 1 settings → ` +
     `${targets.length} documents${force ? " (overwriting)" : " (create-only)"}`
 );
 
