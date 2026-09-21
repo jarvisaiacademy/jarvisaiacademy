@@ -485,3 +485,24 @@ export const COURSE_KB_KEY: Record<string, keyof typeof academyKnowledge> = {
   super10: "super10",
   referral: "referral",
 };
+
+/**
+ * Every reply key, for the dashboard's pickers. `Object.keys` and not a walk over the
+ * entries: reading `.text` would call the `testimonials` getter, which draws a fresh random
+ * sample of people on every read.
+ */
+export const REPLY_KEYS: string[] = Object.keys(academyKnowledge);
+
+/**
+ * The replies that are generated on read rather than written down, so a replacement string
+ * has nowhere to go. `testimonials` assembles itself from `TESTIMONIAL_POOL` on every read;
+ * changing what it says is an edit to `src/data/testimonials.ts`, not to a string here.
+ */
+export const GENERATED_REPLY_KEYS: ReadonlySet<string> = new Set(["testimonials"]);
+
+/** The public pages that render a reply's words, for the same reason `COURSE_KB_KEY` exists. */
+export function replyPages(replyKey: string): string[] {
+  return Object.entries(COURSE_KB_KEY)
+    .filter(([, topic]) => topic === replyKey)
+    .map(([courseId]) => `/courses/${courseId}`);
+}
