@@ -258,6 +258,23 @@ await check("guest writes a testimonial", false, () =>
   patch(docPath("testimonials", "intruder"), { name: { stringValue: "x" } }, guest)
 );
 
+// --- settings: every value in it is advertised publicly, so reads are open and writes are not ---
+await check("admin writes the settings", true, () =>
+  patch(
+    docPath("settings", "app"),
+    { referralReward: { integerValue: "3000" }, gstin: { stringValue: "27AABCJ1988Z1Z9" } },
+    admin
+  )
+);
+await check("guest reads the settings", true, () => get(docPath("settings", "app"), guest));
+await check("learner reads the settings", true, () => get(docPath("settings", "app"), studentOne));
+await check("learner writes the settings", false, () =>
+  patch(docPath("settings", "app"), { referralReward: { integerValue: "9999" } }, studentOne)
+);
+await check("guest creates a settings doc", false, () =>
+  patch(docPath("settings", "intruder"), { gstin: { stringValue: "x" } }, guest)
+);
+
 console.log(`\n${passed} passed, ${failures.length} failed`);
 if (failures.length) {
   for (const failure of failures) console.log(`  - ${failure}`);

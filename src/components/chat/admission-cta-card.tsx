@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { motion, useMotionValue, useReducedMotion, useSpring } from "motion/react";
 import { useCourses } from "@/providers/courses-provider";
+import { useSettings } from "@/providers/settings-provider";
 import { useToast } from "@/components/ui/toast";
 import { BorderGlow } from "@/components/ui/border-glow";
 import {
@@ -111,6 +112,8 @@ function CardEffectSwitch({ value }: { value: AdmissionCardEffect }) {
  */
 export function AdmissionCtaCard({ onActionPrompt }: AdmissionCtaCardProps) {
   const { courses } = useCourses();
+  const { settings } = useSettings();
+  const { super10Seats } = settings;
   const { showToast } = useToast();
 
   // "Reserve my seat" opens the checkout, which defaults to this track — so this is the
@@ -118,13 +121,15 @@ export function AdmissionCtaCard({ onActionPrompt }: AdmissionCtaCardProps) {
   // track that is free, and quoting its ₹0 as general tuition would be a false price.
   const track = courses.find((course) => course.id === "fullstack");
   const elite = courses.find((course) => course.id === "super10");
+  // The seat cap comes from the settings document, not from here: the comment above was
+  // already true of the fees but not of the "10 seats" that sat in this line.
   const facts = [
-    { icon: Sparkles, label: "Tuition", value: track?.fee ?? "₹30,000" },
-    { icon: CalendarClock, label: "Duration", value: track?.duration ?? "60 Days" },
+    { icon: Sparkles, label: "Tuition", value: track?.fee ?? "—" },
+    { icon: CalendarClock, label: "Duration", value: track?.duration ?? "—" },
     {
       icon: ShieldCheck,
       label: "Super10 Elite",
-      value: elite ? `${elite.fee} · 10 seats` : "₹0 · 10 seats",
+      value: `${elite?.fee ?? "—"} · ${super10Seats} seats`,
     },
   ];
 

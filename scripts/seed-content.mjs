@@ -11,7 +11,7 @@
  * are also the fallback the app renders when Firestore is empty; the testimonials are not,
  * because they are invented people, so this script is the only route by which they reach
  * the site at all. Both are keyed so the admin dashboard and the public pages address the
- * identical documents.
+ * identical documents. The third target is the single `settings/app` document.
  *
  * Create-only is the default on purpose: `--force` against the real project discards
  * whatever an admin has since edited in the dashboard. Run `--dry-run` first.
@@ -82,6 +82,12 @@ const { COURSES_DATA } = await import(fromData("src/data/courses.ts"));
 const { TESTIMONIAL_POOL, testimonialId } = await import(
   fromData("scripts/seed-data/testimonials.mjs")
 );
+// The academy's business values — the Settings tab in /admin edits this document. Seeding it
+// is what makes those values exist in a fresh project; until it does, the app renders
+// DEFAULT_APP_SETTINGS, which is the same object.
+const { DEFAULT_APP_SETTINGS, SETTINGS_COLLECTION, SETTINGS_DOC_ID } = await import(
+  fromData("src/data/app-settings.ts")
+);
 
 const targets = [
   ...COURSES_DATA.map((course) => ({
@@ -94,6 +100,7 @@ const targets = [
     id: testimonialId(person.name),
     data: person,
   })),
+  { collection: SETTINGS_COLLECTION, id: SETTINGS_DOC_ID, data: DEFAULT_APP_SETTINGS },
 ];
 
 // A repeated id means two sources collapsed onto one document and one of them would be
@@ -112,7 +119,7 @@ if (duplicates.length) {
 
 const courseCount = COURSES_DATA.length;
 console.log(
-  `${courseCount} courses + ${TESTIMONIAL_POOL.length} testimonials → ` +
+  `${courseCount} courses + ${TESTIMONIAL_POOL.length} testimonials + 1 settings → ` +
     `${targets.length} documents${force ? " (overwriting)" : " (create-only)"}`
 );
 
