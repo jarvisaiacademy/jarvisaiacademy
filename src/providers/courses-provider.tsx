@@ -11,6 +11,7 @@ import {
   seedDefaultCoursesToFirestore,
 } from "@/services/courses-service";
 import { useAuth } from "@/providers/auth-provider";
+import { fetchPublicContent } from "@/lib/public-content";
 
 interface CoursesContextType {
   courses: CourseItem[];
@@ -48,45 +49,76 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
   const [isLiveFromFirebase, setIsLiveFromFirebase] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isAdmin = !!user?.isAdmin;
+
   useEffect(() => {
     let isMounted = true;
 
-    const unsubscribe = subscribeCoursesFromFirestore(
-      (stored) => {
-        if (!isMounted) return;
-        setFirestoreCourses(stored ?? []);
-        if (stored && stored.length > 0) {
-          setCourses(stored);
-          setIsLiveFromFirebase(true);
-        } else {
-          // Keep current courses or fall back to default COURSES_DATA
-          setCourses((prev) => (prev.length > 0 ? prev : COURSES_DATA));
+    // An admin keeps the live subscription: the Courses tab has to show the course it just
+    // saved, and a value the cache has not caught up with reads as a failed save. Everyone
+    // else takes the cached payload below, which is one Firestore read per window instead of
+    // one per visitor.
+    if (isAdmin) {
+      const unsubscribe = subscribeCoursesFromFirestore(
+        (stored) => {
+          if (!isMounted) return;
+          setFirestoreCourses(stored ?? []);
+          if (stored && stored.length > 0) {
+            setCourses(stored);
+            setIsLiveFromFirebase(true);
+          } else {
+            // Keep current courses or fall back to default COURSES_DATA
+            setCourses((prev) => (prev.length > 0 ? prev : COURSES_DATA));
+            setIsLiveFromFirebase(false);
+          }
+          setLoading(false);
+          setError(null);
+        },
+        (err) => {
+          if (!isMounted) return;
+          console.warn("[CoursesProvider] Real-time subscription error, using local state:", err);
+          setError(err.message);
           setIsLiveFromFirebase(false);
+          setLoading(false);
         }
-        setLoading(false);
-        setError(null);
-      },
-      (err) => {
-        if (!isMounted) return;
-        console.warn("[CoursesProvider] Real-time subscription error, using local state:", err);
-        setError(err.message);
+      );
+
+      if (!unsubscribe) {
         setIsLiveFromFirebase(false);
         setLoading(false);
       }
-    );
 
-    if (!unsubscribe) {
-      setIsLiveFromFirebase(false);
-      setLoading(false);
+      return () => {
+        isMounted = false;
+        unsubscribe?.();
+      };
     }
+
+    fetchPublicContent()
+      .then((payload) => {
+        if (!isMounted) return;
+        // `firestoreCourses` is left alone on purpose. This payload cannot say whether a
+        // course is stored or is the server's built-in fallback, and that list means "what is
+        // in the database" — only the subscription above, which reads the collection itself,
+        // may fill it.
+        if (payload.courses?.length) setCourses(payload.courses);
+        setIsLiveFromFirebase(false);
+        setLoading(false);
+        setError(null);
+      })
+      .catch((err: unknown) => {
+        if (!isMounted) return;
+        // COURSES_DATA stays on screen: it is the same catalogue the server would have sent.
+        console.warn("[CoursesProvider] Cached read failed, using the built-in catalogue:", err);
+        setError(err instanceof Error ? err.message : "Failed to load the catalogue");
+        setIsLiveFromFirebase(false);
+        setLoading(false);
+      });
 
     return () => {
       isMounted = false;
-      if (unsubscribe) {
-        unsubscribe();
-      }
     };
-  }, []);
+  }, [isAdmin]);
 
   const refreshCourses = async () => {
     setLoading(true);

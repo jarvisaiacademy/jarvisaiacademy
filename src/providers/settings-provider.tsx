@@ -7,6 +7,7 @@ import {
   updateSettingsInFirestore,
 } from "@/services/settings-service";
 import { useAuth } from "@/providers/auth-provider";
+import { fetchPublicContent } from "@/lib/public-content";
 
 interface SettingsContextType {
   settings: AppSettings;
@@ -20,8 +21,10 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 /**
  * The academy's settings, kept in step with Firestore.
  *
- * Subscribes for everyone, not only admins: these values are quoted on public pages, so the
- * read is open in `firestore.rules` and a non-admin listener is not a permission error.
+ * An admin subscribes, because the Settings tab has to show the figure it just saved. Everyone
+ * else reads the cached payload: these values are quoted on public pages, the read is open in
+ * `firestore.rules`, and the answer is the same for every visitor — so a listener per visitor
+ * was billing a Firestore read each to learn something `revalidate` already knows.
  */
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -32,34 +35,57 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const isAdmin = !!user?.isAdmin;
+
   useEffect(() => {
     let isMounted = true;
 
-    const unsubscribe = subscribeSettingsFromFirestore(
-      (next) => {
+    if (isAdmin) {
+      const unsubscribe = subscribeSettingsFromFirestore(
+        (next) => {
+          if (!isMounted) return;
+          setSettings(next);
+          setLoading(false);
+          setError(null);
+        },
+        (err) => {
+          if (!isMounted) return;
+          // The defaults stay on screen. There is nothing partial to show here — these are five
+          // scalars, and the built-in values are what the site shipped with — so falling back
+          // is a correct render, not a degraded one.
+          console.warn("[SettingsProvider] Subscription error, keeping the built-in settings:", err);
+          setError(err.message);
+          setLoading(false);
+        }
+      );
+
+      if (!unsubscribe) setLoading(false);
+
+      return () => {
+        isMounted = false;
+        unsubscribe?.();
+      };
+    }
+
+    fetchPublicContent()
+      .then((payload) => {
         if (!isMounted) return;
-        setSettings(next);
+        // Spread over the defaults in case the document that came back predates a field.
+        setSettings({ ...DEFAULT_APP_SETTINGS, ...payload.settings });
         setLoading(false);
         setError(null);
-      },
-      (err) => {
+      })
+      .catch((err: unknown) => {
         if (!isMounted) return;
-        // The defaults stay on screen. There is nothing partial to show here — these are five
-        // scalars, and the built-in values are what the site shipped with — so falling back
-        // is a correct render, not a degraded one.
-        console.warn("[SettingsProvider] Subscription error, keeping the built-in settings:", err);
-        setError(err.message);
+        console.warn("[SettingsProvider] Cached read failed, keeping the built-in settings:", err);
+        setError(err instanceof Error ? err.message : "Failed to load the settings");
         setLoading(false);
-      }
-    );
-
-    if (!unsubscribe) setLoading(false);
+      });
 
     return () => {
       isMounted = false;
-      unsubscribe?.();
     };
-  }, []);
+  }, [isAdmin]);
 
   const saveSettings = async (updates: Partial<AppSettings>) => {
     if (!user?.isAdmin) {
