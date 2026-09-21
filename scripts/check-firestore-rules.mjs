@@ -249,13 +249,15 @@ await check("learner writes the catalogue", false, () =>
   patch(docPath("courses", "fullstack"), { title: { stringValue: "vandalised" } }, studentOne)
 );
 
-// --- testimonials: as public as the catalogue ---
-await check("guest reads a testimonial", true, () => get(docPath("testimonials", "gurpreet-kaur"), guest));
+// --- testimonials: closed on purpose ---
+// The alumni live in `src/data/testimonials.ts` and are never read from Firestore, so the
+// collection falls to the catch-all. If someone later puts them back in the database, these
+// two flip and should be rewritten as the public-read pair they were before.
+await check("guest reads a testimonial", false, () =>
+  get(docPath("testimonials", "gurpreet-kaur"), guest)
+);
 await check("learner writes a testimonial", false, () =>
   patch(docPath("testimonials", "gurpreet-kaur"), { quote: { stringValue: "vandalised" } }, studentOne)
-);
-await check("guest writes a testimonial", false, () =>
-  patch(docPath("testimonials", "intruder"), { name: { stringValue: "x" } }, guest)
 );
 
 // --- settings: every value in it is advertised publicly, so reads are open and writes are not ---

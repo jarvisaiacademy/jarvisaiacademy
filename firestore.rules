@@ -89,12 +89,10 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // The alumni pool behind the testimonials reply. Public for the same reason the
-    // catalogue is; the chat reads it, and it carries nothing private.
-    match /testimonials/{testimonialId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
+    // There is deliberately no stanza for `testimonials`: the alumni are hard-coded in
+    // `src/data/testimonials.ts` and no longer read from or written to Firestore, so the
+    // catch-all below denies the collection outright. Re-adding a stanza here is part of
+    // putting them back in the database.
 
     // The academy's settings — referral reward, Super10 seat cap, GST rate, GSTIN, the
     // money-back window. Public read because every one of these is already advertised: the
