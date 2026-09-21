@@ -5,7 +5,6 @@ import {
   Users,
   IndianRupee,
   GraduationCap,
-  TrendingUp,
   ArrowLeft,
   Download,
   Search,
@@ -45,6 +44,7 @@ import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
 import { ThemeSwitcher } from "@/components/layout/theme-switcher";
 import { AdminAssignments } from "@/components/admin/admin-assignments";
 import { AdminTeachers } from "@/components/admin/admin-teachers";
+import { AdminKnowledge } from "@/components/admin/admin-knowledge";
 import { Select } from "@/components/ui/select";
 import { shortcutById } from "@/data/shortcuts";
 import { isTypingTarget, matchesShortcut } from "@/lib/keyboard";
@@ -244,6 +244,13 @@ export function AdminDashboard({
   const super10Count = records.filter(
     (r) => r.courseId === "super10" && r.action === "paid"
   ).length;
+
+  // The referral reward the academy advertises, and the seat count the Super10 track is
+  // capped at. Both are named because they were bare numbers in the JSX: a 3000 next to a
+  // rupee sign is not an arithmetic error waiting to happen, it is one already happening,
+  // since nothing tied it to the figure the answer book quotes.
+  const REFERRAL_REWARD = 3000;
+  const SUPER10_SEATS = 10;
 
   const exportCSV = () => {
     const headers = "TransactionID,StudentName,StudentEmail,Course,Amount,Status,Timestamp\n";
@@ -1117,6 +1124,9 @@ export function AdminDashboard({
         {/* TEACHERS MANAGEMENT */}
         {activeTab === "teachers" && <AdminTeachers />}
 
+        {/* ANSWER BOOK — what the assistant replies with, read-only */}
+        {activeTab === "knowledge" && <AdminKnowledge />}
+
         {/* TAB 3: COURSE ASSIGNMENTS */}
         {activeTab === "assignments" && <AdminAssignments />}
 
@@ -1156,9 +1166,9 @@ export function AdminDashboard({
                   <span className="text-2xl font-bold text-neutral-900 dark:text-white">
                     ₹{totalPaidRevenue.toLocaleString("en-IN")}
                   </span>
-                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center">
-                    <TrendingUp className="w-3 h-3 mr-0.5" /> +100%
-                  </span>
+                  {/* No growth figure here. There is no prior period stored to compare
+                      against, and the "+100%" that used to sit in this slot was typed into
+                      the JSX — it read the same whether revenue rose or fell to zero. */}
                 </div>
                 <span className="text-[11px] text-neutral-500">Incl. 18% statutory GST</span>
               </div>
@@ -1192,10 +1202,10 @@ export function AdminDashboard({
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {super10Count} / 10
+                    {super10Count} / {SUPER10_SEATS}
                   </span>
                   <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
-                    {10 - super10Count} seats left
+                    {Math.max(SUPER10_SEATS - super10Count, 0)} seats left
                   </span>
                 </div>
                 <span className="text-[11px] text-neutral-500">Placement assurance track</span>
@@ -1212,9 +1222,11 @@ export function AdminDashboard({
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    ₹{(totalPaidStudents * 3000).toLocaleString("en-IN")}
+                    ₹{(totalPaidStudents * REFERRAL_REWARD).toLocaleString("en-IN")}
                   </span>
-                  <span className="text-xs text-purple-600 dark:text-purple-400">₹3K / student</span>
+                  <span className="text-xs text-purple-600 dark:text-purple-400">
+                    ₹{REFERRAL_REWARD / 1000}K / student
+                  </span>
                 </div>
                 <span className="text-[11px] text-neutral-500">Upon 60-day completion</span>
               </div>
@@ -1260,7 +1272,7 @@ export function AdminDashboard({
                   <div className="flex justify-between py-1 border-b border-neutral-100 dark:border-white/5">
                     <span className="text-neutral-500">Super10 Placement Assurance Batch:</span>
                     <span className="font-semibold text-amber-600 dark:text-amber-400">
-                      {super10Count} Students ({super10Count * 10}% Capped)
+                      {super10Count} of {SUPER10_SEATS} seats
                     </span>
                   </div>
                   <div className="flex justify-between py-1">

@@ -17,6 +17,7 @@ const TAB_STORAGE_KEY = "jarvis_admin_tab";
 const VALID_TABS: Record<DashboardTab, true> = {
   courses: true,
   teachers: true,
+  knowledge: true,
   users: true,
   assignments: true,
   analytics: true,

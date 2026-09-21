@@ -14,6 +14,8 @@ import { TestimonialPerson, setTestimonialPool } from "@/data/testimonials";
  *
  * Testimonials are public read-only content, so unlike courses there is no CRUD or admin
  * seeding to host — which is why this is one file rather than a provider plus a service.
+ * The collection being empty is a valid state and the one the site starts in: the reply says
+ * the academy has published none yet rather than quoting somebody.
  */
 export function TestimonialsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
@@ -22,13 +24,10 @@ export function TestimonialsProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onSnapshot(
       collection(db, "testimonials"),
       (snap) => {
-        // An empty collection means "not seeded yet", not "no testimonials".
-        // setTestimonialPool enforces the same rule; this avoids the call entirely.
-        if (snap.empty) return;
         setTestimonialPool(snap.docs.map((d) => d.data() as TestimonialPerson));
       },
       (err) => {
-        console.warn("[TestimonialsProvider] Subscription error, keeping the seed pool:", err);
+        console.warn("[TestimonialsProvider] Subscription failed, showing no testimonials:", err);
       }
     );
 
