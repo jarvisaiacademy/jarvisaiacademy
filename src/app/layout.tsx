@@ -18,7 +18,6 @@ import { LanguageProvider } from "@/providers/language-provider";
 import { AuthProvider } from "@/providers/auth-provider";
 import { CoursesProvider } from "@/providers/courses-provider";
 import { SettingsProvider } from "@/providers/settings-provider";
-import { TestimonialsProvider } from "@/providers/testimonials-provider";
 import { TeachersProvider } from "@/providers/teachers-provider";
 import { StudentsProvider } from "@/providers/students-provider";
 import { AssignmentsProvider } from "@/providers/assignments-provider";
@@ -124,17 +123,15 @@ export default function RootLayout({
             <AuthProvider>
               <CoursesProvider>
                 <SettingsProvider>
-                  <TestimonialsProvider>
-                    <TeachersProvider>
-                      <StudentsProvider>
-                        <AssignmentsProvider>
-                          {children}
-                          {/* Renders nothing until opened, so it adds no markup to the HTML. */}
-                          <ShortcutGuide />
-                        </AssignmentsProvider>
-                      </StudentsProvider>
-                    </TeachersProvider>
-                  </TestimonialsProvider>
+                  <TeachersProvider>
+                    <StudentsProvider>
+                      <AssignmentsProvider>
+                        {children}
+                        {/* Renders nothing until opened, so it adds no markup to the HTML. */}
+                        <ShortcutGuide />
+                      </AssignmentsProvider>
+                    </StudentsProvider>
+                  </TeachersProvider>
                 </SettingsProvider>
               </CoursesProvider>
             </AuthProvider>

@@ -162,8 +162,8 @@ Which file owns what:
   (`src/lib/courses-server.ts`), falling back to `COURSES_DATA` and `siteConfig` when the
   collection is empty or unreachable, so they track those changes on their own. Never paste
   the catalogue into them by hand. Edits arrive through the admin dashboard, or through
-  `pnpm seed:content`, which uploads `src/data/{courses,testimonials}.ts` and is the only
-  thing that puts them into Firestore in the first place.
+  `pnpm seed:content`, which uploads `src/data/courses.ts` and the `settings/app` document
+  and is the only thing that puts them into Firestore in the first place.
 - A new **reply** in `src/data/academy-knowledge.ts` → nothing to do unless it is a program's
   answer, in which case add the id to `COURSE_KB_KEY` beside it or `/courses/<id>` renders
   without its copy. `node scripts/check-course-routing.mjs` fails if the map and the chat's
