@@ -7,10 +7,11 @@
  *   pnpm seed:content --dry-run    # print the plan and write nothing (no credentials needed)
  *   pnpm seed:content --force      # overwrite docs that already exist
  *
- * `src/data/courses.ts` and `src/data/testimonials.ts` are the seed. They are the fallback
- * the app already renders when Firestore is empty, so this script is what promotes them
- * into the store of record — the same 12 courses and 12 people, keyed so the admin
- * dashboard and the public pages address the identical documents.
+ * `src/data/courses.ts` and `scripts/seed-data/testimonials.mjs` are the seed. The courses
+ * are also the fallback the app renders when Firestore is empty; the testimonials are not,
+ * because they are invented people, so this script is the only route by which they reach
+ * the site at all. Both are keyed so the admin dashboard and the public pages address the
+ * identical documents.
  *
  * Create-only is the default on purpose: `--force` against the real project discards
  * whatever an admin has since edited in the dashboard. Run `--dry-run` first.
@@ -72,11 +73,15 @@ if (unknown.length) {
 const dryRun = argv.includes("--dry-run");
 const force = argv.includes("--force");
 
-// Node strips the types natively, so the seed is the real source file rather than a copy
-// that can drift from it. Both modules are import-free, which is what makes this work.
+// Node strips the types natively, so the courses come from the real source file rather than
+// a copy that can drift from it. The testimonials come from `scripts/seed-data/`, because
+// they are invented placeholder people and must not sit in `src/` looking like content the
+// app owns. Both modules are import-free, which is what makes the first one work.
 const fromData = (rel) => pathToFileURL(path.join(projectRoot, rel)).href;
 const { COURSES_DATA } = await import(fromData("src/data/courses.ts"));
-const { TESTIMONIAL_POOL, testimonialId } = await import(fromData("src/data/testimonials.ts"));
+const { TESTIMONIAL_POOL, testimonialId } = await import(
+  fromData("scripts/seed-data/testimonials.mjs")
+);
 
 const targets = [
   ...COURSES_DATA.map((course) => ({

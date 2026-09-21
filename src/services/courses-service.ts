@@ -1,8 +1,10 @@
 import {
+  arrayRemove,
+  arrayUnion,
   collection,
   doc,
+  getDoc,
   getDocs,
-  setDoc,
   updateDoc,
   deleteDoc,
   onSnapshot,
@@ -13,6 +15,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { CourseItem, COURSES_DATA } from "@/data/courses";
+import { TEACHERS_COLLECTION } from "@/data/teachers";
 import { checkIsAdmin } from "@/providers/auth-provider";
 
 export const COURSES_COLLECTION = "courses";
@@ -134,16 +137,33 @@ export async function createCourseInFirestore(
     techIcons: course.techIcons || [],
     topics: course.topics || [],
     actionPrompt: course.actionPrompt || `Tell me about the ${course.title} course`,
+    status: course.status ?? "active",
+    teacherIds: course.teacherIds ?? [],
   };
 
   const docRef = doc(db, COURSES_COLLECTION, courseId);
-  await setDoc(docRef, fullCourse);
+  const teacherIds = fullCourse.teacherIds ?? [];
+
+  // The course and the teachers' own `courseIds` are the join, so they commit together —
+  // see the note on `updateCourseInFirestore`.
+  const batch = writeBatch(db);
+  batch.set(docRef, fullCourse);
+  for (const teacherId of teacherIds) {
+    batch.update(doc(db, TEACHERS_COLLECTION, teacherId), { courseIds: arrayUnion(courseId) });
+  }
+
+  await batch.commit();
   return fullCourse;
 }
 
 /**
  * Update an existing course in Firestore.
  * Strictly restricted to verified admins.
+ *
+ * When the update carries `teacherIds`, the other half of the link is moved in the
+ * same batch: each newly assigned teacher gains this course id, each dropped teacher
+ * loses it. Skipping this is how the two arrays drift apart — the course would name
+ * a teacher who does not name it back.
  */
 export async function updateCourseInFirestore(
   courseId: string,
@@ -159,7 +179,26 @@ export async function updateCourseInFirestore(
   }
 
   const docRef = doc(db, COURSES_COLLECTION, courseId);
-  await updateDoc(docRef, updates);
+
+  if (!updates.teacherIds) {
+    await updateDoc(docRef, updates);
+    return;
+  }
+
+  const next = updates.teacherIds;
+  const snapshot = await getDoc(docRef);
+  const previous: string[] = snapshot.exists() ? snapshot.data().teacherIds ?? [] : [];
+
+  const batch = writeBatch(db);
+  batch.update(docRef, updates);
+  for (const teacherId of next.filter((id) => !previous.includes(id))) {
+    batch.update(doc(db, TEACHERS_COLLECTION, teacherId), { courseIds: arrayUnion(courseId) });
+  }
+  for (const teacherId of previous.filter((id) => !next.includes(id))) {
+    batch.update(doc(db, TEACHERS_COLLECTION, teacherId), { courseIds: arrayRemove(courseId) });
+  }
+
+  await batch.commit();
 }
 
 /**
@@ -200,7 +239,9 @@ export async function seedDefaultCoursesToFirestore(
   const batch = writeBatch(db);
   for (const course of COURSES_DATA) {
     const docRef = doc(db, COURSES_COLLECTION, course.id);
-    batch.set(docRef, course);
+    // Merge, not overwrite: COURSES_DATA knows nothing of `status` or `teacherIds`, so a
+    // plain set would retire nothing but would silently unassign every teacher.
+    batch.set(docRef, course, { merge: true });
   }
 
   await batch.commit();

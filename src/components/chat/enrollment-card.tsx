@@ -13,6 +13,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
+import { useCourses } from "@/providers/courses-provider";
 import { siteConfig } from "@/config/site";
 
 export interface EnrollmentData {
@@ -37,25 +38,6 @@ interface EnrollmentCardProps {
   onRequireLogin?: (action: () => void) => void;
 }
 
-const COURSES_INFO = {
-  fullstack: {
-    id: "fullstack" as const,
-    name: "Full-Stack AI & Web Engineering Program",
-    duration: "60 Days (2 Months)",
-    /** All-inclusive: the quoted ₹30,000 is what the candidate pays. */
-    baseAmount: 30000,
-    gstRate: 0,
-  },
-  super10: {
-    id: "super10" as const,
-    name: "Super10 Elite Program (100% Placement Assurance)",
-    duration: "60 Days Intensive",
-    /** The one fully sponsored track — strictly 10 seats. */
-    baseAmount: 0,
-    gstRate: 0,
-  },
-};
-
 export function EnrollmentCard({
   messageId,
   initialData,
@@ -71,18 +53,31 @@ export function EnrollmentCard({
     initialData?.status || "initiated"
   );
   const [isProcessing, setIsProcessing] = useState(false);
-  const studentName =
-    initialData?.studentName || currentUser?.name || "Sugatraj Sarwade";
-  const studentEmail =
-    initialData?.studentEmail || currentUser?.email || "sugat@jarvisaiacademy.com";
+  // Empty for a signed-out visitor rather than a name belonging to somebody. The earlier
+  // fallback was a real person's name and address, so a guest who opened this card was
+  // shown as enrolled, and any row it wrote carried their identity.
+  const studentName = initialData?.studentName || currentUser?.name || "";
+  const studentEmail = initialData?.studentEmail || currentUser?.email || "";
   const [transactionId, setTransactionId] = useState(
     initialData?.transactionId || "TXN-JARVIS-PENDING"
   );
   const [paidAt, setPaidAt] = useState<string | undefined>(initialData?.paidAt);
 
-  const course = COURSES_INFO[selectedCourse];
-  const gstAmount = Math.round(course.baseAmount * course.gstRate);
-  const totalAmount = course.baseAmount + gstAmount;
+  const { courses } = useCourses();
+
+  // Read from the catalogue the admin edits, not a second table kept in this file. The copy
+  // that used to live here had its own title and its own ₹30,000, so a fee changed in the
+  // dashboard would leave the checkout quoting the old one.
+  const courseItem = courses.find((c) => c.id === selectedCourse);
+  const course = {
+    name: courseItem?.title ?? selectedCourse,
+    duration: courseItem?.duration ?? "",
+    // `amount` is the numeric fee, `fee` its display string. Both tracks are quoted
+    // all-inclusive, so nothing is added on top and `gstAmount` is always zero.
+    baseAmount: courseItem?.amount ?? 0,
+  };
+  const gstAmount = 0;
+  const totalAmount = course.baseAmount;
 
   // Track event in localStorage audit ledger
   const trackAction = (
@@ -414,7 +409,7 @@ export function EnrollmentCard({
     <div class="footer-note">
       This is a digitally generated computer invoice. No signature required.<br/>
       Includes Jarvis AI Academy 7-Day 100% Money-Back Guarantee policy.<br/>
-      Questions or corporate invoice requests? Email finance@jarvisaiacademy.com
+      Questions or corporate invoice requests? Email ${siteConfig.contact.financeEmail}
     </div>
   </div>
 </body>
