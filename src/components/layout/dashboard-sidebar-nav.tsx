@@ -41,7 +41,8 @@ export function DashboardSidebarNav({
   onBackToChat,
   isMobile,
 }: DashboardSidebarNavProps) {
-  const { courses } = useCourses();
+  // The count has to match the table it labels, so it is the stored count, not the fallback's.
+  const { firestoreCourses: courses } = useCourses();
   const { assignments } = useAssignments();
   const { teachers } = useTeachers();
 

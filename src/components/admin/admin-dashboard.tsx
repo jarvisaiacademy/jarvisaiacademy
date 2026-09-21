@@ -99,8 +99,11 @@ export function AdminDashboard({
     loading: studentsLoading,
     error: studentsError,
   } = useStudents();
+  // `firestoreCourses`, not `courses`: this tab lists what is in the database. With the
+  // COURSES_DATA fallback in front of it the twelve built-in courses appeared here as if they
+  // were stored, and saving one failed the write because no such document existed.
   const {
-    courses,
+    firestoreCourses: courses,
     isLiveFromFirebase,
     loading: coursesLoading,
     addCourse,
@@ -509,7 +512,7 @@ export function AdminDashboard({
                   {courses.length} Offerings
                 </div>
                 <span className="text-[11px] text-neutral-400">
-                  Synchronized across chat and catalog
+                  {courses.length > 0 ? "Stored in Firestore" : "Nothing stored yet"}
                 </span>
               </div>
 
@@ -770,7 +773,11 @@ export function AdminDashboard({
                     ) : (
                       <tr>
                         <td colSpan={6} className="text-center py-10 text-neutral-400">
-                          No courses found matching your criteria.
+                          {/* An empty store and an empty filter read the same in the table and
+                              mean opposite things, so they are not given the same sentence. */}
+                          {courses.length === 0
+                            ? "No courses are stored yet. Add one here, or seed the catalogue."
+                            : "No courses found matching your criteria."}
                         </td>
                       </tr>
                     )}
