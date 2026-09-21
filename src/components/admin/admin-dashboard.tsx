@@ -47,6 +47,7 @@ import { UserProfile } from "@/components/layout/user-profile";
 import { AdminAssignments } from "@/components/admin/admin-assignments";
 import { AdminTeachers } from "@/components/admin/admin-teachers";
 import { AdminKnowledge } from "@/components/admin/admin-knowledge";
+import { AdminChangeRequests } from "@/components/admin/admin-change-requests";
 import { AdminSettings } from "@/components/admin/admin-settings";
 import { Select } from "@/components/ui/select";
 import { shortcutById } from "@/data/shortcuts";
@@ -1142,6 +1143,9 @@ export function AdminDashboard({
 
         {/* ANSWER BOOK — what the assistant replies with, read-only */}
         {activeTab === "knowledge" && <AdminKnowledge />}
+
+        {/* CHANGE REQUESTS — wording changes to copy that is hard-coded in src/ */}
+        {activeTab === "changeRequests" && <AdminChangeRequests />}
 
         {/* ACADEMY SETTINGS — the figures the site quotes */}
         {activeTab === "settings" && <AdminSettings />}

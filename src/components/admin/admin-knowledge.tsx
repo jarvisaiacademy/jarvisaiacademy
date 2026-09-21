@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { BookOpen, Search, Info } from "lucide-react";
-import { academyKnowledge, COURSE_KB_KEY } from "@/data/academy-knowledge";
+import { academyKnowledge, replyPages } from "@/data/academy-knowledge";
 import { MarkdownRenderer } from "@/components/chat/markdown-renderer";
 
 /**
@@ -39,9 +39,7 @@ export function AdminKnowledge() {
   const entry = academyKnowledge[selected];
 
   // Which public page renders this topic, if any. Inverse of the map the course pages read.
-  const pages = Object.entries(COURSE_KB_KEY)
-    .filter(([, topic]) => topic === selected)
-    .map(([courseId]) => `/courses/${courseId}`);
+  const pages = replyPages(selected);
 
   return (
     <div className="flex flex-col gap-6">

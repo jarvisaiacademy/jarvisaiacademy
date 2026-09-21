@@ -234,6 +234,37 @@ await check("learner writes a teacher", false, () =>
   patch(docPath("teachers", "t1"), { mobile: { stringValue: "9111111111" } }, studentOne)
 );
 
+// --- change requests: admin-only, because a request is internal wording nobody has shipped ---
+await check("admin files a change request", true, () =>
+  patch(
+    docPath("changeRequests", "cr1"),
+    {
+      replyKey: { stringValue: "courses" },
+      requestedText: { stringValue: "The wording we want instead." },
+      requestedBy: { stringValue: "admin@jarvisaiacademy.com" },
+      done: { booleanValue: false },
+    },
+    admin
+  )
+);
+await check("admin closes a change request", true, () =>
+  patch(docPath("changeRequests", "cr1"), { done: { booleanValue: true } }, admin)
+);
+await check("admin reads a change request", true, () => get(docPath("changeRequests", "cr1"), admin));
+await check("learner reads a change request", false, () =>
+  get(docPath("changeRequests", "cr1"), studentOne)
+);
+await check("guest reads a change request", false, () =>
+  get(docPath("changeRequests", "cr1"), guest)
+);
+await check("learner files a change request", false, () =>
+  patch(
+    docPath("changeRequests", "cr2"),
+    { replyKey: { stringValue: "courses" }, requestedText: { stringValue: "vandalised" } },
+    studentOne
+  )
+);
+
 // --- guests ---
 await check("guest reads the public catalogue", true, () => get(docPath("courses", "fullstack"), guest));
 await check("guest reads a roster row", false, () => get(docPath("users", "student-two"), guest));

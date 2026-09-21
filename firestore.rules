@@ -72,6 +72,16 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // Change requests — wording changes an admin wants made to copy that is hard-coded in
+    // `src/`. Admin-only even for reads: a request is an internal note about unreleased
+    // wording, and a requester's screenshot link is nobody else's business.
+    //
+    // The app only stores and displays these. Applying one is a code change, and nothing
+    // written here reaches the site until a developer ships it.
+    match /changeRequests/{requestId} {
+      allow read, write: if isAdmin();
+    }
+
     // Course assignments. A learner reads the ones addressed to them, which is the
     // `where('studentId', '==', uid)` the client already uses, so the query stays provable.
     match /assignments/{assignmentId} {
