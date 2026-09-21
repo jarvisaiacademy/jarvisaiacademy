@@ -10,8 +10,6 @@ import {
   Search,
   ShieldCheck,
   Trash2,
-  CheckCircle2,
-  XCircle,
   X,
 } from "lucide-react";
 import { useTeachers } from "@/providers/teachers-provider";
@@ -19,6 +17,7 @@ import { useCourses } from "@/providers/courses-provider";
 import { useStudents } from "@/providers/students-provider";
 import { useToast } from "@/components/ui/toast";
 import { Select } from "@/components/ui/select";
+import { StatusSwitch } from "@/components/ui/switch";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { TeacherRecord, TeacherStatus } from "@/data/teachers";
 import { StudentRecord } from "@/data/assignments";
@@ -28,11 +27,6 @@ const inputClass =
 const selectClass =
   "w-full py-2 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs";
 const labelClass = "text-[11px] font-semibold text-neutral-600 dark:text-neutral-400";
-
-const STATUS_OPTIONS = [
-  { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
-];
 
 // Enough to scroll through without putting a thousand rows in the DOM.
 const PICKER_LIMIT = 50;
@@ -195,8 +189,7 @@ export function AdminTeachers() {
     }
   };
 
-  const handleToggleStatus = async (teacher: TeacherRecord) => {
-    const next: TeacherStatus = teacher.status === "active" ? "inactive" : "active";
+  const handleToggleStatus = async (teacher: TeacherRecord, next: TeacherStatus) => {
     setBusyId(teacher.id);
     try {
       await setTeacherStatus(teacher.id, next);
@@ -368,6 +361,18 @@ export function AdminTeachers() {
             </div>
 
             <div className="flex flex-col gap-1.5">
+              <span className={labelClass}>Status</span>
+              <StatusSwitch
+                checked={formStatus === "active"}
+                onCheckedChange={(next) => setFormStatus(next ? "active" : "inactive")}
+                label="Teacher status"
+              />
+            </div>
+
+            {/* Full width and last: the selections are chips, and chips need the room. In a
+                half-width column a teacher with five courses pushed the trigger's label past
+                the edge of the card. */}
+            <div className="flex flex-col gap-1.5 lg:col-span-2">
               <span className={labelClass}>Assigned Courses</span>
               <Select
                 multiple
@@ -376,7 +381,28 @@ export function AdminTeachers() {
                 onValueChange={setFormCourseIds}
                 options={courseOptions}
                 className={selectClass}
+                // The trigger counts them; the names are chips underneath, where they can
+                // wrap and be read together.
+                formatValue={(value) => {
+                  const picked = Array.isArray(value) ? value : [];
+                  if (picked.length === 0) return "Choose courses";
+                  return picked.length === 1 ? "1 course assigned" : `${picked.length} courses assigned`;
+                }}
               />
+
+              {formCourseIds.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {formCourseIds.map((id) => (
+                    <span
+                      key={id}
+                      className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-neutral-100 dark:bg-white/10 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-white/10"
+                    >
+                      {courseTitle(id)}
+                    </span>
+                  ))}
+                </div>
+              )}
+
               <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
                 {/* The picker is empty until the catalogue is stored, and an empty dropdown
                     with no explanation reads as a bug. */}
@@ -384,19 +410,8 @@ export function AdminTeachers() {
                   ? "No courses are stored yet, so there is nothing to assign."
                   : formCourseIds.length === 0
                     ? "No courses assigned yet."
-                    : formCourseIds.map(courseTitle).join(", ")}
+                    : "Open the list to change the assignment."}
               </span>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <span className={labelClass}>Status</span>
-              <Select
-                label="Teacher status"
-                value={formStatus}
-                onValueChange={(next) => setFormStatus(next as TeacherStatus)}
-                options={STATUS_OPTIONS}
-                className={selectClass}
-              />
             </div>
           </div>
 
@@ -475,6 +490,9 @@ export function AdminTeachers() {
                 filtered.map((teacher) => {
                   const user = userById.get(teacher.id);
                   const displayName = user?.name || teacher.name;
+                  // Anything that is not explicitly inactive counts as active — the field is
+                  // optional, and a teacher record written before it existed is a live one.
+                  const isActive = teacher.status !== "inactive";
                   return (
                     <tr
                       key={teacher.id}
@@ -482,7 +500,7 @@ export function AdminTeachers() {
                     >
                       <td className="py-3.5 px-4 sm:px-6">
                         <div className="flex items-center gap-3">
-                          {user && <UserAvatar user={user} size="sm" />}
+                          {user && <UserAvatar user={user} size="md" />}
                           <div className="flex flex-col min-w-0">
                             <span className="font-semibold text-neutral-900 dark:text-white">
                               {displayName}
@@ -518,17 +536,14 @@ export function AdminTeachers() {
                       </td>
 
                       <td className="py-3.5 px-4 sm:px-6">
-                        {teacher.status === "inactive" ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-neutral-100 dark:bg-white/10 text-neutral-600 dark:text-neutral-300 border border-neutral-200 dark:border-white/10">
-                            <XCircle className="w-3 h-3" />
-                            Inactive
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
-                            <CheckCircle2 className="w-3 h-3" />
-                            Active
-                          </span>
-                        )}
+                        <StatusSwitch
+                          checked={isActive}
+                          onCheckedChange={(next) =>
+                            handleToggleStatus(teacher, next ? "active" : "inactive")
+                          }
+                          disabled={busyId === teacher.id}
+                          label={`Make ${displayName} ${isActive ? "inactive" : "active"}`}
+                        />
                       </td>
 
                       <td className="py-3.5 px-4 sm:px-6 text-right">
@@ -553,15 +568,6 @@ export function AdminTeachers() {
                           </div>
                         ) : (
                           <div className="flex items-center justify-end gap-1">
-                            <button
-                              type="button"
-                              disabled={busyId === teacher.id}
-                              onClick={() => handleToggleStatus(teacher)}
-                              title={teacher.status === "active" ? "Mark inactive" : "Mark active"}
-                              className="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/5 transition-colors cursor-pointer disabled:opacity-50"
-                            >
-                              {teacher.status === "active" ? "Deactivate" : "Activate"}
-                            </button>
                             <button
                               type="button"
                               onClick={() => handleOpenEdit(teacher)}

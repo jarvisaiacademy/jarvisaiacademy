@@ -18,6 +18,12 @@ interface BaseSelectProps {
   /** Controlled popup state — omit to let Base UI manage it. */
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /**
+   * What the trigger says instead of the selected labels, for choices whose labels are too
+   * long to read in a closed box — a multiple picker with a dozen course names, say. Without
+   * it the trigger shows them all, truncated to one line.
+   */
+  formatValue?: (value: string | string[]) => React.ReactNode;
 }
 
 interface SingleSelectProps extends BaseSelectProps {
@@ -44,7 +50,7 @@ export type SelectProps = SingleSelectProps | MultipleSelectProps;
  * and passing `multiple` as a runtime boolean would collapse that distinction.
  */
 export function Select(props: SelectProps) {
-  const { options, label, className, open, onOpenChange } = props;
+  const { options, label, className, open, onOpenChange, formatValue } = props;
 
   // Only pass these when the caller wants control, so the default stays
   // uncontrolled instead of pinning the popup to a stale value.
@@ -55,11 +61,18 @@ export function Select(props: SelectProps) {
       <BaseSelect.Trigger
         aria-label={label}
         className={cn(
-          "inline-flex items-center justify-between gap-2 cursor-pointer select-none whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+          "inline-flex min-w-0 items-center justify-between gap-2 cursor-pointer select-none whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
           className
         )}
       >
-        <BaseSelect.Value />
+        {/* `min-w-0` is what lets the label shrink at all: a flex item refuses to go below
+            its content width, so a long selection used to push the trigger — and its
+            chevron — straight out of the card. */}
+        <BaseSelect.Value className="min-w-0 truncate">
+          {formatValue
+            ? (value: unknown) => formatValue(value as string | string[])
+            : undefined}
+        </BaseSelect.Value>
         <BaseSelect.Icon className="shrink-0 opacity-60">
           <ChevronsUpDown className="w-3.5 h-3.5" />
         </BaseSelect.Icon>
