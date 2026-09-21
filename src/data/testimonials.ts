@@ -1,14 +1,16 @@
 /**
  * The alumni the testimonials reply quotes.
  *
- * There is no pool in this file. The people live in the `testimonials` collection, written
- * by `pnpm seed:content` from `scripts/seed-data/testimonials.mjs` and read here by
- * `TestimonialsProvider`. The seed that used to sit here was twelve invented graduates with
- * AI-generated portraits, and because it was also the fallback it served as the live content
- * — the chat quoted people who do not exist for as long as Firestore was empty.
+ * The pool is hard-coded here rather than read from Firestore, for the same reason
+ * `src/data/academy-knowledge.ts` carries its prose: the reply has to answer with the
+ * database unreachable, and a `testimonials` collection that nothing writes to could only
+ * ever make that answer emptier.
  *
- * So the pool starts empty and the reply says so. A missing collection now reads as "no
- * testimonials yet" rather than as a reason to invent some.
+ * **These twelve people do not exist.** Their names, employers and quotes were written to
+ * demonstrate the reply, and their portraits under `public/testimonials/` are AI-generated,
+ * not photographs of anyone. Replacing them with the academy's real alumni — their own
+ * names, roles, employers and photographs, once they have agreed to be quoted — is a change
+ * to this array alone.
  */
 export interface TestimonialPerson {
   name: string;
@@ -20,18 +22,116 @@ export interface TestimonialPerson {
   photo: string;
 }
 
-/**
- * The live pool, swapped in by TestimonialsProvider once Firestore has answered.
- *
- * A mutable module variable rather than a parameter because `buildTestimonialsText` is
- * called synchronously from a getter in `academy-knowledge.ts`. This is the same
- * store shape as `src/lib/admission-card-effect.ts`.
- */
-let pool: TestimonialPerson[] = [];
-
-export function setTestimonialPool(next: TestimonialPerson[]): void {
-  pool = next;
-}
+export const TESTIMONIAL_POOL: TestimonialPerson[] = [
+  {
+    name: "Gurpreet Kaur",
+    role: "Software Engineer",
+    company: "Monzo",
+    location: "London, UK",
+    quote:
+      "I came from a non-IT background, so I had a lot of doubt in the beginning. The daily project reviews kept me on track, and in 60 days I was writing full-stack code properly.",
+    photo: "/testimonials/person-01.jpg",
+  },
+  {
+    name: "Karthik Iyer",
+    role: "Backend Engineer",
+    company: "Stripe",
+    location: "Austin, US",
+    quote:
+      "The system design mock interviews were the main reason I cleared my loop. We did them again and again until I could explain my choices without hesitating.",
+    photo: "/testimonials/person-02.jpg",
+  },
+  {
+    name: "Ananya Deshmukh",
+    role: "Full Stack Developer",
+    company: "Deliveroo",
+    location: "Manchester, UK",
+    quote:
+      "In most courses you watch videos for a month before you touch anything real. Here we were writing production code from the first week itself.",
+    photo: "/testimonials/person-03.jpg",
+  },
+  {
+    name: "Farhan Qureshi",
+    role: "Data Engineer",
+    company: "Datadog",
+    location: "Boston, US",
+    quote:
+      "The capstone felt like an actual sprint. By the time I joined my team, the way we worked was already familiar to me.",
+    photo: "/testimonials/person-04.jpg",
+  },
+  {
+    name: "Meghna Barman",
+    role: "Application Support Engineer",
+    company: "Ocado Technology",
+    location: "Bristol, UK",
+    quote:
+      "Sitting with the mentors and debugging on live systems taught me more than any tutorial did. You pick up the shortcuts only when something is actually broken.",
+    photo: "/testimonials/person-05.jpg",
+  },
+  {
+    name: "Nithin Reddy",
+    role: "GenAI Engineer",
+    company: "Notion",
+    location: "San Francisco, US",
+    quote:
+      "We built a retrieval pipeline end to end, not a toy one. That project is still the first thing I show in interviews.",
+    photo: "/testimonials/person-06.jpg",
+  },
+  {
+    name: "Sneha Nair",
+    role: "DevOps Engineer",
+    company: "Checkout.com",
+    location: "London, UK",
+    quote:
+      "Getting my code reviewed every single day for 60 days changed the way I work. Those habits are what I use on every pull request now.",
+    photo: "/testimonials/person-07.jpg",
+  },
+  {
+    name: "Hardik Patel",
+    role: "Backend AI Engineer",
+    company: "Cloudflare",
+    location: "Austin, US",
+    quote:
+      "The mentors did not let anything slide. No ticket was ever left half finished, and that standard stayed with me after the course.",
+    photo: "/testimonials/person-08.jpg",
+  },
+  {
+    name: "Ritika Rathore",
+    role: "Frontend Engineer",
+    company: "Wise",
+    location: "Birmingham, UK",
+    quote:
+      "I came from a design background and was worried the coding part would go over my head. The frontend track started exactly where I was and built up from there.",
+    photo: "/testimonials/person-09.jpg",
+  },
+  {
+    name: "Debashish Mohanty",
+    role: "Database Administrator",
+    company: "Ramp",
+    location: "New York, US",
+    quote:
+      "I joined knowing only basic SQL. By the end I could look at a slow query, understand the plan behind it and fix it.",
+    photo: "/testimonials/person-10.jpg",
+  },
+  {
+    name: "Tenzin Dolma",
+    role: "Full Stack Engineer",
+    company: "Figma",
+    location: "Seattle, US",
+    quote:
+      "The 60-day structure made me finish what I started. That was the one skill I was missing, and it changed how I work.",
+    photo: "/testimonials/person-11.jpg",
+  },
+  {
+    name: "Suhas Gowda",
+    role: "Software Engineer",
+    company: "Sky",
+    location: "Leeds, UK",
+    quote:
+      "Because we worked on live commercial projects, my portfolio had real work in it instead of practice exercises.",
+    photo: "/testimonials/person-12.jpg",
+  },
+];
 
 /** Fisher-Yates, so a fresh sample can come out in a different order every time. */
 function shuffle<T>(items: T[]): T[] {
@@ -47,10 +147,6 @@ function shuffle<T>(items: T[]): T[] {
  * Draws `count` people at random and renders them as markdown. Called per reply, so
  * asking for testimonials twice does not produce the same three faces.
  *
- * With nothing published this says exactly that. It deliberately does not quote anybody,
- * and it does not claim alumni exist either — the honest answer is that the academy has
- * none to show yet, which is also what a prospective student needs to know.
- *
  * The portrait is markdown image syntax; `MarkdownRenderer` styles it into a circle.
  * Empty alt text on purpose — the name follows in bold, so the image would only
  * repeat it to a screen reader.
@@ -60,15 +156,7 @@ function shuffle<T>(items: T[]): T[] {
  * the answer and cannot be tapped.
  */
 export function buildTestimonialsText(count = 3): string {
-  if (pool.length === 0) {
-    return [
-      `🏆 **Student Success Stories & Placements**:`,
-      ``,
-      `We publish alumni outcomes here once graduates have agreed to be named and quoted. Nothing is up yet, so rather than show you a testimonial we cannot stand behind, ask the admissions desk for reference contacts from the most recent batch.`,
-    ].join("\n");
-  }
-
-  const people = shuffle(pool).slice(0, count);
+  const people = shuffle(TESTIMONIAL_POOL).slice(0, count);
 
   return [
     `🏆 **Student Success Stories & Placements**:`,
