@@ -14,14 +14,19 @@ import {
 import { db } from "@/lib/firebase";
 import { TEACHERS_COLLECTION, TeacherRecord, TeacherStatus } from "@/data/teachers";
 import { COURSES_COLLECTION } from "@/services/courses-service";
+import { STUDENTS_COLLECTION } from "@/services/students-service";
 import { checkIsAdmin } from "@/providers/auth-provider";
 
+/** A teacher is a user, so the input names the user and not a person-shaped set of fields. */
 export interface TeacherInput {
-  name: string;
+  userId: string;
   mobile: string;
   courseIds?: string[];
   status?: TeacherStatus;
 }
+
+/** The person is the document's identity, so nothing here can move a teacher to another user. */
+export type TeacherUpdate = Partial<Pick<TeacherInput, "mobile" | "courseIds" | "status">>;
 
 function courseRef(courseId: string): DocumentReference {
   return doc(db!, COURSES_COLLECTION, courseId);
@@ -64,7 +69,7 @@ export function subscribeTeachersFromFirestore(
 }
 
 /**
- * Create a teacher, and put the teacher's id on every course it was assigned.
+ * Promote a user to the faculty list, and put their uid on every course assigned.
  *
  * Both halves commit together: Firestore has no joins, so the two arrays are the
  * join, and writing them separately would leave a course and a teacher disagreeing
@@ -81,13 +86,35 @@ export async function createTeacherInFirestore(
     throw new Error("Firestore is not initialized.");
   }
 
-  const id = doc(collection(db, TEACHERS_COLLECTION)).id;
+  const { userId } = input;
+  const teacherRef = doc(db, TEACHERS_COLLECTION, userId);
+
+  const [existing, userSnap] = await Promise.all([
+    getDoc(teacherRef),
+    getDoc(doc(db, STUDENTS_COLLECTION, userId)),
+  ]);
+
+  // The picker hides accounts that are already on the list, but a stale list is only ever
+  // one refresh behind — and silently overwriting here would reset `courseIds` without
+  // taking the uid off the courses it no longer names.
+  if (existing.exists()) {
+    throw new Error("That account is already on the faculty list.");
+  }
+  if (!userSnap.exists()) {
+    throw new Error("That account no longer exists.");
+  }
+
+  // Read from the user document rather than trusted from the caller, so the roster cannot
+  // be made to name somebody the uid does not belong to.
+  const user = userSnap.data();
+  const name: string = user.name || user.email || "Unnamed";
+
   const now = new Date().toISOString();
   const courseIds = input.courseIds ?? [];
 
   const teacher: TeacherRecord = {
-    id,
-    name: input.name.trim(),
+    id: userId,
+    name,
     mobile: input.mobile.trim(),
     courseIds,
     status: input.status ?? "active",
@@ -96,11 +123,11 @@ export async function createTeacherInFirestore(
   };
 
   const batch = writeBatch(db);
-  batch.set(doc(db, TEACHERS_COLLECTION, id), teacher);
+  batch.set(teacherRef, teacher);
   // `update`, not `set` with merge: a course the admin's list is stale about should
   // fail the batch loudly rather than have an empty course doc invented for it.
   for (const courseId of courseIds) {
-    batch.update(courseRef(courseId), { teacherIds: arrayUnion(id) });
+    batch.update(courseRef(courseId), { teacherIds: arrayUnion(userId) });
   }
 
   await batch.commit();
@@ -113,7 +140,7 @@ export async function createTeacherInFirestore(
  */
 export async function updateTeacherInFirestore(
   teacherId: string,
-  updates: Partial<TeacherInput>,
+  updates: TeacherUpdate,
   userEmail?: string | null
 ): Promise<void> {
   if (!checkIsAdmin(userEmail)) {

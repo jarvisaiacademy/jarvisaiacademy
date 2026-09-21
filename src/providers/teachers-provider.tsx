@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { TeacherRecord, TeacherStatus } from "@/data/teachers";
 import {
   TeacherInput,
+  TeacherUpdate,
   subscribeTeachersFromFirestore,
   createTeacherInFirestore,
   updateTeacherInFirestore,
@@ -17,7 +18,7 @@ interface TeachersContextType {
   loading: boolean;
   error: string | null;
   addTeacher: (input: TeacherInput) => Promise<TeacherRecord>;
-  editTeacher: (id: string, updates: Partial<TeacherInput>) => Promise<void>;
+  editTeacher: (id: string, updates: TeacherUpdate) => Promise<void>;
   removeTeacher: (id: string) => Promise<void>;
   setTeacherStatus: (id: string, status: TeacherStatus) => Promise<void>;
 }
@@ -73,7 +74,7 @@ export function TeachersProvider({ children }: { children: ReactNode }) {
   const addTeacher = (input: TeacherInput) =>
     createTeacherInFirestore(input, user?.email);
 
-  const editTeacher = (id: string, updates: Partial<TeacherInput>) =>
+  const editTeacher = (id: string, updates: TeacherUpdate) =>
     updateTeacherInFirestore(id, updates, user?.email);
 
   const removeTeacher = (id: string) => deleteTeacherInFirestore(id, user?.email);
