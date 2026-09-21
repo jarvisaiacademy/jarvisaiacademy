@@ -389,27 +389,6 @@ export function AdminTeachers() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <span className={labelClass}>Assigned Courses</span>
-              <Select
-                multiple
-                label="Assigned courses"
-                value={formCourseIds}
-                onValueChange={setFormCourseIds}
-                options={courseOptions}
-                className={selectClass}
-              />
-              <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
-                {/* The picker is empty until the catalogue is stored, and an empty dropdown
-                    with no explanation reads as a bug. */}
-                {courses.length === 0
-                  ? "No courses are stored yet, so there is nothing to assign."
-                  : formCourseIds.length === 0
-                    ? "No courses assigned yet."
-                    : formCourseIds.map(courseTitle).join(", ")}
-              </span>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
               <span className={labelClass}>Status</span>
               <Select
                 label="Teacher status"
@@ -418,6 +397,51 @@ export function AdminTeachers() {
                 options={STATUS_OPTIONS}
                 className={selectClass}
               />
+            </div>
+
+            {/* Full width and last: the selections are chips, and chips need the room. In a
+                half-width column a teacher with five courses pushed the trigger's label past
+                the edge of the card. */}
+            <div className="flex flex-col gap-1.5 lg:col-span-2">
+              <span className={labelClass}>Assigned Courses</span>
+              <Select
+                multiple
+                label="Assigned courses"
+                value={formCourseIds}
+                onValueChange={setFormCourseIds}
+                options={courseOptions}
+                className={selectClass}
+                // The trigger counts them; the names are chips underneath, where they can
+                // wrap and be read together.
+                formatValue={(value) => {
+                  const picked = Array.isArray(value) ? value : [];
+                  if (picked.length === 0) return "Choose courses";
+                  return picked.length === 1 ? "1 course assigned" : `${picked.length} courses assigned`;
+                }}
+              />
+
+              {formCourseIds.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {formCourseIds.map((id) => (
+                    <span
+                      key={id}
+                      className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-neutral-100 dark:bg-white/10 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-white/10"
+                    >
+                      {courseTitle(id)}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                {/* The picker is empty until the catalogue is stored, and an empty dropdown
+                    with no explanation reads as a bug. */}
+                {courses.length === 0
+                  ? "No courses are stored yet, so there is nothing to assign."
+                  : formCourseIds.length === 0
+                    ? "No courses assigned yet."
+                    : "Open the list to change the assignment."}
+              </span>
             </div>
           </div>
 
@@ -506,7 +530,7 @@ export function AdminTeachers() {
                     >
                       <td className="py-3.5 px-4 sm:px-6">
                         <div className="flex items-center gap-3">
-                          {user && <UserAvatar user={user} size="sm" />}
+                          {user && <UserAvatar user={user} size="md" />}
                           <div className="flex flex-col min-w-0">
                             <span className="font-semibold text-neutral-900 dark:text-white">
                               {displayName}
