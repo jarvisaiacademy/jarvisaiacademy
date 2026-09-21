@@ -7,10 +7,10 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
       // Nothing is disallowed on purpose:
-      // - the admin dashboard has no route (it renders inside / behind auth), so
-      //   there is no URL to exclude;
-      // - /settings carries `noindex` from app/settings/layout.tsx. A Disallow
-      //   here would stop the crawl before that tag could ever be read.
+      // - /admin and /settings carry `noindex` from their segment layouts. A
+      //   Disallow here would stop the crawl before those tags could be read.
+      // - the admin dashboard's content is behind a client-side auth gate and is
+      //   never in the HTML, so there is nothing for a crawler to index anyway.
     },
     sitemap: `${siteConfig.url}/sitemap.xml`,
   };

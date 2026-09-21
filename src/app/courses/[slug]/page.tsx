@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { COURSES_DATA } from "@/data/courses";
+import { getPublicCourses } from "@/lib/courses-server";
 import { COURSE_KB_KEY, academyKnowledge } from "@/data/academy-knowledge";
 import { courseStructuredData } from "@/config/seo";
 import { siteConfig } from "@/config/site";
@@ -11,14 +11,12 @@ import { MarkdownRenderer } from "@/components/chat/markdown-renderer";
  * One page per catalogue entry, rendered from the same strings the chat replies
  * with. The point is that a crawler — which cannot click a sidebar row — reads the
  * answer, and a visitor landing here can carry the conversation on into the chat.
- *
- * ponytail: reads the static COURSES_DATA at build time, while the running chat
- * prefers a Firestore-edited catalogue. An admin edit is live in the chat but not
- * here until the next deploy. Add `revalidate` plus a Firestore read in
- * `generateStaticParams` if admin edits become routine.
  */
-export function generateStaticParams() {
-  return COURSES_DATA.map((course) => ({ slug: course.id }));
+export const revalidate = 300;
+
+export async function generateStaticParams() {
+  const courses = await getPublicCourses();
+  return courses.map((course) => ({ slug: course.id }));
 }
 
 export async function generateMetadata({
@@ -27,7 +25,8 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const course = COURSES_DATA.find((c) => c.id === slug);
+  const courses = await getPublicCourses();
+  const course = courses.find((c) => c.id === slug);
   if (!course) return {};
 
   const url = `${siteConfig.url}/courses/${course.id}`;
@@ -69,7 +68,8 @@ export default async function CoursePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const course = COURSES_DATA.find((c) => c.id === slug);
+  const courses = await getPublicCourses();
+  const course = courses.find((c) => c.id === slug);
   if (!course) notFound();
 
   const kbKey = COURSE_KB_KEY[course.id];
@@ -163,7 +163,7 @@ export default async function CoursePage({
               href="/courses"
               className="mt-3 inline-block text-sm font-medium text-[#9d5932] dark:text-[#ea580c] hover:underline"
             >
-              See all {COURSES_DATA.length} programmes →
+              See all {courses.length} programmes →
             </Link>
           )}
         </section>

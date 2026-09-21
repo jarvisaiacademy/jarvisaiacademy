@@ -1,22 +1,26 @@
 import type { CourseItem } from "@/data/courses";
-import { COURSES_DATA } from "@/data/courses";
+import { getPublicCourses } from "@/lib/courses-server";
 import { siteConfig } from "@/config/site";
 
-// Served at /llms.txt. Generated from COURSES_DATA so what an agent reads cannot
-// drift from what the chat UI renders. Every track also has a public page, so the
-// catalogue is both described inline (below) and linked.
-export const dynamic = "force-static";
+// Served at /llms.txt, generated from the Firestore catalogue through
+// getPublicCourses() so what an agent reads cannot drift from what the chat UI
+// renders. Every track also has a public page, so the catalogue is both described
+// inline (below) and linked.
+export const revalidate = 300;
 
 const bullet = (c: CourseItem) =>
   `- **${c.title}** — ${c.fee}, ${c.duration}, ${c.level}. ${c.description} Tech stack: ${c.techStack.join(", ")}.`;
 
 const isReferral = (c: CourseItem) => c.id === "referral";
-const courses = COURSES_DATA.filter((c) => !isReferral(c));
-const referral = COURSES_DATA.filter(isReferral);
 
 const courseUrl = (c: CourseItem) => `${siteConfig.url}/courses/${c.id}`;
 
-const body = `# ${siteConfig.name}
+export async function GET() {
+  const all = await getPublicCourses();
+  const courses = all.filter((c) => !isReferral(c));
+  const referral = all.filter(isReferral);
+
+  const body = `# ${siteConfig.name}
 
 > ${siteConfig.name} is a 60-day, build-first software engineering bootcamp in Pune, India. It runs ${courses.length} program tracks — full-stack AI and web, frontend, backend, generative AI, data and business analysis, DevOps, database administration, application support and Laravel — each at ₹30,000 all-inclusive tuition. Its Super10 Elite batch is the one fully sponsored track (₹0), capped at 10 seats, and carries a 100% placement assurance.
 
@@ -33,7 +37,7 @@ ${referral.map(bullet).join("\n")}
 ## Course pages
 
 - [All courses](${siteConfig.url}/courses)
-${COURSES_DATA.map((c) => `- [${c.title}](${courseUrl(c)})`).join("\n")}
+${all.map((c) => `- [${c.title}](${courseUrl(c)})`).join("\n")}
 
 ## Contact
 
@@ -57,7 +61,6 @@ ${COURSES_DATA.map((c) => `- [${c.title}](${courseUrl(c)})`).join("\n")}
 - [Settings](${siteConfig.url}/settings): language and theme preferences. Requires sign-in and is excluded from search engines.
 `;
 
-export function GET() {
   return new Response(body, {
     headers: { "Content-Type": "text/plain; charset=utf-8" },
   });

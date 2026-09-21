@@ -79,7 +79,7 @@ These rules take priority over convenience.
 - Do not hard-code application data into UI components when it belongs in data/state/config.
 - Do not claim a task is complete without verification.
 - Do not silently change product behavior.
-- Do not give the admin dashboard a route or any SEO metadata — it is authenticated-only and must never be indexable.
+- **Do not render the admin dashboard anywhere but `/admin`**, and give it no SEO beyond the `robots: { index: false }` its layout already exports. It is authenticated-only, must never be indexable, and stays out of the sitemap and `/llms.txt`. The route's gate is client-side UX; `firestore.rules` is the real access control.
 - Do not invent APIs, backend behavior, environment variables, or database schemas.
 
 ---
@@ -110,15 +110,25 @@ These rules take priority over convenience.
 # 3. SEO
 
 The public surface is: `/` (indexable), `/courses` and `/courses/<slug>` (indexable, one
-per `COURSES_DATA` entry), and `/settings` (noindex). The admin dashboard has **no route** —
-it renders inside `/` only for an authenticated admin — so it is already outside SEO. Keep it
-that way; do not give it a URL.
+per `COURSES_DATA` entry). The non-public routes are `/settings` (account UI) and `/admin`
+(the dashboard). Both are **noindex and authenticated-only**: each exports
+`robots: { index: false }` from its own server-component `layout.tsx` and its own canonical,
+and both are deliberately absent from the sitemap and `/llms.txt`.
+
+`/admin` keeps its URL so that refreshing the dashboard refreshes the dashboard. That is not
+cosmetic: `/` is statically prerendered, so restoring the dashboard *after* hydration always
+flashes the chat page first. Nothing admin-only is ever in the HTML — the route reveals its
+content one commit after mount, once localStorage says the visitor is an admin — so the gate
+is UX, and `firestore.rules` remains the real access control.
 
 The course pages are server-rendered from the same knowledge base the chat replies with
-(`src/data/academy-knowledge.ts`), so the copy a crawler reads is the copy the bot says. Each
-`/courses/<slug>` sets its own canonical — the root layout's `canonical: "/"` is inherited by
-any route that does not override it. A new catalogue entry gets a page, a sitemap entry and an
-`/llms.txt` link automatically; nothing else needs editing.
+(`src/data/academy-knowledge.ts`), so the copy a crawler reads is the copy the bot says. The
+catalogue itself is read from Firestore through `getPublicCourses()`, so `/courses`,
+`/courses/<slug>`, `src/app/sitemap.ts` and `/llms.txt` all set `revalidate = 300` and pick up
+an admin edit within five minutes, with no deploy. Each `/courses/<slug>` sets its own
+canonical — the root layout's `canonical: "/"` is inherited by any route that does not
+override it. A new catalogue entry gets a page, a sitemap entry and an `/llms.txt` link
+automatically; nothing else needs editing.
 
 Which file owns what:
 
@@ -129,6 +139,7 @@ Which file owns what:
 | Brand strings, contact details, social handles | `src/config/site.ts` |
 | JSON-LD structured data (site + per-course) | `src/config/seo.ts` |
 | Chat replies, and the page copy lifted from them | `src/data/academy-knowledge.ts` |
+| The catalogue those pages read | `src/lib/courses-server.ts`, falling back to `src/data/courses.ts` |
 | Sitemap | `src/app/sitemap.ts` |
 | Crawl rules | `src/app/robots.ts` |
 | Web app manifest | `public/site.webmanifest` |
@@ -147,8 +158,12 @@ Which file owns what:
   for this: it stops the crawl before the `noindex` can be read.
 - New social profile → `siteConfig.links`, which feeds both the sidebar and `sameAs`.
 - Course catalogue, fees, duration or contact details → nothing to do. `/llms.txt`, the
-  sitemap and the course pages are all generated from `COURSES_DATA` and `siteConfig`, so they
-  track those changes on their own. Never paste the catalogue into them by hand.
+  sitemap and the course pages all read Firestore through `getPublicCourses()`
+  (`src/lib/courses-server.ts`), falling back to `COURSES_DATA` and `siteConfig` when the
+  collection is empty or unreachable, so they track those changes on their own. Never paste
+  the catalogue into them by hand. Edits arrive through the admin dashboard, or through
+  `pnpm seed:content`, which uploads `src/data/{courses,testimonials}.ts` and is the only
+  thing that puts them into Firestore in the first place.
 - A new **reply** in `src/data/academy-knowledge.ts` → nothing to do unless it is a program's
   answer, in which case add the id to `COURSE_KB_KEY` beside it or `/courses/<id>` renders
   without its copy. `node scripts/check-course-routing.mjs` fails if the map and the chat's

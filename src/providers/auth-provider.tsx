@@ -18,6 +18,10 @@ export interface User {
   plan?: string;
   role?: "admin" | "student" | "guest";
   isAdmin?: boolean;
+  /** Everything the Google account handed us, carried through for the candidate record. */
+  emailVerified?: boolean;
+  signInProvider?: string;
+  createdAt?: string;
 }
 
 interface AuthContextType {
@@ -141,6 +145,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             isAdmin,
             role: isAdmin ? "admin" : "student",
             plan: isAdmin ? "Admin / Founder" : "Learner Pro",
+            emailVerified: fbUser.emailVerified,
+            signInProvider: fbUser.providerData[0]?.providerId,
+            // Null for a session restored from persistence rather than a fresh sign-in, and
+            // the type says so — an absent field must not overwrite a good stored value.
+            createdAt: fbUser.metadata.creationTime ?? undefined,
           };
           setUser(mappedUser);
           saveUserSession(mappedUser);
@@ -160,6 +169,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       picture: user.picture,
       role: user.role,
       plan: user.plan,
+      emailVerified: user.emailVerified,
+      signInProvider: user.signInProvider,
+      createdAt: user.createdAt,
     });
   }, [user]);
 

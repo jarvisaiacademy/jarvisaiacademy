@@ -13,6 +13,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
+import { useCourses } from "@/providers/courses-provider";
+import { useSettings } from "@/providers/settings-provider";
 import { siteConfig } from "@/config/site";
 
 export interface EnrollmentData {
@@ -37,25 +39,6 @@ interface EnrollmentCardProps {
   onRequireLogin?: (action: () => void) => void;
 }
 
-const COURSES_INFO = {
-  fullstack: {
-    id: "fullstack" as const,
-    name: "Full-Stack AI & Web Engineering Program",
-    duration: "60 Days (2 Months)",
-    /** All-inclusive: the quoted ₹30,000 is what the candidate pays. */
-    baseAmount: 30000,
-    gstRate: 0,
-  },
-  super10: {
-    id: "super10" as const,
-    name: "Super10 Elite Program (100% Placement Assurance)",
-    duration: "60 Days Intensive",
-    /** The one fully sponsored track — strictly 10 seats. */
-    baseAmount: 0,
-    gstRate: 0,
-  },
-};
-
 export function EnrollmentCard({
   messageId,
   initialData,
@@ -71,18 +54,37 @@ export function EnrollmentCard({
     initialData?.status || "initiated"
   );
   const [isProcessing, setIsProcessing] = useState(false);
-  const studentName =
-    initialData?.studentName || currentUser?.name || "Sugatraj Sarwade";
-  const studentEmail =
-    initialData?.studentEmail || currentUser?.email || "sugat@jarvisaiacademy.com";
+  // Empty for a signed-out visitor rather than a name belonging to somebody. The earlier
+  // fallback was a real person's name and address, so a guest who opened this card was
+  // shown as enrolled, and any row it wrote carried their identity.
+  const studentName = initialData?.studentName || currentUser?.name || "";
+  const studentEmail = initialData?.studentEmail || currentUser?.email || "";
   const [transactionId, setTransactionId] = useState(
     initialData?.transactionId || "TXN-JARVIS-PENDING"
   );
   const [paidAt, setPaidAt] = useState<string | undefined>(initialData?.paidAt);
 
-  const course = COURSES_INFO[selectedCourse];
-  const gstAmount = Math.round(course.baseAmount * course.gstRate);
-  const totalAmount = course.baseAmount + gstAmount;
+  const { courses } = useCourses();
+  const { settings } = useSettings();
+  const { super10Seats, referralReward, moneyBackDays, gstin, gstRatePercent } = settings;
+
+  // Read from the catalogue the admin edits, not a second table kept in this file. The copy
+  // that used to live here had its own title and its own ₹30,000, so a fee changed in the
+  // dashboard would leave the checkout quoting the old one.
+  const courseItem = courses.find((c) => c.id === selectedCourse);
+  // The selector below offers these two by id, so it looks their fees up from the same
+  // catalogue rather than repeating the figures a third time.
+  const fullstackItem = courses.find((c) => c.id === "fullstack");
+  const super10Item = courses.find((c) => c.id === "super10");
+  const course = {
+    name: courseItem?.title ?? selectedCourse,
+    duration: courseItem?.duration ?? "",
+    // `amount` is the numeric fee, `fee` its display string. Both tracks are quoted
+    // all-inclusive, so nothing is added on top and `gstAmount` is always zero.
+    baseAmount: courseItem?.amount ?? 0,
+  };
+  const gstAmount = 0;
+  const totalAmount = course.baseAmount;
 
   // Track event in localStorage audit ledger
   const trackAction = (
@@ -340,7 +342,7 @@ export function EnrollmentCard({
         <h1 class="brand-title">${siteConfig.name}</h1>
         <div class="tagline">${siteConfig.tagline}</div>
         <div style="font-size: 11px; color: #64748b; margin-top: 6px;">
-          GSTIN: 27AABCJ1988Z1Z9 · Educational Services
+          GSTIN: ${gstin} · Educational Services
         </div>
       </div>
       <div class="invoice-badge">
@@ -396,11 +398,11 @@ export function EnrollmentCard({
       ${
         gstAmount > 0
           ? `<div class="totals-row">
-        <span>Statutory CGST (9%):</span>
+        <span>Statutory CGST (${gstRatePercent / 2}%):</span>
         <span>₹${Math.round(gstAmount / 2).toLocaleString("en-IN")}</span>
       </div>
       <div class="totals-row">
-        <span>Statutory SGST (9%):</span>
+        <span>Statutory SGST (${gstRatePercent / 2}%):</span>
         <span>₹${Math.round(gstAmount / 2).toLocaleString("en-IN")}</span>
       </div>`
           : ""
@@ -413,8 +415,8 @@ export function EnrollmentCard({
 
     <div class="footer-note">
       This is a digitally generated computer invoice. No signature required.<br/>
-      Includes Jarvis AI Academy 7-Day 100% Money-Back Guarantee policy.<br/>
-      Questions or corporate invoice requests? Email finance@jarvisaiacademy.com
+      Includes Jarvis AI Academy ${moneyBackDays}-Day 100% Money-Back Guarantee policy.<br/>
+      Questions or corporate invoice requests? Email ${siteConfig.contact.financeEmail}
     </div>
   </div>
 </body>
@@ -506,7 +508,8 @@ export function EnrollmentCard({
                 60 Days (2 Months) · Next.js 15 &amp; Python GenAI
               </span>
               <span className="text-sm font-bold text-neutral-900 dark:text-white mt-2">
-                ₹30,000 <span className="text-[10px] font-normal text-neutral-500 dark:text-neutral-400">all-in</span>
+                {fullstackItem?.fee ?? "—"}{" "}
+                <span className="text-[10px] font-normal text-neutral-500 dark:text-neutral-400">all-in</span>
               </span>
             </button>
 
@@ -522,20 +525,21 @@ export function EnrollmentCard({
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold">Super10 Elite Program</span>
                 <span className="text-[9px] font-medium px-2 py-0.5 rounded-full bg-neutral-200/80 dark:bg-white/10 text-neutral-700 dark:text-neutral-300">
-                  10 SEATS
+                  {super10Seats} SEATS
                 </span>
               </div>
               <span className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
                 60 Days · 100% Placement Assurance
               </span>
               <span className="text-sm font-bold text-neutral-900 dark:text-white mt-2">
-                ₹0 <span className="text-[10px] font-normal text-neutral-500 dark:text-neutral-400">fully sponsored</span>
+                {super10Item?.fee ?? "—"}{" "}
+                <span className="text-[10px] font-normal text-neutral-500 dark:text-neutral-400">fully sponsored</span>
               </span>
             </button>
           </div>
           {/* Referral Reward Banner */}
           <div className="mt-2.5 p-2 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-[11px] text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
-            <span>🎁 <strong>Referral Program:</strong> Refer a student &amp; earn <strong>₹3,000</strong> cash bonus once they complete the full 60-day course!</span>
+            <span>🎁 <strong>Referral Program:</strong> Refer a student &amp; earn <strong>₹{referralReward.toLocaleString("en-IN")}</strong> cash bonus once they complete the full 60-day course!</span>
           </div>
         </div>
       ) : (
@@ -570,7 +574,10 @@ export function EnrollmentCard({
         </div>
         {gstAmount > 0 && (
           <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
-            <span>Statutory 18% GST (CGST 9% + SGST 9%):</span>
+            <span>
+              Statutory {gstRatePercent}% GST (CGST {gstRatePercent / 2}% + SGST{" "}
+              {gstRatePercent / 2}%):
+            </span>
             <span className="text-neutral-900 dark:text-neutral-200">₹{gstAmount.toLocaleString("en-IN")}</span>
           </div>
         )}

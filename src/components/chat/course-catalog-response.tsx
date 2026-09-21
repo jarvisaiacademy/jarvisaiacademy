@@ -19,6 +19,7 @@ import {
   CourseItem,
 } from "@/data/courses";
 import { useCourses } from "@/providers/courses-provider";
+import { useSettings } from "@/providers/settings-provider";
 import { DevIcon } from "@/components/ui/dev-icon";
 
 function CourseBannerGraphic({
@@ -28,6 +29,9 @@ function CourseBannerGraphic({
   course: CourseItem;
   isHovered?: boolean;
 }) {
+  // Before the switch: a hook cannot sit behind one of the early returns below.
+  const { settings } = useSettings();
+
   const containerClass = `relative flex flex-col gap-1 p-2 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 shadow-lg shadow-black/10 w-[116px] transition-all duration-300 ${
     isHovered ? "rotate-0 scale-105 bg-white/20" : "rotate-[-2deg] scale-100"
   }`;
@@ -271,7 +275,8 @@ function CourseBannerGraphic({
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
           </div>
           <div className="text-[12px] font-extrabold text-white leading-none my-0.5">
-            ₹3,000 <span className="text-[8px] font-medium text-white/80">Cash</span>
+            ₹{settings.referralReward.toLocaleString("en-IN")}{" "}
+            <span className="text-[8px] font-medium text-white/80">Cash</span>
           </div>
           <div className="flex items-center justify-between pt-0.5">
             <span className="text-[8px] font-semibold text-white/90">Direct UPI</span>
@@ -309,6 +314,7 @@ export function CourseCatalogResponse({
   onSelectCourse,
 }: CourseCatalogResponseProps) {
   const { courses } = useCourses();
+  const { settings } = useSettings();
   const [selectedCategory, setSelectedCategory] =
     useState<CourseCategoryId>("all");
   const [hoveredCourseId, setHoveredCourseId] = useState<string | null>(null);
@@ -618,7 +624,7 @@ export function CourseCatalogResponse({
               Refer & Earn
             </span>
             <span className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate">
-              ₹3,000 Cash Reward
+              ₹{settings.referralReward.toLocaleString("en-IN")} Cash Reward
             </span>
           </div>
         </div>

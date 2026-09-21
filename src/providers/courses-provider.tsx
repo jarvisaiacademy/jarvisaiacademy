@@ -134,6 +134,8 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
       techIcons: course.techIcons || [],
       topics: course.topics || [],
       actionPrompt: course.actionPrompt || `Tell me about the ${course.title} course`,
+      status: course.status ?? "active",
+      teacherIds: course.teacherIds ?? [],
     };
 
     // Optimistic update; the Firestore write below is what actually persists it.

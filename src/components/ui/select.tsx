@@ -9,9 +9,7 @@ export interface SelectOption {
   label: string;
 }
 
-interface SelectProps {
-  value: string;
-  onValueChange: (value: string) => void;
+interface BaseSelectProps {
   options: SelectOption[];
   /** Accessible name — the trigger renders as a button, so it needs one. */
   label: string;
@@ -22,30 +20,38 @@ interface SelectProps {
   onOpenChange?: (open: boolean) => void;
 }
 
+interface SingleSelectProps extends BaseSelectProps {
+  multiple?: false;
+  value: string;
+  onValueChange: (value: string) => void;
+}
+
+interface MultipleSelectProps extends BaseSelectProps {
+  multiple: true;
+  value: string[];
+  onValueChange: (value: string[]) => void;
+}
+
+export type SelectProps = SingleSelectProps | MultipleSelectProps;
+
 /**
  * The app's dropdown. Wraps Base UI's Select so every surface gets the same
  * keyboard behaviour and popup styling rather than the browser's native menu.
+ *
+ * `multiple` is Base UI's own (1.8.0), not a local reimplementation, so the popup already
+ * stays open between picks and each item carries its own indicator. The two branches below
+ * exist only because Base UI spells the value type differently per mode — `T` versus `T[]` —
+ * and passing `multiple` as a runtime boolean would collapse that distinction.
  */
-export function Select({
-  value,
-  onValueChange,
-  options,
-  label,
-  className,
-  open,
-  onOpenChange,
-}: SelectProps) {
-  return (
-    <BaseSelect.Root
-      items={options}
-      value={value}
-      onValueChange={(next) => {
-        if (typeof next === "string") onValueChange(next);
-      }}
-      // Only pass these when the caller wants control, so the default stays
-      // uncontrolled instead of pinning the popup to a stale value.
-      {...(open === undefined ? {} : { open, onOpenChange })}
-    >
+export function Select(props: SelectProps) {
+  const { options, label, className, open, onOpenChange } = props;
+
+  // Only pass these when the caller wants control, so the default stays
+  // uncontrolled instead of pinning the popup to a stale value.
+  const popup = open === undefined ? {} : { open, onOpenChange };
+
+  const chrome = (
+    <>
       <BaseSelect.Trigger
         aria-label={label}
         className={cn(
@@ -84,6 +90,35 @@ export function Select({
           </BaseSelect.Popup>
         </BaseSelect.Positioner>
       </BaseSelect.Portal>
+    </>
+  );
+
+  if (props.multiple) {
+    return (
+      <BaseSelect.Root<string, true>
+        items={options}
+        multiple
+        value={props.value}
+        onValueChange={(next) => props.onValueChange(next)}
+        {...popup}
+      >
+        {chrome}
+      </BaseSelect.Root>
+    );
+  }
+
+  return (
+    <BaseSelect.Root<string, false>
+      items={options}
+      value={props.value}
+      // Base UI reports a cleared selection as null; the single-select contract here is a
+      // plain string, so a clear is not forwarded rather than invented as "".
+      onValueChange={(next) => {
+        if (typeof next === "string") props.onValueChange(next);
+      }}
+      {...popup}
+    >
+      {chrome}
     </BaseSelect.Root>
   );
 }

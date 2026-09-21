@@ -31,6 +31,8 @@ const tokenFor = (uid, email) =>
 
 const studentOne = tokenFor("student-one", "student-one@example.com");
 const studentTwo = tokenFor("student-two", "student-two@example.com");
+const bannedStudent = tokenFor("student-banned", "student-banned@example.com");
+const super10Student = tokenFor("student-super", "student-super@example.com");
 const admin = tokenFor("admin-uid", ADMIN_EMAIL);
 const guest = null;
 
@@ -124,6 +126,16 @@ async function check(label, expect, run) {
 // bypasses the rules; nothing below relies on it.
 await patch(docPath("users", "student-one"), { role: { stringValue: "student" } }, "owner");
 await patch(docPath("users", "student-two"), { role: { stringValue: "student" } }, "owner");
+await patch(
+  docPath("users", "student-banned"),
+  { role: { stringValue: "student" }, status: { stringValue: "banned" } },
+  "owner"
+);
+await patch(
+  docPath("users", "student-super"),
+  { role: { stringValue: "student" }, is_super10: { booleanValue: true } },
+  "owner"
+);
 
 // --- a signed-in learner ---
 await check("learner writes their own row", true, () =>
@@ -136,6 +148,50 @@ await check("learner promotes themselves to admin", false, () =>
 await check("learner reads another learner's row", false, () => get(docPath("users", "student-two"), studentOne));
 await check("learner lists the whole roster", false, () => list("users", null, null, studentOne));
 await check("learner deletes their own row", false, () => request(docPath("users", "student-one"), { method: "DELETE", token: studentOne }));
+
+// --- the two fields that belong to the admin ---
+// The self-update path exists so a name or avatar can refresh on sign-in. If it were not
+// fenced, a banned candidate could clear their own ban from the browser console.
+//
+// Note these bodies carry `role` and the fenced field explicitly. This harness PATCHes
+// without an update mask, so the body *is* the resulting document — which is how the
+// client's `setDoc(..., { merge: true })` behaves too, once the stored fields are inlined.
+await check("banned learner un-bans themselves", false, () =>
+  patch(
+    docPath("users", "student-banned"),
+    { role: { stringValue: "student" }, status: { stringValue: "active" } },
+    bannedStudent
+  )
+);
+await check("banned learner rewrites their row keeping the ban", true, () =>
+  patch(
+    docPath("users", "student-banned"),
+    { role: { stringValue: "student" }, status: { stringValue: "banned" }, name: { stringValue: "Renamed" } },
+    bannedStudent
+  )
+);
+await check("learner awards themselves Super10", false, () =>
+  patch(
+    docPath("users", "student-one"),
+    { role: { stringValue: "student" }, is_super10: { booleanValue: true } },
+    studentOne
+  )
+);
+await check("learner strips their own Super10 flag", false, () =>
+  patch(
+    docPath("users", "student-super"),
+    { role: { stringValue: "student" }, is_super10: { booleanValue: false } },
+    super10Student
+  )
+);
+// The flag is fenced, not the row: a Super10 learner is otherwise an ordinary learner.
+await check("Super10 learner edits their own name", true, () =>
+  patch(
+    docPath("users", "student-super"),
+    { role: { stringValue: "student" }, is_super10: { booleanValue: true }, name: { stringValue: "Renamed" } },
+    super10Student
+  )
+);
 
 // --- assignments ---
 await check("admin writes an assignment", true, () =>
@@ -155,6 +211,28 @@ await check("admin lists the roster", true, () => list("users", null, null, admi
 await check("admin writes the catalogue", true, () =>
   patch(docPath("courses", "fullstack"), { title: { stringValue: "Full-Stack AI & Web Engineering" } }, admin)
 );
+// The other half of the fence above: an admin is the one who may move these two fields.
+await check("admin bans a candidate", true, () =>
+  patch(docPath("users", "student-one"), { status: { stringValue: "banned" } }, admin)
+);
+await check("admin grants Super10", true, () =>
+  patch(docPath("users", "student-two"), { is_super10: { booleanValue: true } }, admin)
+);
+
+// --- teachers: admin-only even to read, because the record carries a mobile number ---
+await check("admin writes a teacher", true, () =>
+  patch(
+    docPath("teachers", "t1"),
+    { name: { stringValue: "A Teacher" }, mobile: { stringValue: "9000000000" } },
+    admin
+  )
+);
+await check("admin reads a teacher", true, () => get(docPath("teachers", "t1"), admin));
+await check("learner reads a teacher", false, () => get(docPath("teachers", "t1"), studentOne));
+await check("guest reads a teacher", false, () => get(docPath("teachers", "t1"), guest));
+await check("learner writes a teacher", false, () =>
+  patch(docPath("teachers", "t1"), { mobile: { stringValue: "9111111111" } }, studentOne)
+);
 
 // --- guests ---
 await check("guest reads the public catalogue", true, () => get(docPath("courses", "fullstack"), guest));
@@ -169,6 +247,32 @@ await check("guest reads an unmapped collection", false, () => get(docPath("secr
 await check("learner reads the catalogue", true, () => get(docPath("courses", "fullstack"), studentOne));
 await check("learner writes the catalogue", false, () =>
   patch(docPath("courses", "fullstack"), { title: { stringValue: "vandalised" } }, studentOne)
+);
+
+// --- testimonials: as public as the catalogue ---
+await check("guest reads a testimonial", true, () => get(docPath("testimonials", "gurpreet-kaur"), guest));
+await check("learner writes a testimonial", false, () =>
+  patch(docPath("testimonials", "gurpreet-kaur"), { quote: { stringValue: "vandalised" } }, studentOne)
+);
+await check("guest writes a testimonial", false, () =>
+  patch(docPath("testimonials", "intruder"), { name: { stringValue: "x" } }, guest)
+);
+
+// --- settings: every value in it is advertised publicly, so reads are open and writes are not ---
+await check("admin writes the settings", true, () =>
+  patch(
+    docPath("settings", "app"),
+    { referralReward: { integerValue: "3000" }, gstin: { stringValue: "27AABCJ1988Z1Z9" } },
+    admin
+  )
+);
+await check("guest reads the settings", true, () => get(docPath("settings", "app"), guest));
+await check("learner reads the settings", true, () => get(docPath("settings", "app"), studentOne));
+await check("learner writes the settings", false, () =>
+  patch(docPath("settings", "app"), { referralReward: { integerValue: "9999" } }, studentOne)
+);
+await check("guest creates a settings doc", false, () =>
+  patch(docPath("settings", "intruder"), { gstin: { stringValue: "x" } }, guest)
 );
 
 console.log(`\n${passed} passed, ${failures.length} failed`);

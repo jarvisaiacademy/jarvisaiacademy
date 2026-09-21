@@ -10,11 +10,23 @@ import {
   ShieldCheck,
   Sparkles,
   GraduationCap,
+  Contact,
+  Settings as SettingsIcon,
 } from "lucide-react";
 import { useCourses } from "@/providers/courses-provider";
 import { useAssignments } from "@/providers/assignments-provider";
+import { useTeachers } from "@/providers/teachers-provider";
+import { academyKnowledge } from "@/data/academy-knowledge";
 
-export type DashboardTab = "courses" | "users" | "assignments" | "analytics" | "cloud";
+export type DashboardTab =
+  | "courses"
+  | "teachers"
+  | "knowledge"
+  | "settings"
+  | "users"
+  | "assignments"
+  | "analytics"
+  | "cloud";
 
 interface DashboardSidebarNavProps {
   activeTab: DashboardTab;
@@ -31,6 +43,7 @@ export function DashboardSidebarNav({
 }: DashboardSidebarNavProps) {
   const { courses } = useCourses();
   const { assignments } = useAssignments();
+  const { teachers } = useTeachers();
 
   const activeGrantCount = assignments.filter((a) => a.status === "active").length;
 
@@ -90,6 +103,102 @@ export function DashboardSidebarNav({
             }`}
           >
             {courses.length}
+          </span>
+        </button>
+
+        {/* Teachers (CRUD). Sits beside Courses because the two are linked: assigning a
+            teacher to a course here and picking teachers on a course are the same edge. */}
+        <button
+          type="button"
+          onClick={() => handleSelect("teachers")}
+          className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            activeTab === "teachers"
+              ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-xs"
+              : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/5"
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <Contact
+              className={`w-4 h-4 ${
+                activeTab === "teachers"
+                  ? "text-amber-400 dark:text-amber-600"
+                  : "text-neutral-500"
+              }`}
+            />
+            <span>Teachers</span>
+          </div>
+          <span
+            className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+              activeTab === "teachers"
+                ? "bg-white/20 dark:bg-black/15 text-white dark:text-neutral-900"
+                : "bg-neutral-200/70 dark:bg-white/10 text-neutral-600 dark:text-neutral-300"
+            }`}
+          >
+            {teachers.length}
+          </span>
+        </button>
+
+        {/* Answer Book. Last of the content tabs, because it is reference rather than
+            management — nothing here can be edited. */}
+        <button
+          type="button"
+          onClick={() => handleSelect("knowledge")}
+          className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            activeTab === "knowledge"
+              ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-xs"
+              : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/5"
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <BookOpen
+              className={`w-4 h-4 ${
+                activeTab === "knowledge"
+                  ? "text-indigo-400 dark:text-indigo-600"
+                  : "text-neutral-500"
+              }`}
+            />
+            <span>Answer Book</span>
+          </div>
+          <span
+            className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+              activeTab === "knowledge"
+                ? "bg-white/20 dark:bg-black/15 text-white dark:text-neutral-900"
+                : "bg-neutral-200/70 dark:bg-white/10 text-neutral-600 dark:text-neutral-300"
+            }`}
+          >
+            {Object.keys(academyKnowledge).length}
+          </span>
+        </button>
+
+        {/* Academy Settings. The figures the site quotes. Not a record list like the others:
+            one document of scalars, so it carries no count badge. */}
+        <button
+          type="button"
+          onClick={() => handleSelect("settings")}
+          className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            activeTab === "settings"
+              ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-xs"
+              : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/5"
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <SettingsIcon
+              className={`w-4 h-4 ${
+                activeTab === "settings"
+                  ? "text-rose-400 dark:text-rose-600"
+                  : "text-neutral-500"
+              }`}
+            />
+            <span>Settings</span>
+          </div>
+          <span
+            className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+              activeTab === "settings"
+                ? "bg-white/20 dark:bg-black/15 text-white dark:text-neutral-900"
+                : "bg-neutral-200/70 dark:bg-white/10 text-neutral-600 dark:text-neutral-300"
+            }`}
+          >
+            Config
           </span>
         </button>
 
