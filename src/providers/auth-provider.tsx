@@ -16,7 +16,7 @@ export interface User {
   email: string;
   picture?: string;
   plan?: string;
-  role?: "admin" | "student" | "guest";
+  role?: "admin" | "student";
   isAdmin?: boolean;
   /** Everything the Google account handed us, carried through for the candidate record. */
   emailVerified?: boolean;

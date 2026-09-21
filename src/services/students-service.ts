@@ -24,7 +24,7 @@ export interface RosterUserInput {
   name: string;
   email: string;
   picture?: string;
-  role?: "admin" | "student" | "guest";
+  role?: "admin" | "student";
   plan?: string;
   /** Straight off the Firebase Auth user; whatever the Google account actually gave us. */
   emailVerified?: boolean;

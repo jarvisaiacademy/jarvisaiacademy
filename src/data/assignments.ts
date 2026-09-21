@@ -3,7 +3,7 @@ export interface StudentRecord {
   name: string;
   email: string;
   picture?: string;
-  role: "admin" | "student" | "guest";
+  role: "admin" | "student";
   plan?: string;
   lastLoginAt: string;
   /** Absent means active. `banned` is a deliberate block, not merely an unset flag. */

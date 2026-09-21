@@ -27,6 +27,7 @@ import {
   Check,
   PanelLeft,
   Star,
+  Briefcase,
 } from "lucide-react";
 import { MobileMenuIcon } from "@/components/ui/mobile-menu-icon";
 import { siteConfig } from "@/config/site";
@@ -77,6 +78,33 @@ function formatSignIn(iso: string): string {
     minute: "2-digit",
   });
 }
+
+/**
+ * The three roles a person can hold on this site, and how each one's badge reads.
+ *
+ * Teacher is not stored anywhere — see `renderRole`. Sky rather than amber because amber
+ * already means Super10 in this same table, and one row must not carry two amber chips.
+ */
+const ROLE_BADGE = {
+  admin: {
+    label: "Admin",
+    icon: ShieldCheck,
+    badge:
+      "bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-500/30",
+  },
+  teacher: {
+    label: "Teacher",
+    icon: Briefcase,
+    badge:
+      "bg-sky-50 dark:bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-500/30",
+  },
+  student: {
+    label: "Student",
+    icon: GraduationCap,
+    badge:
+      "bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-white/10",
+  },
+} as const;
 
 interface AdminDashboardProps {
   onBackToChat: () => void;
@@ -511,6 +539,27 @@ export function AdminDashboard({
           {isBanned ? "Unban" : "Ban"}
         </button>
       </div>
+    );
+  };
+
+  // Faculty membership is a `teachers/{uid}` document, not a value on `users`: `role` is
+  // recomputed from the admin allowlist on every sign-in (see `src/data/teachers.ts`), so a
+  // stored "teacher" would revert on that person's next visit. Deriving the third role from
+  // the roster the Teachers tab already owns is also what stops the two tabs disagreeing.
+  const teacherIds = new Set(teachers.map((teacher) => teacher.id));
+
+  const renderRole = (student: StudentRecord) => {
+    const role: keyof typeof ROLE_BADGE =
+      student.role === "admin" ? "admin" : teacherIds.has(student.id) ? "teacher" : "student";
+    const { label, icon: Icon, badge } = ROLE_BADGE[role];
+
+    return (
+      <span
+        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${badge}`}
+      >
+        <Icon className="w-3 h-3" />
+        {label}
+      </span>
     );
   };
 
@@ -1113,22 +1162,7 @@ export function AdminDashboard({
                             </div>
                           </td>
 
-                          <td className="py-3.5 px-4 sm:px-6">
-                            <span
-                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
-                                student.role === "admin"
-                                  ? "bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-500/30"
-                                  : "bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-white/10"
-                              }`}
-                            >
-                              {student.role === "admin" ? (
-                                <ShieldCheck className="w-3 h-3" />
-                              ) : (
-                                <GraduationCap className="w-3 h-3" />
-                              )}
-                              {student.role === "admin" ? "Admin" : "Student"}
-                            </span>
-                          </td>
+                          <td className="py-3.5 px-4 sm:px-6">{renderRole(student)}</td>
 
                           <td className="py-3.5 px-4 sm:px-6 text-neutral-600 dark:text-neutral-400">
                             {student.plan || "—"}
