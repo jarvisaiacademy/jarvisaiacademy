@@ -27,18 +27,24 @@ import {
   Cloud,
   Check,
   PanelLeft,
+  Star,
 } from "lucide-react";
 import { MobileMenuIcon } from "@/components/ui/mobile-menu-icon";
 import { siteConfig } from "@/config/site";
 import { useCourses } from "@/providers/courses-provider";
 import { useStudents } from "@/providers/students-provider";
-import { CourseItem, COURSE_CATEGORIES, CourseCategoryId } from "@/data/courses";
+import { useTeachers } from "@/providers/teachers-provider";
+import { useAuth } from "@/providers/auth-provider";
+import { updateCandidateInFirestore } from "@/services/students-service";
+import { CandidateStatus } from "@/data/assignments";
+import { CourseItem, COURSE_CATEGORIES, CourseCategoryId, CourseStatus } from "@/data/courses";
 import { DevIcon } from "@/components/ui/dev-icon";
 import { useToast } from "@/components/ui/toast";
 
 import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
 import { ThemeSwitcher } from "@/components/layout/theme-switcher";
 import { AdminAssignments } from "@/components/admin/admin-assignments";
+import { AdminTeachers } from "@/components/admin/admin-teachers";
 import { Select } from "@/components/ui/select";
 import { shortcutById } from "@/data/shortcuts";
 import { isTypingTarget, matchesShortcut } from "@/lib/keyboard";
@@ -97,6 +103,8 @@ export function AdminDashboard({
     removeCourse,
     seedCourses,
   } = useCourses();
+  const { teachers } = useTeachers();
+  const { user } = useAuth();
 
   // Seeding overwrites the live catalogue from the built-in one, which is a development
   // action, not something to leave armed on the deployed site. `next dev` is the only
@@ -146,6 +154,37 @@ export function AdminDashboard({
   const [formTechIcons, setFormTechIcons] = useState("");
   const [formTopics, setFormTopics] = useState("");
   const [formActionPrompt, setFormActionPrompt] = useState("");
+  const [formStatus, setFormStatus] = useState<CourseStatus>("active");
+  const [formTeacherIds, setFormTeacherIds] = useState<string[]>([]);
+
+  // Candidate rows are edited on the spot — the two admin-owned fields are the whole
+  // edit surface, so a modal would be a dialog around two controls.
+  const [busyCandidateId, setBusyCandidateId] = useState<string | null>(null);
+
+  const handleCandidateStatus = async (uid: string, status: CandidateStatus) => {
+    setBusyCandidateId(uid);
+    try {
+      await updateCandidateInFirestore(uid, { status }, user?.email);
+      showToast(`Candidate marked ${status}`, "success");
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : "Failed to update candidate", "error");
+    } finally {
+      setBusyCandidateId(null);
+    }
+  };
+
+  const handleToggleSuper10 = async (uid: string, current: boolean) => {
+    const next = !current;
+    setBusyCandidateId(uid);
+    try {
+      await updateCandidateInFirestore(uid, { is_super10: next }, user?.email);
+      showToast(next ? "Super10 granted" : "Super10 removed", "success");
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : "Failed to update candidate", "error");
+    } finally {
+      setBusyCandidateId(null);
+    }
+  };
 
   // The ledger is the enrolments that actually happened, read back from the tracker
   // the chat writes. A hardcoded set of demo students used to be merged in here, which
@@ -261,6 +300,8 @@ export function AdminDashboard({
     setFormTechIcons("nextjs, react, fastapi, python, postgresql");
     setFormTopics("Module 1: Architecture\nModule 2: Real-time APIs\nModule 3: Cloud Deployment");
     setFormActionPrompt("");
+    setFormStatus("active");
+    setFormTeacherIds([]);
     setIsModalOpen(true);
   };
 
@@ -285,6 +326,8 @@ export function AdminDashboard({
     setFormTechIcons((course.techIcons || []).join(", "));
     setFormTopics((course.topics || []).join("\n"));
     setFormActionPrompt(course.actionPrompt || `Tell me about the ${course.title} course`);
+    setFormStatus(course.status ?? "active");
+    setFormTeacherIds(course.teacherIds ?? []);
     setIsModalOpen(true);
   };
 
@@ -333,6 +376,8 @@ export function AdminDashboard({
           topics: topicsArr,
           actionPrompt:
             formActionPrompt.trim() || `Tell me about the ${formTitle.trim()} course`,
+          status: formStatus,
+          teacherIds: formTeacherIds,
         });
         showToast(`Course "${formTitle}" updated successfully!`, "success");
       } else {
@@ -356,6 +401,8 @@ export function AdminDashboard({
           topics: topicsArr,
           actionPrompt:
             formActionPrompt.trim() || `Tell me about the ${formTitle.trim()} course`,
+          status: formStatus,
+          teacherIds: formTeacherIds,
         });
         showToast(`New course "${formTitle}" created successfully!`, "success");
       }
@@ -597,6 +644,13 @@ export function AdminDashboard({
                                 {course.badge && (
                                   <span className="px-2 py-0.2 rounded-full text-[10px] font-semibold bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">
                                     {course.badge}
+                                  </span>
+                                )}
+                                {/* Absent means active, so only the exception is worth
+                                    a badge — a row of "Active" pills says nothing. */}
+                                {(course.status ?? "active") === "inactive" && (
+                                  <span className="px-2 py-0.2 rounded-full text-[10px] font-semibold bg-neutral-200 dark:bg-white/10 text-neutral-600 dark:text-neutral-300 border border-neutral-300 dark:border-white/10">
+                                    Inactive
                                   </span>
                                 )}
                               </div>
@@ -909,25 +963,27 @@ export function AdminDashboard({
                       <th className="py-3 px-4 sm:px-6">Student Learner</th>
                       <th className="py-3 px-4 sm:px-6">Role</th>
                       <th className="py-3 px-4 sm:px-6">Plan</th>
+                      <th className="py-3 px-4 sm:px-6">Status</th>
+                      <th className="py-3 px-4 sm:px-6">Super10</th>
                       <th className="py-3 px-4 sm:px-6">Last Sign-in</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-200 dark:divide-white/5">
                     {studentsLoading ? (
                       <tr>
-                        <td colSpan={4} className="text-center py-8 text-neutral-400">
+                        <td colSpan={6} className="text-center py-8 text-neutral-400">
                           Loading registered students...
                         </td>
                       </tr>
                     ) : studentsError ? (
                       <tr>
-                        <td colSpan={4} className="text-center py-8 text-amber-600 dark:text-amber-400">
+                        <td colSpan={6} className="text-center py-8 text-amber-600 dark:text-amber-400">
                           Could not load the roster right now.
                         </td>
                       </tr>
                     ) : students.length === 0 ? (
                       <tr>
-                        <td colSpan={4} className="text-center py-8 text-neutral-400">
+                        <td colSpan={6} className="text-center py-8 text-neutral-400">
                           No accounts yet — nobody has signed in with Google.
                         </td>
                       </tr>
@@ -957,6 +1013,20 @@ export function AdminDashboard({
                                 <span className="text-[11px] text-neutral-500 truncate">
                                   {student.email}
                                 </span>
+                                {/* The rest of what the Gmail account gave us. Storing it
+                                    is only worth anything if an admin can read it. */}
+                                <span className="flex items-center gap-1.5 text-[10px] text-neutral-400">
+                                  {student.signInProvider && <span>{student.signInProvider}</span>}
+                                  {student.emailVerified && (
+                                    <span className="inline-flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400">
+                                      <Check className="w-2.5 h-2.5" />
+                                      verified
+                                    </span>
+                                  )}
+                                  {student.createdAt && (
+                                    <span>since {new Date(student.createdAt).getFullYear()}</span>
+                                  )}
+                                </span>
                               </div>
                             </div>
                           </td>
@@ -982,6 +1052,55 @@ export function AdminDashboard({
                             {student.plan || "—"}
                           </td>
 
+                          {/* Three states, and only an admin can move them: the `users`
+                              rule pins both fields to their stored values for a self-write,
+                              so a banned candidate cannot clear their own ban. */}
+                          <td className="py-3.5 px-4 sm:px-6">
+                            <Select
+                              label={`Status for ${student.name || student.email}`}
+                              value={student.status ?? "active"}
+                              onValueChange={(next) =>
+                                handleCandidateStatus(student.id, next as CandidateStatus)
+                              }
+                              options={[
+                                { value: "active", label: "Active" },
+                                { value: "inactive", label: "Inactive" },
+                                { value: "banned", label: "Banned" },
+                              ]}
+                              className={`py-1 px-2 rounded-lg border text-[11px] ${
+                                student.status === "banned"
+                                  ? "bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300 border-red-200 dark:border-red-500/30"
+                                  : student.status === "inactive"
+                                    ? "bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-white/10"
+                                    : "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30"
+                              }`}
+                            />
+                          </td>
+
+                          <td className="py-3.5 px-4 sm:px-6">
+                            <button
+                              type="button"
+                              disabled={busyCandidateId === student.id}
+                              onClick={() => handleToggleSuper10(student.id, student.is_super10 === true)}
+                              aria-pressed={student.is_super10 === true}
+                              title={
+                                student.is_super10
+                                  ? "Remove the Super10 flag"
+                                  : "Grant the Super10 flag"
+                              }
+                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors cursor-pointer disabled:opacity-50 ${
+                                student.is_super10
+                                  ? "bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30"
+                                  : "bg-neutral-100 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-white/10 hover:text-amber-600 dark:hover:text-amber-400"
+                              }`}
+                            >
+                              <Star
+                                className={`w-3 h-3 ${student.is_super10 ? "fill-current" : ""}`}
+                              />
+                              {student.is_super10 ? "Super10" : "—"}
+                            </button>
+                          </td>
+
                           <td className="py-3.5 px-4 sm:px-6 text-neutral-500 text-[11px]">
                             {formatSignIn(student.lastLoginAt)}
                           </td>
@@ -994,6 +1113,9 @@ export function AdminDashboard({
             </div>
           </div>
         )}
+
+        {/* TEACHERS MANAGEMENT */}
+        {activeTab === "teachers" && <AdminTeachers />}
 
         {/* TAB 3: COURSE ASSIGNMENTS */}
         {activeTab === "assignments" && <AdminAssignments />}
@@ -1476,6 +1598,50 @@ export function AdminDashboard({
                   placeholder="Next.js 15 Server Components & Actions&#10;FastAPI Async Microservices&#10;PostgreSQL & Schema Optimization"
                   className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white font-mono text-[11px]"
                 />
+              </div>
+
+              {/* Visibility & Faculty. The status is how a course leaves the public site:
+                  the catalogue, sitemap and /llms.txt all read through getPublicCourses,
+                  which drops anything inactive, and /courses/<slug> then 404s. */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
+                    Status
+                  </label>
+                  <Select
+                    label="Course status"
+                    value={formStatus}
+                    onValueChange={(next) => setFormStatus(next as CourseStatus)}
+                    options={[
+                      { value: "active", label: "Active — listed publicly" },
+                      { value: "inactive", label: "Inactive — hidden everywhere" },
+                    ]}
+                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
+                    Assigned Teachers
+                  </label>
+                  <Select
+                    multiple
+                    label="Assigned teachers"
+                    value={formTeacherIds}
+                    onValueChange={setFormTeacherIds}
+                    options={teachers.map((t) => ({ value: t.id, label: t.name }))}
+                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
+                  />
+                  <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                    {teachers.length === 0
+                      ? "No teachers yet — add them in the Teachers tab."
+                      : formTeacherIds.length === 0
+                        ? "No teacher assigned to this course."
+                        : formTeacherIds
+                            .map((id) => teachers.find((t) => t.id === id)?.name ?? id)
+                            .join(", ")}
+                  </span>
+                </div>
               </div>
 
               {/* Modal Actions */}

@@ -20,7 +20,15 @@ export interface CourseItem {
   techIcons: string[];
   topics: string[];
   actionPrompt: string;
+  // Absent means active, so the twelve seeded entries and any doc already in Firestore
+  // need no migration — a course only carries this once an admin has retired it.
+  status?: CourseStatus;
+  // Teacher ids only. A teacher's name lives in the `teachers` collection, which is
+  // admin-only to read, so a public course page never has it.
+  teacherIds?: string[];
 }
+
+export type CourseStatus = "active" | "inactive";
 
 export const COURSE_CATEGORIES = [
   { id: "all", label: "All Courses" },
