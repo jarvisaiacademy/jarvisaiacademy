@@ -10,8 +10,6 @@ import {
   Search,
   ShieldCheck,
   Trash2,
-  CheckCircle2,
-  XCircle,
   X,
 } from "lucide-react";
 import { useTeachers } from "@/providers/teachers-provider";
@@ -19,6 +17,7 @@ import { useCourses } from "@/providers/courses-provider";
 import { useStudents } from "@/providers/students-provider";
 import { useToast } from "@/components/ui/toast";
 import { Select } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { TeacherRecord, TeacherStatus } from "@/data/teachers";
 import { StudentRecord } from "@/data/assignments";
 
@@ -218,8 +217,7 @@ export function AdminTeachers() {
     }
   };
 
-  const handleToggleStatus = async (teacher: TeacherRecord) => {
-    const next: TeacherStatus = teacher.status === "active" ? "inactive" : "active";
+  const handleToggleStatus = async (teacher: TeacherRecord, next: TeacherStatus) => {
     setBusyId(teacher.id);
     try {
       await setTeacherStatus(teacher.id, next);
@@ -498,6 +496,9 @@ export function AdminTeachers() {
                 filtered.map((teacher) => {
                   const user = userById.get(teacher.id);
                   const displayName = user?.name || teacher.name;
+                  // Anything that is not explicitly inactive counts as active — the field is
+                  // optional, and a teacher record written before it existed is a live one.
+                  const isActive = teacher.status !== "inactive";
                   return (
                     <tr
                       key={teacher.id}
@@ -541,17 +542,25 @@ export function AdminTeachers() {
                       </td>
 
                       <td className="py-3.5 px-4 sm:px-6">
-                        {teacher.status === "inactive" ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-neutral-100 dark:bg-white/10 text-neutral-600 dark:text-neutral-300 border border-neutral-200 dark:border-white/10">
-                            <XCircle className="w-3 h-3" />
-                            Inactive
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={isActive}
+                            onCheckedChange={(next) =>
+                              handleToggleStatus(teacher, next ? "active" : "inactive")
+                            }
+                            disabled={busyId === teacher.id}
+                            label={`Make ${displayName} ${isActive ? "inactive" : "active"}`}
+                          />
+                          <span
+                            className={`text-[11px] font-semibold ${
+                              isActive
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : "text-neutral-500 dark:text-neutral-400"
+                            }`}
+                          >
+                            {isActive ? "Active" : "Inactive"}
                           </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
-                            <CheckCircle2 className="w-3 h-3" />
-                            Active
-                          </span>
-                        )}
+                        </div>
                       </td>
 
                       <td className="py-3.5 px-4 sm:px-6 text-right">
@@ -576,15 +585,6 @@ export function AdminTeachers() {
                           </div>
                         ) : (
                           <div className="flex items-center justify-end gap-1">
-                            <button
-                              type="button"
-                              disabled={busyId === teacher.id}
-                              onClick={() => handleToggleStatus(teacher)}
-                              title={teacher.status === "active" ? "Mark inactive" : "Mark active"}
-                              className="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/5 transition-colors cursor-pointer disabled:opacity-50"
-                            >
-                              {teacher.status === "active" ? "Deactivate" : "Activate"}
-                            </button>
                             <button
                               type="button"
                               onClick={() => handleOpenEdit(teacher)}
