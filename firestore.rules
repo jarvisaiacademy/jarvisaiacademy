@@ -96,6 +96,20 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // The academy's settings — referral reward, Super10 seat cap, GST rate, GSTIN, the
+    // money-back window. Public read because every one of these is already advertised: the
+    // reward and the seat cap are on the enrolment card, and the GSTIN and the window are
+    // printed on the receipt.
+    //
+    // That is the condition this rule depends on. A value that is not meant to be public —
+    // a margin, an internal cost — must not go in this document without narrowing the read
+    // here to isAdmin(), because a public read exposes the whole document and not just the
+    // fields the app happens to render.
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Nothing else is reachable, including any collection added later without a rule here.
     match /{document=**} {
       allow read, write: if false;

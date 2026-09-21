@@ -31,6 +31,7 @@ import {
 import { MobileMenuIcon } from "@/components/ui/mobile-menu-icon";
 import { siteConfig } from "@/config/site";
 import { useCourses } from "@/providers/courses-provider";
+import { useSettings } from "@/providers/settings-provider";
 import { useStudents } from "@/providers/students-provider";
 import { useTeachers } from "@/providers/teachers-provider";
 import { useAuth } from "@/providers/auth-provider";
@@ -43,10 +44,10 @@ import { useToast } from "@/components/ui/toast";
 import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
 import { ThemeSwitcher } from "@/components/layout/theme-switcher";
 import { UserProfile } from "@/components/layout/user-profile";
-import { useAuth } from "@/providers/auth-provider";
 import { AdminAssignments } from "@/components/admin/admin-assignments";
 import { AdminTeachers } from "@/components/admin/admin-teachers";
 import { AdminKnowledge } from "@/components/admin/admin-knowledge";
+import { AdminSettings } from "@/components/admin/admin-settings";
 import { Select } from "@/components/ui/select";
 import { shortcutById } from "@/data/shortcuts";
 import { isTypingTarget, matchesShortcut } from "@/lib/keyboard";
@@ -91,6 +92,7 @@ export function AdminDashboard({
   onToggleSidebar,
 }: AdminDashboardProps) {
   const { showToast } = useToast();
+  const { settings } = useSettings();
   const { user, logout } = useAuth();
   const {
     students,
@@ -107,7 +109,6 @@ export function AdminDashboard({
     seedCourses,
   } = useCourses();
   const { teachers } = useTeachers();
-  const { user } = useAuth();
 
   // Seeding overwrites the live catalogue from the built-in one, which is a development
   // action, not something to leave armed on the deployed site. `next dev` is the only
@@ -248,12 +249,14 @@ export function AdminDashboard({
     (r) => r.courseId === "super10" && r.action === "paid"
   ).length;
 
-  // The referral reward the academy advertises, and the seat count the Super10 track is
-  // capped at. Both are named because they were bare numbers in the JSX: a 3000 next to a
-  // rupee sign is not an arithmetic error waiting to happen, it is one already happening,
-  // since nothing tied it to the figure the answer book quotes.
-  const REFERRAL_REWARD = 3000;
-  const SUPER10_SEATS = 10;
+  // The referral reward the academy advertises and the seat count the Super10 track is capped
+  // at. Both are saved on the Settings tab; the constants that used to sit here could only be
+  // changed by editing this file and deploying.
+  const { referralReward, super10Seats } = settings;
+  // Pricing is quoted all-inclusive, so the tax breakdown divides tax back out rather than
+  // adding it on. The settings document holds a percentage — 18, not 0.18 — so the fraction
+  // is derived here, in the one place that needs it.
+  const gstDivisor = 1 + settings.gstRatePercent / 100;
 
   const exportCSV = () => {
     const headers = "TransactionID,StudentName,StudentEmail,Course,Amount,Status,Timestamp\n";
@@ -1133,6 +1136,9 @@ export function AdminDashboard({
         {/* ANSWER BOOK — what the assistant replies with, read-only */}
         {activeTab === "knowledge" && <AdminKnowledge />}
 
+        {/* ACADEMY SETTINGS — the figures the site quotes */}
+        {activeTab === "settings" && <AdminSettings />}
+
         {/* TAB 3: COURSE ASSIGNMENTS */}
         {activeTab === "assignments" && <AdminAssignments />}
 
@@ -1176,7 +1182,9 @@ export function AdminDashboard({
                       against, and the "+100%" that used to sit in this slot was typed into
                       the JSX — it read the same whether revenue rose or fell to zero. */}
                 </div>
-                <span className="text-[11px] text-neutral-500">Incl. 18% statutory GST</span>
+                <span className="text-[11px] text-neutral-500">
+                  Incl. {settings.gstRatePercent}% statutory GST
+                </span>
               </div>
 
               <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-3">
@@ -1208,10 +1216,10 @@ export function AdminDashboard({
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {super10Count} / {SUPER10_SEATS}
+                    {super10Count} / {super10Seats}
                   </span>
                   <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
-                    {Math.max(SUPER10_SEATS - super10Count, 0)} seats left
+                    {Math.max(super10Seats - super10Count, 0)} seats left
                   </span>
                 </div>
                 <span className="text-[11px] text-neutral-500">Placement assurance track</span>
@@ -1228,10 +1236,10 @@ export function AdminDashboard({
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    ₹{(totalPaidStudents * REFERRAL_REWARD).toLocaleString("en-IN")}
+                    ₹{(totalPaidStudents * referralReward).toLocaleString("en-IN")}
                   </span>
                   <span className="text-xs text-purple-600 dark:text-purple-400">
-                    ₹{REFERRAL_REWARD / 1000}K / student
+                    ₹{referralReward / 1000}K / student
                   </span>
                 </div>
                 <span className="text-[11px] text-neutral-500">Upon 60-day completion</span>
@@ -1252,13 +1260,15 @@ export function AdminDashboard({
                   <div className="flex justify-between py-1 border-b border-neutral-100 dark:border-white/5">
                     <span className="text-neutral-500">Net Academy Revenue (excl. GST):</span>
                     <span className="font-semibold">
-                      ₹{Math.round(totalPaidRevenue / 1.18).toLocaleString("en-IN")}
+                      ₹{Math.round(totalPaidRevenue / gstDivisor).toLocaleString("en-IN")}
                     </span>
                   </div>
                   <div className="flex justify-between py-1">
-                    <span className="text-neutral-500">18% Statutory GST:</span>
+                    <span className="text-neutral-500">
+                      {settings.gstRatePercent}% Statutory GST:
+                    </span>
                     <span className="font-semibold text-blue-600 dark:text-blue-400">
-                      ₹{Math.round(totalPaidRevenue - totalPaidRevenue / 1.18).toLocaleString("en-IN")}
+                      ₹{Math.round(totalPaidRevenue - totalPaidRevenue / gstDivisor).toLocaleString("en-IN")}
                     </span>
                   </div>
                 </div>
@@ -1278,7 +1288,7 @@ export function AdminDashboard({
                   <div className="flex justify-between py-1 border-b border-neutral-100 dark:border-white/5">
                     <span className="text-neutral-500">Super10 Placement Assurance Batch:</span>
                     <span className="font-semibold text-amber-600 dark:text-amber-400">
-                      {super10Count} of {SUPER10_SEATS} seats
+                      {super10Count} of {super10Seats} seats
                     </span>
                   </div>
                   <div className="flex justify-between py-1">
