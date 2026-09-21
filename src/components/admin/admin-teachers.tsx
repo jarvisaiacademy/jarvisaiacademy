@@ -19,6 +19,7 @@ import { useCourses } from "@/providers/courses-provider";
 import { useStudents } from "@/providers/students-provider";
 import { useToast } from "@/components/ui/toast";
 import { Select } from "@/components/ui/select";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { TeacherRecord, TeacherStatus } from "@/data/teachers";
 import { StudentRecord } from "@/data/assignments";
 
@@ -35,30 +36,6 @@ const STATUS_OPTIONS = [
 
 // Enough to scroll through without putting a thousand rows in the DOM.
 const PICKER_LIMIT = 50;
-
-function initials(user: { name?: string; email?: string }): string {
-  return (user.name || user.email || "?").slice(0, 2).toUpperCase();
-}
-
-function UserAvatar({ user, size }: { user: StudentRecord; size: "sm" | "md" }) {
-  const box = size === "sm" ? "w-7 h-7" : "w-9 h-9";
-  if (user.picture) {
-    return (
-      <img
-        src={user.picture}
-        alt=""
-        className={`${box} rounded-full border border-neutral-200 dark:border-white/10 object-cover shrink-0`}
-      />
-    );
-  }
-  return (
-    <div
-      className={`flex items-center justify-center ${box} rounded-full bg-neutral-700 text-neutral-200 text-[10px] font-semibold shrink-0`}
-    >
-      {initials(user)}
-    </div>
-  );
-}
 
 /**
  * Manage Teachers — the faculty list, which is a slice of the accounts that already exist.
