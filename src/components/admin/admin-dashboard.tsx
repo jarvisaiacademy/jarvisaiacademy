@@ -43,6 +43,7 @@ import { useToast } from "@/components/ui/toast";
 
 import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
 import { ThemeSwitcher } from "@/components/layout/theme-switcher";
+import { UserProfile } from "@/components/layout/user-profile";
 import { AdminAssignments } from "@/components/admin/admin-assignments";
 import { AdminTeachers } from "@/components/admin/admin-teachers";
 import { AdminKnowledge } from "@/components/admin/admin-knowledge";
@@ -92,6 +93,7 @@ export function AdminDashboard({
 }: AdminDashboardProps) {
   const { showToast } = useToast();
   const { settings } = useSettings();
+  const { user, logout } = useAuth();
   const {
     students,
     loading: studentsLoading,
@@ -107,7 +109,6 @@ export function AdminDashboard({
     seedCourses,
   } = useCourses();
   const { teachers } = useTeachers();
-  const { user } = useAuth();
 
   // Seeding overwrites the live catalogue from the built-in one, which is a development
   // action, not something to leave armed on the deployed site. `next dev` is the only
@@ -481,11 +482,14 @@ export function AdminDashboard({
           Admin Control Center
         </h1>
 
-        {/* The theme control lives here, as it does in the guest header. Both outer
-            groups are flex-1 so the title stays centred whatever width the control
-            takes — the old fixed-width spacer only balanced a 36px button. */}
-        <div className="flex flex-1 items-center justify-end min-w-[40px]">
+        {/* The theme control and the identity live here, as they do in the guest
+            header. Both outer groups are flex-1 so the title stays centred whatever
+            width the controls take — the old fixed-width spacer only balanced a
+            36px button. The identity is repeated from the sidebar footer because
+            that footer disappears when the sidebar is collapsed. */}
+        <div className="flex flex-1 items-center justify-end gap-1.5 sm:gap-2.5 min-w-[40px]">
           <ThemeSwitcher className="shrink-0" />
+          {user && <UserProfile user={user} onLogout={logout} variant="compact" />}
         </div>
       </header>
 
