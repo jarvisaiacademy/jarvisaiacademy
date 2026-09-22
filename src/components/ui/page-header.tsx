@@ -15,8 +15,6 @@ export interface Crumb {
 interface PageHeaderProps {
   /** Root first, this page last. */
   crumbs: Crumb[];
-  /** Leaves the dashboard — the same door the sidebar's "Return to Chat" opens. */
-  onBack: () => void;
   /**
    * The page's primary action, on the right. Omitted on a page where nothing can be
    * created, rather than filled with a disabled button that explains itself.
@@ -25,7 +23,7 @@ interface PageHeaderProps {
 }
 
 /**
- * The header every dashboard page opens with: where you are, the way out, and the one
+ * The header every dashboard page opens with: where you are, the way up, and the one
  * thing the page is for.
  *
  * Shared rather than repeated per page so the three positions cannot drift — a page that
@@ -35,22 +33,36 @@ interface PageHeaderProps {
  * Three columns, so the trail sits centred in the space between the arrow and the action
  * whatever either of those happens to be.
  *
+ * The arrow goes up the trail, not out of the dashboard. It is the second-to-last crumb's
+ * action rather than a prop of its own, so there is one source of truth and no arrow can
+ * point somewhere the trail does not. A trail of one crumb is a root, and gets no arrow —
+ * "Return to Chat" in the sidebar is the door out, and it is not this.
+ *
  * The arrow and the crumbs are both buttons, not links: the dashboard swaps panels in
  * place and keeps its tab in session storage, so there is no URL to point a link at.
  */
-export function PageHeader({ crumbs, onBack, action }: PageHeaderProps) {
+export function PageHeader({ crumbs, action }: PageHeaderProps) {
+  const parent = crumbs.length > 1 ? crumbs[crumbs.length - 2] : undefined;
+  const goUp = parent?.onSelect;
+
   return (
     <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
-      {/* Icon only, so the accessible name has to come from `aria-label`. */}
-      <button
-        type="button"
-        onClick={onBack}
-        aria-label="Back to chat"
-        title="Back to chat"
-        className="w-8 h-8 inline-flex items-center justify-center rounded-full border border-neutral-200 dark:border-white/10 bg-white dark:bg-white/5 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/10 shadow-xs transition-colors cursor-pointer shrink-0"
-      >
-        <ArrowLeft className="w-4 h-4" />
-      </button>
+      {goUp ? (
+        /* Icon only, so the accessible name has to come from `aria-label` — and it names
+           the destination rather than saying "back", which assumes you remember. */
+        <button
+          type="button"
+          onClick={goUp}
+          aria-label={`Back to ${parent.label}`}
+          title={`Back to ${parent.label}`}
+          className="w-8 h-8 inline-flex items-center justify-center rounded-full border border-neutral-200 dark:border-white/10 bg-white dark:bg-white/5 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/10 shadow-xs transition-colors cursor-pointer shrink-0"
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </button>
+      ) : (
+        // Same footprint as the arrow, so the trail stays centred on a root page.
+        <span aria-hidden="true" className="w-8 h-8" />
+      )}
 
       {/* The trail ends on the page you are on, which is the page's name — so the last crumb
           is read as the title and there is nothing else to put up here. */}

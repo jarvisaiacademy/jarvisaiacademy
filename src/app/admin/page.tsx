@@ -14,7 +14,6 @@ export default function AdminRoute() {
         <AdminDashboard
           activeTab={shell.activeTab}
           onChangeTab={shell.onSelectTab}
-          onBackToChat={shell.onBackToChat}
           sidebarOpen={shell.sidebarOpen}
           onToggleSidebar={shell.onToggleSidebar}
         />

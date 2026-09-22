@@ -124,7 +124,6 @@ const ROLE_PAGE = {
 } as const satisfies Record<AccountRole, unknown>;
 
 interface AdminDashboardProps {
-  onBackToChat: () => void;
   activeTab?: DashboardTab;
   onChangeTab?: (tab: DashboardTab) => void;
   sidebarOpen?: boolean;
@@ -132,7 +131,6 @@ interface AdminDashboardProps {
 }
 
 export function AdminDashboard({
-  onBackToChat,
   activeTab: controlledTab,
   onChangeTab,
   sidebarOpen = true,
@@ -846,7 +844,6 @@ export function AdminDashboard({
             admin does here is find one, on a roster that is otherwise a long scroll. */}
         <PageHeader
           crumbs={[{ label: "Home", onSelect: () => setActiveTab("home") }, { label: page.title }]}
-          onBack={onBackToChat}
           action={
             <div className="relative">
               <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -951,7 +948,7 @@ export function AdminDashboard({
     return (
       <div className="flex flex-col gap-4">
         {/* The root of the trail, so the crumb is this page and there is nothing to step up to. */}
-        <PageHeader crumbs={[{ label: "Home" }]} onBack={onBackToChat} />
+        <PageHeader crumbs={[{ label: "Home" }]} />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {cards.map(({ label, icon: Icon, tint, value, hint }) => (
@@ -1027,8 +1024,7 @@ export function AdminDashboard({
                 second copy up here would be the same button twice. */}
             <PageHeader
               crumbs={[{ label: "Home", onSelect: () => setActiveTab("home") }, { label: "Courses" }]}
-              onBack={onBackToChat}
-            />
+                />
 
             {/* Summary Metrics */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1334,8 +1330,7 @@ export function AdminDashboard({
                 // Named for the tab that opens it, not for the heading the banner used to carry.
                 { label: "Users & Admissions" },
               ]}
-              onBack={onBackToChat}
-            />
+                />
 
             {/* Quick Metrics */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1503,12 +1498,12 @@ export function AdminDashboard({
 
         {/* ANSWER BOOK — what the assistant replies with, read-only */}
         {activeTab === "knowledge" && (
-          <AdminKnowledge onBack={onBackToChat} onHome={() => setActiveTab("home")} />
+          <AdminKnowledge onHome={() => setActiveTab("home")} />
         )}
 
         {/* ACADEMY SETTINGS — the figures the site quotes */}
         {activeTab === "settings" && (
-          <AdminSettings onBack={onBackToChat} onHome={() => setActiveTab("home")} />
+          <AdminSettings onHome={() => setActiveTab("home")} />
         )}
 
         {/* REVENUE & ANALYTICS */}
@@ -1519,8 +1514,7 @@ export function AdminDashboard({
                 { label: "Home", onSelect: () => setActiveTab("home") },
                 { label: "Revenue & Analytics" },
               ]}
-              onBack={onBackToChat}
-            />
+                />
 
             {/* 4 KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1670,8 +1664,7 @@ export function AdminDashboard({
                 { label: "Home", onSelect: () => setActiveTab("home") },
                 { label: "Cloud & Seeder" },
               ]}
-              onBack={onBackToChat}
-            />
+                />
 
             {/* Which origin the catalogue is coming from is the one fact this page carried —
                 it moves into a plain row rather than going away with the banner. */}

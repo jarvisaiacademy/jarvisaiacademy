@@ -82,9 +82,7 @@ const FIELDS: FieldSpec[] = [
 const GSTIN_PATTERN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z]Z[0-9A-Z]$/;
 
 interface AdminSettingsProps {
-  /** Leaves the dashboard for the chat, as the header's arrow does on every other page. */
-  onBack: () => void;
-  /** Back up the trail to the dashboard's root. */
+  /** Back up the trail to the dashboard's root, which is where the header's arrow goes. */
   onHome: () => void;
 }
 
@@ -99,7 +97,7 @@ interface AdminSettingsProps {
  * of these figures as prose. They are static on purpose — the bot must answer with Firestore
  * unreachable — so they do not follow a change made here, and the notice below says so.
  */
-export function AdminSettings({ onBack, onHome }: AdminSettingsProps) {
+export function AdminSettings({ onHome }: AdminSettingsProps) {
   const { settings, loading, saveSettings } = useSettings();
   const { showToast } = useToast();
 
@@ -167,10 +165,7 @@ export function AdminSettings({ onBack, onHome }: AdminSettingsProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <PageHeader
-        crumbs={[{ label: "Home", onSelect: onHome }, { label: "Settings" }]}
-        onBack={onBack}
-      />
+      <PageHeader crumbs={[{ label: "Home", onSelect: onHome }, { label: "Settings" }]} />
 
       <div className="flex items-start gap-2 p-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10">
         <Info className="w-3.5 h-3.5 text-neutral-500 mt-0.5 shrink-0" />

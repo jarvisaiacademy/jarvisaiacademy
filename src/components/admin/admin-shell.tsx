@@ -40,7 +40,6 @@ export interface AdminShellState {
   onNavigateTab: (tab: DashboardTab) => void;
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
-  onBackToChat: () => void;
 }
 
 interface AdminShellProps {
@@ -147,7 +146,6 @@ export function AdminShell({ defaultTab, restoreTab = true, children }: AdminShe
             onNavigateTab: handleSidebarTab,
             sidebarOpen: isOpen,
             onToggleSidebar: toggle,
-            onBackToChat: goHome,
           })}
         </main>
       </div>

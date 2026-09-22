@@ -7,9 +7,7 @@ import { MarkdownRenderer } from "@/components/chat/markdown-renderer";
 import { PageHeader } from "@/components/ui/page-header";
 
 interface AdminKnowledgeProps {
-  /** Leaves the dashboard for the chat, as the header's arrow does on every other page. */
-  onBack: () => void;
-  /** Back up the trail to the dashboard's root. */
+  /** Back up the trail to the dashboard's root, which is where the header's arrow goes. */
   onHome: () => void;
 }
 
@@ -22,7 +20,7 @@ interface AdminKnowledgeProps {
  * without having to ask it, and without the bot gaining a database dependency it would
  * have to be up for.
  */
-export function AdminKnowledge({ onBack, onHome }: AdminKnowledgeProps) {
+export function AdminKnowledge({ onHome }: AdminKnowledgeProps) {
   // Keys only. Reading `.text` here would call the `testimonials` getter, which draws a
   // fresh sample of people on every read.
   const topics = useMemo(() => Object.keys(academyKnowledge), []);
@@ -51,10 +49,7 @@ export function AdminKnowledge({ onBack, onHome }: AdminKnowledgeProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <PageHeader
-        crumbs={[{ label: "Home", onSelect: onHome }, { label: "Answer Book" }]}
-        onBack={onBack}
-      />
+      <PageHeader crumbs={[{ label: "Home", onSelect: onHome }, { label: "Answer Book" }]} />
 
       <div className="flex items-start gap-2 p-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10">
         <Info className="w-3.5 h-3.5 text-neutral-500 mt-0.5 shrink-0" />
