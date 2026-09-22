@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -12,6 +12,8 @@ export default function CertificatePage() {
   const router = useRouter();
   const [cert, setCert] = useState<CertificateRecord | null>(null);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const certRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function fetchCert() {
@@ -21,10 +23,6 @@ export default function CertificatePage() {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           setCert({ id: docSnap.id, ...docSnap.data() } as CertificateRecord);
-          // Wait for render then print
-          setTimeout(() => {
-            window.print();
-          }, 500);
         } else {
           console.error("Certificate not found");
         }
@@ -36,6 +34,40 @@ export default function CertificatePage() {
     }
     fetchCert();
   }, [id]);
+
+  const generateAndDownloadPDF = async () => {
+    if (!certRef.current || !cert) return;
+    setGenerating(true);
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const { jsPDF } = await import("jspdf");
+
+      // Temporarily remove any transforms or scaling to ensure sharp render
+      const canvas = await html2canvas(certRef.current, {
+        scale: 2, // High resolution
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+      });
+      
+      // A4 dimensions in mm: 297 x 210 (Landscape)
+      const pdf = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const imgData = canvas.toDataURL("image/jpeg", 1.0);
+      
+      pdf.addImage(imgData, "JPEG", 0, 0, 297, 210);
+      pdf.save(`Jarvis_AI_Academy_Certificate_${cert.id}.pdf`);
+    } catch (error) {
+      console.error("PDF generation failed", error);
+      alert("Failed to generate PDF. Please try again.");
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   if (loading) {
     return <div className="flex h-screen items-center justify-center">Loading certificate...</div>;
@@ -57,6 +89,7 @@ export default function CertificatePage() {
         297mm x 210mm
       */}
       <div 
+        ref={certRef}
         className="relative flex flex-col bg-white text-black w-full max-w-[1122px] aspect-[1.414/1] p-12 sm:p-20 border-[12px] border-emerald-900 outline outline-4 outline-offset-[-16px] outline-emerald-700/50 shadow-2xl print:shadow-none print:border-[16px]"
         style={{
           backgroundImage: "radial-gradient(circle at center, rgba(16, 185, 129, 0.03) 0%, transparent 70%)"
@@ -127,10 +160,11 @@ export default function CertificatePage() {
       {/* Hide controls when printing */}
       <div className="fixed bottom-8 flex items-center gap-4 print:hidden">
         <button 
-          onClick={() => window.print()} 
-          className="px-6 py-3 bg-emerald-600 text-white font-semibold rounded-full shadow-lg hover:bg-emerald-700 transition"
+          onClick={generateAndDownloadPDF}
+          disabled={generating}
+          className="px-6 py-3 bg-emerald-600 text-white font-semibold rounded-full shadow-lg hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
-          Save as PDF
+          {generating ? "Generating PDF..." : "Download as PDF"}
         </button>
         <button 
           onClick={() => router.back()} 
