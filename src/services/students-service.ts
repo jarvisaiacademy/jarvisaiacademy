@@ -38,7 +38,6 @@ export interface RosterUserInput {
   email: string;
   picture?: string;
   role?: "admin" | "student";
-  plan?: string;
   /** Straight off the Firebase Auth user; whatever the Google account actually gave us. */
   emailVerified?: boolean;
   signInProvider?: string;
@@ -64,7 +63,6 @@ export async function upsertStudentRecord(user: RosterUserInput): Promise<void> 
     role: user.role || "student",
     lastLoginAt: new Date().toISOString(),
     ...(user.picture ? { picture: user.picture } : {}),
-    ...(user.plan ? { plan: user.plan } : {}),
     ...(user.emailVerified === undefined ? {} : { emailVerified: user.emailVerified }),
     ...(user.signInProvider ? { signInProvider: user.signInProvider } : {}),
     ...(user.createdAt ? { createdAt: user.createdAt } : {}),
@@ -97,7 +95,7 @@ export async function upsertStudentRecord(user: RosterUserInput): Promise<void> 
 export async function updateCandidateInFirestore(
   uid: string,
   updates: Partial<
-    Pick<StudentRecord, "name" | "status" | "is_super10" | "is_teacher" | "plan" | "role">
+    Pick<StudentRecord, "name" | "status" | "is_super10" | "is_teacher" | "role">
   >,
   userEmail?: string | null
 ): Promise<void> {

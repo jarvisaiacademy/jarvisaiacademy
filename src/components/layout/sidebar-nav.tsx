@@ -94,7 +94,7 @@ const navHoverData: Record<string, NavHoverItemData> = {
   },
   my_profile: {
     title: "My Profile",
-    description: "Your Jarvis AI Academy account — name, email and the plan you are enrolled on.",
+    description: "Your Jarvis AI Academy account — your name and email.",
     gradientClass: "bg-gradient-to-br from-[#845ef7] via-[#5c7cfa] to-[#4dabf7]",
   },
   my_courses: {
