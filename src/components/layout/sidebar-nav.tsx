@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   SquarePen,
   BookOpen,
@@ -182,6 +183,7 @@ export function SidebarNav({
   isMobile,
 }: SidebarNavProps) {
   const { user, isLoggedIn } = useAuth();
+  const router = useRouter();
   const enrollmentCount = useStudentEnrollments(user?.email).length;
   const showStudentItems = isLoggedIn && !user?.isAdmin;
 
@@ -307,7 +309,7 @@ export function SidebarNav({
       {mounted && showStudentItems && (
         <button
           type="button"
-          onClick={() => onOpenStudentView?.("profile")}
+          onClick={() => router.push("/dashboard")}
           aria-current={activeItem?.startsWith("my_") ? "page" : undefined}
           className={`group flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg transition-colors text-left cursor-pointer ${navStateClass(!!activeItem?.startsWith("my_"))}`}
         >
