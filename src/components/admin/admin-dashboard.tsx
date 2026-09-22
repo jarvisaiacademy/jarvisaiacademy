@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import Link from "next/link";
 import {
   Users,
   IndianRupee,
@@ -14,7 +13,6 @@ import {
   Clock,
   ExternalLink,
   Award,
-  Filter,
   Plus,
   Pencil,
   Trash2,
@@ -24,7 +22,6 @@ import {
   Layers,
   X,
   AlertCircle,
-  Cloud,
   Check,
   PanelLeft,
   Star,
@@ -35,10 +32,9 @@ import { siteConfig } from "@/config/site";
 import { useCourses } from "@/providers/courses-provider";
 import { useSettings } from "@/providers/settings-provider";
 import { useStudents } from "@/providers/students-provider";
-import { useTeachers } from "@/providers/teachers-provider";
 import { useAuth } from "@/providers/auth-provider";
 import { updateCandidateInFirestore } from "@/services/students-service";
-import { CandidateStatus, StudentRecord } from "@/data/assignments";
+import { accountRoleOf, CandidateStatus, StudentRecord, type AccountRole } from "@/data/students";
 import { CourseItem, COURSE_CATEGORIES, CourseCategoryId, CourseStatus } from "@/data/courses";
 import { DevIcon } from "@/components/ui/dev-icon";
 import { StatusSwitch } from "@/components/ui/switch";
@@ -48,14 +44,10 @@ import { useToast } from "@/components/ui/toast";
 import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
 import { ThemeSwitcher } from "@/components/layout/theme-switcher";
 import { UserProfile } from "@/components/layout/user-profile";
-import { AdminAssignments } from "@/components/admin/admin-assignments";
-import { AdminTeachers } from "@/components/admin/admin-teachers";
 import { AdminKnowledge } from "@/components/admin/admin-knowledge";
-import { AdminChangeRequests } from "@/components/admin/admin-change-requests";
 import { AdminSettings } from "@/components/admin/admin-settings";
 import { Select } from "@/components/ui/select";
 import { shortcutById } from "@/data/shortcuts";
-import { accountRoleOf, type AccountRole } from "@/data/teachers";
 import { isTypingTarget, matchesShortcut } from "@/lib/keyboard";
 
 interface EnrollmentRecord {
@@ -118,7 +110,7 @@ const ROLE_PAGE = {
   student: {
     title: "Students",
     description:
-      "Accounts that signed in with Google and hold no other role. Enrolling is separate — see Assignments.",
+      "Accounts that signed in with Google and hold no other role. An admin can mark one as faculty from the Teacher column.",
     empty: "No learner accounts yet — nobody has signed in with Google.",
     banner: "from-emerald-600/10 via-teal-600/10 to-blue-600/10 border-emerald-500/20",
     pill: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
@@ -133,8 +125,8 @@ const ROLE_PAGE = {
   teacher: {
     title: "Teachers",
     description:
-      "Accounts linked to a faculty record. Faculty are added on Faculty Records, and appear here once they sign in.",
-    empty: "No faculty accounts yet — link a signed-in account from Faculty Records.",
+      "Accounts an admin has marked as faculty. The mark is what puts them here; removing it moves them back to Students.",
+    empty: "No faculty yet — mark an account as Teacher from the Teacher column.",
     banner: "from-sky-600/10 via-cyan-600/10 to-blue-600/10 border-sky-500/20",
     pill: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
   },
@@ -175,19 +167,16 @@ export function AdminDashboard({
     removeCourse,
     seedCourses,
   } = useCourses();
-  const { teachers } = useTeachers();
 
-  // Firestore has no joins, so the courses table assembles its own. A teacher is the user its
-  // uid names, which is why the picture comes off `users` and not off the faculty record.
-  const teachersById = useMemo(() => {
-    const map = new Map(teachers.map((t) => [t.id, t] as const));
-    return map;
-  }, [teachers]);
-
+  // Firestore has no joins, so the courses table assembles its own. A course's `teacherIds` are
+  // user ids, and `studentsById` is where their names and pictures come from.
   const studentsById = useMemo(() => {
     const map = new Map(students.map((s) => [s.id, s] as const));
     return map;
   }, [students]);
+
+  // The people a course can be assigned to: the accounts an admin has marked as faculty.
+  const faculty = useMemo(() => students.filter((s) => s.is_teacher), [students]);
 
   // Seeding overwrites the live catalogue from the built-in one, which is a development
   // action, not something to leave armed on the deployed site. `next dev` is the only
@@ -276,6 +265,21 @@ export function AdminDashboard({
     try {
       await updateCandidateInFirestore(uid, { is_super10: next }, user?.email);
       showToast(next ? "Super10 granted" : "Super10 removed", "success");
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : "Failed to update candidate", "error");
+    } finally {
+      setBusyCandidateId(null);
+    }
+  };
+
+  // Faculty membership is this flag and nothing else. Marking someone moves them to the
+  // Teachers page, since `accountRoleOf` reads it; unmarking moves them back.
+  const handleToggleTeacher = async (uid: string, current: boolean) => {
+    const next = !current;
+    setBusyCandidateId(uid);
+    try {
+      await updateCandidateInFirestore(uid, { is_teacher: next }, user?.email);
+      showToast(next ? "Marked as faculty" : "Faculty mark removed", "success");
     } catch (err: unknown) {
       showToast(err instanceof Error ? err.message : "Failed to update candidate", "error");
     } finally {
@@ -388,17 +392,19 @@ export function AdminDashboard({
   // The teacher cell. `course.teacherIds` is only ids, so each one is resolved against the
   // roster for the name and the account for the picture. A course with none says so rather
   // than showing an empty cell, which reads as a rendering fault.
+  //
+  // Read-only: this used to link to a per-teacher page, which is gone. A teacher is an
+  // account, so the place to act on one is the Teachers page.
   const renderTeacherCell = (course: CourseItem) => {
     const assigned = (course.teacherIds ?? [])
       .map((id) => {
-        const teacher = teachersById.get(id);
         const user = studentsById.get(id);
-        if (!teacher && !user) return null;
+        if (!user) return null;
         return {
           id,
-          name: user?.name || teacher?.name || "Unnamed",
-          email: user?.email,
-          picture: user?.picture,
+          name: user.name || "Unnamed",
+          email: user.email,
+          picture: user.picture,
         };
       })
       .filter((t): t is NonNullable<typeof t> => t !== null);
@@ -413,23 +419,15 @@ export function AdminDashboard({
       <div className="flex items-center gap-2.5">
         <div className="flex -space-x-2 shrink-0">
           {assigned.slice(0, 3).map((teacher) => (
-            <Link
-              key={teacher.id}
-              href={`/admin/teachers/${teacher.id}`}
-              title={teacher.name}
-              className="rounded-full ring-2 ring-white dark:ring-[#1c1c1c] transition-transform hover:z-10 hover:-translate-y-0.5"
-            >
+            <span key={teacher.id} title={teacher.name} className="rounded-full">
               <UserAvatar user={teacher} size="sm" />
-            </Link>
+            </span>
           ))}
         </div>
         <div className="flex flex-col min-w-0">
-          <Link
-            href={`/admin/teachers/${first.id}`}
-            className="font-semibold text-neutral-900 dark:text-white hover:text-amber-600 dark:hover:text-amber-400 truncate transition-colors"
-          >
+          <span className="font-semibold text-neutral-900 dark:text-white truncate">
             {first.name}
-          </Link>
+          </span>
           {rest.length > 0 && (
             <span className="text-[10px] text-neutral-500">+{rest.length} more</span>
           )}
@@ -641,12 +639,10 @@ export function AdminDashboard({
     );
   };
 
-  // The rule itself lives in `src/data/teachers.ts`, because the sidebar counts people by it
+  // The rule itself lives in `src/data/students.ts`, because the sidebar counts people by it
   // too — the number beside a tab and the number of rows behind it have to be the same number.
-  const teacherIds = new Set(teachersById.keys());
-
   const renderRole = (student: StudentRecord) => {
-    const { label, icon: Icon, badge } = ROLE_BADGE[accountRoleOf(student, teacherIds)];
+    const { label, icon: Icon, badge } = ROLE_BADGE[accountRoleOf(student)];
 
     return (
       <span
@@ -666,7 +662,7 @@ export function AdminDashboard({
     teacher: [],
     admin: [],
   };
-  for (const student of students) rosterByRole[accountRoleOf(student, teacherIds)].push(student);
+  for (const student of students) rosterByRole[accountRoleOf(student)].push(student);
 
   // The table on its own. The page below supplies the framing around it, so the markup for a
   // row exists once for all three roles.
@@ -684,13 +680,14 @@ export function AdminDashboard({
                 <th className="py-3 px-4 sm:px-6">Plan</th>
                 <th className="py-3 px-4 sm:px-6">Status</th>
                 <th className="py-3 px-4 sm:px-6">Super10</th>
+                <th className="py-3 px-4 sm:px-6">Teacher</th>
                 <th className="py-3 px-4 sm:px-6">Last Sign-in</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-200 dark:divide-white/5">
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-8 text-neutral-400">
+                  <td colSpan={7} className="text-center py-8 text-neutral-400">
                     {empty}
                   </td>
                 </tr>
@@ -757,6 +754,28 @@ export function AdminDashboard({
                           className={`w-3 h-3 ${student.is_super10 ? "fill-current" : ""}`}
                         />
                         {student.is_super10 ? "Super10" : "—"}
+                      </button>
+                    </td>
+
+                    <td className="py-3.5 px-4 sm:px-6">
+                      <button
+                        type="button"
+                        disabled={busyCandidateId === student.id}
+                        onClick={() => handleToggleTeacher(student.id, student.is_teacher === true)}
+                        aria-pressed={student.is_teacher === true}
+                        title={
+                          student.is_teacher
+                            ? "Remove the faculty mark"
+                            : "Mark this account as faculty"
+                        }
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors cursor-pointer disabled:opacity-50 ${
+                          student.is_teacher
+                            ? "bg-sky-50 dark:bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-500/30"
+                            : "bg-neutral-100 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-white/10 hover:text-sky-600 dark:hover:text-sky-400"
+                        }`}
+                      >
+                        <Briefcase className="w-3 h-3" />
+                        {student.is_teacher ? "Teacher" : "—"}
                       </button>
                     </td>
 
@@ -1166,7 +1185,7 @@ export function AdminDashboard({
                   Learners &amp; Student Admissions
                 </h2>
                 <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
-                  Manage enrolled candidates, transaction IDs, payment verification, and program access.
+                  Manage enrolled candidates, transaction IDs and payment verification.
                 </p>
               </div>
               <div className="flex items-center gap-2 text-xs">
@@ -1341,22 +1360,13 @@ export function AdminDashboard({
         {activeTab === "admins" && renderRolePage("admin")}
         {activeTab === "teachers" && renderRolePage("teacher")}
 
-        {/* FACULTY RECORDS MANAGEMENT */}
-        {activeTab === "faculty" && <AdminTeachers />}
-
         {/* ANSWER BOOK — what the assistant replies with, read-only */}
         {activeTab === "knowledge" && <AdminKnowledge />}
-
-        {/* CHANGE REQUESTS — wording changes to copy that is hard-coded in src/ */}
-        {activeTab === "changeRequests" && <AdminChangeRequests />}
 
         {/* ACADEMY SETTINGS — the figures the site quotes */}
         {activeTab === "settings" && <AdminSettings />}
 
-        {/* TAB 3: COURSE ASSIGNMENTS */}
-        {activeTab === "assignments" && <AdminAssignments />}
-
-        {/* TAB 4: REVENUE & ANALYTICS */}
+        {/* REVENUE & ANALYTICS */}
         {activeTab === "analytics" && (
           <div className="flex flex-col gap-6">
             {/* Banner */}
@@ -1870,16 +1880,16 @@ export function AdminDashboard({
                     label="Assigned teachers"
                     value={formTeacherIds}
                     onValueChange={setFormTeacherIds}
-                    options={teachers.map((t) => ({ value: t.id, label: t.name }))}
+                    options={faculty.map((t) => ({ value: t.id, label: t.name }))}
                     className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
                   />
                   <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
-                    {teachers.length === 0
-                      ? "No teachers yet — add them in the Teachers tab."
+                    {faculty.length === 0
+                      ? "No faculty yet — mark an account as Teacher on the Teachers tab."
                       : formTeacherIds.length === 0
                         ? "No teacher assigned to this course."
                         : formTeacherIds
-                            .map((id) => teachers.find((t) => t.id === id)?.name ?? id)
+                            .map((id) => faculty.find((t) => t.id === id)?.name ?? id)
                             .join(", ")}
                   </span>
                 </div>

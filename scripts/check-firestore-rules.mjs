@@ -30,9 +30,9 @@ const tokenFor = (uid, email) =>
   [b64({ alg: "none", typ: "JWT" }), b64({ aud: PROJECT, sub: uid, user_id: uid, email, email_verified: true, iat: now, exp: now + 3600 }), ""].join(".");
 
 const studentOne = tokenFor("student-one", "student-one@example.com");
-const studentTwo = tokenFor("student-two", "student-two@example.com");
 const bannedStudent = tokenFor("student-banned", "student-banned@example.com");
 const super10Student = tokenFor("student-super", "student-super@example.com");
+const facultyStudent = tokenFor("student-faculty", "student-faculty@example.com");
 const admin = tokenFor("admin-uid", ADMIN_EMAIL);
 const guest = null;
 
@@ -136,6 +136,11 @@ await patch(
   { role: { stringValue: "student" }, is_super10: { booleanValue: true } },
   "owner"
 );
+await patch(
+  docPath("users", "student-faculty"),
+  { role: { stringValue: "student" }, is_teacher: { booleanValue: true } },
+  "owner"
+);
 
 // --- a signed-in learner ---
 await check("learner writes their own row", true, () =>
@@ -149,7 +154,7 @@ await check("learner reads another learner's row", false, () => get(docPath("use
 await check("learner lists the whole roster", false, () => list("users", null, null, studentOne));
 await check("learner deletes their own row", false, () => request(docPath("users", "student-one"), { method: "DELETE", token: studentOne }));
 
-// --- the two fields that belong to the admin ---
+// --- the fields that belong to the admin ---
 // The self-update path exists so a name or avatar can refresh on sign-in. If it were not
 // fenced, a banned candidate could clear their own ban from the browser console.
 //
@@ -192,18 +197,30 @@ await check("Super10 learner edits their own name", true, () =>
     super10Student
   )
 );
-
-// --- assignments ---
-await check("admin writes an assignment", true, () =>
-  patch(docPath("assignments", "a1"), { studentId: { stringValue: "student-one" }, status: { stringValue: "active" } }, admin)
+// Faculty is the third admin-owned field. It is what `accountRoleOf` reads to put an account
+// on the Teachers page, so a self-write here would let a learner hand themselves the role.
+await check("learner marks themselves faculty", false, () =>
+  patch(
+    docPath("users", "student-one"),
+    { role: { stringValue: "student" }, is_teacher: { booleanValue: true } },
+    studentOne
+  )
 );
-await check("learner lists their own assignments", true, () => list("assignments", "studentId", "student-one", studentOne));
-await check("learner lists every assignment", false, () => list("assignments", null, null, studentOne));
-await check("learner lists another learner's assignments", false, () => list("assignments", "studentId", "student-two", studentOne));
-await check("learner writes their own assignment", false, () =>
-  patch(docPath("assignments", "a2"), { studentId: { stringValue: "student-one" } }, studentOne)
+// But it is fenced like the others, not a lock on the row: a teacher still refreshes normally.
+await check("faculty learner edits their own name", true, () =>
+  patch(
+    docPath("users", "student-faculty"),
+    { role: { stringValue: "student" }, is_teacher: { booleanValue: true }, name: { stringValue: "Renamed" } },
+    facultyStudent
+  )
 );
-await check("second learner lists the first learner's assignments", false, () => list("assignments", "studentId", "student-one", studentTwo));
+await check("faculty learner strips their own faculty mark", false, () =>
+  patch(
+    docPath("users", "student-faculty"),
+    { role: { stringValue: "student" }, is_teacher: { booleanValue: false } },
+    facultyStudent
+  )
+);
 
 // --- an admin ---
 await check("admin reads any row", true, () => get(docPath("users", "student-two"), admin));
@@ -219,51 +236,25 @@ await check("admin grants Super10", true, () =>
   patch(docPath("users", "student-two"), { is_super10: { booleanValue: true } }, admin)
 );
 
-// --- teachers: admin-only even to read, because the record carries a mobile number ---
-await check("admin writes a teacher", true, () =>
-  patch(
-    docPath("teachers", "t1"),
-    { name: { stringValue: "A Teacher" }, mobile: { stringValue: "9000000000" } },
-    admin
-  )
-);
-await check("admin reads a teacher", true, () => get(docPath("teachers", "t1"), admin));
-await check("learner reads a teacher", false, () => get(docPath("teachers", "t1"), studentOne));
-await check("guest reads a teacher", false, () => get(docPath("teachers", "t1"), guest));
-await check("learner writes a teacher", false, () =>
-  patch(docPath("teachers", "t1"), { mobile: { stringValue: "9111111111" } }, studentOne)
-);
-
-// --- change requests: admin-only, because a request is internal wording nobody has shipped ---
-await check("admin files a change request", true, () =>
-  patch(
-    docPath("changeRequests", "cr1"),
-    {
-      replyKey: { stringValue: "courses" },
-      requestedText: { stringValue: "The wording we want instead." },
-      requestedBy: { stringValue: "admin@jarvisaiacademy.com" },
-      done: { booleanValue: false },
-    },
-    admin
-  )
-);
-await check("admin closes a change request", true, () =>
-  patch(docPath("changeRequests", "cr1"), { done: { booleanValue: true } }, admin)
-);
-await check("admin reads a change request", true, () => get(docPath("changeRequests", "cr1"), admin));
-await check("learner reads a change request", false, () =>
-  get(docPath("changeRequests", "cr1"), studentOne)
-);
-await check("guest reads a change request", false, () =>
-  get(docPath("changeRequests", "cr1"), guest)
-);
-await check("learner files a change request", false, () =>
-  patch(
-    docPath("changeRequests", "cr2"),
-    { replyKey: { stringValue: "courses" }, requestedText: { stringValue: "vandalised" } },
-    studentOne
-  )
-);
+// --- the collections the app no longer touches ---
+// `teachers`, `changeRequests` and `assignments` were removed along with their features. No
+// stanza covers them, so they fall to the catch-all and are closed to everyone — deliberately
+// including an admin, since nothing writes them any more and a stanza reappearing here would
+// be the sign that the feature had been put back without its rule.
+for (const collectionId of ["teachers", "changeRequests", "assignments"]) {
+  await check(`admin reads ${collectionId}`, false, () =>
+    get(docPath(collectionId, "x1"), admin)
+  );
+  await check(`admin writes ${collectionId}`, false, () =>
+    patch(docPath(collectionId, "x1"), { name: { stringValue: "vandalised" } }, admin)
+  );
+  await check(`learner reads ${collectionId}`, false, () =>
+    get(docPath(collectionId, "x1"), studentOne)
+  );
+  await check(`learner writes ${collectionId}`, false, () =>
+    patch(docPath(collectionId, "x1"), { name: { stringValue: "vandalised" } }, studentOne)
+  );
+}
 
 // --- guests ---
 await check("guest reads the public catalogue", true, () => get(docPath("courses", "fullstack"), guest));
