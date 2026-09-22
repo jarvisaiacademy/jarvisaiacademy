@@ -11,6 +11,8 @@ interface AdminHeaderProps {
   sidebarOpen?: boolean;
   /** Omitted on a page with no sidebar to open, which therefore renders no toggle. */
   onToggleSidebar?: () => void;
+  /** Centred page title. Defaults to the admin label. */
+  title?: string;
 }
 
 /**
@@ -20,7 +22,11 @@ interface AdminHeaderProps {
  * carry one header rather than a copy each: the sidebar toggle is the only way to open the
  * sidebar on mobile, so a page that forgot it would be a page with no navigation at all.
  */
-export function AdminHeader({ sidebarOpen = true, onToggleSidebar }: AdminHeaderProps) {
+export function AdminHeader({
+  sidebarOpen = true,
+  onToggleSidebar,
+  title = "Admin Control Center",
+}: AdminHeaderProps) {
   const { user, logout } = useAuth();
 
   return (
@@ -45,7 +51,7 @@ export function AdminHeader({ sidebarOpen = true, onToggleSidebar }: AdminHeader
       </div>
 
       <h1 className="text-sm sm:text-base font-bold tracking-tight text-neutral-900 dark:text-white text-center">
-        Admin Control Center
+        {title}
       </h1>
 
       {/* The theme control and the identity live here, as they do in the guest header. Both

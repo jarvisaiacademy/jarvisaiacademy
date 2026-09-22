@@ -96,7 +96,7 @@ export default function Home() {
   // academy admin lands on the admin route, a student on the courses an admin
   // granted them. Only reachable while signed in — both chips render only for a user.
   const handleOpenProfile = () =>
-    user?.isAdmin ? router.push("/admin") : handleOpenLearning();
+    user?.isAdmin ? router.push("/admin") : router.push("/dashboard");
   const handleLogout = () => {
     setStudentView(null);
     setIsLearningOpen(false);

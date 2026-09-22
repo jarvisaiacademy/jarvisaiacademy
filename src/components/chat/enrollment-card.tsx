@@ -85,16 +85,13 @@ export function EnrollmentCard({
   const gstAmount = 0;
   const totalAmount = course.baseAmount;
 
-  // Track event in localStorage audit ledger
-  const trackAction = (
+  // Track event in Firestore audit ledger
+  const trackAction = async (
     action: "initiated" | "paid" | "not_paid",
     txnId: string,
     paidTimestamp?: string
   ) => {
     try {
-      const existing = JSON.parse(
-        localStorage.getItem("jarvis_enrollment_tracker") || "[]"
-      );
       const logEntry = {
         action,
         courseId: selectedCourse,
@@ -103,16 +100,24 @@ export function EnrollmentCard({
         transactionId: txnId,
         studentName,
         studentEmail,
-        timestamp: paidTimestamp || new Date().toISOString(),
+        timestamp: paidTimestamp || new Date().toLocaleString("en-IN"),
         messageId,
       };
-      localStorage.setItem(
-        "jarvis_enrollment_tracker",
-        JSON.stringify([logEntry, ...existing])
-      );
-      console.log(`[EnrollmentTracker] Action logged: ${action}`, logEntry);
-    } catch {
-      // ignore
+
+      const docId = `${studentEmail}_${selectedCourse}`.replace(/[@.]/g, "_");
+      
+      // We import these dynamically or rely on global scope if imported at top,
+      // let's ensure we add the imports at the top of the file! 
+      // For now we'll write the logic. I will add imports in a separate replace_file_content.
+      const { doc, setDoc } = await import("firebase/firestore");
+      const { db } = await import("@/lib/firebase");
+      
+      if (db) {
+        await setDoc(doc(db, "enrollments", docId), logEntry, { merge: true });
+        console.log(`[EnrollmentTracker] Action logged to Firestore: ${action}`, logEntry);
+      }
+    } catch (e) {
+      console.error("[EnrollmentTracker] Failed to log action:", e);
     }
   };
 
