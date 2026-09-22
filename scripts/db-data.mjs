@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 
 /**
- * Jarvis AI Academy — Firestore push / pull
+ * Jarvis AI Academy — Firestore push / pull / drop
  *
  *   pnpm db pull               # every collection -> db-backups/<collection>.json
  *   pnpm db pull courses       # just one collection
  *   pnpm db push --yes         # every backup file -> Firestore
+ *   pnpm db drop old one --yes # delete those collections outright
  *
  * Credentials come from `.env.local` (see `.env.example`). This talks to Firestore with the
  * Admin SDK, so `firestore.rules` does not apply and it can write anything — that is the point
@@ -71,9 +72,11 @@ function usage() {
   console.log(`Usage:
   pnpm db pull [collection ...]         Firestore -> db-backups/<collection>.json
   pnpm db push [collection ...] --yes   db-backups/<collection>.json -> Firestore
+  pnpm db drop <collection ...> --yes   delete those collections outright
 
 With no collection named, pull backs up every collection in the database and push
-restores every backup file it finds.`);
+restores every backup file it finds. drop always needs the names: there is no
+"drop everything", because the mistake is not reversible.`);
 }
 
 async function pull(names) {
@@ -132,6 +135,38 @@ async function push(names, confirmed) {
   }
 }
 
+async function drop(names, confirmed) {
+  if (names.length === 0) {
+    console.error("Name the collections to drop. Refusing to guess at a deletion.");
+    process.exit(1);
+  }
+
+  // Counted before deleting so the operator sees the blast radius, and so a name that matches
+  // nothing is visibly a typo rather than a silent no-op.
+  const targets = [];
+  for (const name of names) {
+    const snapshot = await db.collection(name).get();
+    targets.push({ name, size: snapshot.size });
+  }
+
+  console.log("Will delete these collections:");
+  for (const target of targets) {
+    console.log(`  ${target.name.padEnd(12)} ${String(target.size).padStart(5)} docs`);
+  }
+
+  if (!confirmed) {
+    console.error("\nNothing deleted. Re-run with --yes to confirm the deletion.");
+    process.exit(1);
+  }
+
+  for (const target of targets) {
+    // recursiveDelete, not a bulkWriter over the docs: it takes subcollections with it, so a
+    // collection cannot be left behind looking empty while its children still bill.
+    await db.recursiveDelete(db.collection(target.name));
+    console.log(`  ✓ ${target.name} deleted`);
+  }
+}
+
 const envFile = loadEnv();
 const emulator = process.env.FIRESTORE_EMULATOR_HOST;
 const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
@@ -140,7 +175,7 @@ const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
 
 const [command, ...rest] = process.argv.slice(2);
-if (command !== "pull" && command !== "push") {
+if (command !== "pull" && command !== "push" && command !== "drop") {
   usage();
   process.exit(command ? 1 : 0);
 }
@@ -178,6 +213,8 @@ console.log(`Target: ${projectId}${emulator ? ` (emulator ${emulator})` : ""}`);
 try {
   if (command === "pull") {
     await pull(names);
+  } else if (command === "drop") {
+    await drop(names, rest.includes("--yes"));
   } else {
     await push(names, rest.includes("--yes"));
   }

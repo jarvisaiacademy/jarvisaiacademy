@@ -8,10 +8,12 @@
  *   pnpm seed:content --force      # overwrite docs that already exist
  *
  * `src/data/courses.ts` is the seed, keyed so the admin dashboard and the public pages
- * address the identical documents. The second target is the single `settings/app` document.
+ * address the identical documents.
  *
  * Testimonials are deliberately not here: they are hard-coded in `src/data/testimonials.ts`
  * and never read from Firestore, so the twelve invented graduates never reach a collection.
+ * The academy's own figures (`src/data/app-settings.ts`) are not here either, and no longer
+ * have a Firestore document at all.
  *
  * Create-only is the default on purpose: `--force` against the real project discards
  * whatever an admin has since edited in the dashboard. Run `--dry-run` first.
@@ -77,12 +79,6 @@ const force = argv.includes("--force");
 // a copy that can drift from it. The module is import-free, which is what makes that work.
 const fromData = (rel) => pathToFileURL(path.join(projectRoot, rel)).href;
 const { COURSES_DATA } = await import(fromData("src/data/courses.ts"));
-// The academy's business values — the Settings tab in /admin edits this document. Seeding it
-// is what makes those values exist in a fresh project; until it does, the app renders
-// DEFAULT_APP_SETTINGS, which is the same object.
-const { DEFAULT_APP_SETTINGS, SETTINGS_COLLECTION, SETTINGS_DOC_ID } = await import(
-  fromData("src/data/app-settings.ts")
-);
 
 const targets = [
   ...COURSES_DATA.map((course) => ({
@@ -90,7 +86,6 @@ const targets = [
     id: course.id,
     data: course,
   })),
-  { collection: SETTINGS_COLLECTION, id: SETTINGS_DOC_ID, data: DEFAULT_APP_SETTINGS },
 ];
 
 // A repeated id means two sources collapsed onto one document and one of them would be

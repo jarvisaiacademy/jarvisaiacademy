@@ -11,23 +11,20 @@ import { useAuth } from "@/providers/auth-provider";
 const TAB_STORAGE_KEY = "jarvis_admin_tab";
 
 // Keyed by every DashboardTab, so adding a tab to that union without adding it
-// here fails to compile. "cloud" is development-only — its content is gated on
-// `canSeed`, so restoring it in production would render an empty dashboard.
+// here fails to compile.
 const VALID_TABS: Record<DashboardTab, true> = {
-  courses: true,
+  home: true,
+  admins: true,
   teachers: true,
+  students: true,
+  courses: true,
   knowledge: true,
-  changeRequests: true,
-  settings: true,
   users: true,
-  assignments: true,
   analytics: true,
-  cloud: true,
 };
 
 function isDashboardTab(value: string | null): value is DashboardTab {
-  if (!value || !(value in VALID_TABS)) return false;
-  return value !== "cloud" || process.env.NODE_ENV === "development";
+  return !!value && value in VALID_TABS;
 }
 
 /** What the shell hands its page: the chrome's state, so the page can drive it. */
@@ -39,7 +36,6 @@ export interface AdminShellState {
   onNavigateTab: (tab: DashboardTab) => void;
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
-  onBackToChat: () => void;
 }
 
 interface AdminShellProps {
@@ -146,7 +142,6 @@ export function AdminShell({ defaultTab, restoreTab = true, children }: AdminShe
             onNavigateTab: handleSidebarTab,
             sidebarOpen: isOpen,
             onToggleSidebar: toggle,
-            onBackToChat: goHome,
           })}
         </main>
       </div>

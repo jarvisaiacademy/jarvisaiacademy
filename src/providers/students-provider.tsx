@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { StudentRecord } from "@/data/assignments";
+import { StudentRecord } from "@/data/students";
 import {
   subscribeStudentsFromFirestore,
   getStudentsFromFirestore,

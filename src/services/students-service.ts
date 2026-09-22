@@ -9,7 +9,7 @@ import {
   Unsubscribe,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { StudentRecord } from "@/data/assignments";
+import { StudentRecord } from "@/data/students";
 import { checkIsAdmin } from "@/providers/auth-provider";
 
 export const STUDENTS_COLLECTION = "users";
@@ -73,7 +73,9 @@ export async function upsertStudentRecord(user: RosterUserInput): Promise<void> 
  */
 export async function updateCandidateInFirestore(
   uid: string,
-  updates: Partial<Pick<StudentRecord, "name" | "status" | "is_super10" | "plan" | "role">>,
+  updates: Partial<
+    Pick<StudentRecord, "name" | "status" | "is_super10" | "is_teacher" | "plan" | "role">
+  >,
   userEmail?: string | null
 ): Promise<void> {
   if (!checkIsAdmin(userEmail)) {

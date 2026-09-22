@@ -144,7 +144,7 @@ Which file owns what:
 | Crawl rules | `src/app/robots.ts` |
 | Web app manifest | `public/site.webmanifest` |
 | `/llms.txt`, the summary AI agents read | `src/app/llms.txt/route.ts` |
-| Requested wording changes to hard-coded copy | the `changeRequests` collection, filed from `/admin` → Change Requests |
+| Requested wording changes to hard-coded copy | edit the file directly — there is no in-app request queue |
 
 **When public-facing content changes, update the matching SEO value in the same commit:**
 
@@ -163,20 +163,19 @@ Which file owns what:
   (`src/lib/courses-server.ts`), falling back to `COURSES_DATA` and `siteConfig` when the
   collection is empty or unreachable, so they track those changes on their own. Never paste
   the catalogue into them by hand. Edits arrive through the admin dashboard, or through
-  `pnpm seed:content`, which uploads `src/data/courses.ts` and the `settings/app` document
-  and is the only thing that puts them into Firestore in the first place.
+  `pnpm seed:content`, which uploads `src/data/courses.ts` and is the only thing that puts
+  them into Firestore in the first place. The academy's own figures — referral reward, Super10
+  seat cap, GST rate, GSTIN, money-back window — are **not** in Firestore: they are hard-coded
+  in `src/data/app-settings.ts`, with no editor in the dashboard.
 - A new **reply** in `src/data/academy-knowledge.ts` → nothing to do unless it is a program's
   answer, in which case add the id to `COURSE_KB_KEY` beside it or `/courses/<id>` renders
   without its copy. `node scripts/check-course-routing.mjs` fails if the map and the chat's
   keyword router ever disagree.
 
 **Copy the dashboard cannot edit.** The replies, the alumni pool in `src/data/testimonials.ts`
-and the `/llms.txt` prose are hard-coded in `src/`, so an admin who wants them reworded files a
-**change request** in `/admin` → Change Requests. It stores the reply key and the requested
-wording verbatim in the `changeRequests` collection for a developer to apply as a code change.
-The app never edits its own codebase, and nothing requested there is live until a deploy ships
-it. A request that names a programme's reply lands on `/courses/<id>` too, so it carries the
-SEO pass above.
+and the `/llms.txt` prose are hard-coded in `src/`. The app never edits its own codebase, so a
+wording change is a code change and ships with a deploy. If the change names a programme's
+reply it lands on `/courses/<id>` too, so it carries the SEO pass above.
 
 Do not add `keywords` (Google ignores it). Do not add an SEO library — Next's Metadata API
 plus `robots.ts` / `sitemap.ts` cover everything here.

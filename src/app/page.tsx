@@ -161,13 +161,7 @@ export default function Home() {
               }}
             />
           ) : isLearningOpen && isLoggedIn && !user?.isAdmin ? (
-            <MyLearningPage
-              onBack={handleCloseLearning}
-              onOpenCourse={(topic) => {
-                setIsLearningOpen(false);
-                setActiveTopic(topic);
-              }}
-            />
+            <MyLearningPage onBack={handleCloseLearning} />
           ) : (
             <>
               <GuestHeader
