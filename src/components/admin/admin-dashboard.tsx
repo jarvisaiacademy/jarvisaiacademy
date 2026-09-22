@@ -47,6 +47,16 @@ import { UserProfile } from "@/components/layout/user-profile";
 import { AdminKnowledge } from "@/components/admin/admin-knowledge";
 import { Select } from "@/components/ui/select";
 import { PageHeader } from "@/components/ui/page-header";
+import { TablePagination } from "@/components/ui/table-pagination";
+import { usePagedQuery } from "@/hooks/use-paged-query";
+import {
+  buildCoursesQuery,
+  buildRosterQuery,
+  countCourses,
+  countRoster,
+  DEFAULT_PAGE_SIZE,
+  type PageSize,
+} from "@/services/pagination";
 import { shortcutById } from "@/data/shortcuts";
 import { isTypingTarget, matchesShortcut } from "@/lib/keyboard";
 
@@ -225,6 +235,45 @@ export function AdminDashboard({
     setRosterStatus("all");
   }
 
+  // The roster is three pages that share one table, and exactly one of them is mounted at a
+  // time, so there is one query rather than three. `null` while no role page is open: the hook
+  // then holds nothing and subscribes to nothing.
+  const rosterRole: AccountRole | null =
+    activeTab === "students" ? "student"
+    : activeTab === "teachers" ? "teacher"
+    : activeTab === "admins" ? "admin"
+    : null;
+
+  const rosterPage = usePagedQuery<StudentRecord>({
+    enabled: rosterRole !== null,
+    // The search box is deliberately absent from this key: it narrows the page already loaded,
+    // so folding it in would re-run the query on every keystroke for the same rows.
+    filterKey: `${rosterRole}|${rosterStatus}`,
+    buildQuery: (_page, size, cursor) =>
+      rosterRole ? buildRosterQuery(rosterRole, rosterStatus, size, cursor) : null,
+    count: () => (rosterRole ? countRoster(rosterRole, rosterStatus) : Promise.resolve(0)),
+  });
+
+  const coursePage = usePagedQuery<CourseItem>({
+    enabled: activeTab === "courses",
+    filterKey: `courses|${categoryFilter}`,
+    buildQuery: (_page, size, cursor) => buildCoursesQuery(categoryFilter, size, cursor),
+    count: () => countCourses(categoryFilter),
+  });
+
+  // The ledger is the browser's own localStorage list, so there is no query to page and nothing
+  // to ask Firestore for: it is sliced where it already sits, with the same footer.
+  const [ledgerPage, setLedgerPage] = useState(0);
+  const [ledgerPageSize, setLedgerPageSize] = useState<PageSize>(DEFAULT_PAGE_SIZE);
+  const [ledgerFilters, setLedgerFilters] = useState({
+    search: searchQuery,
+    status: statusFilter,
+  });
+  if (ledgerFilters.search !== searchQuery || ledgerFilters.status !== statusFilter) {
+    setLedgerFilters({ search: searchQuery, status: statusFilter });
+    setLedgerPage(0);
+  }
+
   const handleCandidateStatus = async (uid: string, status: CandidateStatus) => {
     setBusyCandidateId(uid);
     try {
@@ -329,6 +378,18 @@ export function AdminDashboard({
     return matchesSearch && matchesStatus;
   });
 
+  // Sliced after the filters, so the footer counts the filtered set rather than the whole
+  // ledger. `ledgerCurrentPage` is clamped for the case where a filter change shrinks the set
+  // out from under the page you were on — the footer computes its own page count from `total`,
+  // and the two have to agree about which page is on screen. Export CSV still reads
+  // `filteredRecords`: the page is what you are looking at, not what you are allowed to take.
+  const ledgerPageCount = Math.max(1, Math.ceil(filteredRecords.length / ledgerPageSize));
+  const ledgerCurrentPage = Math.min(ledgerPage, ledgerPageCount - 1);
+  const pagedRecords = filteredRecords.slice(
+    ledgerCurrentPage * ledgerPageSize,
+    (ledgerCurrentPage + 1) * ledgerPageSize
+  );
+
   const totalPaidRevenue = records
     .filter((r) => r.action === "paid")
     .reduce((acc, curr) => acc + (curr.amount || 0), 0);
@@ -364,21 +425,20 @@ export function AdminDashboard({
     URL.revokeObjectURL(url);
   };
 
-  // Filter courses
-  const filteredCourses = courses.filter((c) => {
+  // Only the search box narrows this, and only against the rows Firestore returned for the
+  // page. The category is a query constraint now — `buildCoursesQuery` carries it — so it has
+  // already been applied to `coursePage.rows` by the time this runs. Firestore has no substring
+  // match, which is why the search could not move to the server with it.
+  const filteredCourses = coursePage.rows.filter((c) => {
     const query = courseSearch.toLowerCase();
-    const matchesSearch =
-      !query ||
+    if (!query) return true;
+    return (
       c.title.toLowerCase().includes(query) ||
       c.id.toLowerCase().includes(query) ||
       c.description.toLowerCase().includes(query) ||
       c.techStack.some((t) => t.toLowerCase().includes(query)) ||
-      c.topics.some((top) => top.toLowerCase().includes(query));
-
-    const matchesCategory =
-      categoryFilter === "all" || c.category === categoryFilter;
-
-    return matchesSearch && matchesCategory;
+      c.topics.some((top) => top.toLowerCase().includes(query))
+    );
   });
 
   // The teacher cell. `course.teacherIds` is only ids, so each one is resolved against the
@@ -644,28 +704,28 @@ export function AdminDashboard({
   // The table on its own. The page below supplies the framing around it, so the markup for a
   // row exists once for all three roles.
   const renderRosterTable = (role: AccountRole, empty: string) => {
-    const rows = rosterByRole[role];
+    // The page the query returned, not the whole roster: the providers' full arrays are still
+    // what the Home cards and the courses table's teacher names read.
+    const rows = rosterPage.rows;
 
-    // Absent status means active, the same reading the status switch makes — filtering on the
-    // stored value alone would drop every account whose sign-in never wrote one.
+    // The status is a query constraint (`rosterFilters`), so it is already applied to `rows`.
+    // Only the search narrows anything here, and only within the page — Firestore cannot match
+    // a substring, so a search box that spans the roster is not something a real limit allows.
     const query = rosterQuery.trim().toLowerCase();
-    const isFiltered = query !== "" || rosterStatus !== "all";
-    const visible = rows.filter((student) => {
-      if (rosterStatus !== "all" && (student.status ?? "active") !== rosterStatus) return false;
-      if (!query) return true;
-      return `${student.name ?? ""} ${student.email ?? ""}`.toLowerCase().includes(query);
-    });
+    const visible = query
+      ? rows.filter((student) =>
+          `${student.name ?? ""} ${student.email ?? ""}`.toLowerCase().includes(query)
+        )
+      : rows;
 
     return (
       <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden flex flex-col">
         {/* The count reads left and the control sits right, the way every other toolbar on the
-            dashboard is laid out. The count says what is on screen, so a filtered table cannot
-            silently disagree with the number beside it. */}
+            dashboard is laid out. The count is the whole filtered set while the footer below
+            says which slice of it is on screen. */}
         <div className="flex items-center justify-between gap-3 flex-wrap px-4 sm:px-6 py-3 border-b border-neutral-200 dark:border-white/10">
           <span className="text-[11px] text-neutral-400">
-            {isFiltered
-              ? `${visible.length} of ${rows.length} shown`
-              : `${rows.length} ${rows.length === 1 ? "account" : "accounts"}`}
+            {rosterPage.total} {rosterPage.total === 1 ? "account" : "accounts"}
           </span>
 
           <Select
@@ -699,9 +759,14 @@ export function AdminDashboard({
               {visible.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-8 text-neutral-400">
-                    {/* An empty table and a filtered-away table are different facts, so they
-                        do not get the same sentence. */}
-                    {isFiltered ? "No accounts match these filters." : empty}
+                    {/* Four different facts, four sentences. A search that hid the page's rows
+                        is not the same as a status nobody holds, and neither is the same as a
+                        roster that is empty. */}
+                    {query
+                      ? "No accounts on this page match your search."
+                      : rosterStatus !== "all"
+                        ? "No accounts hold this status."
+                        : empty}
                   </td>
                 </tr>
               ) : (
@@ -801,6 +866,15 @@ export function AdminDashboard({
             </tbody>
           </table>
         </div>
+
+        <TablePagination
+          page={rosterPage.page}
+          pageSize={rosterPage.pageSize}
+          total={rosterPage.total}
+          onPageChange={rosterPage.setPage}
+          onPageSizeChange={rosterPage.setPageSize}
+          noun="accounts"
+        />
       </div>
     );
   };
@@ -832,11 +906,16 @@ export function AdminDashboard({
           }
         />
 
-        {studentsError ? (
+        {rosterPage.error || studentsError ? (
           <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 text-center text-xs text-amber-600 dark:text-amber-400">
-            Could not load the roster right now.
+            {/* A rejected query is usually a composite index the project is missing, and
+                Firestore's own message carries the URL that creates it, so it is worth more
+                than a fixed sentence. */}
+            {rosterPage.error
+              ? "This page could not be queried — see the console for the index it needs."
+              : "Could not load the roster right now."}
           </div>
-        ) : studentsLoading ? (
+        ) : studentsLoading || rosterPage.loading ? (
           <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 text-center text-xs text-neutral-400">
             Loading accounts...
           </div>
@@ -993,11 +1072,21 @@ export function AdminDashboard({
         {/* TAB 1: COURSE MANAGEMENT (CRUD) */}
         {activeTab === "courses" && (
           <div className="flex flex-col gap-4">
-            {/* No action: the toolbar below already carries Add Course and the search, and a
-                second copy up here would be the same button twice. */}
+            {/* The create button sits in the trail's action column, where every other page
+                puts its one action, rather than beside the search in the toolbar. */}
             <PageHeader
               crumbs={[{ label: "Home", onSelect: () => setActiveTab("home") }, { label: "Courses" }]}
-                />
+              action={
+                <button
+                  type="button"
+                  onClick={handleOpenAdd}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Course</span>
+                </button>
+              }
+            />
 
             {/* Summary Metrics */}
             {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1048,47 +1137,36 @@ export function AdminDashboard({
               </div>
             </div> */}
 
-            {/* Courses Toolbar */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-              <div className="relative flex-1 max-w-md">
+            {/* Courses Toolbar. Both controls right-aligned, the filter outermost, so the
+                search reads the same way here as it does in the roster's trail action and in
+                the ledger's card header. */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
+              <div className="relative w-full sm:w-64">
                 <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={courseSearch}
                   onChange={(e) => setCourseSearch(e.target.value)}
                   placeholder="Search course title, tech stack, topics..."
+                  aria-label="Search courses"
                   className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white focus:outline-hidden focus:ring-1 focus:ring-blue-500"
                 />
               </div>
 
-              {/* The filter sits with the controls on the right rather than beside the search,
-                  so the toolbars read the same way: what you are looking at on the left, what
-                  narrows it on the right. */}
-              <div className="flex items-center gap-2 flex-wrap self-end lg:self-auto">
-                <Select
-                  label="Filter by category"
-                  value={categoryFilter}
-                  onValueChange={setCategoryFilter}
-                  options={[
-                    { value: "all", label: "All Categories" },
-                    { value: "web", label: "Web & Full-Stack" },
-                    { value: "ai", label: "AI & Data Science" },
-                    { value: "devops", label: "DevOps & Cloud" },
-                    { value: "database", label: "Database & Systems" },
-                    { value: "elite", label: "Super10 Elite" },
-                  ]}
-                  className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
-                />
-
-                <button
-                  type="button"
-                  onClick={handleOpenAdd}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Course</span>
-                </button>
-              </div>
+              <Select
+                label="Filter by category"
+                value={categoryFilter}
+                onValueChange={setCategoryFilter}
+                options={[
+                  { value: "all", label: "All Categories" },
+                  { value: "web", label: "Web & Full-Stack" },
+                  { value: "ai", label: "AI & Data Science" },
+                  { value: "devops", label: "DevOps & Cloud" },
+                  { value: "database", label: "Database & Systems" },
+                  { value: "elite", label: "Super10 Elite" },
+                ]}
+                className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+              />
             </div>
 
             {/* Courses Table */}
@@ -1235,17 +1313,30 @@ export function AdminDashboard({
                     ) : (
                       <tr>
                         <td colSpan={7} className="text-center py-10 text-neutral-400">
-                          {/* An empty store and an empty filter read the same in the table and
-                              mean opposite things, so they are not given the same sentence. */}
+                          {/* An empty store, an empty category and a search that hid the page's
+                              rows read the same in the table and mean opposite things, so they
+                              are not given the same sentence. `courses` is still the whole
+                              stored catalogue, which is what makes the first case knowable. */}
                           {courses.length === 0
                             ? "No courses are stored yet. Add one here, or seed the catalogue."
-                            : "No courses found matching your criteria."}
+                            : courseSearch.trim()
+                              ? "No courses on this page match your search."
+                              : "No courses in this category."}
                         </td>
                       </tr>
                     )}
                   </tbody>
                 </table>
               </div>
+
+              <TablePagination
+                page={coursePage.page}
+                pageSize={coursePage.pageSize}
+                total={coursePage.total}
+                onPageChange={coursePage.setPage}
+                onPageSizeChange={coursePage.setPageSize}
+                noun="courses"
+              />
             </div>
           </div>
         )}
@@ -1349,8 +1440,8 @@ export function AdminDashboard({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-200 dark:divide-white/5">
-                    {filteredRecords.length > 0 ? (
-                      filteredRecords.map((rec, idx) => (
+                    {pagedRecords.length > 0 ? (
+                      pagedRecords.map((rec, idx) => (
                         <tr
                           key={idx}
                           className="hover:bg-neutral-50/80 dark:hover:bg-white/5 transition-colors"
@@ -1409,6 +1500,18 @@ export function AdminDashboard({
                   </tbody>
                 </table>
               </div>
+
+              <TablePagination
+                page={ledgerCurrentPage}
+                pageSize={ledgerPageSize}
+                total={filteredRecords.length}
+                onPageChange={setLedgerPage}
+                onPageSizeChange={(size) => {
+                  setLedgerPageSize(size);
+                  setLedgerPage(0);
+                }}
+                noun="records"
+              />
             </div>
 
             {/* Who has an account, as distinct from who has paid for something, is its own

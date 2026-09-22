@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 
 /**
- * Jarvis AI Academy — Firestore push / pull / drop
+ * Jarvis AI Academy — Firestore push / pull / drop / backfill
  *
  *   pnpm db pull               # every collection -> db-backups/<collection>.json
  *   pnpm db pull courses       # just one collection
  *   pnpm db push --yes         # every backup file -> Firestore
  *   pnpm db drop old one --yes # delete those collections outright
+ *   pnpm db backfill users --yes  # fill in fields the rules already assume are present
  *
  * Credentials come from `.env.local` (see `.env.example`). This talks to Firestore with the
  * Admin SDK, so `firestore.rules` does not apply and it can write anything — that is the point
@@ -73,6 +74,7 @@ function usage() {
   pnpm db pull [collection ...]         Firestore -> db-backups/<collection>.json
   pnpm db push [collection ...] --yes   db-backups/<collection>.json -> Firestore
   pnpm db drop <collection ...> --yes   delete those collections outright
+  pnpm db backfill users --yes          set fields the rules assume exist
 
 With no collection named, pull backs up every collection in the database and push
 restores every backup file it finds. drop always needs the names: there is no
@@ -167,6 +169,73 @@ async function drop(names, confirmed) {
   }
 }
 
+// Fields the app already behaves as though every document has.
+//
+// `firestore.rules:64-66` compares them with `get(field, default)`, and the roster queries in
+// `src/services/pagination.ts` filter on them — but Firestore's `==`, `!=` and `in` all skip a
+// document where the field is absent, so `where("is_teacher", "==", false)` matches nobody on a
+// roster where the flag was never written. Absent and `false` mean the same thing to the rules
+// and different things to a query; this makes them the same thing to both.
+const USER_FIELD_DEFAULTS = { is_teacher: false, status: "active" };
+
+async function backfill(names, confirmed) {
+  const unknown = names.filter((name) => name !== "users");
+  if (unknown.length) {
+    console.error(
+      `Only \`users\` has fields worth backfilling; got: ${unknown.join(", ")}. Nothing else has a ` +
+        `default the app assumes is present.`
+    );
+    process.exit(1);
+  }
+
+  // Collected before writing so the operator sees the blast radius, and so a second run is
+  // visibly a no-op — which is the whole safety property here.
+  const snapshot = await db.collection("users").get();
+  const writes = [];
+  const gapsByField = {};
+
+  snapshot.forEach((doc) => {
+    const data = doc.data();
+    const gaps = {};
+    for (const [field, value] of Object.entries(USER_FIELD_DEFAULTS)) {
+      // Absent only. A field that is present is left exactly as it is even when it holds
+      // `false`, so this can never demote a real teacher or un-ban a suspended candidate.
+      if (data[field] === undefined) gaps[field] = value;
+    }
+    if (Object.keys(gaps).length === 0) return;
+    for (const field of Object.keys(gaps)) gapsByField[field] = (gapsByField[field] || 0) + 1;
+    writes.push({ ref: doc.ref, gaps });
+  });
+
+  const breakdown = Object.entries(gapsByField)
+    .map(([field, count]) => `${field} on ${count}`)
+    .join(", ");
+  console.log("Will set only the fields these documents are missing:");
+  console.log(
+    `  users        ${String(writes.length).padStart(5)} / ${snapshot.size} docs` +
+      (breakdown ? `  (${breakdown})` : "  — nothing missing")
+  );
+
+  if (writes.length === 0) {
+    console.log("\nNothing to backfill.");
+    return;
+  }
+
+  if (!confirmed) {
+    console.error("\nNothing written. Re-run with --yes to confirm the write.");
+    process.exit(1);
+  }
+
+  const writer = db.bulkWriter();
+  // merge: true, not a plain set — the payload holds only the missing fields, and anything an
+  // admin has since set on the document must survive untouched.
+  for (const write of writes) {
+    writer.set(write.ref, write.gaps, { merge: true });
+  }
+  await writer.close();
+  console.log(`  ✓ users backfilled`);
+}
+
 const envFile = loadEnv();
 const emulator = process.env.FIRESTORE_EMULATOR_HOST;
 const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
@@ -175,7 +244,7 @@ const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
 
 const [command, ...rest] = process.argv.slice(2);
-if (command !== "pull" && command !== "push" && command !== "drop") {
+if (!["pull", "push", "drop", "backfill"].includes(command)) {
   usage();
   process.exit(command ? 1 : 0);
 }
@@ -215,6 +284,8 @@ try {
     await pull(names);
   } else if (command === "drop") {
     await drop(names, rest.includes("--yes"));
+  } else if (command === "backfill") {
+    await backfill(names, rest.includes("--yes"));
   } else {
     await push(names, rest.includes("--yes"));
   }
