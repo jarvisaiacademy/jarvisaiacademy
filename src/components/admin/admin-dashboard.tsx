@@ -21,9 +21,7 @@ import {
   BookOpen,
   Layers,
   AlertCircle,
-  Check,
   Star,
-  Briefcase,
 } from "lucide-react";
 import { useCourses } from "@/providers/courses-provider";
 import { useStudents } from "@/providers/students-provider";
@@ -49,7 +47,7 @@ import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { AdminKnowledge } from "@/components/admin/admin-knowledge";
 import { AdminReferrals } from "@/components/admin/admin-referrals";
-import { ROLE_BADGE, RoleBadge } from "@/components/admin/role-badge";
+import { ROLE_BADGE } from "@/components/admin/role-badge";
 import { Select } from "@/components/ui/select";
 import { PageHeader } from "@/components/ui/page-header";
 import { TablePagination } from "@/components/ui/table-pagination";
@@ -255,21 +253,6 @@ export function AdminDashboard({
     try {
       await updateCandidateInFirestore(uid, { is_super10: next }, user?.email);
       showToast(next ? "Super10 granted" : "Super10 removed", "success");
-    } catch (err: unknown) {
-      showToast(err instanceof Error ? err.message : "Failed to update candidate", "error");
-    } finally {
-      setBusyCandidateId(null);
-    }
-  };
-
-  // Faculty membership is this flag and nothing else. Marking someone moves them to the
-  // Teachers page, since `accountRoleOf` reads it; unmarking moves them back.
-  const handleToggleTeacher = async (uid: string, current: boolean) => {
-    const next = !current;
-    setBusyCandidateId(uid);
-    try {
-      await updateCandidateInFirestore(uid, { is_teacher: next }, user?.email);
-      showToast(next ? "Marked as faculty" : "Faculty mark removed", "success");
     } catch (err: unknown) {
       showToast(err instanceof Error ? err.message : "Failed to update candidate", "error");
     } finally {
@@ -516,12 +499,6 @@ export function AdminDashboard({
     );
   };
 
-  // The rule itself lives in `src/data/students.ts`, because the sidebar counts people by it
-  // too — the number beside a tab and the number of rows behind it have to be the same number.
-  const renderRole = (student: StudentRecord) => (
-    <RoleBadge role={accountRoleOf(student)} />
-  );
-
   // The roster split three ways, one page per role, so every account is listed under the role
   // it holds rather than all of them under a "Students" heading. Built from the same rule the
   // badge reads, so a page holds everybody whose badge names that role, and nobody twice.
@@ -578,18 +555,15 @@ export function AdminDashboard({
             <thead>
               <tr className="bg-neutral-50 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 border-b border-neutral-200 dark:border-white/10 font-medium">
                 <th className="py-3 px-4 sm:px-6">Account</th>
-                <th className="py-3 px-4 sm:px-6">Role</th>
-                <th className="py-3 px-4 sm:px-6">Plan</th>
                 <th className="py-3 px-4 sm:px-6">Status</th>
                 <th className="py-3 px-4 sm:px-6">Super10</th>
-                <th className="py-3 px-4 sm:px-6">Teacher</th>
                 <th className="py-3 px-4 sm:px-6">Last Sign-in</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-200 dark:divide-white/5">
               {visible.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-8 text-neutral-400">
+                  <td colSpan={4} className="text-center py-8 text-neutral-400">
                     {/* Four different facts, four sentences. A search that hid the page's rows
                         is not the same as a status nobody holds, and neither is the same as a
                         roster that is empty. */}
@@ -616,76 +590,23 @@ export function AdminDashboard({
                           <span className="text-[11px] text-neutral-500 truncate">
                             {student.email}
                           </span>
-                          {/* The rest of what the Gmail account gave us. Storing it
-                              is only worth anything if an admin can read it. */}
-                          <span className="flex items-center gap-1.5 text-[10px] text-neutral-400">
-                            {student.signInProvider && <span>{student.signInProvider}</span>}
-                            {student.emailVerified && (
-                              <span className="inline-flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400">
-                                <Check className="w-2.5 h-2.5" />
-                                verified
-                              </span>
-                            )}
-                            {student.createdAt && (
-                              <span>since {new Date(student.createdAt).getFullYear()}</span>
-                            )}
-                          </span>
                         </div>
                       </div>
-                    </td>
-
-                    <td className="py-3.5 px-4 sm:px-6">{renderRole(student)}</td>
-
-                    <td className="py-3.5 px-4 sm:px-6 text-neutral-600 dark:text-neutral-400">
-                      {student.plan || "—"}
                     </td>
 
                     <td className="py-3.5 px-4 sm:px-6">{renderCandidateStatus(student)}</td>
 
                     <td className="py-3.5 px-4 sm:px-6">
-                      <button
-                        type="button"
-                        disabled={busyCandidateId === student.id}
-                        onClick={() => handleToggleSuper10(student.id, student.is_super10 === true)}
-                        aria-pressed={student.is_super10 === true}
-                        title={
-                          student.is_super10
-                            ? "Remove the Super10 flag"
-                            : "Grant the Super10 flag"
+                      <StatusSwitch
+                        checked={student.is_super10 === true}
+                        onCheckedChange={() =>
+                          handleToggleSuper10(student.id, student.is_super10 === true)
                         }
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors cursor-pointer disabled:opacity-50 ${
-                          student.is_super10
-                            ? "bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30"
-                            : "bg-neutral-100 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-white/10 hover:text-amber-600 dark:hover:text-amber-400"
-                        }`}
-                      >
-                        <Star
-                          className={`w-3 h-3 ${student.is_super10 ? "fill-current" : ""}`}
-                        />
-                        {student.is_super10 ? "Super10" : "—"}
-                      </button>
-                    </td>
-
-                    <td className="py-3.5 px-4 sm:px-6">
-                      <button
-                        type="button"
                         disabled={busyCandidateId === student.id}
-                        onClick={() => handleToggleTeacher(student.id, student.is_teacher === true)}
-                        aria-pressed={student.is_teacher === true}
-                        title={
-                          student.is_teacher
-                            ? "Remove the faculty mark"
-                            : "Mark this account as faculty"
-                        }
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors cursor-pointer disabled:opacity-50 ${
-                          student.is_teacher
-                            ? "bg-sky-50 dark:bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-500/30"
-                            : "bg-neutral-100 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-white/10 hover:text-sky-600 dark:hover:text-sky-400"
-                        }`}
-                      >
-                        <Briefcase className="w-3 h-3" />
-                        {student.is_teacher ? "Teacher" : "—"}
-                      </button>
+                        onLabel="Super10"
+                        offLabel="Not Super10"
+                        label={`Super10 status for ${student.name || student.email}`}
+                      />
                     </td>
 
                     <td className="py-3.5 px-4 sm:px-6 text-neutral-500 text-[11px]">
@@ -974,6 +895,7 @@ export function AdminDashboard({
                     <tr className="bg-neutral-50 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 border-b border-neutral-200 dark:border-white/10 font-medium">
                       <th className="py-3 px-4 sm:px-6 w-16">#</th>
                       <th className="py-3 px-4 sm:px-6">Courses</th>
+                      <th className="py-3 px-4 sm:px-6">Status</th>
                       <th className="py-3 px-4 sm:px-6">Category</th>
                       <th className="py-3 px-4 sm:px-6">Teacher</th>
                       <th className="py-3 px-4 sm:px-6">Tech Stack</th>
@@ -993,23 +915,24 @@ export function AdminDashboard({
                             {course.number || "—"}
                           </td>
 
-                          {/* Title & Badge */}
+                          {/* Title */}
                           <td className="py-3.5 px-4 sm:px-6">
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold text-neutral-900 dark:text-white">
-                                {course.title}
-                              </span>
-                              {/* A static pill said nothing on a row that was fine and left the
-                                  one hiding a course from the site looking like every other
-                                  row. The switch says both, and flips it where it is read. */}
-                              <StatusSwitch
-                                checked={(course.status ?? "active") === "active"}
-                                onCheckedChange={(next) =>
-                                  handleCourseStatus(course, next ? "active" : "inactive")
-                                }
-                                label={`Visibility of ${course.title}`}
-                              />
-                            </div>
+                            <span className="font-semibold text-neutral-900 dark:text-white">
+                              {course.title}
+                            </span>
+                          </td>
+
+                          {/* Visibility — a static pill said nothing on a row that was fine and
+                              left the one hiding a course from the site looking like every other
+                              row. The switch says both, and flips it where it is read. */}
+                          <td className="py-3.5 px-4 sm:px-6">
+                            <StatusSwitch
+                              checked={(course.status ?? "active") === "active"}
+                              onCheckedChange={(next) =>
+                                handleCourseStatus(course, next ? "active" : "inactive")
+                              }
+                              label={`Visibility of ${course.title}`}
+                            />
                           </td>
 
                           {/* Category */}
@@ -1119,7 +1042,7 @@ export function AdminDashboard({
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={7} className="text-center py-10 text-neutral-400">
+                        <td colSpan={8} className="text-center py-10 text-neutral-400">
                           {/* An empty store, an empty category and a search that hid the page's
                               rows read the same in the table and mean opposite things, so they
                               are not given the same sentence. `courses` is still the whole

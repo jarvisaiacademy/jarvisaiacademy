@@ -11,7 +11,6 @@ export interface StudentRecord {
   email: string;
   picture?: string;
   role: "admin" | "student";
-  plan?: string;
   lastLoginAt: string;
   /** Absent means active. `banned` is a deliberate block, not merely an unset flag. */
   status?: CandidateStatus;

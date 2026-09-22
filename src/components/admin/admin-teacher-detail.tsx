@@ -180,7 +180,6 @@ export function AdminTeacherDetail({ teacherId, shell }: AdminTeacherDetailProps
               <Field label="Email" className="col-span-2">
                 {teacher.email || "—"}
               </Field>
-              <Field label="Plan">{teacher.plan || "—"}</Field>
               <Field label="Super10">{teacher.is_super10 ? "Yes" : "No"}</Field>
 
               <Field label="Sign-in provider">{teacher.signInProvider || "—"}</Field>
