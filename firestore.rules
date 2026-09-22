@@ -27,7 +27,8 @@ service cloud.firestore {
     function isAdmin() {
       return request.auth != null && request.auth.token.email in [
         'sugatraj.2106@gmail.com',
-        'hivirajkadam@gmail.com'
+        'hivirajkadam@gmail.com',
+        'lalitspatil03@gmail.com'
       ];
     }
 
@@ -155,6 +156,20 @@ service cloud.firestore {
     // lets it seed a project where no admin has signed in yet.
     match /courses/{courseId} {
       allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Enrollments: students can read/write their own enrollments. Admins can read all.
+    match /enrollments/{enrollmentId} {
+      allow read: if isAdmin() || (request.auth != null && resource.data.studentEmail == request.auth.token.email);
+      allow create: if isAdmin() || (request.auth != null && request.resource.data.studentEmail == request.auth.token.email);
+      allow update: if isAdmin() || (request.auth != null && request.resource.data.studentEmail == request.auth.token.email && resource.data.studentEmail == request.auth.token.email);
+      allow delete: if isAdmin();
+    }
+
+    // Certificates: students can read their own, admins can read/write all.
+    match /certificates/{certId} {
+      allow read: if isAdmin() || (request.auth != null && resource.data.studentEmail == request.auth.token.email);
       allow write: if isAdmin();
     }
 

@@ -24,7 +24,6 @@ export function UserProfile({
   variant = "sidebar",
 }: UserProfileProps) {
   const name = user?.name || "Jarvis Member";
-  const plan = user?.plan || "Pro";
   const initials = user?.name ? user.name.slice(0, 2).toUpperCase() : "JA";
   const compact = variant === "compact";
 
@@ -46,7 +45,7 @@ export function UserProfile({
           {name}
         </span>
         <span className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-none mt-0.5 truncate max-w-[140px]">
-          {user?.email || plan}
+          {user?.email}
         </span>
       </div>
     </>

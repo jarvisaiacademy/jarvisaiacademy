@@ -291,6 +291,12 @@ await check("admin bans a candidate", true, () =>
 await check("admin grants Super10", true, () =>
   patch(docPath("users", "student-two"), { is_super10: { booleanValue: true } }, admin)
 );
+// The roster is gated by an email list, so the harness says which addresses are on it rather
+// than assuming. A new admin added to the list but not to these rules is a silent regression:
+// the dashboard renders, then every read below comes back permission-denied.
+const newAdmin = tokenFor("new-admin-uid", "lalitspatil03@gmail.com");
+await check("new admin reads any row", true, () => get(docPath("users", "student-two"), newAdmin));
+await check("new admin lists the roster", true, () => list("users", null, null, newAdmin));
 
 // --- referral codes: the index -------------------------------------------------
 // The uids below are alphanumeric on purpose. A real Firebase uid is 28 such characters and the

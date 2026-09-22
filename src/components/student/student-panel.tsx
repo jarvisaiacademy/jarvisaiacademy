@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { GraduationCap, Mail, Sparkles } from "lucide-react";
+import { GraduationCap, Mail } from "lucide-react";
 
 import { SettingsHeader } from "@/components/settings/settings-header";
 import { SettingsSection } from "@/components/settings/settings-section";
@@ -116,11 +116,6 @@ function ProfileSection() {
         icon={<Mail className="w-4 h-4" />}
         label="Email"
         value={user?.email}
-      />
-      <DetailRow
-        icon={<Sparkles className="w-4 h-4" />}
-        label="Plan"
-        value={user?.plan}
       />
     </SettingsSection>
   );

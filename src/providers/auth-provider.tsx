@@ -17,7 +17,6 @@ export interface User {
   name: string;
   email: string;
   picture?: string;
-  plan?: string;
   role?: "admin" | "student";
   isAdmin?: boolean;
   /** Everything the Google account handed us, carried through for the candidate record. */
@@ -86,7 +85,7 @@ function describeAuthError(error: { code?: string; message?: string }): string {
 
 const ADMIN_EMAILS = (
   process.env.NEXT_PUBLIC_ADMIN_EMAILS ||
-  "sugatraj.2106@gmail.com,hivirajkadam@gmail.com"
+  "sugatraj.2106@gmail.com,hivirajkadam@gmail.com,lalitspatil03@gmail.com"
 )
   .split(",")
   .map((e) => e.trim().toLowerCase());
@@ -159,7 +158,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             picture: fbUser.photoURL || undefined,
             isAdmin,
             role: isAdmin ? "admin" : "student",
-            plan: isAdmin ? "Admin / Founder" : "Learner Pro",
             emailVerified: fbUser.emailVerified,
             signInProvider: fbUser.providerData[0]?.providerId,
             // Null for a session restored from persistence rather than a fresh sign-in, and
@@ -183,7 +181,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email: user.email,
       picture: user.picture,
       role: user.role,
-      plan: user.plan,
       emailVerified: user.emailVerified,
       signInProvider: user.signInProvider,
       createdAt: user.createdAt,
@@ -216,7 +213,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         picture: fbUser.photoURL || undefined,
         isAdmin,
         role: isAdmin ? "admin" : "student",
-        plan: isAdmin ? "Admin / Founder" : "Learner Pro",
       };
       setUser(mappedUser);
       saveUserSession(mappedUser);
