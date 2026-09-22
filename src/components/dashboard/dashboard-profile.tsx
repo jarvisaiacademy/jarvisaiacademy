@@ -93,69 +93,27 @@ export function DashboardProfile() {
       transition={{ duration: 0.18 }}
       className="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-8"
     >
-      {/* LVL100 Hero */}
       <div className="flex flex-col md:flex-row items-center md:items-start gap-6 p-6 rounded-2xl bg-muted/40 border border-border">
         <div className="relative">
           {user?.picture ? (
             <img
               src={user.picture}
               alt={name}
-              className="w-24 h-24 rounded-full border-2 border-background object-cover ring-4 ring-emerald-500/20"
+              className="w-24 h-24 rounded-full border-2 border-background object-cover"
             />
           ) : (
-            <div className="flex items-center justify-center w-24 h-24 rounded-full bg-background text-foreground/80 border-2 border-border text-3xl font-bold ring-4 ring-emerald-500/20">
+            <div className="flex items-center justify-center w-24 h-24 rounded-full bg-background text-foreground/80 border-2 border-border text-3xl font-bold">
               {initials}
             </div>
           )}
-          <span className="absolute -bottom-2 -right-2 flex items-center justify-center w-10 h-10 rounded-full border-[3px] border-background bg-emerald-500 text-white shadow-sm">
-            <Trophy className="w-5 h-5" />
-          </span>
         </div>
         
-        <div className="flex flex-col items-center md:items-start gap-1.5 flex-1">
-          <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold text-foreground">{name}</h2>
-            <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-              <Star className="w-3 h-3" />
-              Elite
-            </span>
-          </div>
-          <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
-            Level 100 Grandmaster
-          </span>
-          <p className="text-sm text-muted-foreground text-center md:text-left max-w-md mt-1">
-            Top 1% of Jarvis AI Academy developers. Core contributor to open source.
+        <div className="flex flex-col items-center md:items-start gap-1.5 flex-1 justify-center h-24">
+          <h2 className="text-2xl font-bold text-foreground">{name}</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Jarvis AI Academy Member
           </p>
-          
-          <div className="flex items-center gap-3 mt-3 w-full max-w-xs">
-            <div className="h-2 flex-1 rounded-full bg-muted overflow-hidden">
-              <div className="h-full bg-emerald-500 w-full" />
-            </div>
-            <span className="text-xs font-mono font-medium text-muted-foreground">MAX</span>
-          </div>
         </div>
-      </div>
-
-      {/* Gamification Stats */}
-      <div className="flex flex-wrap gap-4">
-        <StatBadge 
-          icon={<Zap className="w-4 h-4" />}
-          label="Total XP"
-          value="99,999"
-          colorClass="bg-purple-500/10 text-purple-600 dark:text-purple-400"
-        />
-        <StatBadge 
-          icon={<Code className="w-4 h-4" />}
-          label="Projects Built"
-          value="42"
-          colorClass="bg-blue-500/10 text-blue-600 dark:text-blue-400"
-        />
-        <StatBadge 
-          icon={<Award className="w-4 h-4" />}
-          label="Super10 Cohort"
-          value="#1"
-          colorClass="bg-amber-500/10 text-amber-600 dark:text-amber-400"
-        />
       </div>
 
       {/* Account details */}
