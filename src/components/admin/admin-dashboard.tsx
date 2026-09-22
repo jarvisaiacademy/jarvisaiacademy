@@ -609,18 +609,18 @@ export function AdminDashboard({
     );
   };
 
+  // One place decides a person's role, so the badge on a row and the section that row is listed
+  // under can never disagree. Admin outranks faculty.
+  //
   // Faculty membership is a `teachers/{uid}` document, not a value on `users`: `role` is
   // recomputed from the admin allowlist on every sign-in (see `src/data/teachers.ts`), so a
   // stored "teacher" would revert on that person's next visit. Deriving the third role from
   // the roster the Teachers tab already owns is also what stops the two tabs disagreeing.
+  const roleOf = (student: StudentRecord): keyof typeof ROLE_BADGE =>
+    student.role === "admin" ? "admin" : teachersById.has(student.id) ? "teacher" : "student";
+
   const renderRole = (student: StudentRecord) => {
-    const role: keyof typeof ROLE_BADGE =
-      student.role === "admin"
-        ? "admin"
-        : teachersById.has(student.id)
-          ? "teacher"
-          : "student";
-    const { label, icon: Icon, badge } = ROLE_BADGE[role];
+    const { label, icon: Icon, badge } = ROLE_BADGE[roleOf(student)];
 
     return (
       <span
@@ -632,9 +632,146 @@ export function AdminDashboard({
     );
   };
 
+  // The roster split three ways, each account in exactly one section. Built from `roleOf` so a
+  // section holds everybody whose badge says that role, and nobody twice.
+  const rosterByRole: Record<keyof typeof ROLE_BADGE, StudentRecord[]> = {
+    student: [],
+    teacher: [],
+    admin: [],
+  };
+  for (const student of students) rosterByRole[roleOf(student)].push(student);
+
+  // One section per role, so every account is listed under the role it holds rather than all of
+  // them under a "Students" heading. Same table three times, driven by one renderer.
+  const renderRosterSection = ({
+    role,
+    heading,
+    blurb,
+    empty,
+  }: {
+    role: keyof typeof ROLE_BADGE;
+    heading: string;
+    blurb: string;
+    empty: string;
+  }) => {
+    const rows = rosterByRole[role];
+    const { icon: Icon } = ROLE_BADGE[role];
+
+    return (
+      <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden flex flex-col">
+        <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-200 dark:border-white/10">
+          <div>
+            <h3 className="text-base font-semibold text-neutral-900 dark:text-white">{heading}</h3>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{blurb}</p>
+          </div>
+          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 text-xs font-medium self-start sm:self-auto">
+            <Icon className="w-3.5 h-3.5" />
+            {rows.length} {rows.length === 1 ? "Account" : "Accounts"}
+          </span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-neutral-50 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 border-b border-neutral-200 dark:border-white/10 font-medium">
+                <th className="py-3 px-4 sm:px-6">Account</th>
+                <th className="py-3 px-4 sm:px-6">Role</th>
+                <th className="py-3 px-4 sm:px-6">Plan</th>
+                <th className="py-3 px-4 sm:px-6">Status</th>
+                <th className="py-3 px-4 sm:px-6">Super10</th>
+                <th className="py-3 px-4 sm:px-6">Last Sign-in</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-200 dark:divide-white/5">
+              {rows.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-8 text-neutral-400">
+                    {empty}
+                  </td>
+                </tr>
+              ) : (
+                rows.map((student) => (
+                  <tr
+                    key={student.id}
+                    className="hover:bg-neutral-50/80 dark:hover:bg-white/5 transition-colors"
+                  >
+                    <td className="py-3.5 px-4 sm:px-6">
+                      <div className="flex items-center gap-3">
+                        <UserAvatar user={student} />
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-semibold text-neutral-900 dark:text-white truncate">
+                            {student.name || "—"}
+                          </span>
+                          <span className="text-[11px] text-neutral-500 truncate">
+                            {student.email}
+                          </span>
+                          {/* The rest of what the Gmail account gave us. Storing it
+                              is only worth anything if an admin can read it. */}
+                          <span className="flex items-center gap-1.5 text-[10px] text-neutral-400">
+                            {student.signInProvider && <span>{student.signInProvider}</span>}
+                            {student.emailVerified && (
+                              <span className="inline-flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400">
+                                <Check className="w-2.5 h-2.5" />
+                                verified
+                              </span>
+                            )}
+                            {student.createdAt && (
+                              <span>since {new Date(student.createdAt).getFullYear()}</span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="py-3.5 px-4 sm:px-6">{renderRole(student)}</td>
+
+                    <td className="py-3.5 px-4 sm:px-6 text-neutral-600 dark:text-neutral-400">
+                      {student.plan || "—"}
+                    </td>
+
+                    <td className="py-3.5 px-4 sm:px-6">{renderCandidateStatus(student)}</td>
+
+                    <td className="py-3.5 px-4 sm:px-6">
+                      <button
+                        type="button"
+                        disabled={busyCandidateId === student.id}
+                        onClick={() => handleToggleSuper10(student.id, student.is_super10 === true)}
+                        aria-pressed={student.is_super10 === true}
+                        title={
+                          student.is_super10
+                            ? "Remove the Super10 flag"
+                            : "Grant the Super10 flag"
+                        }
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors cursor-pointer disabled:opacity-50 ${
+                          student.is_super10
+                            ? "bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30"
+                            : "bg-neutral-100 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-white/10 hover:text-amber-600 dark:hover:text-amber-400"
+                        }`}
+                      >
+                        <Star
+                          className={`w-3 h-3 ${student.is_super10 ? "fill-current" : ""}`}
+                        />
+                        {student.is_super10 ? "Super10" : "—"}
+                      </button>
+                    </td>
+
+                    <td className="py-3.5 px-4 sm:px-6 text-neutral-500 text-[11px]">
+                      {formatSignIn(student.lastLoginAt)}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col min-h-screen w-full bg-neutral-50 dark:bg-[#121212] text-neutral-900 dark:text-neutral-100 overflow-y-auto">
       {/* Top Header */}
+
       <header className="sticky top-0 z-30 flex shrink-0 items-center justify-between px-3 sm:px-6 h-14 bg-white/90 dark:bg-[#181818]/90 backdrop-blur-md border-b border-neutral-200 dark:border-white/10 select-none">
         <div className="flex flex-1 items-center min-w-[40px]">
           {!sidebarOpen && onToggleSidebar && (
@@ -1144,130 +1281,41 @@ export function AdminDashboard({
             {/* Who has an account, as distinct from who has paid for something. Every
                 row here is a Google sign-in — `upsertStudentRecord` writes one doc per
                 account on auth state change — so a learner can appear here having never
-                enrolled, and that is the point of the list. */}
-            <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden flex flex-col">
-              <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-200 dark:border-white/10">
-                <div>
-                  <h3 className="text-base font-semibold text-neutral-900 dark:text-white">
-                    Registered Students
-                  </h3>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                    Accounts created by signing in with Google.
-                  </p>
-                </div>
-                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 text-xs font-medium self-start sm:self-auto">
-                  <Users className="w-3.5 h-3.5" />
-                  {students.length} {students.length === 1 ? "Account" : "Accounts"}
-                </span>
+                enrolled, and that is the point of the list.
+
+                Listed one section per role, so every account sits under the role it holds.
+                The roster loads once, so the wait and the failure are stated once here
+                rather than three times over. */}
+            {studentsError ? (
+              <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 text-center text-xs text-amber-600 dark:text-amber-400">
+                Could not load the roster right now.
               </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-neutral-50 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 border-b border-neutral-200 dark:border-white/10 font-medium">
-                      <th className="py-3 px-4 sm:px-6">Student Learner</th>
-                      <th className="py-3 px-4 sm:px-6">Role</th>
-                      <th className="py-3 px-4 sm:px-6">Plan</th>
-                      <th className="py-3 px-4 sm:px-6">Status</th>
-                      <th className="py-3 px-4 sm:px-6">Super10</th>
-                      <th className="py-3 px-4 sm:px-6">Last Sign-in</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-200 dark:divide-white/5">
-                    {studentsLoading ? (
-                      <tr>
-                        <td colSpan={6} className="text-center py-8 text-neutral-400">
-                          Loading registered students...
-                        </td>
-                      </tr>
-                    ) : studentsError ? (
-                      <tr>
-                        <td colSpan={6} className="text-center py-8 text-amber-600 dark:text-amber-400">
-                          Could not load the roster right now.
-                        </td>
-                      </tr>
-                    ) : students.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="text-center py-8 text-neutral-400">
-                          No accounts yet — nobody has signed in with Google.
-                        </td>
-                      </tr>
-                    ) : (
-                      students.map((student) => (
-                        <tr
-                          key={student.id}
-                          className="hover:bg-neutral-50/80 dark:hover:bg-white/5 transition-colors"
-                        >
-                          <td className="py-3.5 px-4 sm:px-6">
-                            <div className="flex items-center gap-3">
-                              <UserAvatar user={student} />
-                              <div className="flex flex-col min-w-0">
-                                <span className="font-semibold text-neutral-900 dark:text-white truncate">
-                                  {student.name || "—"}
-                                </span>
-                                <span className="text-[11px] text-neutral-500 truncate">
-                                  {student.email}
-                                </span>
-                                {/* The rest of what the Gmail account gave us. Storing it
-                                    is only worth anything if an admin can read it. */}
-                                <span className="flex items-center gap-1.5 text-[10px] text-neutral-400">
-                                  {student.signInProvider && <span>{student.signInProvider}</span>}
-                                  {student.emailVerified && (
-                                    <span className="inline-flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400">
-                                      <Check className="w-2.5 h-2.5" />
-                                      verified
-                                    </span>
-                                  )}
-                                  {student.createdAt && (
-                                    <span>since {new Date(student.createdAt).getFullYear()}</span>
-                                  )}
-                                </span>
-                              </div>
-                            </div>
-                          </td>
-
-                          <td className="py-3.5 px-4 sm:px-6">{renderRole(student)}</td>
-
-                          <td className="py-3.5 px-4 sm:px-6 text-neutral-600 dark:text-neutral-400">
-                            {student.plan || "—"}
-                          </td>
-
-                          <td className="py-3.5 px-4 sm:px-6">{renderCandidateStatus(student)}</td>
-
-                          <td className="py-3.5 px-4 sm:px-6">
-                            <button
-                              type="button"
-                              disabled={busyCandidateId === student.id}
-                              onClick={() => handleToggleSuper10(student.id, student.is_super10 === true)}
-                              aria-pressed={student.is_super10 === true}
-                              title={
-                                student.is_super10
-                                  ? "Remove the Super10 flag"
-                                  : "Grant the Super10 flag"
-                              }
-                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors cursor-pointer disabled:opacity-50 ${
-                                student.is_super10
-                                  ? "bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30"
-                                  : "bg-neutral-100 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-white/10 hover:text-amber-600 dark:hover:text-amber-400"
-                              }`}
-                            >
-                              <Star
-                                className={`w-3 h-3 ${student.is_super10 ? "fill-current" : ""}`}
-                              />
-                              {student.is_super10 ? "Super10" : "—"}
-                            </button>
-                          </td>
-
-                          <td className="py-3.5 px-4 sm:px-6 text-neutral-500 text-[11px]">
-                            {formatSignIn(student.lastLoginAt)}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+            ) : studentsLoading ? (
+              <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 text-center text-xs text-neutral-400">
+                Loading accounts...
               </div>
-            </div>
+            ) : (
+              <>
+                {renderRosterSection({
+                  role: "student",
+                  heading: "Students",
+                  blurb: "Learners who signed in with Google. Enrolling is separate.",
+                  empty: "No learner accounts yet — nobody has signed in with Google.",
+                })}
+                {renderRosterSection({
+                  role: "admin",
+                  heading: "Admins",
+                  blurb: "Accounts on the admin allowlist.",
+                  empty: "No admin accounts found.",
+                })}
+                {renderRosterSection({
+                  role: "teacher",
+                  heading: "Teachers",
+                  blurb: "Accounts on the faculty roster, as added from the Teachers tab.",
+                  empty: "No faculty accounts yet — add one from the Teachers tab.",
+                })}
+              </>
+            )}
           </div>
         )}
 
