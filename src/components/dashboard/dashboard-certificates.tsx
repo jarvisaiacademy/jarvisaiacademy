@@ -4,12 +4,28 @@ import React, { useRef, useState } from "react";
 import { motion } from "motion/react";
 import { Award, Lock, Download, ExternalLink, Loader2 } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
-import { useStudentCertificates } from "@/hooks/use-student-certificates";
+import { useStudentEnrollments } from "@/hooks/use-student-enrollments";
+import { CertificateRecord } from "@/hooks/use-student-certificates";
 import { CertificateTemplate } from "@/components/dashboard/certificate-template";
 
 export function DashboardCertificates() {
   const { user } = useAuth();
-  const certificates = useStudentCertificates(user?.email);
+  const enrollments = useStudentEnrollments(user?.email);
+  
+  // Map paid enrollments directly to certificates for the MVP
+  const certificates: CertificateRecord[] = enrollments
+    .filter(e => e.action === "paid")
+    .map(e => ({
+      id: `JAA-2026-${e.id?.substring(0, 4).toUpperCase() || "ABCD"}`,
+      courseId: e.courseId,
+      courseName: e.courseName,
+      studentName: e.studentName,
+      studentEmail: e.studentEmail,
+      issuedAt: new Date(e.timestamp || "2026-09-22T00:00:00Z").toLocaleDateString("en-IN", {
+        day: "numeric", month: "short", year: "numeric"
+      })
+    }));
+
   const certRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [generating, setGenerating] = useState<string | null>(null);
 
