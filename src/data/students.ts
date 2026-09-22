@@ -31,6 +31,28 @@ export interface StudentRecord {
   emailVerified?: boolean;
   signInProvider?: string;
   createdAt?: string;
+  /**
+   * The account's own code to share, derived from the uid. Stored rather than only derived so the
+   * row records the code the learner was actually told, which is what a hand-paid reward has to be
+   * checked against. Absent on an account no sign-in or backfill has reached yet.
+   */
+  referralCode?: string;
+  /** The code this account signed up with. Written once, then fixed — only an admin can move it. */
+  referredByCode?: string;
+  /** The account `referredByCode` belongs to: who the referral reward is owed to. */
+  referredBy?: string;
+  /** ISO timestamp of when the claim was made. Cosmetic; nothing is decided from it. */
+  referredAt?: string;
+}
+
+/**
+ * The rows that carry a referral claim — one per person who signed up with someone's code.
+ *
+ * Shared by the dashboard tab that lists them and the count beside its name in the sidebar, so
+ * the badge cannot disagree with the table it labels.
+ */
+export function referredUsers(users: StudentRecord[]): StudentRecord[] {
+  return users.filter((user) => !!user.referredBy);
 }
 
 export type CandidateStatus = "active" | "inactive" | "banned";

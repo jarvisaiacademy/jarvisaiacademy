@@ -9,12 +9,13 @@ import {
   ShieldCheck,
   GraduationCap,
   Briefcase,
+  Gift,
   Home,
 } from "lucide-react";
 import { useCourses } from "@/providers/courses-provider";
 import { useStudents } from "@/providers/students-provider";
 import { academyKnowledge } from "@/data/academy-knowledge";
-import { accountRoleOf, type AccountRole } from "@/data/students";
+import { accountRoleOf, referredUsers, type AccountRole } from "@/data/students";
 
 export type DashboardTab =
   | "home"
@@ -24,6 +25,7 @@ export type DashboardTab =
   | "courses"
   | "knowledge"
   | "users"
+  | "referrals"
   | "analytics";
 
 interface DashboardSidebarNavProps {
@@ -190,6 +192,17 @@ export function DashboardSidebarNav({
           icon={Users}
           iconActive="text-emerald-400 dark:text-emerald-600"
           badge="Ledger"
+          activeTab={activeTab}
+          onSelect={handleSelect}
+        />
+
+        {/* Referrals: who came in on whose code. */}
+        <NavButton
+          tab="referrals"
+          label="Referrals"
+          icon={Gift}
+          iconActive="text-purple-400 dark:text-purple-600"
+          badge={referredUsers(students).length}
           activeTab={activeTab}
           onSelect={handleSelect}
         />

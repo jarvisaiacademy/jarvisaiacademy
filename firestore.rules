@@ -35,6 +35,45 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == uid;
     }
 
+    // --- a referral claim, on `users` ----------------------------------------
+    //
+    // `referredBy` is the uid the dashboard credits with a ₹3,000 reward, which makes it the one
+    // field here worth forging: naming an arbitrary account as your referrer is exactly how
+    // someone would redirect a payout. So the claim has to name an account that genuinely holds
+    // the code, and that account cannot be your own.
+    //
+    // Clause order is deliberate. The ordinary write is a sign-in upsert that mentions no
+    // referral field at all, and the first clause answers it without reading `referrals` — so the
+    // lookup below is paid for only on the one write that actually makes a claim.
+    function referralClaimIsUnchanged() {
+      return request.resource.data.get('referredByCode', '') == resource.data.get('referredByCode', '')
+        && request.resource.data.get('referredBy', '') == resource.data.get('referredBy', '');
+    }
+
+    function referralClaimIsFresh() {
+      return request.resource.data.get('referredByCode', '') != ''
+        && exists(/databases/$(database)/documents/referrals/$(request.resource.data.referredByCode))
+        && get(/databases/$(database)/documents/referrals/$(request.resource.data.referredByCode)).data.uid == request.resource.data.get('referredBy', '')
+        && request.resource.data.get('referredBy', '') != request.auth.uid;
+    }
+
+    // Written once. A claim already on the row may not be re-pointed or cleared, so an
+    // attribution cannot be shuffled around after the fact — only an admin can move it.
+    function referralUpdateIsHonest() {
+      return referralClaimIsUnchanged()
+        || (resource.data.get('referredByCode', '') == ''
+          && resource.data.get('referredBy', '') == ''
+          && referralClaimIsFresh());
+    }
+
+    // The same claim can arrive as a *create* instead of an update, and that is not a theoretical
+    // path: a hand-written client can sign up, write its own row with a forged `referredBy`
+    // before the app's first upsert, and the upsert's later merge would not remove it. `resource`
+    // does not exist on a create, so this cannot share a definition with the update above.
+    function referralCreateIsHonest() {
+      return request.resource.data.get('referredByCode', '') == '' || referralClaimIsFresh();
+    }
+
     // The roster, and the admin dashboard's candidate pool. A learner owns their row and
     // sees no one else's; only an admin sees the rest.
     match /users/{uid} {
@@ -44,6 +83,7 @@ service cloud.firestore {
       // its own email check, so without it a visitor could store role: 'admin' on their own
       // record and misreport themselves to the dashboard. No access is derived from that
       // field — the rules here are what grant access — but it should not be writable either.
+      //
       // `is_super10` and `is_teacher` are fenced here for the same reason as on the update
       // path below, because a create is the other door onto them: a client that writes its own
       // row before the sign-in upsert gets there could hand itself a seat or a faculty badge.
@@ -53,7 +93,8 @@ service cloud.firestore {
         && (isAdmin()
           || (request.resource.data.role == 'student'
             && request.resource.data.get('is_super10', false) == false
-            && request.resource.data.get('is_teacher', false) == false));
+            && request.resource.data.get('is_teacher', false) == false))
+        && referralCreateIsHonest();
 
       // Separate from create, and this is the whole point of separating them: `resource.data`
       // does not exist on a create, so the two clauses cannot share a line.
@@ -71,7 +112,38 @@ service cloud.firestore {
           && request.resource.data.role == 'student'
           && request.resource.data.get('status', 'active') == resource.data.get('status', 'active')
           && request.resource.data.get('is_super10', false) == resource.data.get('is_super10', false)
-          && request.resource.data.get('is_teacher', false) == resource.data.get('is_teacher', false));
+          && request.resource.data.get('is_teacher', false) == resource.data.get('is_teacher', false)
+          && referralUpdateIsHonest());
+
+      allow delete: if isAdmin();
+    }
+
+    // The referral code index: one document per code, holding the uid it belongs to.
+    //
+    // It exists because `users` reads are `isSelf || isAdmin`, so an account that has just signed
+    // up cannot look up the person who referred them — the code has to be resolvable against
+    // something deliberately readable. That something holds a uid and nothing else, so a code
+    // being semi-public costs no personal data.
+    //
+    // `get` and `list` are split rather than a single `read`: a signed-in learner must be able to
+    // resolve the one code they were given, and must not be able to enumerate every code in play
+    // and help themselves to one.
+    match /referrals/{code} {
+      allow get: if request.auth != null;
+      allow list: if isAdmin();
+
+      // Your own entry, and only your own. On an update the *stored* owner has to be you as
+      // well, or anyone could claim an entry by overwriting it with their own uid.
+      allow create: if isAdmin()
+        || (request.auth != null
+          && request.resource.data.keys().hasOnly(['uid'])
+          && request.resource.data.uid == request.auth.uid);
+
+      allow update: if isAdmin()
+        || (request.auth != null
+          && resource.data.uid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['uid'])
+          && request.resource.data.uid == request.auth.uid);
 
       allow delete: if isAdmin();
     }
