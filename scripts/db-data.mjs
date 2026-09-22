@@ -8,6 +8,7 @@
  *   pnpm db push --yes         # every backup file -> Firestore
  *   pnpm db drop old one --yes # delete those collections outright
  *   pnpm db backfill users --yes  # fill in fields the rules already assume are present
+ *   pnpm db referral-codes --yes  # give every account a referral code, and index it
  *
  * Credentials come from `.env.local` (see `.env.example`). This talks to Firestore with the
  * Admin SDK, so `firestore.rules` does not apply and it can write anything — that is the point
@@ -22,12 +23,20 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { initializeApp, cert, applicationDefault } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const BACKUP_DIR = path.join(projectRoot, "db-backups");
+
+// The derivation is imported rather than restated, so the backfill and the browser cannot
+// disagree about what a code is — a code written here that `/settings` would not derive is a
+// code that resolves to its owner and does not match what they were told to share. Import-free
+// for exactly this reason; Node strips the types (`scripts/seed-content.mjs` does the same).
+const { referralCodeFor } = await import(
+  pathToFileURL(path.join(projectRoot, "src/data/referrals.ts")).href
+);
 
 function loadEnv() {
   for (const file of [".env.local", ".env"]) {
@@ -75,6 +84,7 @@ function usage() {
   pnpm db push [collection ...] --yes   db-backups/<collection>.json -> Firestore
   pnpm db drop <collection ...> --yes   delete those collections outright
   pnpm db backfill users --yes          set fields the rules assume exist
+  pnpm db referral-codes --yes          give every existing account a referral code
 
 With no collection named, pull backs up every collection in the database and push
 restores every backup file it finds. drop always needs the names: there is no
@@ -236,6 +246,103 @@ async function backfill(names, confirmed) {
   console.log(`  ✓ users backfilled`);
 }
 
+// Every existing account a referral code, in the two places it lives: the field on their own row,
+// which is what the dashboard lists, and the `referrals` index document, which is the only way a
+// code can be resolved by someone who knows nothing but the code. `publishReferralCode` writes
+// the same pair on every sign-in; this is the pass that reaches the accounts that signed in
+// before either existed.
+//
+// A code is derived from the uid, so there is nothing to generate and nothing to make unique —
+// which is most of why this is a short script. The one thing it does have to do is refuse to
+// write a collision.
+async function referralCodes(confirmed, names) {
+  if (names.length) {
+    console.error(`referral-codes takes no arguments; got: ${names.join(", ")}.`);
+    process.exit(1);
+  }
+
+  // Both sides read before anything is written. A collision can only be found by looking, and the
+  // second write of one code silently moves it to another account and the ₹3,000 with it.
+  const [users, index] = await Promise.all([
+    db.collection("users").get(),
+    db.collection("referrals").get(),
+  ]);
+  const storedIndex = new Map(index.docs.map((doc) => [doc.id, doc.data().uid]));
+
+  const codeOwners = new Map();
+  const collisions = [];
+  const userWrites = [];
+
+  users.forEach((doc) => {
+    const code = referralCodeFor(doc.id);
+    const holder = codeOwners.get(code);
+    if (holder) {
+      collisions.push(`${code} is derived by both ${holder} and ${doc.id}`);
+      return;
+    }
+    codeOwners.set(code, doc.id);
+    if (doc.data().referralCode !== code) userWrites.push({ ref: doc.ref, code });
+  });
+
+  const indexWrites = [];
+  for (const [code, uid] of codeOwners) {
+    const stored = storedIndex.get(code);
+    // The same failure from the other direction: an entry already held by a different account,
+    // which only an older format or a hand-edited document could have produced.
+    if (stored !== undefined && stored !== uid) {
+      collisions.push(`${code} is held by ${uid} but indexed to ${stored}`);
+      continue;
+    }
+    if (stored !== uid) indexWrites.push({ code, uid });
+  }
+
+  if (collisions.length) {
+    console.error("Two accounts would share a code, so nothing was written:");
+    for (const line of collisions) console.error(`  ${line}`);
+    console.error("\nTwo accounts with one code means a reward credited to the wrong referrer.");
+    console.error("Renaming an account is not possible; a code is derived from the uid, and the");
+    console.error("uid is Firestore's. Resolve this by hand, and deliberately.");
+    process.exit(1);
+  }
+
+  // An entry with no account behind it resolves to a uid that no longer exists — the code is
+  // dead weight and a claim against it credits nobody. Reported rather than deleted: removing
+  // data is a deliberate act, not a side effect of a backfill.
+  const orphans = [...storedIndex.keys()].filter((code) => !codeOwners.has(code));
+
+  console.log(`Will set a code on the ${userWrites.length} of ${users.size} accounts that lack one:`);
+  console.log(
+    `  users        ${String(userWrites.length).padStart(5)} / ${users.size} docs` +
+      (userWrites.length ? "" : "  — every account already has its own code")
+  );
+  console.log(`  referrals    ${String(indexWrites.length).padStart(5)} index docs`);
+  if (orphans.length) {
+    console.log(`  ${orphans.length} index docs belong to no account: ${orphans.join(", ")}`);
+  }
+
+  if (!userWrites.length && !indexWrites.length) {
+    console.log("\nNothing to backfill.");
+    return;
+  }
+
+  if (!confirmed) {
+    console.error("\nNothing written. Re-run with --yes to confirm the write.");
+    process.exit(1);
+  }
+
+  const writer = db.bulkWriter();
+  // merge: true on both, so an admin's edits to the rest of the row and anything else already on
+  // the index document survive. Only these two fields are this script's business.
+  for (const write of userWrites) {
+    writer.set(write.ref, { referralCode: write.code }, { merge: true });
+  }
+  for (const write of indexWrites) {
+    writer.set(db.collection("referrals").doc(write.code), { uid: write.uid }, { merge: true });
+  }
+  await writer.close();
+  console.log(`  ✓ referral codes backfilled`);
+}
+
 const envFile = loadEnv();
 const emulator = process.env.FIRESTORE_EMULATOR_HOST;
 const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
@@ -244,7 +351,7 @@ const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
 
 const [command, ...rest] = process.argv.slice(2);
-if (!["pull", "push", "drop", "backfill"].includes(command)) {
+if (!["pull", "push", "drop", "backfill", "referral-codes"].includes(command)) {
   usage();
   process.exit(command ? 1 : 0);
 }
@@ -286,6 +393,8 @@ try {
     await drop(names, rest.includes("--yes"));
   } else if (command === "backfill") {
     await backfill(names, rest.includes("--yes"));
+  } else if (command === "referral-codes") {
+    await referralCodes(rest.includes("--yes"), names);
   } else {
     await push(names, rest.includes("--yes"));
   }

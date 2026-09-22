@@ -45,6 +45,7 @@ import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
 import { ThemeSwitcher } from "@/components/layout/theme-switcher";
 import { UserProfile } from "@/components/layout/user-profile";
 import { AdminKnowledge } from "@/components/admin/admin-knowledge";
+import { AdminReferrals } from "@/components/admin/admin-referrals";
 import { Select } from "@/components/ui/select";
 import { PageHeader } from "@/components/ui/page-header";
 import { TablePagination } from "@/components/ui/table-pagination";
@@ -1555,6 +1556,11 @@ export function AdminDashboard({
         {/* ANSWER BOOK — what the assistant replies with, read-only */}
         {activeTab === "knowledge" && (
           <AdminKnowledge onHome={() => setActiveTab("home")} />
+        )}
+
+        {/* REFERRALS — who came in on whose code, read-only */}
+        {activeTab === "referrals" && (
+          <AdminReferrals onHome={() => setActiveTab("home")} />
         )}
 
         {/* REVENUE & ANALYTICS */}
