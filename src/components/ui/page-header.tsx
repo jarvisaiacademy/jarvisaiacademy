@@ -1,0 +1,93 @@
+"use client";
+
+import React from "react";
+import { ArrowLeft, ChevronRight } from "lucide-react";
+
+/**
+ * One crumb of the trail. The last crumb is the page you are on, so it carries no
+ * `onSelect` and renders as plain text; every crumb before it is a step back up.
+ */
+export interface Crumb {
+  label: string;
+  onSelect?: () => void;
+}
+
+interface PageHeaderProps {
+  /** Root first, this page last. */
+  crumbs: Crumb[];
+  /** Leaves the dashboard — the same door the sidebar's "Return to Chat" opens. */
+  onBack: () => void;
+  /**
+   * The page's primary action, on the right. Omitted on a page where nothing can be
+   * created, rather than filled with a disabled button that explains itself.
+   */
+  action?: React.ReactNode;
+}
+
+/**
+ * The header every dashboard page opens with: where you are, the way out, and the one
+ * thing the page is for.
+ *
+ * Shared rather than repeated per page so the three positions cannot drift — a page that
+ * put its create button on the left, or its breadcrumb below the fold, would be a page
+ * users have to re-learn. Keep the anatomy here and pass content.
+ *
+ * The arrow and the crumbs are both buttons, not links: the dashboard swaps panels in
+ * place and keeps its tab in session storage, so there is no URL to point a link at.
+ */
+export function PageHeader({ crumbs, onBack, action }: PageHeaderProps) {
+  return (
+    <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex items-center gap-2 min-w-0">
+        <button
+          type="button"
+          onClick={onBack}
+          title="Back to chat"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/5 transition-colors cursor-pointer shrink-0"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Back</span>
+        </button>
+
+        <nav aria-label="Breadcrumb" className="min-w-0">
+          <ol className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+            {crumbs.map((crumb, index) => {
+              const isCurrent = index === crumbs.length - 1;
+
+              return (
+                <li key={crumb.label} className="flex items-center gap-1.5 min-w-0">
+                  {index > 0 && (
+                    <ChevronRight
+                      aria-hidden="true"
+                      className="w-3 h-3 text-neutral-300 dark:text-neutral-600 shrink-0"
+                    />
+                  )}
+                  {crumb.onSelect && !isCurrent ? (
+                    <button
+                      type="button"
+                      onClick={crumb.onSelect}
+                      className="hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer truncate"
+                    >
+                      {crumb.label}
+                    </button>
+                  ) : (
+                    <span
+                      aria-current={isCurrent ? "page" : undefined}
+                      className="font-semibold text-neutral-900 dark:text-white truncate"
+                    >
+                      {crumb.label}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        </nav>
+      </div>
+
+      {action && <div className="flex items-center gap-2 shrink-0">{action}</div>}
+    </div>
+  );
+}
+
+export default PageHeader;

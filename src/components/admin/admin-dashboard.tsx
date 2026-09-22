@@ -50,6 +50,7 @@ import { UserProfile } from "@/components/layout/user-profile";
 import { AdminKnowledge } from "@/components/admin/admin-knowledge";
 import { AdminSettings } from "@/components/admin/admin-settings";
 import { Select } from "@/components/ui/select";
+import { PageHeader } from "@/components/ui/page-header";
 import { shortcutById } from "@/data/shortcuts";
 import { isTypingTarget, matchesShortcut } from "@/lib/keyboard";
 
@@ -804,6 +805,13 @@ export function AdminDashboard({
 
     return (
       <div className="flex flex-col gap-6">
+        {/* No action: an account is created by signing in with Google, and admin access is an
+            email allowlist, so there is nothing this page could create. */}
+        <PageHeader
+          crumbs={[{ label: "Home", onSelect: () => setActiveTab("home") }, { label: page.title }]}
+          onBack={onBackToChat}
+        />
+
         {/* Header Banner */}
         <div
           className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r border shadow-xs ${page.banner}`}
