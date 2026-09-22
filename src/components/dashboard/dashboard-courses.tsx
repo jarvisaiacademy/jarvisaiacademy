@@ -103,32 +103,47 @@ export function DashboardCourses() {
               {enrollments.length > 0 ? (
                 enrollments.map((record) => {
                   const status = STATUS_STYLES[record.action] ?? STATUS_STYLES.not_paid;
+                  const courseObj = courses.find((c) => c.enrollmentId === record.courseId || c.id === record.courseId);
+                  const description = courseObj?.description || "A comprehensive Jarvis AI Academy programme.";
+
                   return (
                     <button
                       key={`${record.transactionId}-${record.timestamp}`}
                       onClick={() => setSelectedEnrollment(record)}
-                      className="w-full flex items-center justify-between gap-3 px-4 py-3.5 hover:bg-muted/40 transition-colors text-left group"
+                      className="w-full flex items-start justify-between gap-3 px-4 py-3.5 hover:bg-muted/40 transition-colors text-left group"
                     >
-                      <div className="flex items-center gap-3.5 min-w-0">
-                        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-muted text-foreground/80 shrink-0 group-hover:bg-background group-hover:shadow-sm transition-all border border-transparent group-hover:border-border">
+                      <div className="flex items-start gap-3.5 min-w-0">
+                        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-muted text-foreground/80 shrink-0 group-hover:bg-background group-hover:shadow-sm transition-all border border-transparent group-hover:border-border mt-0.5">
                           <GraduationCap className="w-5 h-5" />
                         </div>
                         <div className="flex flex-col min-w-0">
                           <span className="text-sm font-medium text-foreground leading-snug truncate">
                             {record.courseName}
                           </span>
-                          <span className="text-xs text-muted-foreground leading-normal mt-0.5 truncate">
-                            {record.transactionId}
+                          <span className="text-xs text-muted-foreground leading-relaxed mt-1 line-clamp-2 pr-4">
+                            {description}
                           </span>
+                          <div className="flex items-center gap-2 mt-2">
+                            {courseObj?.duration && (
+                              <span className="text-[10px] font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md">
+                                {courseObj.duration}
+                              </span>
+                            )}
+                            {courseObj?.level && (
+                              <span className="text-[10px] font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md">
+                                {courseObj.level}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4 shrink-0">
+                      <div className="flex flex-col items-end gap-2 shrink-0 pt-1">
                         <span
                           className={`text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-full ${status.className}`}
                         >
                           {status.label}
                         </span>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-foreground transition-colors" />
+                        <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-foreground transition-colors mt-auto" />
                       </div>
                     </button>
                   );
