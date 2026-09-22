@@ -89,56 +89,59 @@ export function DashboardCertificates() {
       </div>
 
       {certificates.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="flex flex-col gap-4">
           {certificates.map((cert) => (
             <div
               key={cert.id}
-              className="flex flex-col rounded-xl border border-border bg-card overflow-hidden hover:border-border/80 hover:shadow-sm transition-all"
+              className="flex flex-col sm:flex-row gap-4 p-5 rounded-xl border border-border bg-card hover:border-border/80 hover:shadow-sm transition-all"
             >
-              <div className="p-5 flex flex-col gap-4 flex-1">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
-                    <Award className="w-6 h-6" />
-                  </div>
-                  <span className="text-[10px] font-mono font-semibold px-2 py-1 rounded bg-muted text-muted-foreground">
-                    {cert.id}
+              {/* Course Info */}
+              <div className="flex flex-col min-w-0 flex-1 gap-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    CERT-{cert.id.split("-").pop()}
+                  </span>
+                  <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+                    <Award className="w-3.5 h-3.5" />
+                    Completed
                   </span>
                 </div>
                 
-                <div className="flex flex-col min-w-0">
-                  <h3 className="text-base font-semibold text-foreground leading-tight line-clamp-2">
-                    {cert.courseName}
-                  </h3>
-                  <span className="text-sm text-muted-foreground mt-1">
-                    Issued {cert.issuedAt}
-                  </span>
-                </div>
+                <h3 className="text-lg font-semibold text-foreground leading-tight mt-1">
+                  {cert.courseName}
+                </h3>
+                
+                <p className="text-sm text-muted-foreground">
+                  Issued on {cert.issuedAt}
+                </p>
               </div>
               
-              <div className="grid grid-cols-2 divide-x divide-border border-t border-border bg-muted/20">
+              {/* Actions */}
+              <div className="flex flex-col gap-2 shrink-0 sm:min-w-[200px] justify-center mt-2 sm:mt-0">
                 <button
                   type="button"
                   disabled={generating === cert.id}
                   onClick={() => generateAndDownloadPDF(cert.id)}
-                  className="flex items-center justify-center gap-2 py-3 text-xs font-medium text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {generating === cert.id ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <Download className="w-3.5 h-3.5" />
+                    <Download className="w-4 h-4" />
                   )}
                   {generating === cert.id ? "Generating..." : "Download PDF"}
                 </button>
+                
                 <button
                   type="button"
                   onClick={() => {
                     navigator.clipboard.writeText(window.location.origin + `/dashboard/certificate/${cert.id}`);
                     alert("Verification link copied to clipboard!");
                   }}
-                  className="flex items-center justify-center gap-2 py-3 text-xs font-medium text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
+                  className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-medium border border-border bg-transparent hover:bg-muted/50 transition-colors"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
-                  Copy Link
+                  Copy Verification Link
                 </button>
               </div>
             </div>
