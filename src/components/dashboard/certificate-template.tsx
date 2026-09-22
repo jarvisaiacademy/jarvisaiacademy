@@ -52,10 +52,10 @@ export const CertificateTemplate = forwardRef<HTMLDivElement, CertificateTemplat
         <div className="flex justify-between items-end mt-auto pt-8 border-t border-[#e5e5e5]">
           <div className="flex flex-col gap-1 w-48 text-center">
             <span className="font-serif text-xl italic text-[#262626] border-b border-[#d4d4d4] pb-2">
-              Sugatraj Sarwade
+              Jarvis Academy
             </span>
             <span className="text-xs font-bold uppercase tracking-wider text-[#737373] mt-2">
-              Founder & CEO
+              Program Director
             </span>
           </div>
           
@@ -69,7 +69,7 @@ export const CertificateTemplate = forwardRef<HTMLDivElement, CertificateTemplat
 
           <div className="flex flex-col gap-1 w-48 text-center">
             <span className="font-serif text-xl italic text-[#262626] border-b border-[#d4d4d4] pb-2">
-              Lalit Patil
+              AI Faculty
             </span>
             <span className="text-xs font-bold uppercase tracking-wider text-[#737373] mt-2">
               Lead Instructor
