@@ -44,8 +44,16 @@ service cloud.firestore {
       // its own email check, so without it a visitor could store role: 'admin' on their own
       // record and misreport themselves to the dashboard. No access is derived from that
       // field — the rules here are what grant access — but it should not be writable either.
+      // `is_super10` and `is_teacher` are fenced here for the same reason as on the update
+      // path below, because a create is the other door onto them: a client that writes its own
+      // row before the sign-in upsert gets there could hand itself a seat or a faculty badge.
+      // It may still store the false default — the sign-in backfill does exactly that — and
+      // both read as false when absent, so an ordinary row is unaffected.
       allow create: if isSelf(uid)
-        && (isAdmin() || request.resource.data.role == 'student');
+        && (isAdmin()
+          || (request.resource.data.role == 'student'
+            && request.resource.data.get('is_super10', false) == false
+            && request.resource.data.get('is_teacher', false) == false));
 
       // Separate from create, and this is the whole point of separating them: `resource.data`
       // does not exist on a create, so the two clauses cannot share a line.
