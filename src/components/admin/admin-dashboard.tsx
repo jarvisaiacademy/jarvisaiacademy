@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import Link from "next/link";
 import {
   Users,
   IndianRupee,
@@ -14,19 +15,17 @@ import {
   ExternalLink,
   Award,
   Plus,
+  Eye,
   Pencil,
   Trash2,
   Sparkles,
   BookOpen,
   Layers,
-  X,
   AlertCircle,
   Check,
-  PanelLeft,
   Star,
   Briefcase,
 } from "lucide-react";
-import { MobileMenuIcon } from "@/components/ui/mobile-menu-icon";
 import { useCourses } from "@/providers/courses-provider";
 import { useStudents } from "@/providers/students-provider";
 import { useAuth } from "@/providers/auth-provider";
@@ -42,8 +41,7 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { useToast } from "@/components/ui/toast";
 
 import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
-import { ThemeSwitcher } from "@/components/layout/theme-switcher";
-import { UserProfile } from "@/components/layout/user-profile";
+import { AdminHeader } from "@/components/admin/admin-header";
 import { AdminKnowledge } from "@/components/admin/admin-knowledge";
 import { AdminReferrals } from "@/components/admin/admin-referrals";
 import { Select } from "@/components/ui/select";
@@ -146,7 +144,7 @@ export function AdminDashboard({
   onToggleSidebar,
 }: AdminDashboardProps) {
   const { showToast } = useToast();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const {
     students,
     loading: studentsLoading,
@@ -158,7 +156,6 @@ export function AdminDashboard({
   const {
     firestoreCourses: courses,
     loading: coursesLoading,
-    addCourse,
     editCourse,
     removeCourse,
   } = useCourses();
@@ -169,9 +166,6 @@ export function AdminDashboard({
     const map = new Map(students.map((s) => [s.id, s] as const));
     return map;
   }, [students]);
-
-  // The people a course can be assigned to: the accounts an admin has marked as faculty.
-  const faculty = useMemo(() => students.filter((s) => s.is_teacher), [students]);
 
   const [localTab, setLocalTab] = useState<DashboardTab>("courses");
   const activeTab: DashboardTab = controlledTab || localTab;
@@ -190,32 +184,7 @@ export function AdminDashboard({
   // Courses management state
   const [courseSearch, setCourseSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCourse, setEditingCourse] = useState<CourseItem | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-
-  // Form states for Add / Edit modal
-  const [formId, setFormId] = useState("");
-  const [formNumber, setFormNumber] = useState("");
-  const [formTitle, setFormTitle] = useState("");
-  const [formBannerTitle, setFormBannerTitle] = useState("");
-  const [formBannerSubtitle, setFormBannerSubtitle] = useState("");
-  const [formDescription, setFormDescription] = useState("");
-  const [formCategory, setFormCategory] = useState<CourseItem["category"]>("web");
-  const [formCategoryLabel, setFormCategoryLabel] = useState("Web & Full-Stack");
-  const [formBadge, setFormBadge] = useState("");
-  const [formBadgeType, setFormBadgeType] = useState<CourseItem["badgeType"] | "">("");
-  const [formDuration, setFormDuration] = useState("60 Days (2 Months)");
-  const [formLevel, setFormLevel] = useState("Beginner to Adv");
-  const [formFee, setFormFee] = useState("₹30,000");
-  const [formAmount, setFormAmount] = useState<number>(0);
-  const [formTechStack, setFormTechStack] = useState("");
-  const [formTechIcons, setFormTechIcons] = useState("");
-  const [formTopics, setFormTopics] = useState("");
-  const [formActionPrompt, setFormActionPrompt] = useState("");
-  const [formStatus, setFormStatus] = useState<CourseStatus>("active");
-  const [formTeacherIds, setFormTeacherIds] = useState<string[]>([]);
 
   // Candidate rows are edited on the spot — the two admin-owned fields are the whole
   // edit surface, so a modal would be a dialog around two controls.
@@ -513,141 +482,8 @@ export function AdminDashboard({
     );
   };
 
-  // Open modal for new course
-  const handleOpenAdd = () => {
-    setEditingCourse(null);
-    setFormId("");
-    setFormNumber(String(courses.length + 1).padStart(2, "0"));
-    setFormTitle("");
-    setFormBannerTitle("");
-    setFormBannerSubtitle("");
-    setFormDescription("");
-    setFormCategory("web");
-    setFormCategoryLabel("Web & Full-Stack");
-    setFormBadge("");
-    setFormBadgeType("");
-    setFormDuration("60 Days (2 Months)");
-    setFormLevel("Beginner to Adv");
-    setFormFee("₹30,000");
-    setFormAmount(30000);
-    setFormTechStack("Next.js, React, FastAPI, Python, PostgreSQL");
-    setFormTechIcons("nextjs, react, fastapi, python, postgresql");
-    setFormTopics("Module 1: Architecture\nModule 2: Real-time APIs\nModule 3: Cloud Deployment");
-    setFormActionPrompt("");
-    setFormStatus("active");
-    setFormTeacherIds([]);
-    setIsModalOpen(true);
-  };
-
-  // Open modal for editing existing course
-  const handleOpenEdit = (course: CourseItem) => {
-    setEditingCourse(course);
-    setFormId(course.id);
-    setFormNumber(course.number || "");
-    setFormTitle(course.title);
-    setFormBannerTitle(course.bannerTitle || course.title);
-    setFormBannerSubtitle(course.bannerSubtitle || "");
-    setFormDescription(course.description || "");
-    setFormCategory(course.category);
-    setFormCategoryLabel(course.categoryLabel || "Specialized Program");
-    setFormBadge(course.badge || "");
-    setFormBadgeType(course.badgeType || "");
-    setFormDuration(course.duration || "60 Days");
-    setFormLevel(course.level || "Beginner to Adv");
-    setFormFee(course.fee || "₹30,000");
-    setFormAmount(course.amount ?? 30000);
-    setFormTechStack((course.techStack || []).join(", "));
-    setFormTechIcons((course.techIcons || []).join(", "));
-    setFormTopics((course.topics || []).join("\n"));
-    setFormActionPrompt(course.actionPrompt || `Tell me about the ${course.title} course`);
-    setFormStatus(course.status ?? "active");
-    setFormTeacherIds(course.teacherIds ?? []);
-    setIsModalOpen(true);
-  };
-
-  // Save course (Add or Edit)
-  const handleSaveCourse = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formTitle.trim()) {
-      showToast("Course title is required", "error");
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      const techStackArr = formTechStack
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-
-      const techIconsArr = formTechIcons
-        .split(",")
-        .map((s) => s.trim().toLowerCase())
-        .filter(Boolean);
-
-      const topicsArr = formTopics
-        .split("\n")
-        .map((s) => s.trim())
-        .filter(Boolean);
-
-      if (editingCourse) {
-        await editCourse(editingCourse.id, {
-          number: formNumber.trim() || editingCourse.number,
-          title: formTitle.trim(),
-          bannerTitle: formBannerTitle.trim() || formTitle.trim(),
-          bannerSubtitle: formBannerSubtitle.trim(),
-          description: formDescription.trim(),
-          category: formCategory,
-          categoryLabel: formCategoryLabel.trim(),
-          badge: formBadge.trim() || undefined,
-          badgeType: (formBadgeType as CourseItem["badgeType"]) || undefined,
-          duration: formDuration.trim(),
-          level: formLevel.trim(),
-          fee: formFee.trim(),
-          amount: Number(formAmount) || 0,
-          techStack: techStackArr,
-          techIcons: techIconsArr,
-          topics: topicsArr,
-          actionPrompt:
-            formActionPrompt.trim() || `Tell me about the ${formTitle.trim()} course`,
-          status: formStatus,
-          teacherIds: formTeacherIds,
-        });
-        showToast(`Course "${formTitle}" updated successfully!`, "success");
-      } else {
-        await addCourse({
-          id: formId.trim() || undefined,
-          number: formNumber.trim() || String(courses.length + 1).padStart(2, "0"),
-          title: formTitle.trim(),
-          bannerTitle: formBannerTitle.trim() || formTitle.trim(),
-          bannerSubtitle: formBannerSubtitle.trim(),
-          description: formDescription.trim(),
-          category: formCategory,
-          categoryLabel: formCategoryLabel.trim(),
-          badge: formBadge.trim() || undefined,
-          badgeType: (formBadgeType as CourseItem["badgeType"]) || undefined,
-          duration: formDuration.trim(),
-          level: formLevel.trim(),
-          fee: formFee.trim(),
-          amount: Number(formAmount) || 0,
-          techStack: techStackArr,
-          techIcons: techIconsArr,
-          topics: topicsArr,
-          actionPrompt:
-            formActionPrompt.trim() || `Tell me about the ${formTitle.trim()} course`,
-          status: formStatus,
-          teacherIds: formTeacherIds,
-        });
-        showToast(`New course "${formTitle}" created successfully!`, "success");
-      }
-      setIsModalOpen(false);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to save course";
-      showToast(msg, "error");
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  // Creating and editing are pages now, not modals: this table only links to them. A
+  // twenty-field form is a piece of work worth a URL, refreshable and openable in a tab.
 
   // Delete course
   const handleDeleteCourse = async (courseId: string) => {
@@ -1052,42 +888,9 @@ export function AdminDashboard({
 
   return (
     <div className="flex flex-col min-h-screen w-full bg-neutral-50 dark:bg-[#121212] text-neutral-900 dark:text-neutral-100 overflow-y-auto">
-      {/* Top Header */}
-
-      <header className="sticky top-0 z-30 flex shrink-0 items-center justify-between px-3 sm:px-6 h-14 bg-white/90 dark:bg-[#181818]/90 backdrop-blur-md border-b border-neutral-200 dark:border-white/10 select-none">
-        <div className="flex flex-1 items-center min-w-[40px]">
-          {!sidebarOpen && onToggleSidebar && (
-            <button
-              type="button"
-              onClick={onToggleSidebar}
-              aria-label="Open sidebar"
-              title="Open sidebar (Cmd+B)"
-              className="flex items-center justify-center transition-colors cursor-pointer w-9 h-9 rounded-full bg-neutral-200/80 dark:bg-[#262626] text-neutral-800 dark:text-neutral-100 hover:bg-neutral-300 dark:hover:bg-[#323232] md:w-auto md:h-auto md:p-2 md:rounded-lg md:bg-transparent md:dark:bg-transparent md:text-neutral-500 md:hover:text-neutral-900 md:hover:bg-neutral-200/60 md:dark:text-neutral-400 md:dark:hover:text-white md:dark:hover:bg-white/10 shadow-xs md:shadow-none shrink-0"
-            >
-              <span className="md:hidden flex items-center justify-center">
-                <MobileMenuIcon className="w-4 h-4" />
-              </span>
-              <span className="hidden md:flex items-center justify-center">
-                <PanelLeft className="w-4 h-4" />
-              </span>
-            </button>
-          )}
-        </div>
-
-        <h1 className="text-sm sm:text-base font-bold tracking-tight text-neutral-900 dark:text-white text-center">
-          Admin Control Center
-        </h1>
-
-        {/* The theme control and the identity live here, as they do in the guest
-            header. Both outer groups are flex-1 so the title stays centred whatever
-            width the controls take — the old fixed-width spacer only balanced a
-            36px button. The identity is repeated from the sidebar footer because
-            that footer disappears when the sidebar is collapsed. */}
-        <div className="flex flex-1 items-center justify-end gap-1.5 sm:gap-2.5 min-w-[40px]">
-          <ThemeSwitcher className="shrink-0" />
-          {user && <UserProfile user={user} onLogout={logout} variant="compact" />}
-        </div>
-      </header>
+      {/* Top Header — shared with the course detail page, a route of its own that has no
+          dashboard around it to draw the sidebar toggle. */}
+      <AdminHeader sidebarOpen={sidebarOpen} onToggleSidebar={onToggleSidebar} />
 
       {/* Main Container */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
@@ -1102,14 +905,13 @@ export function AdminDashboard({
             <PageHeader
               crumbs={[{ label: "Home", onSelect: () => setActiveTab("home") }, { label: "Courses" }]}
               action={
-                <button
-                  type="button"
-                  onClick={handleOpenAdd}
+                <Link
+                  href="/admin/courses/new"
                   className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer whitespace-nowrap"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add Course</span>
-                </button>
+                </Link>
               }
             />
 
@@ -1295,14 +1097,24 @@ export function AdminDashboard({
                           {/* Actions */}
                           <td className="py-3.5 px-4 sm:px-6 text-right">
                             <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => handleOpenEdit(course)}
+                              {/* Both of these are links rather than buttons, unlike the
+                                  delete beside them: a course has pages of its own now, so
+                                  these are somewhere a middle-click or a new tab can go. */}
+                              <Link
+                                href={`/admin/courses/${course.id}`}
+                                className="p-1.5 rounded-lg text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                title="View Course"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Link>
+
+                              <Link
+                                href={`/admin/courses/${course.id}/edit`}
                                 className="p-1.5 rounded-lg text-neutral-600 dark:text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors cursor-pointer"
                                 title="Edit Course"
                               >
                                 <Pencil className="w-4 h-4" />
-                              </button>
+                              </Link>
 
                               {deleteConfirmId === course.id ? (
                                 <div className="flex items-center gap-1 bg-red-50 dark:bg-red-500/10 p-1 rounded-lg border border-red-200 dark:border-red-500/30">
@@ -1714,365 +1526,6 @@ export function AdminDashboard({
         )}
 
       </main>
-
-      {/* ADD / EDIT COURSE MODAL */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
-          <div className="relative w-full max-w-2xl max-h-[90vh] bg-white dark:bg-[#1e1e1e] border border-neutral-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-y-auto p-6 flex flex-col gap-5 text-neutral-900 dark:text-white">
-            <div className="flex items-center justify-between pb-3 border-b border-neutral-200 dark:border-white/10">
-              <div className="flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-blue-500" />
-                <h3 className="text-base sm:text-lg font-bold">
-                  {editingCourse ? "Edit Course" : "Create New Course"}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-lg text-neutral-400 hover:text-neutral-700 dark:hover:text-white cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveCourse} className="flex flex-col gap-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Course ID / Slug */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Course Identifier (slug) *
-                  </label>
-                  <input
-                    type="text"
-                    value={formId}
-                    onChange={(e) => setFormId(e.target.value)}
-                    placeholder="e.g. genai-agents"
-                    disabled={!!editingCourse}
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white disabled:opacity-60"
-                  />
-                  <span className="text-[10px] text-neutral-400">
-                    Unique key for routing &amp; Firestore document ID
-                  </span>
-                </div>
-
-                {/* Display Number */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Index / Number (#)
-                  </label>
-                  <input
-                    type="text"
-                    value={formNumber}
-                    onChange={(e) => setFormNumber(e.target.value)}
-                    placeholder="e.g. 13"
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                  />
-                  <span className="text-[10px] text-neutral-400">Used for catalog sorting</span>
-                </div>
-              </div>
-
-              {/* Title */}
-              <div className="flex flex-col gap-1.5">
-                <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                  Course Title *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
-                  placeholder="e.g. Autonomous AI Agents & LangGraph"
-                  className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white font-medium"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Banner Title */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Short Banner Title
-                  </label>
-                  <input
-                    type="text"
-                    value={formBannerTitle}
-                    onChange={(e) => setFormBannerTitle(e.target.value)}
-                    placeholder="e.g. AI Agents & LangGraph"
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                  />
-                </div>
-
-                {/* Banner Subtitle */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Banner Subtitle
-                  </label>
-                  <input
-                    type="text"
-                    value={formBannerSubtitle}
-                    onChange={(e) => setFormBannerSubtitle(e.target.value)}
-                    placeholder="e.g. Multi-Agent Systems · RAG · Python"
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Category */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Category *
-                  </label>
-                  <Select
-                    label="Category"
-                    value={formCategory}
-                    onValueChange={(value) => {
-                      const cat = value as CourseItem["category"];
-                      setFormCategory(cat);
-                      if (cat === "web") setFormCategoryLabel("Web & Full-Stack");
-                      else if (cat === "ai") setFormCategoryLabel("AI & Data Science");
-                      else if (cat === "devops") setFormCategoryLabel("DevOps & Cloud");
-                      else if (cat === "database") setFormCategoryLabel("Database & Systems");
-                      else if (cat === "elite") setFormCategoryLabel("Super10 Elite");
-                    }}
-                    options={[
-                      { value: "web", label: "Web & Full-Stack" },
-                      { value: "ai", label: "AI & Data Science" },
-                      { value: "devops", label: "DevOps & Cloud" },
-                      { value: "database", label: "Database & Systems" },
-                      { value: "elite", label: "Super10 Elite" },
-                    ]}
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                  />
-                </div>
-
-                {/* Category Label */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Category Label
-                  </label>
-                  <input
-                    type="text"
-                    value={formCategoryLabel}
-                    onChange={(e) => setFormCategoryLabel(e.target.value)}
-                    placeholder="e.g. AI & Data Science"
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {/* Duration */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Duration
-                  </label>
-                  <input
-                    type="text"
-                    value={formDuration}
-                    onChange={(e) => setFormDuration(e.target.value)}
-                    placeholder="60 Days (2 Months)"
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                  />
-                </div>
-
-                {/* Level */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Level
-                  </label>
-                  <input
-                    type="text"
-                    value={formLevel}
-                    onChange={(e) => setFormLevel(e.target.value)}
-                    placeholder="Beginner to Adv"
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                  />
-                </div>
-
-                {/* Fee */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Fee (Display &amp; Amount)
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={formFee}
-                      onChange={(e) => setFormFee(e.target.value)}
-                      placeholder="₹30,000"
-                      className="w-1/2 px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white font-semibold"
-                    />
-                    <input
-                      type="number"
-                      value={formAmount}
-                      onChange={(e) => setFormAmount(Number(e.target.value))}
-                      placeholder="0"
-                      className="w-1/2 px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Badge Text */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Badge Text (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={formBadge}
-                    onChange={(e) => setFormBadge(e.target.value)}
-                    placeholder="e.g. Bestseller, 100% Placement"
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                  />
-                </div>
-
-                {/* Badge Type */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Badge Style
-                  </label>
-                  <Select
-                    label="Badge Style"
-                    value={formBadgeType ?? ""}
-                    onValueChange={(value) =>
-                      setFormBadgeType(value as CourseItem["badgeType"] | "")
-                    }
-                    options={[
-                      { value: "", label: "None" },
-                      { value: "bestseller", label: "Bestseller (Cyan/Blue)" },
-                      { value: "elite", label: "Elite (Gold/Amber)" },
-                      { value: "popular", label: "Popular (Indigo/Purple)" },
-                      { value: "ai", label: "AI Special (Violet/Magenta)" },
-                    ]}
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                  />
-                </div>
-              </div>
-
-              {/* Description */}
-              <div className="flex flex-col gap-1.5">
-                <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                  Course Description
-                </label>
-                <textarea
-                  rows={3}
-                  value={formDescription}
-                  onChange={(e) => setFormDescription(e.target.value)}
-                  placeholder="Summary of what candidates will build and master..."
-                  className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                />
-              </div>
-
-              {/* Tech Stack & Icons */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Tech Stack (Comma-separated)
-                  </label>
-                  <input
-                    type="text"
-                    value={formTechStack}
-                    onChange={(e) => setFormTechStack(e.target.value)}
-                    placeholder="Next.js 15, React 19, FastAPI, PostgreSQL"
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Tech Icons (DevIcon keys, comma-separated)
-                  </label>
-                  <input
-                    type="text"
-                    value={formTechIcons}
-                    onChange={(e) => setFormTechIcons(e.target.value)}
-                    placeholder="nextjs, react, fastapi, postgresql, python"
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                  />
-                </div>
-              </div>
-
-              {/* Curriculum Topics */}
-              <div className="flex flex-col gap-1.5">
-                <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                  Curriculum Highlights (One topic per line)
-                </label>
-                <textarea
-                  rows={4}
-                  value={formTopics}
-                  onChange={(e) => setFormTopics(e.target.value)}
-                  placeholder="Next.js 15 Server Components & Actions&#10;FastAPI Async Microservices&#10;PostgreSQL & Schema Optimization"
-                  className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white font-mono text-[11px]"
-                />
-              </div>
-
-              {/* Visibility & Faculty. The status is how a course leaves the public site:
-                  the catalogue, sitemap and /llms.txt all read through getPublicCourses,
-                  which drops anything inactive, and /courses/<slug> then 404s. */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Status
-                  </label>
-                  <StatusSwitch
-                    checked={formStatus === "active"}
-                    onCheckedChange={(next) => setFormStatus(next ? "active" : "inactive")}
-                    label="Course status"
-                  />
-                  <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
-                    Active lists it publicly; inactive hides it from the catalogue, the sitemap
-                    and /llms.txt, and its page 404s.
-                  </span>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Assigned Teachers
-                  </label>
-                  <Select
-                    multiple
-                    label="Assigned teachers"
-                    value={formTeacherIds}
-                    onValueChange={setFormTeacherIds}
-                    options={faculty.map((t) => ({ value: t.id, label: t.name }))}
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                  />
-                  <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
-                    {faculty.length === 0
-                      ? "No faculty yet — mark an account as Teacher on the Teachers tab."
-                      : formTeacherIds.length === 0
-                        ? "No teacher assigned to this course."
-                        : formTeacherIds
-                            .map((id) => faculty.find((t) => t.id === id)?.name ?? id)
-                            .join(", ")}
-                  </span>
-                </div>
-              </div>
-
-              {/* Modal Actions */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-neutral-200 dark:border-white/10">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/5 transition-colors cursor-pointer font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSaving}
-                  className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>{isSaving ? "Saving..." : editingCourse ? "Save Changes" : "Create Course"}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
