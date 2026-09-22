@@ -18,13 +18,11 @@ export function DashboardCertificates() {
     if (!el) return;
     setGenerating(certId);
     try {
-      const html2canvas = (await import("html2canvas")).default;
+      const { toPng } = await import("html-to-image");
       const { jsPDF } = await import("jspdf");
 
-      const canvas = await html2canvas(el, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
+      const dataUrl = await toPng(el, {
+        pixelRatio: 2, // High resolution
         backgroundColor: "#ffffff",
       });
       
@@ -34,8 +32,7 @@ export function DashboardCertificates() {
         format: "a4",
       });
 
-      const imgData = canvas.toDataURL("image/jpeg", 1.0);
-      pdf.addImage(imgData, "JPEG", 0, 0, 297, 210);
+      pdf.addImage(dataUrl, "PNG", 0, 0, 297, 210);
       pdf.save(`Jarvis_AI_Academy_Certificate_${certId}.pdf`);
     } catch (error) {
       console.error("PDF generation failed", error);
