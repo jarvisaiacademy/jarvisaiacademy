@@ -167,6 +167,12 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Certificates: students can read their own, admins can read/write all.
+    match /certificates/{certId} {
+      allow read: if isAdmin() || (request.auth != null && resource.data.studentEmail == request.auth.token.email);
+      allow write: if isAdmin();
+    }
+
     // There is deliberately no stanza for `testimonials`: the alumni are hard-coded in
     // `src/data/testimonials.ts` and no longer read from or written to Firestore, so the
     // catch-all below denies the collection outright. Re-adding a stanza here is part of

@@ -59,15 +59,31 @@ async function seed() {
     },
   ];
 
+  const certificates = [
+    {
+      id: "JAA-2026-" + Math.random().toString(36).substr(2, 4).toUpperCase(),
+      courseId: "super10",
+      courseName: "Super10 Elite AI Program",
+      studentName: NAME,
+      studentEmail: EMAIL,
+      issuedAt: new Date().toLocaleString("en-IN"),
+    }
+  ];
+
   console.log(`Seeding to LIVE project: ${firebaseConfig.projectId}`);
 
   for (const record of enrollments) {
     const docId = `${record.studentEmail}_${record.courseId}`.replace(/[@.]/g, "_");
     await setDoc(doc(db, "enrollments", docId), record, { merge: true });
-    console.log(`  -> Wrote ${record.courseName} (${record.action})`);
+    console.log(`  -> Wrote Enrollment: ${record.courseName} (${record.action})`);
+  }
+  
+  for (const cert of certificates) {
+    await setDoc(doc(db, "certificates", cert.id), cert, { merge: true });
+    console.log(`  -> Wrote Certificate: ${cert.courseName} (${cert.id})`);
   }
 
-  console.log("\n✅ Successfully seeded enrollments to Firestore!");
+  console.log("\n✅ Successfully seeded enrollments & certificates to Firestore!");
 }
 
 seed()
