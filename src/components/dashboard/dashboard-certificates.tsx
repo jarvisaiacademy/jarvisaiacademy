@@ -28,6 +28,7 @@ export function DashboardCertificates() {
 
   const certRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [generating, setGenerating] = useState<string | null>(null);
+  const [selectedCert, setSelectedCert] = useState<CertificateRecord | null>(null);
 
   const generateAndDownloadPDF = async (certId: string) => {
     const el = certRefs.current[certId];
@@ -91,9 +92,10 @@ export function DashboardCertificates() {
       {certificates.length > 0 ? (
         <div className="flex flex-col gap-4">
           {certificates.map((cert) => (
-            <div
+            <button
               key={cert.id}
-              className="flex flex-col sm:flex-row gap-4 p-5 rounded-xl border border-border bg-card hover:border-border/80 hover:shadow-sm transition-all"
+              onClick={() => setSelectedCert(cert)}
+              className="flex flex-col sm:flex-row gap-4 p-5 rounded-xl border border-border bg-card hover:border-border/80 hover:shadow-sm transition-all text-left group"
             >
               {/* Course Info */}
               <div className="flex flex-col min-w-0 flex-1 gap-1.5">
@@ -107,7 +109,7 @@ export function DashboardCertificates() {
                   </span>
                 </div>
                 
-                <h3 className="text-lg font-semibold text-foreground leading-tight mt-1">
+                <h3 className="text-lg font-semibold text-foreground leading-tight mt-1 group-hover:text-emerald-600 transition-colors">
                   {cert.courseName}
                 </h3>
                 
@@ -116,35 +118,11 @@ export function DashboardCertificates() {
                 </p>
               </div>
               
-              {/* Actions */}
-              <div className="flex flex-col gap-2 shrink-0 sm:min-w-[200px] justify-center mt-2 sm:mt-0">
-                <button
-                  type="button"
-                  disabled={generating === cert.id}
-                  onClick={() => generateAndDownloadPDF(cert.id)}
-                  className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {generating === cert.id ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Download className="w-4 h-4" />
-                  )}
-                  {generating === cert.id ? "Generating..." : "Download PDF"}
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(window.location.origin + `/dashboard/certificate/${cert.id}`);
-                    alert("Verification link copied to clipboard!");
-                  }}
-                  className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-medium border border-border bg-transparent hover:bg-muted/50 transition-colors"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  Copy Verification Link
-                </button>
+              {/* Arrow */}
+              <div className="flex items-center justify-center shrink-0 sm:px-4 text-muted-foreground group-hover:text-emerald-600 transition-colors mt-2 sm:mt-0">
+                <span className="text-sm font-medium">View Certificate &rarr;</span>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       ) : (
@@ -163,6 +141,53 @@ export function DashboardCertificates() {
               <span className="font-mono font-medium text-foreground">JAA-2026-XXXX</span>{" "}
               serial and a scannable QR code.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Certificate Modal Overlay */}
+      {selectedCert && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-8 animate-in fade-in duration-200">
+          <div className="relative flex flex-col items-center w-full max-w-5xl gap-6">
+            
+            {/* Action Bar */}
+            <div className="flex items-center justify-between w-full bg-background p-4 rounded-2xl shadow-xl">
+              <div className="flex flex-col">
+                <h3 className="font-semibold text-foreground">{selectedCert.courseName}</h3>
+                <p className="text-xs text-muted-foreground">Certificate ID: {selectedCert.id}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={generating === selectedCert.id}
+                  onClick={() => generateAndDownloadPDF(selectedCert.id)}
+                  className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {generating === selectedCert.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
+                  {generating === selectedCert.id ? "Generating..." : "Download PDF"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCert(null)}
+                  className="py-2 px-4 rounded-lg text-sm font-medium bg-muted text-foreground hover:bg-muted/80 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+
+            {/* Certificate Preview (Scaled down for screen fitting) */}
+            <div className="relative w-full max-w-4xl aspect-[1.414] bg-white rounded-lg overflow-hidden shadow-2xl flex items-center justify-center">
+               <div className="scale-[0.4] sm:scale-[0.6] md:scale-[0.8] lg:scale-[0.95] origin-center">
+                 {/* Re-render the specific template here visually so they can see it */}
+                 <CertificateTemplate cert={selectedCert} />
+               </div>
+            </div>
+            
           </div>
         </div>
       )}
