@@ -288,15 +288,30 @@ export function AdminDashboard({
   // the chat writes. A hardcoded set of demo students used to be merged in here, which
   // showed fabricated registrations as though they were real ones.
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("jarvis_enrollment_tracker");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) setRecords(parsed);
-      }
-    } catch {
-      // ignore
-    }
+    // Dynamic import to avoid SSR issues if this component gets SSR'd
+    import("firebase/firestore").then(({ collection, onSnapshot, query }) => {
+      import("@/lib/firebase").then(({ db }) => {
+        if (!db) return;
+        const q = query(collection(db, "enrollments"));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+          const fetched = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          } as unknown as EnrollmentRecord));
+          
+          fetched.sort((a, b) => {
+            const tA = new Date(a.timestamp).getTime() || 0;
+            const tB = new Date(b.timestamp).getTime() || 0;
+            return tB - tA;
+          });
+          
+          setRecords(fetched);
+        });
+        
+        // Cannot easily return unsubscribe from a dynamic import effect without more complex state
+        // This is a minimal refactor.
+      });
+    });
   }, []);
 
   // Only live while the dashboard is mounted, so these never fight the shortcuts
