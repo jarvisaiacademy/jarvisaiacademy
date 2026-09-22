@@ -35,6 +35,45 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == uid;
     }
 
+    // --- a referral claim, on `users` ----------------------------------------
+    //
+    // `referredBy` is the uid the dashboard credits with a ₹3,000 reward, which makes it the one
+    // field here worth forging: naming an arbitrary account as your referrer is exactly how
+    // someone would redirect a payout. So the claim has to name an account that genuinely holds
+    // the code, and that account cannot be your own.
+    //
+    // Clause order is deliberate. The ordinary write is a sign-in upsert that mentions no
+    // referral field at all, and the first clause answers it without reading `referrals` — so the
+    // lookup below is paid for only on the one write that actually makes a claim.
+    function referralClaimIsUnchanged() {
+      return request.resource.data.get('referredByCode', '') == resource.data.get('referredByCode', '')
+        && request.resource.data.get('referredBy', '') == resource.data.get('referredBy', '');
+    }
+
+    function referralClaimIsFresh() {
+      return request.resource.data.get('referredByCode', '') != ''
+        && exists(/databases/$(database)/documents/referrals/$(request.resource.data.referredByCode))
+        && get(/databases/$(database)/documents/referrals/$(request.resource.data.referredByCode)).data.uid == request.resource.data.get('referredBy', '')
+        && request.resource.data.get('referredBy', '') != request.auth.uid;
+    }
+
+    // Written once. A claim already on the row may not be re-pointed or cleared, so an
+    // attribution cannot be shuffled around after the fact — only an admin can move it.
+    function referralUpdateIsHonest() {
+      return referralClaimIsUnchanged()
+        || (resource.data.get('referredByCode', '') == ''
+          && resource.data.get('referredBy', '') == ''
+          && referralClaimIsFresh());
+    }
+
+    // The same claim can arrive as a *create* instead of an update, and that is not a theoretical
+    // path: a hand-written client can sign up, write its own row with a forged `referredBy`
+    // before the app's first upsert, and the upsert's later merge would not remove it. `resource`
+    // does not exist on a create, so this cannot share a definition with the update above.
+    function referralCreateIsHonest() {
+      return request.resource.data.get('referredByCode', '') == '' || referralClaimIsFresh();
+    }
+
     // The roster, and the admin dashboard's candidate pool. A learner owns their row and
     // sees no one else's; only an admin sees the rest.
     match /users/{uid} {
@@ -44,16 +83,27 @@ service cloud.firestore {
       // its own email check, so without it a visitor could store role: 'admin' on their own
       // record and misreport themselves to the dashboard. No access is derived from that
       // field — the rules here are what grant access — but it should not be writable either.
+      //
+      // `is_super10` and `is_teacher` are fenced here for the same reason as on the update
+      // path below, because a create is the other door onto them: a client that writes its own
+      // row before the sign-in upsert gets there could hand itself a seat or a faculty badge.
+      // It may still store the false default — the sign-in backfill does exactly that — and
+      // both read as false when absent, so an ordinary row is unaffected.
       allow create: if isSelf(uid)
-        && (isAdmin() || request.resource.data.role == 'student');
+        && (isAdmin()
+          || (request.resource.data.role == 'student'
+            && request.resource.data.get('is_super10', false) == false
+            && request.resource.data.get('is_teacher', false) == false))
+        && referralCreateIsHonest();
 
       // Separate from create, and this is the whole point of separating them: `resource.data`
       // does not exist on a create, so the two clauses cannot share a line.
       //
       // An admin may write anything. A learner may update their own row only while leaving
-      // `status` and `is_super10` exactly as stored. Without that, the self-update path that
-      // exists to keep names and avatars fresh would also be a way for a banned candidate to
-      // un-ban themselves — or to award themselves Super10 — from the browser console.
+      // `status`, `is_super10` and `is_teacher` exactly as stored. Without that, the
+      // self-update path that exists to keep names and avatars fresh would also be a way for
+      // a banned candidate to un-ban themselves — or to award themselves Super10, or mark
+      // themselves faculty — from the browser console.
       //
       // `get(field, default)` on both sides makes a merge-write compare the stored value to
       // itself, so a payload that simply omits the field is not read as "changing" it.
@@ -61,32 +111,41 @@ service cloud.firestore {
         || (isSelf(uid)
           && request.resource.data.role == 'student'
           && request.resource.data.get('status', 'active') == resource.data.get('status', 'active')
-          && request.resource.data.get('is_super10', false) == resource.data.get('is_super10', false));
+          && request.resource.data.get('is_super10', false) == resource.data.get('is_super10', false)
+          && request.resource.data.get('is_teacher', false) == resource.data.get('is_teacher', false)
+          && referralUpdateIsHonest());
 
       allow delete: if isAdmin();
     }
 
-    // Teachers. Admin-only even for reads: the record carries a mobile number, and the
-    // public course pages hold teacher *ids* only, so nothing anonymous needs this.
-    match /teachers/{teacherId} {
-      allow read, write: if isAdmin();
-    }
-
-    // Change requests — wording changes an admin wants made to copy that is hard-coded in
-    // `src/`. Admin-only even for reads: a request is an internal note about unreleased
-    // wording, and a requester's screenshot link is nobody else's business.
+    // The referral code index: one document per code, holding the uid it belongs to.
     //
-    // The app only stores and displays these. Applying one is a code change, and nothing
-    // written here reaches the site until a developer ships it.
-    match /changeRequests/{requestId} {
-      allow read, write: if isAdmin();
-    }
+    // It exists because `users` reads are `isSelf || isAdmin`, so an account that has just signed
+    // up cannot look up the person who referred them — the code has to be resolvable against
+    // something deliberately readable. That something holds a uid and nothing else, so a code
+    // being semi-public costs no personal data.
+    //
+    // `get` and `list` are split rather than a single `read`: a signed-in learner must be able to
+    // resolve the one code they were given, and must not be able to enumerate every code in play
+    // and help themselves to one.
+    match /referrals/{code} {
+      allow get: if request.auth != null;
+      allow list: if isAdmin();
 
-    // Course assignments. A learner reads the ones addressed to them, which is the
-    // `where('studentId', '==', uid)` the client already uses, so the query stays provable.
-    match /assignments/{assignmentId} {
-      allow read: if isAdmin() || isSelf(resource.data.studentId);
-      allow write: if isAdmin();
+      // Your own entry, and only your own. On an update the *stored* owner has to be you as
+      // well, or anyone could claim an entry by overwriting it with their own uid.
+      allow create: if isAdmin()
+        || (request.auth != null
+          && request.resource.data.keys().hasOnly(['uid'])
+          && request.resource.data.uid == request.auth.uid);
+
+      allow update: if isAdmin()
+        || (request.auth != null
+          && resource.data.uid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['uid'])
+          && request.resource.data.uid == request.auth.uid);
+
+      allow delete: if isAdmin();
     }
 
     // The catalogue is public content, so reads are open and writes are not.
@@ -104,19 +163,10 @@ service cloud.firestore {
     // catch-all below denies the collection outright. Re-adding a stanza here is part of
     // putting them back in the database.
 
-    // The academy's settings — referral reward, Super10 seat cap, GST rate, GSTIN, the
-    // money-back window. Public read because every one of these is already advertised: the
-    // reward and the seat cap are on the enrolment card, and the GSTIN and the window are
-    // printed on the receipt.
-    //
-    // That is the condition this rule depends on. A value that is not meant to be public —
-    // a margin, an internal cost — must not go in this document without narrowing the read
-    // here to isAdmin(), because a public read exposes the whole document and not just the
-    // fields the app happens to render.
-    match /settings/{docId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
+    // There is deliberately no stanza for `settings` either: the referral reward, the Super10
+    // seat cap, the GST rate and the GSTIN are hard-coded in `src/data/app-settings.ts` and
+    // have no Firestore document. The catch-all denies them, so an old document at
+    // `settings/app` is inert rather than half-live.
 
     // Nothing else is reachable, including any collection added later without a rule here.
     match /{document=**} {

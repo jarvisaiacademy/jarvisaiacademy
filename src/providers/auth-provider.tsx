@@ -5,10 +5,12 @@ import {
   signInWithPopup,
   signOut as firebaseSignOut,
   onAuthStateChanged,
+  getAdditionalUserInfo,
   User as FirebaseUser,
 } from "firebase/auth";
 import { auth, googleProvider, isFirebaseConfigured } from "@/lib/firebase";
 import { upsertStudentRecord } from "@/services/students-service";
+import { publishReferralCode } from "@/services/referral-service";
 
 export interface User {
   id: string;
@@ -24,13 +26,26 @@ export interface User {
   createdAt?: string;
 }
 
+export interface GoogleLoginResult {
+  /** True only when a user session was actually established. */
+  ok: boolean;
+  /**
+   * True only for an account Google has just created, which is what the referral step hangs off.
+   * It has to be the *account's* first sign-in rather than the browser's, or a learner signing in
+   * on a second device would be asked for a code they already gave.
+   */
+  isNewUser: boolean;
+  /** The signed-in account id, or "" when there is no session. Carried here so the caller does
+   * not have to wait for a re-render to learn who just signed in. */
+  uid: string;
+}
+
 interface AuthContextType {
   user: User | null;
   isLoggedIn: boolean;
   isAdmin: boolean;
   authError: string | null;
-  /** Resolves true only when a user session was actually established. */
-  loginWithGoogle: () => Promise<boolean>;
+  loginWithGoogle: () => Promise<GoogleLoginResult>;
   logout: () => Promise<void>;
   clearAuthError: () => void;
 }
@@ -173,16 +188,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signInProvider: user.signInProvider,
       createdAt: user.createdAt,
     });
+    // The account's own code, and the index entry that lets someone who only knows the code find
+    // them. Idempotent, and it belongs on this effect rather than beside the referral prompt:
+    // the prompt only ever runs for a new account, and a code has to exist for every account,
+    // including the ones that predate the feature and the ones that skip the prompt.
+    void publishReferralCode(user.id);
   }, [user]);
 
-  const loginWithGoogle = useCallback(async (): Promise<boolean> => {
+  const loginWithGoogle = useCallback(async (): Promise<GoogleLoginResult> => {
     setAuthError(null);
 
     if (!isFirebaseConfigured || !auth || !googleProvider) {
       setAuthError(
         "Sign-in is unavailable because authentication is not configured. Please contact support."
       );
-      return false;
+      return { ok: false, isNewUser: false, uid: "" };
     }
 
     try {
@@ -200,17 +220,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
       setUser(mappedUser);
       saveUserSession(mappedUser);
-      return true;
+      // Null when the provider gives no such detail; treated as a returning account, since
+      // asking a long-standing learner to re-enter a code is the worse of the two mistakes.
+      const isNewUser = getAdditionalUserInfo(result)?.isNewUser ?? false;
+      return { ok: true, isNewUser, uid: fbUser.uid };
     } catch (err: unknown) {
       const error = err as { code?: string; message?: string };
       const message = describeAuthError(error);
       if (!message) {
         // Visitor dismissed the popup — not a failure worth reporting.
-        return false;
+        return { ok: false, isNewUser: false, uid: "" };
       }
       console.error("[Auth] Google sign-in error:", error);
       setAuthError(message);
-      return false;
+      return { ok: false, isNewUser: false, uid: "" };
     }
   }, []);
 

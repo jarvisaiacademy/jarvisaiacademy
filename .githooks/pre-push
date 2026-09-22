@@ -1,0 +1,15 @@
+#!/bin/sh
+# The same gate as pre-commit, on the way out. A commit can get here without having passed it —
+# `git commit --no-verify`, a rebase, a cherry-pick, a branch made on another machine — and a
+# branch CI cannot build is worth catching before it is a PR rather than after.
+
+if [ ! -d node_modules ]; then
+  echo "pre-push: node_modules is missing, skipping the checks."
+  exit 0
+fi
+
+if ! pnpm check; then
+  echo ""
+  echo "pre-push: pnpm check failed. Fix it, or push with --no-verify if you mean to."
+  exit 1
+fi

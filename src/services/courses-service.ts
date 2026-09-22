@@ -1,21 +1,17 @@
 import {
-  arrayRemove,
-  arrayUnion,
   collection,
   doc,
-  getDoc,
   getDocs,
+  setDoc,
   updateDoc,
   deleteDoc,
   onSnapshot,
   writeBatch,
   query,
-  orderBy,
   Unsubscribe,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { CourseItem, COURSES_DATA } from "@/data/courses";
-import { TEACHERS_COLLECTION } from "@/data/teachers";
 import { checkIsAdmin } from "@/providers/auth-provider";
 
 export const COURSES_COLLECTION = "courses";
@@ -141,18 +137,7 @@ export async function createCourseInFirestore(
     teacherIds: course.teacherIds ?? [],
   };
 
-  const docRef = doc(db, COURSES_COLLECTION, courseId);
-  const teacherIds = fullCourse.teacherIds ?? [];
-
-  // The course and the teachers' own `courseIds` are the join, so they commit together —
-  // see the note on `updateCourseInFirestore`.
-  const batch = writeBatch(db);
-  batch.set(docRef, fullCourse);
-  for (const teacherId of teacherIds) {
-    batch.update(doc(db, TEACHERS_COLLECTION, teacherId), { courseIds: arrayUnion(courseId) });
-  }
-
-  await batch.commit();
+  await setDoc(doc(db, COURSES_COLLECTION, courseId), fullCourse);
   return fullCourse;
 }
 
@@ -160,10 +145,8 @@ export async function createCourseInFirestore(
  * Update an existing course in Firestore.
  * Strictly restricted to verified admins.
  *
- * When the update carries `teacherIds`, the other half of the link is moved in the
- * same batch: each newly assigned teacher gains this course id, each dropped teacher
- * loses it. Skipping this is how the two arrays drift apart — the course would name
- * a teacher who does not name it back.
+ * `teacherIds` lives only on the course. It used to be mirrored onto each teacher's own
+ * `courseIds` inside the same batch, but there are no teacher records to mirror it onto.
  */
 export async function updateCourseInFirestore(
   courseId: string,
@@ -178,27 +161,7 @@ export async function updateCourseInFirestore(
     throw new Error("Firestore is not initialized.");
   }
 
-  const docRef = doc(db, COURSES_COLLECTION, courseId);
-
-  if (!updates.teacherIds) {
-    await updateDoc(docRef, updates);
-    return;
-  }
-
-  const next = updates.teacherIds;
-  const snapshot = await getDoc(docRef);
-  const previous: string[] = snapshot.exists() ? snapshot.data().teacherIds ?? [] : [];
-
-  const batch = writeBatch(db);
-  batch.update(docRef, updates);
-  for (const teacherId of next.filter((id) => !previous.includes(id))) {
-    batch.update(doc(db, TEACHERS_COLLECTION, teacherId), { courseIds: arrayUnion(courseId) });
-  }
-  for (const teacherId of previous.filter((id) => !next.includes(id))) {
-    batch.update(doc(db, TEACHERS_COLLECTION, teacherId), { courseIds: arrayRemove(courseId) });
-  }
-
-  await batch.commit();
+  await updateDoc(doc(db, COURSES_COLLECTION, courseId), updates);
 }
 
 /**

@@ -9,51 +9,59 @@ import {
   ArrowLeft,
   Download,
   Search,
-  ShieldCheck,
   CheckCircle2,
   Clock,
   ExternalLink,
   Award,
-  Filter,
   Plus,
+  Eye,
   Pencil,
   Trash2,
-  Database,
   Sparkles,
   BookOpen,
   Layers,
-  X,
   AlertCircle,
-  Cloud,
   Check,
-  PanelLeft,
   Star,
   Briefcase,
 } from "lucide-react";
-import { MobileMenuIcon } from "@/components/ui/mobile-menu-icon";
-import { siteConfig } from "@/config/site";
 import { useCourses } from "@/providers/courses-provider";
-import { useSettings } from "@/providers/settings-provider";
 import { useStudents } from "@/providers/students-provider";
-import { useTeachers } from "@/providers/teachers-provider";
 import { useAuth } from "@/providers/auth-provider";
 import { updateCandidateInFirestore } from "@/services/students-service";
-import { CandidateStatus, StudentRecord } from "@/data/assignments";
-import { CourseItem, COURSE_CATEGORIES, CourseCategoryId, CourseStatus } from "@/data/courses";
+import { accountRoleOf, CandidateStatus, StudentRecord, type AccountRole } from "@/data/students";
+import { APP_SETTINGS } from "@/data/app-settings";
+import { academyKnowledge } from "@/data/academy-knowledge";
+import { isPublic } from "@/lib/courses-server";
+import {
+  CourseItem,
+  COURSE_CATEGORIES,
+  CourseCategoryId,
+  CourseStatus,
+  stackDisplay,
+} from "@/data/courses";
 import { DevIcon } from "@/components/ui/dev-icon";
 import { StatusSwitch } from "@/components/ui/switch";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { useToast } from "@/components/ui/toast";
 
 import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
-import { ThemeSwitcher } from "@/components/layout/theme-switcher";
-import { UserProfile } from "@/components/layout/user-profile";
-import { AdminAssignments } from "@/components/admin/admin-assignments";
-import { AdminTeachers } from "@/components/admin/admin-teachers";
+import { AdminHeader } from "@/components/admin/admin-header";
 import { AdminKnowledge } from "@/components/admin/admin-knowledge";
-import { AdminChangeRequests } from "@/components/admin/admin-change-requests";
-import { AdminSettings } from "@/components/admin/admin-settings";
+import { AdminReferrals } from "@/components/admin/admin-referrals";
+import { ROLE_BADGE, RoleBadge } from "@/components/admin/role-badge";
 import { Select } from "@/components/ui/select";
+import { PageHeader } from "@/components/ui/page-header";
+import { TablePagination } from "@/components/ui/table-pagination";
+import { usePagedQuery } from "@/hooks/use-paged-query";
+import {
+  buildCoursesQuery,
+  buildRosterQuery,
+  countCourses,
+  countRoster,
+  DEFAULT_PAGE_SIZE,
+  type PageSize,
+} from "@/services/pagination";
 import { shortcutById } from "@/data/shortcuts";
 import { isTypingTarget, matchesShortcut } from "@/lib/keyboard";
 
@@ -82,34 +90,26 @@ function formatSignIn(iso: string): string {
 }
 
 /**
- * The three roles a person can hold on this site, and how each one's badge reads.
- *
- * Teacher is not stored anywhere — see `renderRole`. Sky rather than amber because amber
- * already means Super10 in this same table, and one row must not carry two amber chips.
+ * The framing around each role's roster table. The table is the same three times, so the
+ * words that differ — the page title in the header, and what an empty page means — are
+ * stated once here rather than inline three times.
  */
-const ROLE_BADGE = {
+const ROLE_PAGE = {
+  student: {
+    title: "Students",
+    empty: "No learner accounts yet — nobody has signed in with Google.",
+  },
   admin: {
-    label: "Admin",
-    icon: ShieldCheck,
-    badge:
-      "bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-500/30",
+    title: "Admins",
+    empty: "No admin accounts found.",
   },
   teacher: {
-    label: "Teacher",
-    icon: Briefcase,
-    badge:
-      "bg-sky-50 dark:bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-500/30",
+    title: "Teachers",
+    empty: "No faculty yet — mark an account as Teacher from the Teacher column.",
   },
-  student: {
-    label: "Student",
-    icon: GraduationCap,
-    badge:
-      "bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-white/10",
-  },
-} as const;
+} as const satisfies Record<AccountRole, unknown>;
 
 interface AdminDashboardProps {
-  onBackToChat: () => void;
   activeTab?: DashboardTab;
   onChangeTab?: (tab: DashboardTab) => void;
   sidebarOpen?: boolean;
@@ -117,15 +117,13 @@ interface AdminDashboardProps {
 }
 
 export function AdminDashboard({
-  onBackToChat,
   activeTab: controlledTab,
   onChangeTab,
   sidebarOpen = true,
   onToggleSidebar,
 }: AdminDashboardProps) {
   const { showToast } = useToast();
-  const { settings } = useSettings();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const {
     students,
     loading: studentsLoading,
@@ -136,31 +134,17 @@ export function AdminDashboard({
   // were stored, and saving one failed the write because no such document existed.
   const {
     firestoreCourses: courses,
-    isLiveFromFirebase,
     loading: coursesLoading,
-    addCourse,
     editCourse,
     removeCourse,
-    seedCourses,
   } = useCourses();
-  const { teachers } = useTeachers();
 
-  // Firestore has no joins, so the courses table assembles its own. A teacher is the user its
-  // uid names, which is why the picture comes off `users` and not off the faculty record.
-  const teachersById = useMemo(() => {
-    const map = new Map(teachers.map((t) => [t.id, t] as const));
-    return map;
-  }, [teachers]);
-
+  // Firestore has no joins, so the courses table assembles its own. A course's `teacherIds` are
+  // user ids, and `studentsById` is where their names and pictures come from.
   const studentsById = useMemo(() => {
     const map = new Map(students.map((s) => [s.id, s] as const));
     return map;
   }, [students]);
-
-  // Seeding overwrites the live catalogue from the built-in one, which is a development
-  // action, not something to leave armed on the deployed site. `next dev` is the only
-  // context where this is true; Netlify builds with NODE_ENV=production.
-  const canSeed = process.env.NODE_ENV === "development";
 
   const [localTab, setLocalTab] = useState<DashboardTab>("courses");
   const activeTab: DashboardTab = controlledTab || localTab;
@@ -179,38 +163,65 @@ export function AdminDashboard({
   // Courses management state
   const [courseSearch, setCourseSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCourse, setEditingCourse] = useState<CourseItem | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isSeeding, setIsSeeding] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [seedConfirm, setSeedConfirm] = useState(false);
-
-  // Form states for Add / Edit modal
-  const [formId, setFormId] = useState("");
-  const [formNumber, setFormNumber] = useState("");
-  const [formTitle, setFormTitle] = useState("");
-  const [formBannerTitle, setFormBannerTitle] = useState("");
-  const [formBannerSubtitle, setFormBannerSubtitle] = useState("");
-  const [formDescription, setFormDescription] = useState("");
-  const [formCategory, setFormCategory] = useState<CourseItem["category"]>("web");
-  const [formCategoryLabel, setFormCategoryLabel] = useState("Web & Full-Stack");
-  const [formBadge, setFormBadge] = useState("");
-  const [formBadgeType, setFormBadgeType] = useState<CourseItem["badgeType"] | "">("");
-  const [formDuration, setFormDuration] = useState("60 Days (2 Months)");
-  const [formLevel, setFormLevel] = useState("Beginner to Adv");
-  const [formFee, setFormFee] = useState("₹30,000");
-  const [formAmount, setFormAmount] = useState<number>(0);
-  const [formTechStack, setFormTechStack] = useState("");
-  const [formTechIcons, setFormTechIcons] = useState("");
-  const [formTopics, setFormTopics] = useState("");
-  const [formActionPrompt, setFormActionPrompt] = useState("");
-  const [formStatus, setFormStatus] = useState<CourseStatus>("active");
-  const [formTeacherIds, setFormTeacherIds] = useState<string[]>([]);
 
   // Candidate rows are edited on the spot — the two admin-owned fields are the whole
   // edit surface, so a modal would be a dialog around two controls.
   const [busyCandidateId, setBusyCandidateId] = useState<string | null>(null);
+
+  // The roster's filters. One pair of them, shared by the three role pages — they filter the
+  // same table — and cleared when the page changes, because a query typed while looking at
+  // Students would otherwise keep hiding rows on Teachers with nothing on screen to say so.
+  // Adjusted during render rather than in an effect, so the reset lands in the same commit as
+  // the new tab and the next page never paints a filtered table for a frame.
+  const [rosterQuery, setRosterQuery] = useState("");
+  const [rosterStatus, setRosterStatus] = useState<"all" | CandidateStatus>("all");
+  const [filtersTab, setFiltersTab] = useState(activeTab);
+
+  if (filtersTab !== activeTab) {
+    setFiltersTab(activeTab);
+    setRosterQuery("");
+    setRosterStatus("all");
+  }
+
+  // The roster is three pages that share one table, and exactly one of them is mounted at a
+  // time, so there is one query rather than three. `null` while no role page is open: the hook
+  // then holds nothing and subscribes to nothing.
+  const rosterRole: AccountRole | null =
+    activeTab === "students" ? "student"
+    : activeTab === "teachers" ? "teacher"
+    : activeTab === "admins" ? "admin"
+    : null;
+
+  const rosterPage = usePagedQuery<StudentRecord>({
+    enabled: rosterRole !== null,
+    // The search box is deliberately absent from this key: it narrows the page already loaded,
+    // so folding it in would re-run the query on every keystroke for the same rows.
+    filterKey: `${rosterRole}|${rosterStatus}`,
+    buildQuery: (_page, size, cursor) =>
+      rosterRole ? buildRosterQuery(rosterRole, rosterStatus, size, cursor) : null,
+    count: () => (rosterRole ? countRoster(rosterRole, rosterStatus) : Promise.resolve(0)),
+  });
+
+  const coursePage = usePagedQuery<CourseItem>({
+    enabled: activeTab === "courses",
+    filterKey: `courses|${categoryFilter}`,
+    buildQuery: (_page, size, cursor) => buildCoursesQuery(categoryFilter, size, cursor),
+    count: () => countCourses(categoryFilter),
+  });
+
+  // The ledger is the browser's own localStorage list, so there is no query to page and nothing
+  // to ask Firestore for: it is sliced where it already sits, with the same footer.
+  const [ledgerPage, setLedgerPage] = useState(0);
+  const [ledgerPageSize, setLedgerPageSize] = useState<PageSize>(DEFAULT_PAGE_SIZE);
+  const [ledgerFilters, setLedgerFilters] = useState({
+    search: searchQuery,
+    status: statusFilter,
+  });
+  if (ledgerFilters.search !== searchQuery || ledgerFilters.status !== statusFilter) {
+    setLedgerFilters({ search: searchQuery, status: statusFilter });
+    setLedgerPage(0);
+  }
 
   const handleCandidateStatus = async (uid: string, status: CandidateStatus) => {
     setBusyCandidateId(uid);
@@ -250,6 +261,45 @@ export function AdminDashboard({
       setBusyCandidateId(null);
     }
   };
+
+  // Faculty membership is this flag and nothing else. Marking someone moves them to the
+  // Teachers page, since `accountRoleOf` reads it; unmarking moves them back.
+  const handleToggleTeacher = async (uid: string, current: boolean) => {
+    const next = !current;
+    setBusyCandidateId(uid);
+    try {
+      await updateCandidateInFirestore(uid, { is_teacher: next }, user?.email);
+      showToast(next ? "Marked as faculty" : "Faculty mark removed", "success");
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : "Failed to update candidate", "error");
+    } finally {
+      setBusyCandidateId(null);
+    }
+  };
+
+  // Fills the roster defaults onto rows that predate the sign-in writing them. Those rows are
+  // invisible to the Students page, whose filter is `is_teacher == false` — a `==` never matches
+  // an absent field, so the sidebar counts them and the table cannot list them.
+  //
+  // Only the fields that are missing, so a value an admin set deliberately is never overwritten:
+  // a teacher keeps `true`, a banned candidate keeps `banned`. Once every row carries both, the
+  // loop finds nothing to write and costs one pass over data already in memory.
+  const healedRoster = useRef(false);
+  useEffect(() => {
+    if (healedRoster.current || students.length === 0) return;
+    healedRoster.current = true;
+
+    for (const candidate of students) {
+      const patch: { is_teacher?: boolean; status?: CandidateStatus } = {};
+      if (candidate.is_teacher === undefined) patch.is_teacher = false;
+      if (candidate.status === undefined) patch.status = "active";
+      if (Object.keys(patch).length === 0) continue;
+
+      updateCandidateInFirestore(candidate.id, patch, user?.email).catch((err) => {
+        console.warn("[AdminDashboard] Could not write roster defaults for", candidate.id, err);
+      });
+    }
+  }, [students, user?.email]);
 
   // The ledger is the enrolments that actually happened, read back from the tracker
   // the chat writes. A hardcoded set of demo students used to be merged in here, which
@@ -301,6 +351,18 @@ export function AdminDashboard({
     return matchesSearch && matchesStatus;
   });
 
+  // Sliced after the filters, so the footer counts the filtered set rather than the whole
+  // ledger. `ledgerCurrentPage` is clamped for the case where a filter change shrinks the set
+  // out from under the page you were on — the footer computes its own page count from `total`,
+  // and the two have to agree about which page is on screen. Export CSV still reads
+  // `filteredRecords`: the page is what you are looking at, not what you are allowed to take.
+  const ledgerPageCount = Math.max(1, Math.ceil(filteredRecords.length / ledgerPageSize));
+  const ledgerCurrentPage = Math.min(ledgerPage, ledgerPageCount - 1);
+  const pagedRecords = filteredRecords.slice(
+    ledgerCurrentPage * ledgerPageSize,
+    (ledgerCurrentPage + 1) * ledgerPageSize
+  );
+
   const totalPaidRevenue = records
     .filter((r) => r.action === "paid")
     .reduce((acc, curr) => acc + (curr.amount || 0), 0);
@@ -310,14 +372,14 @@ export function AdminDashboard({
     (r) => r.courseId === "super10" && r.action === "paid"
   ).length;
 
-  // The referral reward the academy advertises and the seat count the Super10 track is capped
-  // at. Both are saved on the Settings tab; the constants that used to sit here could only be
-  // changed by editing this file and deploying.
-  const { referralReward, super10Seats } = settings;
+  // The academy's business figures, hard-coded in `src/data/app-settings.ts`. Changing one is a
+  // code change and a deploy, on purpose: the same numbers are printed on the receipt and the
+  // enrolment card, and an editor that can disagree with the receipt is worse than no editor.
+  const { referralReward, super10Seats } = APP_SETTINGS;
   // Pricing is quoted all-inclusive, so the tax breakdown divides tax back out rather than
-  // adding it on. The settings document holds a percentage — 18, not 0.18 — so the fraction
-  // is derived here, in the one place that needs it.
-  const gstDivisor = 1 + settings.gstRatePercent / 100;
+  // adding it on. `gstRatePercent` is a percentage — 18, not 0.18 — so the fraction is derived
+  // here, in the one place that needs it.
+  const gstDivisor = 1 + APP_SETTINGS.gstRatePercent / 100;
 
   const exportCSV = () => {
     const headers = "TransactionID,StudentName,StudentEmail,Course,Amount,Status,Timestamp\n";
@@ -336,37 +398,38 @@ export function AdminDashboard({
     URL.revokeObjectURL(url);
   };
 
-  // Filter courses
-  const filteredCourses = courses.filter((c) => {
+  // Only the search box narrows this, and only against the rows Firestore returned for the
+  // page. The category is a query constraint now — `buildCoursesQuery` carries it — so it has
+  // already been applied to `coursePage.rows` by the time this runs. Firestore has no substring
+  // match, which is why the search could not move to the server with it.
+  const filteredCourses = coursePage.rows.filter((c) => {
     const query = courseSearch.toLowerCase();
-    const matchesSearch =
-      !query ||
+    if (!query) return true;
+    return (
       c.title.toLowerCase().includes(query) ||
       c.id.toLowerCase().includes(query) ||
       c.description.toLowerCase().includes(query) ||
       c.techStack.some((t) => t.toLowerCase().includes(query)) ||
-      c.topics.some((top) => top.toLowerCase().includes(query));
-
-    const matchesCategory =
-      categoryFilter === "all" || c.category === categoryFilter;
-
-    return matchesSearch && matchesCategory;
+      c.topics.some((top) => top.toLowerCase().includes(query))
+    );
   });
 
   // The teacher cell. `course.teacherIds` is only ids, so each one is resolved against the
   // roster for the name and the account for the picture. A course with none says so rather
   // than showing an empty cell, which reads as a rendering fault.
+  //
+  // Read-only: this used to link to a per-teacher page, which is gone. A teacher is an
+  // account, so the place to act on one is the Teachers page.
   const renderTeacherCell = (course: CourseItem) => {
     const assigned = (course.teacherIds ?? [])
       .map((id) => {
-        const teacher = teachersById.get(id);
         const user = studentsById.get(id);
-        if (!teacher && !user) return null;
+        if (!user) return null;
         return {
           id,
-          name: user?.name || teacher?.name || "Unnamed",
-          email: user?.email,
-          picture: user?.picture,
+          name: user.name || "Unnamed",
+          email: user.email,
+          picture: user.picture,
         };
       })
       .filter((t): t is NonNullable<typeof t> => t !== null);
@@ -381,23 +444,15 @@ export function AdminDashboard({
       <div className="flex items-center gap-2.5">
         <div className="flex -space-x-2 shrink-0">
           {assigned.slice(0, 3).map((teacher) => (
-            <Link
-              key={teacher.id}
-              href={`/admin/teachers/${teacher.id}`}
-              title={teacher.name}
-              className="rounded-full ring-2 ring-white dark:ring-[#1c1c1c] transition-transform hover:z-10 hover:-translate-y-0.5"
-            >
+            <span key={teacher.id} title={teacher.name} className="rounded-full">
               <UserAvatar user={teacher} size="sm" />
-            </Link>
+            </span>
           ))}
         </div>
         <div className="flex flex-col min-w-0">
-          <Link
-            href={`/admin/teachers/${first.id}`}
-            className="font-semibold text-neutral-900 dark:text-white hover:text-amber-600 dark:hover:text-amber-400 truncate transition-colors"
-          >
+          <span className="font-semibold text-neutral-900 dark:text-white truncate">
             {first.name}
-          </Link>
+          </span>
           {rest.length > 0 && (
             <span className="text-[10px] text-neutral-500">+{rest.length} more</span>
           )}
@@ -406,141 +461,8 @@ export function AdminDashboard({
     );
   };
 
-  // Open modal for new course
-  const handleOpenAdd = () => {
-    setEditingCourse(null);
-    setFormId("");
-    setFormNumber(String(courses.length + 1).padStart(2, "0"));
-    setFormTitle("");
-    setFormBannerTitle("");
-    setFormBannerSubtitle("");
-    setFormDescription("");
-    setFormCategory("web");
-    setFormCategoryLabel("Web & Full-Stack");
-    setFormBadge("");
-    setFormBadgeType("");
-    setFormDuration("60 Days (2 Months)");
-    setFormLevel("Beginner to Adv");
-    setFormFee("₹30,000");
-    setFormAmount(30000);
-    setFormTechStack("Next.js, React, FastAPI, Python, PostgreSQL");
-    setFormTechIcons("nextjs, react, fastapi, python, postgresql");
-    setFormTopics("Module 1: Architecture\nModule 2: Real-time APIs\nModule 3: Cloud Deployment");
-    setFormActionPrompt("");
-    setFormStatus("active");
-    setFormTeacherIds([]);
-    setIsModalOpen(true);
-  };
-
-  // Open modal for editing existing course
-  const handleOpenEdit = (course: CourseItem) => {
-    setEditingCourse(course);
-    setFormId(course.id);
-    setFormNumber(course.number || "");
-    setFormTitle(course.title);
-    setFormBannerTitle(course.bannerTitle || course.title);
-    setFormBannerSubtitle(course.bannerSubtitle || "");
-    setFormDescription(course.description || "");
-    setFormCategory(course.category);
-    setFormCategoryLabel(course.categoryLabel || "Specialized Program");
-    setFormBadge(course.badge || "");
-    setFormBadgeType(course.badgeType || "");
-    setFormDuration(course.duration || "60 Days");
-    setFormLevel(course.level || "Beginner to Adv");
-    setFormFee(course.fee || "₹30,000");
-    setFormAmount(course.amount ?? 30000);
-    setFormTechStack((course.techStack || []).join(", "));
-    setFormTechIcons((course.techIcons || []).join(", "));
-    setFormTopics((course.topics || []).join("\n"));
-    setFormActionPrompt(course.actionPrompt || `Tell me about the ${course.title} course`);
-    setFormStatus(course.status ?? "active");
-    setFormTeacherIds(course.teacherIds ?? []);
-    setIsModalOpen(true);
-  };
-
-  // Save course (Add or Edit)
-  const handleSaveCourse = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formTitle.trim()) {
-      showToast("Course title is required", "error");
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      const techStackArr = formTechStack
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-
-      const techIconsArr = formTechIcons
-        .split(",")
-        .map((s) => s.trim().toLowerCase())
-        .filter(Boolean);
-
-      const topicsArr = formTopics
-        .split("\n")
-        .map((s) => s.trim())
-        .filter(Boolean);
-
-      if (editingCourse) {
-        await editCourse(editingCourse.id, {
-          number: formNumber.trim() || editingCourse.number,
-          title: formTitle.trim(),
-          bannerTitle: formBannerTitle.trim() || formTitle.trim(),
-          bannerSubtitle: formBannerSubtitle.trim(),
-          description: formDescription.trim(),
-          category: formCategory,
-          categoryLabel: formCategoryLabel.trim(),
-          badge: formBadge.trim() || undefined,
-          badgeType: (formBadgeType as CourseItem["badgeType"]) || undefined,
-          duration: formDuration.trim(),
-          level: formLevel.trim(),
-          fee: formFee.trim(),
-          amount: Number(formAmount) || 0,
-          techStack: techStackArr,
-          techIcons: techIconsArr,
-          topics: topicsArr,
-          actionPrompt:
-            formActionPrompt.trim() || `Tell me about the ${formTitle.trim()} course`,
-          status: formStatus,
-          teacherIds: formTeacherIds,
-        });
-        showToast(`Course "${formTitle}" updated successfully!`, "success");
-      } else {
-        await addCourse({
-          id: formId.trim() || undefined,
-          number: formNumber.trim() || String(courses.length + 1).padStart(2, "0"),
-          title: formTitle.trim(),
-          bannerTitle: formBannerTitle.trim() || formTitle.trim(),
-          bannerSubtitle: formBannerSubtitle.trim(),
-          description: formDescription.trim(),
-          category: formCategory,
-          categoryLabel: formCategoryLabel.trim(),
-          badge: formBadge.trim() || undefined,
-          badgeType: (formBadgeType as CourseItem["badgeType"]) || undefined,
-          duration: formDuration.trim(),
-          level: formLevel.trim(),
-          fee: formFee.trim(),
-          amount: Number(formAmount) || 0,
-          techStack: techStackArr,
-          techIcons: techIconsArr,
-          topics: topicsArr,
-          actionPrompt:
-            formActionPrompt.trim() || `Tell me about the ${formTitle.trim()} course`,
-          status: formStatus,
-          teacherIds: formTeacherIds,
-        });
-        showToast(`New course "${formTitle}" created successfully!`, "success");
-      }
-      setIsModalOpen(false);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to save course";
-      showToast(msg, "error");
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  // Creating and editing are pages now, not modals: this table only links to them. A
+  // twenty-field form is a piece of work worth a URL, refreshable and openable in a tab.
 
   // Delete course
   const handleDeleteCourse = async (courseId: string) => {
@@ -551,21 +473,6 @@ export function AdminDashboard({
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to delete course";
       showToast(msg, "error");
-    }
-  };
-
-  // Seed the built-in course catalogue into Firestore
-  const handleSeedCourses = async () => {
-    setSeedConfirm(false);
-    setIsSeeding(true);
-    try {
-      const res = await seedCourses();
-      showToast(`Successfully seeded ${res.count} courses!`, "success");
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to seed courses";
-      showToast(msg, "error");
-    } finally {
-      setIsSeeding(false);
     }
   };
 
@@ -609,74 +516,377 @@ export function AdminDashboard({
     );
   };
 
-  // Faculty membership is a `teachers/{uid}` document, not a value on `users`: `role` is
-  // recomputed from the admin allowlist on every sign-in (see `src/data/teachers.ts`), so a
-  // stored "teacher" would revert on that person's next visit. Deriving the third role from
-  // the roster the Teachers tab already owns is also what stops the two tabs disagreeing.
-  const renderRole = (student: StudentRecord) => {
-    const role: keyof typeof ROLE_BADGE =
-      student.role === "admin"
-        ? "admin"
-        : teachersById.has(student.id)
-          ? "teacher"
-          : "student";
-    const { label, icon: Icon, badge } = ROLE_BADGE[role];
+  // The rule itself lives in `src/data/students.ts`, because the sidebar counts people by it
+  // too — the number beside a tab and the number of rows behind it have to be the same number.
+  const renderRole = (student: StudentRecord) => (
+    <RoleBadge role={accountRoleOf(student)} />
+  );
+
+  // The roster split three ways, one page per role, so every account is listed under the role
+  // it holds rather than all of them under a "Students" heading. Built from the same rule the
+  // badge reads, so a page holds everybody whose badge names that role, and nobody twice.
+  const rosterByRole: Record<AccountRole, StudentRecord[]> = {
+    student: [],
+    teacher: [],
+    admin: [],
+  };
+  for (const student of students) rosterByRole[accountRoleOf(student)].push(student);
+
+  // The table on its own. The page below supplies the framing around it, so the markup for a
+  // row exists once for all three roles.
+  const renderRosterTable = (role: AccountRole, empty: string) => {
+    // The page the query returned, not the whole roster: the providers' full arrays are still
+    // what the Home cards and the courses table's teacher names read.
+    const rows = rosterPage.rows;
+
+    // The status is a query constraint (`rosterFilters`), so it is already applied to `rows`.
+    // Only the search narrows anything here, and only within the page — Firestore cannot match
+    // a substring, so a search box that spans the roster is not something a real limit allows.
+    const query = rosterQuery.trim().toLowerCase();
+    const visible = query
+      ? rows.filter((student) =>
+          `${student.name ?? ""} ${student.email ?? ""}`.toLowerCase().includes(query)
+        )
+      : rows;
 
     return (
-      <span
-        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${badge}`}
-      >
-        <Icon className="w-3 h-3" />
-        {label}
-      </span>
+      <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden flex flex-col">
+        {/* The count reads left and the control sits right, the way every other toolbar on the
+            dashboard is laid out. The count is the whole filtered set while the footer below
+            says which slice of it is on screen. */}
+        <div className="flex items-center justify-between gap-3 flex-wrap px-4 sm:px-6 py-3 border-b border-neutral-200 dark:border-white/10">
+          <span className="text-[11px] text-neutral-400">
+            {rosterPage.total} {rosterPage.total === 1 ? "account" : "accounts"}
+          </span>
+
+          <Select
+            label="Filter accounts by status"
+            value={rosterStatus}
+            onValueChange={(next) => setRosterStatus(next as "all" | CandidateStatus)}
+            options={[
+              { value: "all", label: "All Statuses" },
+              { value: "active", label: "Active" },
+              { value: "inactive", label: "Inactive" },
+              { value: "banned", label: "Banned" },
+            ]}
+            className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+          />
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-neutral-50 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 border-b border-neutral-200 dark:border-white/10 font-medium">
+                <th className="py-3 px-4 sm:px-6">Account</th>
+                <th className="py-3 px-4 sm:px-6">Role</th>
+                <th className="py-3 px-4 sm:px-6">Plan</th>
+                <th className="py-3 px-4 sm:px-6">Status</th>
+                <th className="py-3 px-4 sm:px-6">Super10</th>
+                <th className="py-3 px-4 sm:px-6">Teacher</th>
+                <th className="py-3 px-4 sm:px-6">Last Sign-in</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-200 dark:divide-white/5">
+              {visible.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-8 text-neutral-400">
+                    {/* Four different facts, four sentences. A search that hid the page's rows
+                        is not the same as a status nobody holds, and neither is the same as a
+                        roster that is empty. */}
+                    {query
+                      ? "No accounts on this page match your search."
+                      : rosterStatus !== "all"
+                        ? "No accounts hold this status."
+                        : empty}
+                  </td>
+                </tr>
+              ) : (
+                visible.map((student) => (
+                  <tr
+                    key={student.id}
+                    className="hover:bg-neutral-50/80 dark:hover:bg-white/5 transition-colors"
+                  >
+                    <td className="py-3.5 px-4 sm:px-6">
+                      <div className="flex items-center gap-3">
+                        <UserAvatar user={student} />
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-semibold text-neutral-900 dark:text-white truncate">
+                            {student.name || "—"}
+                          </span>
+                          <span className="text-[11px] text-neutral-500 truncate">
+                            {student.email}
+                          </span>
+                          {/* The rest of what the Gmail account gave us. Storing it
+                              is only worth anything if an admin can read it. */}
+                          <span className="flex items-center gap-1.5 text-[10px] text-neutral-400">
+                            {student.signInProvider && <span>{student.signInProvider}</span>}
+                            {student.emailVerified && (
+                              <span className="inline-flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400">
+                                <Check className="w-2.5 h-2.5" />
+                                verified
+                              </span>
+                            )}
+                            {student.createdAt && (
+                              <span>since {new Date(student.createdAt).getFullYear()}</span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="py-3.5 px-4 sm:px-6">{renderRole(student)}</td>
+
+                    <td className="py-3.5 px-4 sm:px-6 text-neutral-600 dark:text-neutral-400">
+                      {student.plan || "—"}
+                    </td>
+
+                    <td className="py-3.5 px-4 sm:px-6">{renderCandidateStatus(student)}</td>
+
+                    <td className="py-3.5 px-4 sm:px-6">
+                      <button
+                        type="button"
+                        disabled={busyCandidateId === student.id}
+                        onClick={() => handleToggleSuper10(student.id, student.is_super10 === true)}
+                        aria-pressed={student.is_super10 === true}
+                        title={
+                          student.is_super10
+                            ? "Remove the Super10 flag"
+                            : "Grant the Super10 flag"
+                        }
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors cursor-pointer disabled:opacity-50 ${
+                          student.is_super10
+                            ? "bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30"
+                            : "bg-neutral-100 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-white/10 hover:text-amber-600 dark:hover:text-amber-400"
+                        }`}
+                      >
+                        <Star
+                          className={`w-3 h-3 ${student.is_super10 ? "fill-current" : ""}`}
+                        />
+                        {student.is_super10 ? "Super10" : "—"}
+                      </button>
+                    </td>
+
+                    <td className="py-3.5 px-4 sm:px-6">
+                      <button
+                        type="button"
+                        disabled={busyCandidateId === student.id}
+                        onClick={() => handleToggleTeacher(student.id, student.is_teacher === true)}
+                        aria-pressed={student.is_teacher === true}
+                        title={
+                          student.is_teacher
+                            ? "Remove the faculty mark"
+                            : "Mark this account as faculty"
+                        }
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors cursor-pointer disabled:opacity-50 ${
+                          student.is_teacher
+                            ? "bg-sky-50 dark:bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-500/30"
+                            : "bg-neutral-100 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-white/10 hover:text-sky-600 dark:hover:text-sky-400"
+                        }`}
+                      >
+                        <Briefcase className="w-3 h-3" />
+                        {student.is_teacher ? "Teacher" : "—"}
+                      </button>
+                    </td>
+
+                    <td className="py-3.5 px-4 sm:px-6 text-neutral-500 text-[11px]">
+                      {formatSignIn(student.lastLoginAt)}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <TablePagination
+          page={rosterPage.page}
+          pageSize={rosterPage.pageSize}
+          total={rosterPage.total}
+          onPageChange={rosterPage.setPage}
+          onPageSizeChange={rosterPage.setPageSize}
+          noun="accounts"
+        />
+      </div>
+    );
+  };
+
+  // One page per role. The roster loads once for the whole dashboard, so each page states the
+  // wait and the failure for itself rather than the three of them sharing a single message.
+  const renderRolePage = (role: AccountRole) => {
+    const page = ROLE_PAGE[role];
+
+    return (
+      <div className="flex flex-col gap-4">
+        {/* Search, not create: an account is created by signing in with Google and admin
+            access is an email allowlist, so there is nothing this page could create. What an
+            admin does here is find one, on a roster that is otherwise a long scroll. */}
+        <PageHeader
+          crumbs={[{ label: "Home", onSelect: () => setActiveTab("home") }, { label: page.title }]}
+          action={
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={rosterQuery}
+                onChange={(e) => setRosterQuery(e.target.value)}
+                placeholder="Search accounts..."
+                aria-label={`Search ${page.title.toLowerCase()}`}
+                className="w-36 sm:w-52 pl-8 pr-3 py-1.5 text-xs rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white focus:outline-hidden focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+          }
+        />
+
+        {rosterPage.error || studentsError ? (
+          <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 text-center text-xs text-amber-600 dark:text-amber-400">
+            {/* A rejected query is usually a composite index the project is missing, and
+                Firestore's own message carries the URL that creates it, so it is worth more
+                than a fixed sentence. */}
+            {rosterPage.error
+              ? "This page could not be queried — see the console for the index it needs."
+              : "Could not load the roster right now."}
+          </div>
+        ) : studentsLoading || rosterPage.loading ? (
+          <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 text-center text-xs text-neutral-400">
+            Loading accounts...
+          </div>
+        ) : (
+          renderRosterTable(role, page.empty)
+        )}
+      </div>
+    );
+  };
+
+  // The overview. Every figure here is counted from what is stored — the roster and the
+  // catalogue — rather than from the browser's own admissions ledger, so Home and the tab a
+  // number belongs to can never disagree about it. The one exception is Super10, which is
+  // counted from the roster but capped from Settings.
+  const renderHome = () => {
+    const super10Accounts = students.filter((s) => s.is_super10 === true).length;
+
+    // One card per number, and one shape for all of them: what it counts, the figure, and a
+    // line saying exactly what was counted, since "Courses: 12" and "Live Courses: 9" would
+    // otherwise be two numbers nobody can reconcile.
+    const cards = [
+      {
+        label: "Accounts",
+        icon: Users,
+        tint: "text-amber-500",
+        value: students.length,
+        hint: "every account that has signed in",
+      },
+      {
+        label: "Admins",
+        icon: ROLE_BADGE.admin.icon,
+        tint: "text-indigo-500",
+        value: rosterByRole.admin.length,
+        hint: "can open this dashboard",
+      },
+      {
+        label: "Teachers",
+        icon: ROLE_BADGE.teacher.icon,
+        tint: "text-sky-500",
+        value: rosterByRole.teacher.length,
+        hint: "marked as faculty",
+      },
+      {
+        label: "Students",
+        icon: ROLE_BADGE.student.icon,
+        tint: "text-emerald-500",
+        value: rosterByRole.student.length,
+        hint: "signed in, no other role",
+      },
+      {
+        label: "Super10",
+        icon: Star,
+        tint: "text-amber-500",
+        value: super10Accounts,
+        hint: `of the ${super10Seats} seats the academy caps`,
+      },
+      {
+        label: "Courses",
+        icon: BookOpen,
+        tint: "text-blue-500",
+        value: courses.length,
+        hint: courses.length > 0 ? "in the stored catalogue" : "nothing stored yet",
+      },
+      {
+        label: "Live Courses",
+        icon: CheckCircle2,
+        tint: "text-emerald-500",
+        // The site's own predicate, not a re-derivation of it: absent status means published,
+        // and a count that disagreed with `/courses` would be worse than no count.
+        value: courses.filter(isPublic).length,
+        hint: "published on the public site",
+      },
+      {
+        label: "Answer Book",
+        icon: Layers,
+        tint: "text-indigo-500",
+        value: Object.keys(academyKnowledge).length,
+        hint: "entries the chat can answer from",
+      },
+    ];
+
+    return (
+      <div className="flex flex-col gap-4">
+        {/* The root of the trail, so the crumb is this page and there is nothing to step up to. */}
+        <PageHeader crumbs={[{ label: "Home" }]} />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {cards.map(({ label, icon: Icon, tint, value, hint }) => (
+            <div
+              key={label}
+              className="p-4 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-2"
+            >
+              <div className="flex items-center justify-between text-xs text-neutral-500">
+                <span>{label}</span>
+                <Icon className={`w-4 h-4 ${tint}`} />
+              </div>
+              <div className="text-2xl font-bold text-neutral-900 dark:text-white">{value}</div>
+              <span className="text-[11px] text-neutral-400">{hint}</span>
+            </div>
+          ))}
+        </div>
+
+        {(studentsLoading || coursesLoading) && (
+          <p className="text-[11px] text-neutral-400">Still loading the rest of the roster...</p>
+        )}
+      </div>
     );
   };
 
   return (
     <div className="flex flex-col min-h-screen w-full bg-neutral-50 dark:bg-[#121212] text-neutral-900 dark:text-neutral-100 overflow-y-auto">
-      {/* Top Header */}
-      <header className="sticky top-0 z-30 flex shrink-0 items-center justify-between px-3 sm:px-6 h-14 bg-white/90 dark:bg-[#181818]/90 backdrop-blur-md border-b border-neutral-200 dark:border-white/10 select-none">
-        <div className="flex flex-1 items-center min-w-[40px]">
-          {!sidebarOpen && onToggleSidebar && (
-            <button
-              type="button"
-              onClick={onToggleSidebar}
-              aria-label="Open sidebar"
-              title="Open sidebar (Cmd+B)"
-              className="flex items-center justify-center transition-colors cursor-pointer w-9 h-9 rounded-full bg-neutral-200/80 dark:bg-[#262626] text-neutral-800 dark:text-neutral-100 hover:bg-neutral-300 dark:hover:bg-[#323232] md:w-auto md:h-auto md:p-2 md:rounded-lg md:bg-transparent md:dark:bg-transparent md:text-neutral-500 md:hover:text-neutral-900 md:hover:bg-neutral-200/60 md:dark:text-neutral-400 md:dark:hover:text-white md:dark:hover:bg-white/10 shadow-xs md:shadow-none shrink-0"
-            >
-              <span className="md:hidden flex items-center justify-center">
-                <MobileMenuIcon className="w-4 h-4" />
-              </span>
-              <span className="hidden md:flex items-center justify-center">
-                <PanelLeft className="w-4 h-4" />
-              </span>
-            </button>
-          )}
-        </div>
-
-        <h1 className="text-sm sm:text-base font-bold tracking-tight text-neutral-900 dark:text-white text-center">
-          Admin Control Center
-        </h1>
-
-        {/* The theme control and the identity live here, as they do in the guest
-            header. Both outer groups are flex-1 so the title stays centred whatever
-            width the controls take — the old fixed-width spacer only balanced a
-            36px button. The identity is repeated from the sidebar footer because
-            that footer disappears when the sidebar is collapsed. */}
-        <div className="flex flex-1 items-center justify-end gap-1.5 sm:gap-2.5 min-w-[40px]">
-          <ThemeSwitcher className="shrink-0" />
-          {user && <UserProfile user={user} onLogout={logout} variant="compact" />}
-        </div>
-      </header>
+      {/* Top Header — shared with the course detail page, a route of its own that has no
+          dashboard around it to draw the sidebar toggle. */}
+      <AdminHeader sidebarOpen={sidebarOpen} onToggleSidebar={onToggleSidebar} />
 
       {/* Main Container */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
+        {/* HOME: the counts */}
+        {activeTab === "home" && renderHome()}
+
         {/* TAB 1: COURSE MANAGEMENT (CRUD) */}
         {activeTab === "courses" && (
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-4">
+            {/* The create button sits in the trail's action column, where every other page
+                puts its one action, rather than beside the search in the toolbar. */}
+            <PageHeader
+              crumbs={[{ label: "Home", onSelect: () => setActiveTab("home") }, { label: "Courses" }]}
+              action={
+                <Link
+                  href="/admin/courses/new"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Course</span>
+                </Link>
+              }
+            />
+
             {/* Summary Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="p-4 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-2">
                 <div className="flex items-center justify-between text-xs text-neutral-500">
                   <span>Total Active Courses</span>
@@ -722,83 +932,38 @@ export function AdminDashboard({
                 </div>
                 <span className="text-[11px] text-neutral-400">Super10 Elite &amp; AWS DevOps</span>
               </div>
-            </div>
+            </div> */}
 
-            {/* Courses Toolbar */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-              <div className="flex flex-1 items-center gap-3">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={courseSearch}
-                    onChange={(e) => setCourseSearch(e.target.value)}
-                    placeholder="Search course title, tech stack, topics..."
-                    className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white focus:outline-hidden focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
-
-                <Select
-                  label="Filter by category"
-                  value={categoryFilter}
-                  onValueChange={setCategoryFilter}
-                  options={[
-                    { value: "all", label: "All Categories" },
-                    { value: "web", label: "Web & Full-Stack" },
-                    { value: "ai", label: "AI & Data Science" },
-                    { value: "devops", label: "DevOps & Cloud" },
-                    { value: "database", label: "Database & Systems" },
-                    { value: "elite", label: "Super10 Elite" },
-                  ]}
-                  className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+            {/* Courses Toolbar. Both controls right-aligned, the filter outermost, so the
+                search reads the same way here as it does in the roster's trail action and in
+                the ledger's card header. */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
+              <div className="relative w-full sm:w-64">
+                <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={courseSearch}
+                  onChange={(e) => setCourseSearch(e.target.value)}
+                  placeholder="Search course title, tech stack, topics..."
+                  aria-label="Search courses"
+                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white focus:outline-hidden focus:ring-1 focus:ring-blue-500"
                 />
               </div>
 
-              <div className="flex items-center gap-2 self-end lg:self-auto">
-                {canSeed && (
-                  <>
-                    {seedConfirm ? (
-                      <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-500/10 p-1 rounded-lg border border-blue-200 dark:border-blue-500/30">
-                        <button
-                          type="button"
-                          onClick={handleSeedCourses}
-                          className="px-2 py-0.5 text-[10px] font-bold bg-blue-600 text-white rounded cursor-pointer"
-                          title="Feed the 12 built-in verified courses into Firestore"
-                        >
-                          Confirm
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setSeedConfirm(false)}
-                          className="px-1 text-[10px] text-neutral-500 cursor-pointer"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={isSeeding}
-                        onClick={() => setSeedConfirm(true)}
-                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-neutral-300 dark:border-white/15 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-white/10 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
-                        title="Feed the built-in verified courses into Firestore"
-                      >
-                        <Database className="w-3.5 h-3.5 text-blue-500" />
-                        <span>{isSeeding ? "Feeding..." : "Feed 12 Verified Courses"}</span>
-                      </button>
-                    )}
-                  </>
-                )}
-
-                <button
-                  type="button"
-                  onClick={handleOpenAdd}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Course</span>
-                </button>
-              </div>
+              <Select
+                label="Filter by category"
+                value={categoryFilter}
+                onValueChange={setCategoryFilter}
+                options={[
+                  { value: "all", label: "All Categories" },
+                  { value: "web", label: "Web & Full-Stack" },
+                  { value: "ai", label: "AI & Data Science" },
+                  { value: "devops", label: "DevOps & Cloud" },
+                  { value: "database", label: "Database & Systems" },
+                  { value: "elite", label: "Super10 Elite" },
+                ]}
+                className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+              />
             </div>
 
             {/* Courses Table */}
@@ -808,7 +973,7 @@ export function AdminDashboard({
                   <thead>
                     <tr className="bg-neutral-50 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 border-b border-neutral-200 dark:border-white/10 font-medium">
                       <th className="py-3 px-4 sm:px-6 w-16">#</th>
-                      <th className="py-3 px-4 sm:px-6">Course Offering</th>
+                      <th className="py-3 px-4 sm:px-6">Courses</th>
                       <th className="py-3 px-4 sm:px-6">Category</th>
                       <th className="py-3 px-4 sm:px-6">Teacher</th>
                       <th className="py-3 px-4 sm:px-6">Tech Stack</th>
@@ -830,30 +995,20 @@ export function AdminDashboard({
 
                           {/* Title & Badge */}
                           <td className="py-3.5 px-4 sm:px-6">
-                            <div className="flex flex-col gap-0.5">
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold text-neutral-900 dark:text-white">
-                                  {course.title}
-                                </span>
-                                {course.badge && (
-                                  <span className="px-2 py-0.2 rounded-full text-[10px] font-semibold bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">
-                                    {course.badge}
-                                  </span>
-                                )}
-                                {/* A static pill said nothing on a row that was fine and left the
-                                    one hiding a course from the site looking like every other
-                                    row. The switch says both, and flips it where it is read. */}
-                                <StatusSwitch
-                                  checked={(course.status ?? "active") === "active"}
-                                  onCheckedChange={(next) =>
-                                    handleCourseStatus(course, next ? "active" : "inactive")
-                                  }
-                                  label={`Visibility of ${course.title}`}
-                                />
-                              </div>
-                              <span className="text-[11px] text-neutral-500 font-mono">
-                                id: {course.id}
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-neutral-900 dark:text-white">
+                                {course.title}
                               </span>
+                              {/* A static pill said nothing on a row that was fine and left the
+                                  one hiding a course from the site looking like every other
+                                  row. The switch says both, and flips it where it is read. */}
+                              <StatusSwitch
+                                checked={(course.status ?? "active") === "active"}
+                                onCheckedChange={(next) =>
+                                  handleCourseStatus(course, next ? "active" : "inactive")
+                                }
+                                label={`Visibility of ${course.title}`}
+                              />
                             </div>
                           </td>
 
@@ -871,7 +1026,7 @@ export function AdminDashboard({
                           {/* Tech Stack */}
                           <td className="py-3.5 px-4 sm:px-6">
                             <div className="flex items-center gap-1.5 flex-wrap max-w-xs">
-                              {course.techIcons && course.techIcons.length > 0
+                              {stackDisplay(course) === "icons"
                                 ? course.techIcons.slice(0, 4).map((icon) => (
                                     <div
                                       key={icon}
@@ -881,7 +1036,7 @@ export function AdminDashboard({
                                       <DevIcon name={icon} size={14} />
                                     </div>
                                   ))
-                                : course.techStack.slice(0, 3).map((tech) => (
+                                : course.techStack.slice(0, 4).map((tech) => (
                                     <span
                                       key={tech}
                                       className="px-1.5 py-0.5 rounded text-[10px] bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-400"
@@ -912,14 +1067,24 @@ export function AdminDashboard({
                           {/* Actions */}
                           <td className="py-3.5 px-4 sm:px-6 text-right">
                             <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => handleOpenEdit(course)}
+                              {/* Both of these are links rather than buttons, unlike the
+                                  delete beside them: a course has pages of its own now, so
+                                  these are somewhere a middle-click or a new tab can go. */}
+                              <Link
+                                href={`/admin/courses/${course.id}`}
+                                className="p-1.5 rounded-lg text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                title="View Course"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Link>
+
+                              <Link
+                                href={`/admin/courses/${course.id}/edit`}
                                 className="p-1.5 rounded-lg text-neutral-600 dark:text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors cursor-pointer"
                                 title="Edit Course"
                               >
                                 <Pencil className="w-4 h-4" />
-                              </button>
+                              </Link>
 
                               {deleteConfirmId === course.id ? (
                                 <div className="flex items-center gap-1 bg-red-50 dark:bg-red-500/10 p-1 rounded-lg border border-red-200 dark:border-red-500/30">
@@ -955,41 +1120,44 @@ export function AdminDashboard({
                     ) : (
                       <tr>
                         <td colSpan={7} className="text-center py-10 text-neutral-400">
-                          {/* An empty store and an empty filter read the same in the table and
-                              mean opposite things, so they are not given the same sentence. */}
+                          {/* An empty store, an empty category and a search that hid the page's
+                              rows read the same in the table and mean opposite things, so they
+                              are not given the same sentence. `courses` is still the whole
+                              stored catalogue, which is what makes the first case knowable. */}
                           {courses.length === 0
                             ? "No courses are stored yet. Add one here, or seed the catalogue."
-                            : "No courses found matching your criteria."}
+                            : courseSearch.trim()
+                              ? "No courses on this page match your search."
+                              : "No courses in this category."}
                         </td>
                       </tr>
                     )}
                   </tbody>
                 </table>
               </div>
+
+              <TablePagination
+                page={coursePage.page}
+                pageSize={coursePage.pageSize}
+                total={coursePage.total}
+                onPageChange={coursePage.setPage}
+                onPageSizeChange={coursePage.setPageSize}
+                noun="courses"
+              />
             </div>
           </div>
         )}
 
         {/* TAB 2: USERS & ADMISSIONS */}
         {activeTab === "users" && (
-          <div className="flex flex-col gap-6">
-            {/* Header Banner */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-emerald-600/10 via-teal-600/10 to-blue-600/10 border border-emerald-500/20 shadow-xs">
-              <div className="flex flex-col gap-1">
-                <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
-                  Learners &amp; Student Admissions
-                </h2>
-                <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
-                  Manage enrolled candidates, transaction IDs, payment verification, and program access.
-                </p>
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-medium">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  {totalPaidStudents} Enrolled Learners
-                </span>
-              </div>
-            </div>
+          <div className="flex flex-col gap-4">
+            <PageHeader
+              crumbs={[
+                { label: "Home", onSelect: () => setActiveTab("home") },
+                // Named for the tab that opens it, not for the heading the banner used to carry.
+                { label: "Users & Admissions" },
+              ]}
+                />
 
             {/* Quick Metrics */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1079,8 +1247,8 @@ export function AdminDashboard({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-200 dark:divide-white/5">
-                    {filteredRecords.length > 0 ? (
-                      filteredRecords.map((rec, idx) => (
+                    {pagedRecords.length > 0 ? (
+                      pagedRecords.map((rec, idx) => (
                         <tr
                           key={idx}
                           className="hover:bg-neutral-50/80 dark:hover:bg-white/5 transition-colors"
@@ -1139,173 +1307,53 @@ export function AdminDashboard({
                   </tbody>
                 </table>
               </div>
+
+              <TablePagination
+                page={ledgerCurrentPage}
+                pageSize={ledgerPageSize}
+                total={filteredRecords.length}
+                onPageChange={setLedgerPage}
+                onPageSizeChange={(size) => {
+                  setLedgerPageSize(size);
+                  setLedgerPage(0);
+                }}
+                noun="records"
+              />
             </div>
 
-            {/* Who has an account, as distinct from who has paid for something. Every
-                row here is a Google sign-in — `upsertStudentRecord` writes one doc per
-                account on auth state change — so a learner can appear here having never
-                enrolled, and that is the point of the list. */}
-            <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden flex flex-col">
-              <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-200 dark:border-white/10">
-                <div>
-                  <h3 className="text-base font-semibold text-neutral-900 dark:text-white">
-                    Registered Students
-                  </h3>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                    Accounts created by signing in with Google.
-                  </p>
-                </div>
-                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 text-xs font-medium self-start sm:self-auto">
-                  <Users className="w-3.5 h-3.5" />
-                  {students.length} {students.length === 1 ? "Account" : "Accounts"}
-                </span>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-neutral-50 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 border-b border-neutral-200 dark:border-white/10 font-medium">
-                      <th className="py-3 px-4 sm:px-6">Student Learner</th>
-                      <th className="py-3 px-4 sm:px-6">Role</th>
-                      <th className="py-3 px-4 sm:px-6">Plan</th>
-                      <th className="py-3 px-4 sm:px-6">Status</th>
-                      <th className="py-3 px-4 sm:px-6">Super10</th>
-                      <th className="py-3 px-4 sm:px-6">Last Sign-in</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-200 dark:divide-white/5">
-                    {studentsLoading ? (
-                      <tr>
-                        <td colSpan={6} className="text-center py-8 text-neutral-400">
-                          Loading registered students...
-                        </td>
-                      </tr>
-                    ) : studentsError ? (
-                      <tr>
-                        <td colSpan={6} className="text-center py-8 text-amber-600 dark:text-amber-400">
-                          Could not load the roster right now.
-                        </td>
-                      </tr>
-                    ) : students.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="text-center py-8 text-neutral-400">
-                          No accounts yet — nobody has signed in with Google.
-                        </td>
-                      </tr>
-                    ) : (
-                      students.map((student) => (
-                        <tr
-                          key={student.id}
-                          className="hover:bg-neutral-50/80 dark:hover:bg-white/5 transition-colors"
-                        >
-                          <td className="py-3.5 px-4 sm:px-6">
-                            <div className="flex items-center gap-3">
-                              <UserAvatar user={student} />
-                              <div className="flex flex-col min-w-0">
-                                <span className="font-semibold text-neutral-900 dark:text-white truncate">
-                                  {student.name || "—"}
-                                </span>
-                                <span className="text-[11px] text-neutral-500 truncate">
-                                  {student.email}
-                                </span>
-                                {/* The rest of what the Gmail account gave us. Storing it
-                                    is only worth anything if an admin can read it. */}
-                                <span className="flex items-center gap-1.5 text-[10px] text-neutral-400">
-                                  {student.signInProvider && <span>{student.signInProvider}</span>}
-                                  {student.emailVerified && (
-                                    <span className="inline-flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400">
-                                      <Check className="w-2.5 h-2.5" />
-                                      verified
-                                    </span>
-                                  )}
-                                  {student.createdAt && (
-                                    <span>since {new Date(student.createdAt).getFullYear()}</span>
-                                  )}
-                                </span>
-                              </div>
-                            </div>
-                          </td>
-
-                          <td className="py-3.5 px-4 sm:px-6">{renderRole(student)}</td>
-
-                          <td className="py-3.5 px-4 sm:px-6 text-neutral-600 dark:text-neutral-400">
-                            {student.plan || "—"}
-                          </td>
-
-                          <td className="py-3.5 px-4 sm:px-6">{renderCandidateStatus(student)}</td>
-
-                          <td className="py-3.5 px-4 sm:px-6">
-                            <button
-                              type="button"
-                              disabled={busyCandidateId === student.id}
-                              onClick={() => handleToggleSuper10(student.id, student.is_super10 === true)}
-                              aria-pressed={student.is_super10 === true}
-                              title={
-                                student.is_super10
-                                  ? "Remove the Super10 flag"
-                                  : "Grant the Super10 flag"
-                              }
-                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors cursor-pointer disabled:opacity-50 ${
-                                student.is_super10
-                                  ? "bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30"
-                                  : "bg-neutral-100 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-white/10 hover:text-amber-600 dark:hover:text-amber-400"
-                              }`}
-                            >
-                              <Star
-                                className={`w-3 h-3 ${student.is_super10 ? "fill-current" : ""}`}
-                              />
-                              {student.is_super10 ? "Super10" : "—"}
-                            </button>
-                          </td>
-
-                          <td className="py-3.5 px-4 sm:px-6 text-neutral-500 text-[11px]">
-                            {formatSignIn(student.lastLoginAt)}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            {/* Who has an account, as distinct from who has paid for something, is its own
+                page per role — see the Students, Admins and Teachers tabs. Every row here
+                is a Google sign-in (`upsertStudentRecord` writes one doc per account on
+                auth state change), so a learner can appear there having never enrolled,
+                and that is the point of those lists. */}
           </div>
         )}
 
-        {/* TEACHERS MANAGEMENT */}
-        {activeTab === "teachers" && <AdminTeachers />}
+        {/* ONE PAGE PER ROLE. The three together list every account exactly once, because
+            `accountRoleOf` gives each account the strongest role it holds. */}
+        {activeTab === "students" && renderRolePage("student")}
+        {activeTab === "admins" && renderRolePage("admin")}
+        {activeTab === "teachers" && renderRolePage("teacher")}
 
         {/* ANSWER BOOK — what the assistant replies with, read-only */}
-        {activeTab === "knowledge" && <AdminKnowledge />}
+        {activeTab === "knowledge" && (
+          <AdminKnowledge onHome={() => setActiveTab("home")} />
+        )}
 
-        {/* CHANGE REQUESTS — wording changes to copy that is hard-coded in src/ */}
-        {activeTab === "changeRequests" && <AdminChangeRequests />}
+        {/* REFERRALS — who came in on whose code, read-only */}
+        {activeTab === "referrals" && (
+          <AdminReferrals onHome={() => setActiveTab("home")} />
+        )}
 
-        {/* ACADEMY SETTINGS — the figures the site quotes */}
-        {activeTab === "settings" && <AdminSettings />}
-
-        {/* TAB 3: COURSE ASSIGNMENTS */}
-        {activeTab === "assignments" && <AdminAssignments />}
-
-        {/* TAB 4: REVENUE & ANALYTICS */}
+        {/* REVENUE & ANALYTICS */}
         {activeTab === "analytics" && (
-          <div className="flex flex-col gap-6">
-            {/* Banner */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-600/10 border border-blue-500/20 shadow-xs">
-              <div className="flex flex-col gap-1">
-                <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
-                  Revenue &amp; Enrollment Analytics
-                </h2>
-                <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
-                  Comprehensive performance breakdown, gross revenue, and program capacity for {siteConfig.name}.
-                </p>
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-medium">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  Live Ledger
-                </span>
-              </div>
-            </div>
+          <div className="flex flex-col gap-4">
+            <PageHeader
+              crumbs={[
+                { label: "Home", onSelect: () => setActiveTab("home") },
+                { label: "Revenue & Analytics" },
+              ]}
+                />
 
             {/* 4 KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1327,7 +1375,7 @@ export function AdminDashboard({
                       the JSX — it read the same whether revenue rose or fell to zero. */}
                 </div>
                 <span className="text-[11px] text-neutral-500">
-                  Incl. {settings.gstRatePercent}% statutory GST
+                  Incl. {APP_SETTINGS.gstRatePercent}% statutory GST
                 </span>
               </div>
 
@@ -1409,7 +1457,7 @@ export function AdminDashboard({
                   </div>
                   <div className="flex justify-between py-1">
                     <span className="text-neutral-500">
-                      {settings.gstRatePercent}% Statutory GST:
+                      {APP_SETTINGS.gstRatePercent}% Statutory GST:
                     </span>
                     <span className="font-semibold text-blue-600 dark:text-blue-400">
                       ₹{Math.round(totalPaidRevenue - totalPaidRevenue / gstDivisor).toLocaleString("en-IN")}
@@ -1447,396 +1495,7 @@ export function AdminDashboard({
           </div>
         )}
 
-        {/* TAB 4: FIREBASE CLOUD SYNC & SEEDER */}
-        {activeTab === "cloud" && canSeed && (
-          <div className="flex flex-col gap-6">
-            {/* Cloud Status Banner */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-purple-600/10 via-blue-600/10 to-indigo-600/10 border border-purple-500/20 shadow-xs">
-              <div className="flex flex-col gap-1">
-                <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
-                  Google Firebase Firestore &amp; Seeder
-                </h2>
-                <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
-                  Manage real-time cloud data pipelines, seed initial courses, and monitor collection synchronization.
-                </p>
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                {isLiveFromFirebase ? (
-                  <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-medium">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    Cloud Firestore Active
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-300 font-medium">
-                    <span className="w-2 h-2 rounded-full bg-blue-500" />
-                    Built-in Catalog
-                  </span>
-                )}
-              </div>
-            </div>
-
-          </div>
-        )}
       </main>
-
-      {/* ADD / EDIT COURSE MODAL */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
-          <div className="relative w-full max-w-2xl max-h-[90vh] bg-white dark:bg-[#1e1e1e] border border-neutral-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-y-auto p-6 flex flex-col gap-5 text-neutral-900 dark:text-white">
-            <div className="flex items-center justify-between pb-3 border-b border-neutral-200 dark:border-white/10">
-              <div className="flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-blue-500" />
-                <h3 className="text-base sm:text-lg font-bold">
-                  {editingCourse ? "Edit Course Offering" : "Create New Course Offering"}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-lg text-neutral-400 hover:text-neutral-700 dark:hover:text-white cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveCourse} className="flex flex-col gap-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Course ID / Slug */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Course Identifier (slug) *
-                  </label>
-                  <input
-                    type="text"
-                    value={formId}
-                    onChange={(e) => setFormId(e.target.value)}
-                    placeholder="e.g. genai-agents"
-                    disabled={!!editingCourse}
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white disabled:opacity-60"
-                  />
-                  <span className="text-[10px] text-neutral-400">
-                    Unique key for routing &amp; Firestore document ID
-                  </span>
-                </div>
-
-                {/* Display Number */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Index / Number (#)
-                  </label>
-                  <input
-                    type="text"
-                    value={formNumber}
-                    onChange={(e) => setFormNumber(e.target.value)}
-                    placeholder="e.g. 13"
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                  />
-                  <span className="text-[10px] text-neutral-400">Used for catalog sorting</span>
-                </div>
-              </div>
-
-              {/* Title */}
-              <div className="flex flex-col gap-1.5">
-                <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                  Course Title *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
-                  placeholder="e.g. Autonomous AI Agents & LangGraph"
-                  className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white font-medium"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Banner Title */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Short Banner Title
-                  </label>
-                  <input
-                    type="text"
-                    value={formBannerTitle}
-                    onChange={(e) => setFormBannerTitle(e.target.value)}
-                    placeholder="e.g. AI Agents & LangGraph"
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                  />
-                </div>
-
-                {/* Banner Subtitle */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Banner Subtitle
-                  </label>
-                  <input
-                    type="text"
-                    value={formBannerSubtitle}
-                    onChange={(e) => setFormBannerSubtitle(e.target.value)}
-                    placeholder="e.g. Multi-Agent Systems · RAG · Python"
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Category */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Category *
-                  </label>
-                  <Select
-                    label="Category"
-                    value={formCategory}
-                    onValueChange={(value) => {
-                      const cat = value as CourseItem["category"];
-                      setFormCategory(cat);
-                      if (cat === "web") setFormCategoryLabel("Web & Full-Stack");
-                      else if (cat === "ai") setFormCategoryLabel("AI & Data Science");
-                      else if (cat === "devops") setFormCategoryLabel("DevOps & Cloud");
-                      else if (cat === "database") setFormCategoryLabel("Database & Systems");
-                      else if (cat === "elite") setFormCategoryLabel("Super10 Elite");
-                    }}
-                    options={[
-                      { value: "web", label: "Web & Full-Stack" },
-                      { value: "ai", label: "AI & Data Science" },
-                      { value: "devops", label: "DevOps & Cloud" },
-                      { value: "database", label: "Database & Systems" },
-                      { value: "elite", label: "Super10 Elite" },
-                    ]}
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                  />
-                </div>
-
-                {/* Category Label */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Category Label
-                  </label>
-                  <input
-                    type="text"
-                    value={formCategoryLabel}
-                    onChange={(e) => setFormCategoryLabel(e.target.value)}
-                    placeholder="e.g. AI & Data Science"
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {/* Duration */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Duration
-                  </label>
-                  <input
-                    type="text"
-                    value={formDuration}
-                    onChange={(e) => setFormDuration(e.target.value)}
-                    placeholder="60 Days (2 Months)"
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                  />
-                </div>
-
-                {/* Level */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Level
-                  </label>
-                  <input
-                    type="text"
-                    value={formLevel}
-                    onChange={(e) => setFormLevel(e.target.value)}
-                    placeholder="Beginner to Adv"
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                  />
-                </div>
-
-                {/* Fee */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Fee (Display &amp; Amount)
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={formFee}
-                      onChange={(e) => setFormFee(e.target.value)}
-                      placeholder="₹30,000"
-                      className="w-1/2 px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white font-semibold"
-                    />
-                    <input
-                      type="number"
-                      value={formAmount}
-                      onChange={(e) => setFormAmount(Number(e.target.value))}
-                      placeholder="0"
-                      className="w-1/2 px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Badge Text */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Badge Text (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={formBadge}
-                    onChange={(e) => setFormBadge(e.target.value)}
-                    placeholder="e.g. Bestseller, 100% Placement"
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                  />
-                </div>
-
-                {/* Badge Type */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Badge Style
-                  </label>
-                  <Select
-                    label="Badge Style"
-                    value={formBadgeType ?? ""}
-                    onValueChange={(value) =>
-                      setFormBadgeType(value as CourseItem["badgeType"] | "")
-                    }
-                    options={[
-                      { value: "", label: "None" },
-                      { value: "bestseller", label: "Bestseller (Cyan/Blue)" },
-                      { value: "elite", label: "Elite (Gold/Amber)" },
-                      { value: "popular", label: "Popular (Indigo/Purple)" },
-                      { value: "ai", label: "AI Special (Violet/Magenta)" },
-                    ]}
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                  />
-                </div>
-              </div>
-
-              {/* Description */}
-              <div className="flex flex-col gap-1.5">
-                <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                  Course Description
-                </label>
-                <textarea
-                  rows={3}
-                  value={formDescription}
-                  onChange={(e) => setFormDescription(e.target.value)}
-                  placeholder="Summary of what candidates will build and master..."
-                  className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                />
-              </div>
-
-              {/* Tech Stack & Icons */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Tech Stack (Comma-separated)
-                  </label>
-                  <input
-                    type="text"
-                    value={formTechStack}
-                    onChange={(e) => setFormTechStack(e.target.value)}
-                    placeholder="Next.js 15, React 19, FastAPI, PostgreSQL"
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Tech Icons (DevIcon keys, comma-separated)
-                  </label>
-                  <input
-                    type="text"
-                    value={formTechIcons}
-                    onChange={(e) => setFormTechIcons(e.target.value)}
-                    placeholder="nextjs, react, fastapi, postgresql, python"
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                  />
-                </div>
-              </div>
-
-              {/* Curriculum Topics */}
-              <div className="flex flex-col gap-1.5">
-                <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                  Curriculum Highlights (One topic per line)
-                </label>
-                <textarea
-                  rows={4}
-                  value={formTopics}
-                  onChange={(e) => setFormTopics(e.target.value)}
-                  placeholder="Next.js 15 Server Components & Actions&#10;FastAPI Async Microservices&#10;PostgreSQL & Schema Optimization"
-                  className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white font-mono text-[11px]"
-                />
-              </div>
-
-              {/* Visibility & Faculty. The status is how a course leaves the public site:
-                  the catalogue, sitemap and /llms.txt all read through getPublicCourses,
-                  which drops anything inactive, and /courses/<slug> then 404s. */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Status
-                  </label>
-                  <StatusSwitch
-                    checked={formStatus === "active"}
-                    onCheckedChange={(next) => setFormStatus(next ? "active" : "inactive")}
-                    label="Course status"
-                  />
-                  <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
-                    Active lists it publicly; inactive hides it from the catalogue, the sitemap
-                    and /llms.txt, and its page 404s.
-                  </span>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                    Assigned Teachers
-                  </label>
-                  <Select
-                    multiple
-                    label="Assigned teachers"
-                    value={formTeacherIds}
-                    onValueChange={setFormTeacherIds}
-                    options={teachers.map((t) => ({ value: t.id, label: t.name }))}
-                    className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                  />
-                  <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
-                    {teachers.length === 0
-                      ? "No teachers yet — add them in the Teachers tab."
-                      : formTeacherIds.length === 0
-                        ? "No teacher assigned to this course."
-                        : formTeacherIds
-                            .map((id) => teachers.find((t) => t.id === id)?.name ?? id)
-                            .join(", ")}
-                  </span>
-                </div>
-              </div>
-
-              {/* Modal Actions */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-neutral-200 dark:border-white/10">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/5 transition-colors cursor-pointer font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSaving}
-                  className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>{isSaving ? "Saving..." : editingCourse ? "Save Changes" : "Create Course"}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

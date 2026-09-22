@@ -1,0 +1,23 @@
+#!/bin/sh
+# Type-check and lint before the commit exists, because a commit that does not compile is a
+# commit that has to be un-committed — and a half-finished edit is easy to save and forget.
+#
+# `pnpm check` is `tsc --noEmit && eslint --quiet .`: the type check fails on an error anywhere in
+# the tree, including a file the edit did not touch (a deleted export breaks its importers), and
+# the lint fails on errors only. Warnings do not stop a commit; the repo carries a baseline of
+# them, and a gate that cries wolf is one that gets bypassed.
+#
+# Lives in `.githooks/` rather than `.git/hooks/` so it is in the repository. `pnpm install` runs
+# `git config core.hooksPath .githooks` (the `prepare` script in package.json), which is what
+# makes git look here; a clone that skipped install scripts needs that one line by hand.
+
+if [ ! -d node_modules ]; then
+  echo "pre-commit: node_modules is missing, skipping the checks."
+  exit 0
+fi
+
+if ! pnpm check; then
+  echo ""
+  echo "pre-commit: pnpm check failed. Fix it, or commit with --no-verify if you mean to."
+  exit 1
+fi

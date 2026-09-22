@@ -36,7 +36,7 @@ These rules take priority over convenience.
 ### DO
 
 - **ALWAYS** check out a separate branch (`feat/...`, `fix/...`, `chore/...`) before making changes or commits.
-- **ALWAYS** verify changes with `pnpm tsc --noEmit` before raising a Pull Request.
+- **ALWAYS** verify changes with `pnpm check` — `tsc --noEmit` plus `eslint --quiet .` — before committing or raising a Pull Request. It is the same command the `pre-commit` and `pre-push` hooks in `.githooks/` run, so a commit that would fail it does not get made. Warnings do not fail it; errors do. The hooks live in the repository rather than `.git/hooks/`, which means git has to be told to look there: `git config core.hooksPath .githooks`, which the `prepare` script in `package.json` runs on every `pnpm install`. Do not add a hook runner dependency — this is the whole mechanism.
 - **ALWAYS** push to the feature branch and raise a Pull Request (PR) against `development`.
 - **ALWAYS** cut task branches from `development`, and promote with `--base production`. Keep the promotion fast-forwardable — no rebasing `production`.
 - Inspect the existing code before modifying it.
@@ -71,6 +71,7 @@ These rules take priority over convenience.
 - Do not mix multiple primitive ecosystems unnecessarily.
 - Do not create duplicate components when an existing component can be extended.
 - **Do not render a control whose chrome the browser draws itself** — `<select>`/`<option>`, `<datalist>`, or a native checkbox, radio, date/time/colour picker, range slider, file input or dialog. That chrome cannot be themed, so it arrives in the OS's own colours and breaks the interface. Use the matching primitive in `src/components/ui/` (the dropdown is `src/components/ui/select.tsx`), or wrap the equivalent `@base-ui/react` component the way that file does. A Tailwind-styled `<input>`, `<textarea>` or `<button>` is fine — the offence is the platform's rendering, not the tag.
+- **Do not let a dropdown open over its own field, and do not re-place a popup per call site.** Every dropdown in the app is one of two primitives in `src/components/ui/`: `select.tsx` for a closed list of choices, `combobox.tsx` for a field that takes free text with suggestions. Both open *under* the field their own `sideOffset` away, and the primitive owns that, so a new dropdown-looking field uses one of them rather than a fresh `@base-ui/react` wrapper — one fix then keeps every dropdown in step. The trap is Base UI's own default: `Select.Positioner` ships `alignItemWithTrigger` as `true`, which slides the list until the selected item sits over the trigger — the native macOS menu, which reads as a misplaced popup beside every field that does not do it. `select.tsx` passes `false`; leave it that way.
 - Do not rewrite unrelated files.
 - Do not perform broad refactors during feature work unless required.
 - Do not change package versions unnecessarily.
@@ -144,7 +145,7 @@ Which file owns what:
 | Crawl rules | `src/app/robots.ts` |
 | Web app manifest | `public/site.webmanifest` |
 | `/llms.txt`, the summary AI agents read | `src/app/llms.txt/route.ts` |
-| Requested wording changes to hard-coded copy | the `changeRequests` collection, filed from `/admin` → Change Requests |
+| Requested wording changes to hard-coded copy | edit the file directly — there is no in-app request queue |
 
 **When public-facing content changes, update the matching SEO value in the same commit:**
 
@@ -163,20 +164,19 @@ Which file owns what:
   (`src/lib/courses-server.ts`), falling back to `COURSES_DATA` and `siteConfig` when the
   collection is empty or unreachable, so they track those changes on their own. Never paste
   the catalogue into them by hand. Edits arrive through the admin dashboard, or through
-  `pnpm seed:content`, which uploads `src/data/courses.ts` and the `settings/app` document
-  and is the only thing that puts them into Firestore in the first place.
+  `pnpm seed:content`, which uploads `src/data/courses.ts` and is the only thing that puts
+  them into Firestore in the first place. The academy's own figures — referral reward, Super10
+  seat cap, GST rate, GSTIN, money-back window — are **not** in Firestore: they are hard-coded
+  in `src/data/app-settings.ts`, with no editor in the dashboard.
 - A new **reply** in `src/data/academy-knowledge.ts` → nothing to do unless it is a program's
   answer, in which case add the id to `COURSE_KB_KEY` beside it or `/courses/<id>` renders
   without its copy. `node scripts/check-course-routing.mjs` fails if the map and the chat's
   keyword router ever disagree.
 
 **Copy the dashboard cannot edit.** The replies, the alumni pool in `src/data/testimonials.ts`
-and the `/llms.txt` prose are hard-coded in `src/`, so an admin who wants them reworded files a
-**change request** in `/admin` → Change Requests. It stores the reply key and the requested
-wording verbatim in the `changeRequests` collection for a developer to apply as a code change.
-The app never edits its own codebase, and nothing requested there is live until a deploy ships
-it. A request that names a programme's reply lands on `/courses/<id>` too, so it carries the
-SEO pass above.
+and the `/llms.txt` prose are hard-coded in `src/`. The app never edits its own codebase, so a
+wording change is a code change and ships with a deploy. If the change names a programme's
+reply it lands on `/courses/<id>` too, so it carries the SEO pass above.
 
 Do not add `keywords` (Google ignores it). Do not add an SEO library — Next's Metadata API
 plus `robots.ts` / `sitemap.ts` cover everything here.

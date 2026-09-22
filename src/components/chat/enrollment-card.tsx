@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { useCourses } from "@/providers/courses-provider";
-import { useSettings } from "@/providers/settings-provider";
+import { APP_SETTINGS } from "@/data/app-settings";
 import { siteConfig } from "@/config/site";
 
 export interface EnrollmentData {
@@ -65,8 +65,7 @@ export function EnrollmentCard({
   const [paidAt, setPaidAt] = useState<string | undefined>(initialData?.paidAt);
 
   const { courses } = useCourses();
-  const { settings } = useSettings();
-  const { super10Seats, referralReward, moneyBackDays, gstin, gstRatePercent } = settings;
+  const { super10Seats, referralReward, moneyBackDays, gstin, gstRatePercent } = APP_SETTINGS;
 
   // Read from the catalogue the admin edits, not a second table kept in this file. The copy
   // that used to live here had its own title and its own ₹30,000, so a fee changed in the

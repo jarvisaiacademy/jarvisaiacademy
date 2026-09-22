@@ -7,6 +7,8 @@ import { AppearanceSetting } from "./appearance-setting";
 import { LanguageSetting } from "./language-setting";
 import { DataControlsSetting } from "./data-controls-setting";
 import { KeyboardShortcutsSetting } from "./keyboard-shortcuts-setting";
+import { ReferralCodeSetting } from "./referral-code-setting";
+import { useAuth } from "@/providers/auth-provider";
 import { motion } from "motion/react";
 
 import { siteConfig } from "@/config/site";
@@ -17,6 +19,8 @@ interface SettingsPageProps {
 }
 
 export function SettingsPage({ onBack, className = "" }: SettingsPageProps) {
+  const { isLoggedIn } = useAuth();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -35,6 +39,14 @@ export function SettingsPage({ onBack, className = "" }: SettingsPageProps) {
           <AppearanceSetting />
           <LanguageSetting />
         </SettingsSection>
+
+        {/* Referrals Section — the whole section, heading included: `SettingsSection` draws its
+            heading whether or not it has children, and a signed-out visitor has no code to see. */}
+        {isLoggedIn && (
+          <SettingsSection title="Referrals">
+            <ReferralCodeSetting />
+          </SettingsSection>
+        )}
 
         {/* Data Controls Section */}
         <SettingsSection title="Account & Data">

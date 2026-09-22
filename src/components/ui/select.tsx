@@ -7,6 +7,12 @@ import { cn } from "@/lib/utils";
 export interface SelectOption {
   value: string;
   label: string;
+  /**
+   * Drawn before the label in the popup, and only there — the trigger shows labels, so an option
+   * list of brand marks (a tech stack) still reads as a list of names when it is closed. A slot
+   * rather than a name so this file needs to know nothing about what the marks are.
+   */
+  icon?: React.ReactNode;
 }
 
 interface BaseSelectProps {
@@ -79,7 +85,13 @@ export function Select(props: SelectProps) {
       </BaseSelect.Trigger>
 
       <BaseSelect.Portal>
+        {/* Base UI defaults `alignItemWithTrigger` to true, which slides the popup until the
+            selected item sits over the trigger — the native macOS menu, where the row you are
+            on stays under the cursor. It reads as a misplaced popup here: the list covers the
+            field it belongs to, and it opens nowhere near the dropdowns beside it. Off, so
+            every dropdown in the app opens under its own field, `sideOffset` away. */}
         <BaseSelect.Positioner
+          alignItemWithTrigger={false}
           sideOffset={4}
           className="z-50 outline-hidden select-none"
         >
@@ -94,8 +106,11 @@ export function Select(props: SelectProps) {
                   <BaseSelect.ItemIndicator className="col-start-1 flex items-center justify-center">
                     <Check className="w-3.5 h-3.5" />
                   </BaseSelect.ItemIndicator>
-                  <BaseSelect.ItemText className="col-start-2 truncate">
-                    {option.label}
+                  <BaseSelect.ItemText className="col-start-2 flex items-center gap-2 min-w-0">
+                    {option.icon}
+                    {/* The truncation sits on the label, not the row: a flex row clips its
+                        anonymous text node instead of ellipsising it. */}
+                    <span className="truncate">{option.label}</span>
                   </BaseSelect.ItemText>
                 </BaseSelect.Item>
               ))}

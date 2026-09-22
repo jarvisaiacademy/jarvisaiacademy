@@ -1,18 +1,20 @@
 import type { CourseItem } from "@/data/courses";
-import type { AppSettings } from "@/data/app-settings";
 
 export interface PublicContent {
   courses: CourseItem[];
-  settings: AppSettings;
 }
 
 let pending: Promise<PublicContent> | null = null;
 
 /**
- * The cached public payload — the catalogue and the academy settings in one request.
+ * The cached public payload — the catalogue, in one request.
  *
- * Both providers ask for this on the same tick and the answer is the same for both, so the
- * promise is remembered for the life of the page rather than the request being made twice.
+ * Every provider that needs it asks on the same tick and the answer is the same for all of
+ * them, so the promise is remembered for the life of the page rather than the request being
+ * made twice.
+ *
+ * The academy's own figures are not in here: they are hard-coded in `src/data/app-settings.ts`
+ * and never leave the browser's bundle, so there is nothing to fetch for them.
  *
  * A failure is deliberately not remembered: the next caller gets a fresh attempt instead of
  * the cached rejection.

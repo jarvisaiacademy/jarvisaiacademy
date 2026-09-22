@@ -30,6 +30,20 @@ export interface CourseItem {
 
 export type CourseStatus = "active" | "inactive";
 
+/**
+ * How a course's stack is drawn: the logos when there are any, the names otherwise.
+ *
+ * Shared rather than worked out per surface — the courses tab and the detail page both used to
+ * decide this separately — so a course cannot show logos in one place and words in another.
+ *
+ * The names win nothing here. `techIcons` is derived from `techStack` by name, so a name the map
+ * does not know (OpenAI, RAG) is absent from the logos and shows its initials chip instead of a
+ * brand. A stack with no icons at all is drawn as text, because there would be nothing to draw.
+ */
+export function stackDisplay(course: Pick<CourseItem, "techIcons">): "icons" | "text" {
+  return course.techIcons.length > 0 ? "icons" : "text";
+}
+
 export const COURSE_CATEGORIES = [
   { id: "all", label: "All Courses" },
   { id: "web", label: "Web & Full-Stack" },
@@ -40,6 +54,121 @@ export const COURSE_CATEGORIES = [
 ] as const;
 
 export type CourseCategoryId = (typeof COURSE_CATEGORIES)[number]["id"];
+
+// The vocabulary the three free-text course fields are drawn from, offered as suggestions rather
+// than a fence — the editor's picker takes whatever an admin types as well, which is what lets a
+// value be retired from these lists without orphaning a course that still carries it.
+//
+// Curated, not scraped. Everything the seeded courses use is here except two values that belong
+// to the `referral` entry rather than a course — "All 60-Day Programs" and "Open to Everyone" are
+// the referral programme's own copy. The rest of each list is what an admin reaches for next.
+export const COURSE_DURATIONS = [
+  "60 Days (2 Months)",
+  "60 Days (8 Weeks)",
+  "60 Days (10 Weeks)",
+  "60 Days (12 Weeks)",
+  "60 Days Intensive",
+  "90 Days (3 Months)",
+  "45 Days (6 Weeks)",
+  "Self-Paced",
+] as const;
+
+export const COURSE_LEVELS = [
+  "Beginner to Adv",
+  "Beginner to Intermediate",
+  "Intermediate to Adv",
+  "Selective Program",
+  "Beginner",
+  "Intermediate",
+  "Advanced",
+] as const;
+
+/**
+ * What the Tech Stack picker offers, grouped by the order the academy teaches them.
+ *
+ * A fence, unlike the three lists above. A stack name is what draws a logo and what the public
+ * page prints, and freehand typing is how "TailwindCSS" and "Tailwind CSS" become two different
+ * technologies with one logo between them.
+ *
+ * Every entry either has a mark in `DevIcon` or takes its initials chip, so no row is blank. A
+ * course already holding a name that is not here keeps it — the editor adds the course's own
+ * entries to this list — so nothing an admin saved becomes unsayable, and this array is the only
+ * way the vocabulary grows.
+ */
+export const TECH_STACK_OPTIONS = [
+  // Languages & markup
+  "JavaScript",
+  "TypeScript",
+  "Python",
+  "PHP",
+  "Java",
+  "C#",
+  "Go",
+  "Rust",
+  "HTML5",
+  "CSS3",
+  // Frontend
+  "React",
+  "Next.js",
+  "Vue.js",
+  "Angular",
+  "Svelte",
+  "Tailwind CSS",
+  "Bootstrap",
+  "SASS",
+  // Backend
+  "FastAPI",
+  "Django",
+  "Flask",
+  "Node.js",
+  "Express",
+  "Laravel",
+  "Spring",
+  // Databases
+  "PostgreSQL",
+  "MySQL",
+  "MongoDB",
+  "Redis",
+  "SQLite",
+  "Oracle",
+  "PL/SQL",
+  // Cloud & DevOps
+  "AWS",
+  "Azure",
+  "GCP",
+  "Docker",
+  "Kubernetes",
+  "Linux",
+  "Ubuntu",
+  "Git",
+  "GitHub",
+  "Jira",
+  "Netlify",
+  // Data & AI
+  "TensorFlow",
+  "PyTorch",
+  "Pandas",
+  "NumPy",
+  "Jupyter",
+  "PowerBI",
+  "OpenAI",
+  "RAG",
+  "System Design",
+] as const;
+
+export const COURSE_BADGES = [
+  "Bestseller",
+  "Popular",
+  "High Demand",
+  "100% Placement",
+  "Cloud Certified",
+  "Core Backend",
+  "Cutting-Edge AI",
+  "New Batch",
+  "Limited Seats",
+  "Trending",
+  "🎁 ₹3,000 Reward",
+] as const;
 
 export const COURSES_DATA: CourseItem[] = [
   {

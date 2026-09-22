@@ -16,11 +16,21 @@
  * emulator, no client SDK, and no login. `owner` is the emulator's bypass token and is used
  * only to clear up after a previous run.
  */
+import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+
 const PROJECT = process.env.GCLOUD_PROJECT || "demo-jarvis-local";
 const HOST = process.env.FIRESTORE_EMULATOR_HOST || "127.0.0.1:8080";
 const BASE = `http://${HOST}/v1/projects/${PROJECT}/databases/(default)/documents`;
 
 const ADMIN_EMAIL = "sugatraj.2106@gmail.com";
+
+// The code derivation comes from the app rather than being restated here, so a change to its
+// shape cannot leave this harness asserting against a format nothing produces any more.
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const { referralCodeFor } = await import(
+  pathToFileURL(path.join(ROOT, "src/data/referrals.ts")).href
+);
 
 const b64 = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
 const now = Math.floor(Date.now() / 1000);
@@ -30,9 +40,9 @@ const tokenFor = (uid, email) =>
   [b64({ alg: "none", typ: "JWT" }), b64({ aud: PROJECT, sub: uid, user_id: uid, email, email_verified: true, iat: now, exp: now + 3600 }), ""].join(".");
 
 const studentOne = tokenFor("student-one", "student-one@example.com");
-const studentTwo = tokenFor("student-two", "student-two@example.com");
 const bannedStudent = tokenFor("student-banned", "student-banned@example.com");
 const super10Student = tokenFor("student-super", "student-super@example.com");
+const facultyStudent = tokenFor("student-faculty", "student-faculty@example.com");
 const admin = tokenFor("admin-uid", ADMIN_EMAIL);
 const guest = null;
 
@@ -136,6 +146,11 @@ await patch(
   { role: { stringValue: "student" }, is_super10: { booleanValue: true } },
   "owner"
 );
+await patch(
+  docPath("users", "student-faculty"),
+  { role: { stringValue: "student" }, is_teacher: { booleanValue: true } },
+  "owner"
+);
 
 // --- a signed-in learner ---
 await check("learner writes their own row", true, () =>
@@ -149,7 +164,7 @@ await check("learner reads another learner's row", false, () => get(docPath("use
 await check("learner lists the whole roster", false, () => list("users", null, null, studentOne));
 await check("learner deletes their own row", false, () => request(docPath("users", "student-one"), { method: "DELETE", token: studentOne }));
 
-// --- the two fields that belong to the admin ---
+// --- the fields that belong to the admin ---
 // The self-update path exists so a name or avatar can refresh on sign-in. If it were not
 // fenced, a banned candidate could clear their own ban from the browser console.
 //
@@ -192,18 +207,76 @@ await check("Super10 learner edits their own name", true, () =>
     super10Student
   )
 );
-
-// --- assignments ---
-await check("admin writes an assignment", true, () =>
-  patch(docPath("assignments", "a1"), { studentId: { stringValue: "student-one" }, status: { stringValue: "active" } }, admin)
+// Faculty is the third admin-owned field. It is what `accountRoleOf` reads to put an account
+// on the Teachers page, so a self-write here would let a learner hand themselves the role.
+await check("learner marks themselves faculty", false, () =>
+  patch(
+    docPath("users", "student-one"),
+    { role: { stringValue: "student" }, is_teacher: { booleanValue: true } },
+    studentOne
+  )
 );
-await check("learner lists their own assignments", true, () => list("assignments", "studentId", "student-one", studentOne));
-await check("learner lists every assignment", false, () => list("assignments", null, null, studentOne));
-await check("learner lists another learner's assignments", false, () => list("assignments", "studentId", "student-two", studentOne));
-await check("learner writes their own assignment", false, () =>
-  patch(docPath("assignments", "a2"), { studentId: { stringValue: "student-one" } }, studentOne)
+// The same self-grant on a *create* — a uid with no document yet, so the write is the row's
+// first. Distinct uids, because if the first case were wrongly allowed it would leave a
+// document behind and quietly turn the second into an update, testing the wrong path.
+await check("new learner creates their own row as faculty", false, () =>
+  patch(
+    docPath("users", "student-fresh-a"),
+    { role: { stringValue: "student" }, is_teacher: { booleanValue: true } },
+    tokenFor("student-fresh-a", "student-fresh-a@example.com")
+  )
 );
-await check("second learner lists the first learner's assignments", false, () => list("assignments", "studentId", "student-one", studentTwo));
+await check("new learner creates their own row with a Super10 seat", false, () =>
+  patch(
+    docPath("users", "student-fresh-b"),
+    { role: { stringValue: "student" }, is_super10: { booleanValue: true } },
+    tokenFor("student-fresh-b", "student-fresh-b@example.com")
+  )
+);
+// The control for the two above: an ordinary first write still lands, defaults and all.
+await check("new learner creates their own row", true, () =>
+  patch(
+    docPath("users", "student-fresh-c"),
+    {
+      role: { stringValue: "student" },
+      is_teacher: { booleanValue: false },
+      is_super10: { booleanValue: false },
+    },
+    tokenFor("student-fresh-c", "student-fresh-c@example.com")
+  )
+);
+// But it is fenced like the others, not a lock on the row: a teacher still refreshes normally.
+await check("faculty learner edits their own name", true, () =>
+  patch(
+    docPath("users", "student-faculty"),
+    { role: { stringValue: "student" }, is_teacher: { booleanValue: true }, name: { stringValue: "Renamed" } },
+    facultyStudent
+  )
+);
+await check("faculty learner strips their own faculty mark", false, () =>
+  patch(
+    docPath("users", "student-faculty"),
+    { role: { stringValue: "student" }, is_teacher: { booleanValue: false } },
+    facultyStudent
+  )
+);
+// The default the app writes on every sign-in (`ROSTER_FIELD_DEFAULTS` in
+// src/services/students-service.ts). It has to be allowed, or the write is a silent no-op:
+// `where('is_teacher','==',false)` skips a row where the field is absent, so an account that
+// never carried the flag is missing from the Students page until this lands on its own row.
+// The deny case directly above is the other half — this may fill in a default, never clear one.
+await check("learner writes the roster defaults onto their own row", true, () =>
+  patch(
+    docPath("users", "student-one"),
+    {
+      role: { stringValue: "student" },
+      email: { stringValue: "student-one@example.com" },
+      is_teacher: { booleanValue: false },
+      status: { stringValue: "active" },
+    },
+    studentOne
+  )
+);
 
 // --- an admin ---
 await check("admin reads any row", true, () => get(docPath("users", "student-two"), admin));
@@ -219,51 +292,240 @@ await check("admin grants Super10", true, () =>
   patch(docPath("users", "student-two"), { is_super10: { booleanValue: true } }, admin)
 );
 
-// --- teachers: admin-only even to read, because the record carries a mobile number ---
-await check("admin writes a teacher", true, () =>
+// --- referral codes: the index -------------------------------------------------
+// The uids below are alphanumeric on purpose. A real Firebase uid is 28 such characters and the
+// derivation takes the first eight, so `student-one` above would produce a code with a hyphen in
+// the body — one no learner could type back, since the normaliser accepts only [A-Z0-9].
+const REFERRER_UID = "refuser001";
+const NEWCOMER_UID = "newuser001";
+const CLAIMANT_UID = "claimtest01";
+const REFERRER_CODE = referralCodeFor(REFERRER_UID);
+const NEWCOMER_CODE = referralCodeFor(NEWCOMER_UID);
+const CLAIMANT_CODE = referralCodeFor(CLAIMANT_UID);
+
+const referrer = tokenFor(REFERRER_UID, "referrer@example.com");
+const newcomer = tokenFor(NEWCOMER_UID, "newcomer@example.com");
+const claimant = tokenFor(CLAIMANT_UID, "claimant@example.com");
+
+await patch(docPath("referrals", REFERRER_CODE), { uid: { stringValue: REFERRER_UID } }, "owner");
+await patch(docPath("referrals", CLAIMANT_CODE), { uid: { stringValue: CLAIMANT_UID } }, "owner");
+await patch(docPath("users", REFERRER_UID), { role: { stringValue: "student" } }, "owner");
+await patch(docPath("users", NEWCOMER_UID), { role: { stringValue: "student" } }, "owner");
+await patch(docPath("users", CLAIMANT_UID), { role: { stringValue: "student" } }, "owner");
+
+// The account that stands to gain, writing the ₹3,000 credit onto the learner's row itself rather
+// than waiting to be named. `isSelf` is what refuses this; the referral clauses only govern what an
+// account may say about its own row.
+await check("learner credits themselves from someone else's row", false, () =>
   patch(
-    docPath("teachers", "t1"),
-    { name: { stringValue: "A Teacher" }, mobile: { stringValue: "9000000000" } },
-    admin
+    docPath("users", NEWCOMER_UID),
+    {
+      referredByCode: { stringValue: REFERRER_CODE },
+      referredBy: { stringValue: REFERRER_UID },
+    },
+    referrer
   )
 );
-await check("admin reads a teacher", true, () => get(docPath("teachers", "t1"), admin));
-await check("learner reads a teacher", false, () => get(docPath("teachers", "t1"), studentOne));
-await check("guest reads a teacher", false, () => get(docPath("teachers", "t1"), guest));
-await check("learner writes a teacher", false, () =>
-  patch(docPath("teachers", "t1"), { mobile: { stringValue: "9111111111" } }, studentOne)
+
+// Resolving the one code you were given is the whole reason a new signup can read this at all.
+await check("signed-in learner resolves a code", true, () =>
+  get(docPath("referrals", REFERRER_CODE), newcomer)
+);
+// ...but the collection is not a directory of everyone's code.
+await check("learner lists every code", false, () => list("referrals", null, null, newcomer));
+await check("guest lists every code", false, () => list("referrals", null, null, guest));
+await check("guest resolves a code", false, () => get(docPath("referrals", REFERRER_CODE), guest));
+await check("admin lists every code", true, () => list("referrals", null, null, admin));
+
+await check("learner publishes their own code", true, () =>
+  patch(docPath("referrals", NEWCOMER_CODE), { uid: { stringValue: NEWCOMER_UID } }, newcomer)
+);
+await check("learner publishes an entry under someone else's uid", false, () =>
+  patch(docPath("referrals", "JAR-STOLEN00"), { uid: { stringValue: REFERRER_UID } }, newcomer)
+);
+// Taking over an existing code would hand its owner's referrals to whoever moved first.
+await check("learner seizes another account's code entry", false, () =>
+  patch(docPath("referrals", REFERRER_CODE), { uid: { stringValue: NEWCOMER_UID } }, newcomer)
+);
+await check("learner adds a field to a code entry", false, () =>
+  patch(
+    docPath("referrals", NEWCOMER_CODE),
+    { uid: { stringValue: NEWCOMER_UID }, note: { stringValue: "extra" } },
+    newcomer
+  )
+);
+await check("admin rewrites a code entry", true, () =>
+  patch(docPath("referrals", REFERRER_CODE), { uid: { stringValue: REFERRER_UID } }, admin)
 );
 
-// --- change requests: admin-only, because a request is internal wording nobody has shipped ---
-await check("admin files a change request", true, () =>
+// --- referral codes: claiming one ----------------------------------------------
+await check("newcomer claims a real code", true, () =>
   patch(
-    docPath("changeRequests", "cr1"),
+    docPath("users", NEWCOMER_UID),
     {
-      replyKey: { stringValue: "courses" },
-      requestedText: { stringValue: "The wording we want instead." },
-      requestedBy: { stringValue: "admin@jarvisaiacademy.com" },
-      done: { booleanValue: false },
+      role: { stringValue: "student" },
+      referredByCode: { stringValue: REFERRER_CODE },
+      referredBy: { stringValue: REFERRER_UID },
+    },
+    newcomer
+  )
+);
+// The claim is now stored, so the common write below is an upsert carrying it along untouched —
+// which must stay allowed. This harness PATCHes without an update mask, so modelling the client's
+// merge-write means inlining the stored claim into the body.
+await check("claimed learner signs in again", true, () =>
+  patch(
+    docPath("users", NEWCOMER_UID),
+    {
+      role: { stringValue: "student" },
+      name: { stringValue: "Renamed" },
+      referredByCode: { stringValue: REFERRER_CODE },
+      referredBy: { stringValue: REFERRER_UID },
+    },
+    newcomer
+  )
+);
+// Attribution is worth ₹3,000, so once written it is fixed — an admin moves it, nobody else.
+await check("claimed learner re-points their claim", false, () =>
+  patch(
+    docPath("users", NEWCOMER_UID),
+    {
+      role: { stringValue: "student" },
+      referredByCode: { stringValue: CLAIMANT_CODE },
+      referredBy: { stringValue: CLAIMANT_UID },
+    },
+    newcomer
+  )
+);
+await check("claimed learner clears their claim", false, () =>
+  patch(docPath("users", NEWCOMER_UID), { role: { stringValue: "student" } }, newcomer)
+);
+
+// The claimant's row still has no claim, so these all reach the rules as fresh ones.
+await check("claimant names a code nobody holds", false, () =>
+  patch(
+    docPath("users", CLAIMANT_UID),
+    {
+      role: { stringValue: "student" },
+      referredByCode: { stringValue: "JAR-NOSUCH00" },
+      referredBy: { stringValue: REFERRER_UID },
+    },
+    claimant
+  )
+);
+// The index entry for this one exists — the write is refused for being their own code.
+await check("claimant claims their own code", false, () =>
+  patch(
+    docPath("users", CLAIMANT_UID),
+    {
+      role: { stringValue: "student" },
+      referredByCode: { stringValue: CLAIMANT_CODE },
+      referredBy: { stringValue: CLAIMANT_UID },
+    },
+    claimant
+  )
+);
+// A real code, but pointed at an account that does not own it: the payout would go astray.
+await check("claimant credits an account that does not hold the code", false, () =>
+  patch(
+    docPath("users", CLAIMANT_UID),
+    {
+      role: { stringValue: "student" },
+      referredByCode: { stringValue: REFERRER_CODE },
+      referredBy: { stringValue: "someotheruid" },
+    },
+    claimant
+  )
+);
+await check("guest claims a code", false, () =>
+  patch(
+    docPath("users", "guestclaim1"),
+    {
+      role: { stringValue: "student" },
+      referredByCode: { stringValue: REFERRER_CODE },
+      referredBy: { stringValue: REFERRER_UID },
+    },
+    guest
+  )
+);
+// The claim arriving on the create path is the one a hand-written client would use, so the same
+// check has to hold there. `guestclaim2` has no document yet.
+await check("learner forges a claim while creating their row", false, () =>
+  patch(
+    docPath("users", "forger0001"),
+    {
+      role: { stringValue: "student" },
+      referredByCode: { stringValue: REFERRER_CODE },
+      referredBy: { stringValue: "someotheruid" },
+    },
+    tokenFor("forger0001", "forger@example.com")
+  )
+);
+await check("admin moves someone's claim", true, () =>
+  patch(
+    docPath("users", NEWCOMER_UID),
+    {
+      role: { stringValue: "student" },
+      referredByCode: { stringValue: CLAIMANT_CODE },
+      referredBy: { stringValue: CLAIMANT_UID },
     },
     admin
   )
 );
-await check("admin closes a change request", true, () =>
-  patch(docPath("changeRequests", "cr1"), { done: { booleanValue: true } }, admin)
-);
-await check("admin reads a change request", true, () => get(docPath("changeRequests", "cr1"), admin));
-await check("learner reads a change request", false, () =>
-  get(docPath("changeRequests", "cr1"), studentOne)
-);
-await check("guest reads a change request", false, () =>
-  get(docPath("changeRequests", "cr1"), guest)
-);
-await check("learner files a change request", false, () =>
+
+// --- referral codes: the payloads the client actually sends ---------------------
+// The cases above test which claims are *allowed*; these two pin the exact bodies `recordReferral`
+// and `publishReferralCode` write, because the rules name neither `referralCode` nor `referredAt`
+// and a later `keys().hasOnly([...])` on the claim fields would break every sign-in rather than
+// fail visibly. `role` is inlined on both because this harness PATCHes without an update mask,
+// which replaces the document — the real writes are merges, and Firestore is what carries the
+// stored `role` through them.
+const LATEJOINER_UID = "latejoin01";
+await patch(docPath("users", LATEJOINER_UID), { role: { stringValue: "student" } }, "owner");
+
+await check("a sign-up publishes the learner's own code", true, () =>
   patch(
-    docPath("changeRequests", "cr2"),
-    { replyKey: { stringValue: "courses" }, requestedText: { stringValue: "vandalised" } },
-    studentOne
+    docPath("users", LATEJOINER_UID),
+    {
+      role: { stringValue: "student" },
+      referralCode: { stringValue: referralCodeFor(LATEJOINER_UID) },
+    },
+    tokenFor(LATEJOINER_UID, "latejoin@example.com")
   )
 );
+await check("a claim lands carrying its timestamp", true, () =>
+  patch(
+    docPath("users", LATEJOINER_UID),
+    {
+      role: { stringValue: "student" },
+      referralCode: { stringValue: referralCodeFor(LATEJOINER_UID) },
+      referredByCode: { stringValue: REFERRER_CODE },
+      referredBy: { stringValue: REFERRER_UID },
+      referredAt: { stringValue: "2026-09-22T10:00:00.000Z" },
+    },
+    tokenFor(LATEJOINER_UID, "latejoin@example.com")
+  )
+);
+
+// --- the collections the app no longer touches ---
+// `teachers`, `changeRequests` and `assignments` were removed along with their features. No
+// stanza covers them, so they fall to the catch-all and are closed to everyone — deliberately
+// including an admin, since nothing writes them any more and a stanza reappearing here would
+// be the sign that the feature had been put back without its rule.
+for (const collectionId of ["teachers", "changeRequests", "assignments"]) {
+  await check(`admin reads ${collectionId}`, false, () =>
+    get(docPath(collectionId, "x1"), admin)
+  );
+  await check(`admin writes ${collectionId}`, false, () =>
+    patch(docPath(collectionId, "x1"), { name: { stringValue: "vandalised" } }, admin)
+  );
+  await check(`learner reads ${collectionId}`, false, () =>
+    get(docPath(collectionId, "x1"), studentOne)
+  );
+  await check(`learner writes ${collectionId}`, false, () =>
+    patch(docPath(collectionId, "x1"), { name: { stringValue: "vandalised" } }, studentOne)
+  );
+}
 
 // --- guests ---
 await check("guest reads the public catalogue", true, () => get(docPath("courses", "fullstack"), guest));
@@ -291,16 +553,12 @@ await check("learner writes a testimonial", false, () =>
   patch(docPath("testimonials", "gurpreet-kaur"), { quote: { stringValue: "vandalised" } }, studentOne)
 );
 
-// --- settings: every value in it is advertised publicly, so reads are open and writes are not ---
-await check("admin writes the settings", true, () =>
-  patch(
-    docPath("settings", "app"),
-    { referralReward: { integerValue: "3000" }, gstin: { stringValue: "27AABCJ1988Z1Z9" } },
-    admin
-  )
-);
-await check("guest reads the settings", true, () => get(docPath("settings", "app"), guest));
-await check("learner reads the settings", true, () => get(docPath("settings", "app"), studentOne));
+// --- settings: closed outright ---
+// There is no `settings` stanza any more. The referral reward, the Super10 seat cap, the GST
+// rate and the GSTIN moved into `src/data/app-settings.ts`, so the collection fell to the
+// catch-all — which is the state these two assert. An old document at `settings/app` is inert
+// rather than half-live. Reads used to be open here and were not: the values are public, and
+// public is now a hard-coded file with no document behind it.
 await check("learner writes the settings", false, () =>
   patch(docPath("settings", "app"), { referralReward: { integerValue: "9999" } }, studentOne)
 );
