@@ -55,6 +55,7 @@ import { AdminChangeRequests } from "@/components/admin/admin-change-requests";
 import { AdminSettings } from "@/components/admin/admin-settings";
 import { Select } from "@/components/ui/select";
 import { shortcutById } from "@/data/shortcuts";
+import { accountRoleOf, type AccountRole } from "@/data/teachers";
 import { isTypingTarget, matchesShortcut } from "@/lib/keyboard";
 
 interface EnrollmentRecord {
@@ -107,6 +108,37 @@ const ROLE_BADGE = {
       "bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-white/10",
   },
 } as const;
+
+/**
+ * The framing around each role's roster table. The table is the same three times, so the
+ * words that differ — the page title, what the page is for, and what an empty page means —
+ * are stated once here rather than inline three times.
+ */
+const ROLE_PAGE = {
+  student: {
+    title: "Students",
+    description:
+      "Accounts that signed in with Google and hold no other role. Enrolling is separate — see Assignments.",
+    empty: "No learner accounts yet — nobody has signed in with Google.",
+    banner: "from-emerald-600/10 via-teal-600/10 to-blue-600/10 border-emerald-500/20",
+    pill: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  },
+  admin: {
+    title: "Admins",
+    description: "Accounts on the admin allowlist. Each one can open this dashboard.",
+    empty: "No admin accounts found.",
+    banner: "from-indigo-600/10 via-violet-600/10 to-purple-600/10 border-indigo-500/20",
+    pill: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300",
+  },
+  teacher: {
+    title: "Teachers",
+    description:
+      "Accounts linked to a faculty record. Faculty are added on Faculty Records, and appear here once they sign in.",
+    empty: "No faculty accounts yet — link a signed-in account from Faculty Records.",
+    banner: "from-sky-600/10 via-cyan-600/10 to-blue-600/10 border-sky-500/20",
+    pill: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
+  },
+} as const satisfies Record<AccountRole, unknown>;
 
 interface AdminDashboardProps {
   onBackToChat: () => void;
@@ -609,18 +641,12 @@ export function AdminDashboard({
     );
   };
 
-  // One place decides a person's role, so the badge on a row and the section that row is listed
-  // under can never disagree. Admin outranks faculty.
-  //
-  // Faculty membership is a `teachers/{uid}` document, not a value on `users`: `role` is
-  // recomputed from the admin allowlist on every sign-in (see `src/data/teachers.ts`), so a
-  // stored "teacher" would revert on that person's next visit. Deriving the third role from
-  // the roster the Teachers tab already owns is also what stops the two tabs disagreeing.
-  const roleOf = (student: StudentRecord): keyof typeof ROLE_BADGE =>
-    student.role === "admin" ? "admin" : teachersById.has(student.id) ? "teacher" : "student";
+  // The rule itself lives in `src/data/teachers.ts`, because the sidebar counts people by it
+  // too — the number beside a tab and the number of rows behind it have to be the same number.
+  const teacherIds = new Set(teachersById.keys());
 
   const renderRole = (student: StudentRecord) => {
-    const { label, icon: Icon, badge } = ROLE_BADGE[roleOf(student)];
+    const { label, icon: Icon, badge } = ROLE_BADGE[accountRoleOf(student, teacherIds)];
 
     return (
       <span
@@ -632,44 +658,23 @@ export function AdminDashboard({
     );
   };
 
-  // The roster split three ways, each account in exactly one section. Built from `roleOf` so a
-  // section holds everybody whose badge says that role, and nobody twice.
-  const rosterByRole: Record<keyof typeof ROLE_BADGE, StudentRecord[]> = {
+  // The roster split three ways, one page per role, so every account is listed under the role
+  // it holds rather than all of them under a "Students" heading. Built from the same rule the
+  // badge reads, so a page holds everybody whose badge names that role, and nobody twice.
+  const rosterByRole: Record<AccountRole, StudentRecord[]> = {
     student: [],
     teacher: [],
     admin: [],
   };
-  for (const student of students) rosterByRole[roleOf(student)].push(student);
+  for (const student of students) rosterByRole[accountRoleOf(student, teacherIds)].push(student);
 
-  // One section per role, so every account is listed under the role it holds rather than all of
-  // them under a "Students" heading. Same table three times, driven by one renderer.
-  const renderRosterSection = ({
-    role,
-    heading,
-    blurb,
-    empty,
-  }: {
-    role: keyof typeof ROLE_BADGE;
-    heading: string;
-    blurb: string;
-    empty: string;
-  }) => {
+  // The table on its own. The page below supplies the framing around it, so the markup for a
+  // row exists once for all three roles.
+  const renderRosterTable = (role: AccountRole, empty: string) => {
     const rows = rosterByRole[role];
-    const { icon: Icon } = ROLE_BADGE[role];
 
     return (
       <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden flex flex-col">
-        <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-200 dark:border-white/10">
-          <div>
-            <h3 className="text-base font-semibold text-neutral-900 dark:text-white">{heading}</h3>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{blurb}</p>
-          </div>
-          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 text-xs font-medium self-start sm:self-auto">
-            <Icon className="w-3.5 h-3.5" />
-            {rows.length} {rows.length === 1 ? "Account" : "Accounts"}
-          </span>
-        </div>
-
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
@@ -764,6 +769,50 @@ export function AdminDashboard({
             </tbody>
           </table>
         </div>
+      </div>
+    );
+  };
+
+  // One page per role. The roster loads once for the whole dashboard, so each page states the
+  // wait and the failure for itself rather than the three of them sharing a single message.
+  const renderRolePage = (role: AccountRole) => {
+    const page = ROLE_PAGE[role];
+    const rows = rosterByRole[role];
+    const { icon: Icon } = ROLE_BADGE[role];
+
+    return (
+      <div className="flex flex-col gap-6">
+        {/* Header Banner */}
+        <div
+          className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r border shadow-xs ${page.banner}`}
+        >
+          <div className="flex flex-col gap-1">
+            <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
+              {page.title}
+            </h2>
+            <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
+              {page.description}
+            </p>
+          </div>
+          <span
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium self-start sm:self-auto ${page.pill}`}
+          >
+            <Icon className="w-3.5 h-3.5" />
+            {rows.length} {rows.length === 1 ? "Account" : "Accounts"}
+          </span>
+        </div>
+
+        {studentsError ? (
+          <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 text-center text-xs text-amber-600 dark:text-amber-400">
+            Could not load the roster right now.
+          </div>
+        ) : studentsLoading ? (
+          <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 text-center text-xs text-neutral-400">
+            Loading accounts...
+          </div>
+        ) : (
+          renderRosterTable(role, page.empty)
+        )}
       </div>
     );
   };
@@ -1278,49 +1327,22 @@ export function AdminDashboard({
               </div>
             </div>
 
-            {/* Who has an account, as distinct from who has paid for something. Every
-                row here is a Google sign-in — `upsertStudentRecord` writes one doc per
-                account on auth state change — so a learner can appear here having never
-                enrolled, and that is the point of the list.
-
-                Listed one section per role, so every account sits under the role it holds.
-                The roster loads once, so the wait and the failure are stated once here
-                rather than three times over. */}
-            {studentsError ? (
-              <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 text-center text-xs text-amber-600 dark:text-amber-400">
-                Could not load the roster right now.
-              </div>
-            ) : studentsLoading ? (
-              <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 text-center text-xs text-neutral-400">
-                Loading accounts...
-              </div>
-            ) : (
-              <>
-                {renderRosterSection({
-                  role: "student",
-                  heading: "Students",
-                  blurb: "Learners who signed in with Google. Enrolling is separate.",
-                  empty: "No learner accounts yet — nobody has signed in with Google.",
-                })}
-                {renderRosterSection({
-                  role: "admin",
-                  heading: "Admins",
-                  blurb: "Accounts on the admin allowlist.",
-                  empty: "No admin accounts found.",
-                })}
-                {renderRosterSection({
-                  role: "teacher",
-                  heading: "Teachers",
-                  blurb: "Accounts on the faculty roster, as added from the Teachers tab.",
-                  empty: "No faculty accounts yet — add one from the Teachers tab.",
-                })}
-              </>
-            )}
+            {/* Who has an account, as distinct from who has paid for something, is its own
+                page per role — see the Students, Admins and Teachers tabs. Every row here
+                is a Google sign-in (`upsertStudentRecord` writes one doc per account on
+                auth state change), so a learner can appear there having never enrolled,
+                and that is the point of those lists. */}
           </div>
         )}
 
-        {/* TEACHERS MANAGEMENT */}
-        {activeTab === "teachers" && <AdminTeachers />}
+        {/* ONE PAGE PER ROLE. The three together list every account exactly once, because
+            `accountRoleOf` gives each account the strongest role it holds. */}
+        {activeTab === "students" && renderRolePage("student")}
+        {activeTab === "admins" && renderRolePage("admin")}
+        {activeTab === "teachers" && renderRolePage("teacher")}
+
+        {/* FACULTY RECORDS MANAGEMENT */}
+        {activeTab === "faculty" && <AdminTeachers />}
 
         {/* ANSWER BOOK — what the assistant replies with, read-only */}
         {activeTab === "knowledge" && <AdminKnowledge />}

@@ -15,11 +15,14 @@ const TAB_STORAGE_KEY = "jarvis_admin_tab";
 // `canSeed`, so restoring it in production would render an empty dashboard.
 const VALID_TABS: Record<DashboardTab, true> = {
   courses: true,
-  teachers: true,
+  faculty: true,
   knowledge: true,
   changeRequests: true,
   settings: true,
   users: true,
+  students: true,
+  admins: true,
+  teachers: true,
   assignments: true,
   analytics: true,
   cloud: true,

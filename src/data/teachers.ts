@@ -30,3 +30,23 @@ export interface TeacherRecord {
   createdAt: string;
   updatedAt: string;
 }
+
+/** The three roles a person can hold on this site. */
+export type AccountRole = "student" | "teacher" | "admin";
+
+/**
+ * A person's role, decided in one place so that everything which groups people agrees —
+ * the badge on a row, the page that row is listed on, and the count beside the page's
+ * name in the sidebar.
+ *
+ * Faculty is membership of this collection, not a value on `users` (see above), so the
+ * caller passes the ids it knows. Admin outranks faculty, so an account is listed once,
+ * under the strongest role it holds.
+ */
+export function accountRoleOf(
+  user: { id: string; role?: string },
+  teacherIds: ReadonlySet<string>
+): AccountRole {
+  if (user.role === "admin") return "admin";
+  return teacherIds.has(user.id) ? "teacher" : "student";
+}

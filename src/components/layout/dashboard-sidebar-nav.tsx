@@ -11,21 +11,27 @@ import {
   Sparkles,
   GraduationCap,
   Contact,
+  Briefcase,
   GitPullRequest,
   Settings as SettingsIcon,
 } from "lucide-react";
 import { useCourses } from "@/providers/courses-provider";
 import { useAssignments } from "@/providers/assignments-provider";
 import { useTeachers } from "@/providers/teachers-provider";
+import { useStudents } from "@/providers/students-provider";
 import { academyKnowledge } from "@/data/academy-knowledge";
+import { accountRoleOf, type AccountRole } from "@/data/teachers";
 
 export type DashboardTab =
   | "courses"
-  | "teachers"
+  | "faculty"
   | "knowledge"
   | "changeRequests"
   | "settings"
   | "users"
+  | "students"
+  | "admins"
+  | "teachers"
   | "assignments"
   | "analytics"
   | "cloud";
@@ -47,8 +53,15 @@ export function DashboardSidebarNav({
   const { firestoreCourses: courses } = useCourses();
   const { assignments } = useAssignments();
   const { teachers } = useTeachers();
+  const { students } = useStudents();
 
   const activeGrantCount = assignments.filter((a) => a.status === "active").length;
+
+  // Counted with the same rule the roster pages list by, so the number beside a tab cannot
+  // disagree with the number of rows on the page it opens.
+  const teacherIds = new Set(teachers.map((t) => t.id));
+  const accountsByRole: Record<AccountRole, number> = { student: 0, teacher: 0, admin: 0 };
+  for (const student of students) accountsByRole[accountRoleOf(student, teacherIds)]++;
 
   // Cloud & Seeder is a development tool — seeding overwrites the live catalogue. Kept in
   // step with `canSeed` in admin-dashboard.tsx, which gates the same tab's content.
@@ -109,13 +122,15 @@ export function DashboardSidebarNav({
           </span>
         </button>
 
-        {/* Teachers (CRUD). Sits beside Courses because the two are linked: assigning a
-            teacher to a course here and picking teachers on a course are the same edge. */}
+        {/* Faculty Records (CRUD). Sits beside Courses because the two are linked: assigning a
+            teacher to a course here and picking teachers on a course are the same edge.
+            Named "Faculty Records" rather than "Teachers" because the Teachers tab below is
+            the teacher *accounts* — the people this list of records points at. */}
         <button
           type="button"
-          onClick={() => handleSelect("teachers")}
+          onClick={() => handleSelect("faculty")}
           className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-            activeTab === "teachers"
+            activeTab === "faculty"
               ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-xs"
               : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/5"
           }`}
@@ -123,16 +138,16 @@ export function DashboardSidebarNav({
           <div className="flex items-center gap-2.5">
             <Contact
               className={`w-4 h-4 ${
-                activeTab === "teachers"
+                activeTab === "faculty"
                   ? "text-amber-400 dark:text-amber-600"
                   : "text-neutral-500"
               }`}
             />
-            <span>Teachers</span>
+            <span>Faculty Records</span>
           </div>
           <span
             className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-              activeTab === "teachers"
+              activeTab === "faculty"
                 ? "bg-white/20 dark:bg-black/15 text-white dark:text-neutral-900"
                 : "bg-neutral-200/70 dark:bg-white/10 text-neutral-600 dark:text-neutral-300"
             }`}
@@ -265,6 +280,98 @@ export function DashboardSidebarNav({
             }`}
           >
             Learners
+          </span>
+        </button>
+
+        {/* One tab per role. An account is listed under the strongest role it holds, so these
+            three counts add up to the roster and no account is listed twice. */}
+        <button
+          type="button"
+          onClick={() => handleSelect("students")}
+          className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            activeTab === "students"
+              ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-xs"
+              : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/5"
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <GraduationCap
+              className={`w-4 h-4 ${
+                activeTab === "students"
+                  ? "text-neutral-400 dark:text-neutral-500"
+                  : "text-neutral-500"
+              }`}
+            />
+            <span>Students</span>
+          </div>
+          <span
+            className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+              activeTab === "students"
+                ? "bg-white/20 dark:bg-black/15 text-white dark:text-neutral-900"
+                : "bg-neutral-200/70 dark:bg-white/10 text-neutral-600 dark:text-neutral-300"
+            }`}
+          >
+            {accountsByRole.student}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleSelect("admins")}
+          className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            activeTab === "admins"
+              ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-xs"
+              : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/5"
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <ShieldCheck
+              className={`w-4 h-4 ${
+                activeTab === "admins"
+                  ? "text-indigo-400 dark:text-indigo-600"
+                  : "text-neutral-500"
+              }`}
+            />
+            <span>Admins</span>
+          </div>
+          <span
+            className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+              activeTab === "admins"
+                ? "bg-white/20 dark:bg-black/15 text-white dark:text-neutral-900"
+                : "bg-neutral-200/70 dark:bg-white/10 text-neutral-600 dark:text-neutral-300"
+            }`}
+          >
+            {accountsByRole.admin}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleSelect("teachers")}
+          className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            activeTab === "teachers"
+              ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-xs"
+              : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/5"
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <Briefcase
+              className={`w-4 h-4 ${
+                activeTab === "teachers"
+                  ? "text-sky-400 dark:text-sky-600"
+                  : "text-neutral-500"
+              }`}
+            />
+            <span>Teachers</span>
+          </div>
+          <span
+            className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+              activeTab === "teachers"
+                ? "bg-white/20 dark:bg-black/15 text-white dark:text-neutral-900"
+                : "bg-neutral-200/70 dark:bg-white/10 text-neutral-600 dark:text-neutral-300"
+            }`}
+          >
+            {accountsByRole.teacher}
           </span>
         </button>
 
