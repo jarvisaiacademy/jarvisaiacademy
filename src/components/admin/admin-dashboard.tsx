@@ -237,6 +237,21 @@ export function AdminDashboard({
   // edit surface, so a modal would be a dialog around two controls.
   const [busyCandidateId, setBusyCandidateId] = useState<string | null>(null);
 
+  // The roster's filters. One pair of them, shared by the three role pages — they filter the
+  // same table — and cleared when the page changes, because a query typed while looking at
+  // Students would otherwise keep hiding rows on Teachers with nothing on screen to say so.
+  // Adjusted during render rather than in an effect, so the reset lands in the same commit as
+  // the new tab and the next page never paints a filtered table for a frame.
+  const [rosterQuery, setRosterQuery] = useState("");
+  const [rosterStatus, setRosterStatus] = useState<"all" | CandidateStatus>("all");
+  const [filtersTab, setFiltersTab] = useState(activeTab);
+
+  if (filtersTab !== activeTab) {
+    setFiltersTab(activeTab);
+    setRosterQuery("");
+    setRosterStatus("all");
+  }
+
   const handleCandidateStatus = async (uid: string, status: CandidateStatus) => {
     setBusyCandidateId(uid);
     try {
@@ -673,8 +688,42 @@ export function AdminDashboard({
   const renderRosterTable = (role: AccountRole, empty: string) => {
     const rows = rosterByRole[role];
 
+    // Absent status means active, the same reading the status switch makes — filtering on the
+    // stored value alone would drop every account whose sign-in never wrote one.
+    const query = rosterQuery.trim().toLowerCase();
+    const isFiltered = query !== "" || rosterStatus !== "all";
+    const visible = rows.filter((student) => {
+      if (rosterStatus !== "all" && (student.status ?? "active") !== rosterStatus) return false;
+      if (!query) return true;
+      return `${student.name ?? ""} ${student.email ?? ""}`.toLowerCase().includes(query);
+    });
+
     return (
       <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden flex flex-col">
+        {/* One filter row, in the card above the table it filters. */}
+        <div className="flex items-center justify-between gap-3 flex-wrap px-4 sm:px-6 py-3 border-b border-neutral-200 dark:border-white/10">
+          <Select
+            label="Filter accounts by status"
+            value={rosterStatus}
+            onValueChange={(next) => setRosterStatus(next as "all" | CandidateStatus)}
+            options={[
+              { value: "all", label: "All Statuses" },
+              { value: "active", label: "Active" },
+              { value: "inactive", label: "Inactive" },
+              { value: "banned", label: "Banned" },
+            ]}
+            className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+          />
+
+          {/* The banner pill counts the whole roster, which a filtered table would otherwise
+              silently disagree with. */}
+          {isFiltered && (
+            <span className="text-[11px] text-neutral-400">
+              {visible.length} of {rows.length} shown
+            </span>
+          )}
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
@@ -689,14 +738,16 @@ export function AdminDashboard({
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-200 dark:divide-white/5">
-              {rows.length === 0 ? (
+              {visible.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-8 text-neutral-400">
-                    {empty}
+                    {/* An empty table and a filtered-away table are different facts, so they
+                        do not get the same sentence. */}
+                    {isFiltered ? "No accounts match these filters." : empty}
                   </td>
                 </tr>
               ) : (
-                rows.map((student) => (
+                visible.map((student) => (
                   <tr
                     key={student.id}
                     className="hover:bg-neutral-50/80 dark:hover:bg-white/5 transition-colors"
@@ -805,11 +856,25 @@ export function AdminDashboard({
 
     return (
       <div className="flex flex-col gap-6">
-        {/* No action: an account is created by signing in with Google, and admin access is an
-            email allowlist, so there is nothing this page could create. */}
+        {/* Search, not create: an account is created by signing in with Google and admin
+            access is an email allowlist, so there is nothing this page could create. What an
+            admin does here is find one, on a roster that is otherwise a long scroll. */}
         <PageHeader
           crumbs={[{ label: "Home", onSelect: () => setActiveTab("home") }, { label: page.title }]}
           onBack={onBackToChat}
+          action={
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={rosterQuery}
+                onChange={(e) => setRosterQuery(e.target.value)}
+                placeholder="Search accounts..."
+                aria-label={`Search ${page.title.toLowerCase()}`}
+                className="w-36 sm:w-52 pl-8 pr-3 py-1.5 text-xs rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white focus:outline-hidden focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+          }
         />
 
         {/* Header Banner */}
