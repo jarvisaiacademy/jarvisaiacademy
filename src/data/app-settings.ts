@@ -1,8 +1,10 @@
 /**
- * The academy's own business settings — the figures that are a decision rather than content.
+ * The academy's own business figures — the ones that are a decision rather than content.
  *
- * One document, `settings/app`, not a collection: these are facts about the academy, not
- * records, so there is nothing to list, sort or key.
+ * Hard-coded, and deliberately so. There is no editor for them in the dashboard: five scalars
+ * are a code change and a deploy, and a settings screen that can silently disagree with the
+ * receipt, the enrolment card and the tax breakdown is a way to be wrong in four places at
+ * once. Read them straight from `APP_SETTINGS`.
  *
  * Two kinds of number are deliberately NOT here, each because it already has an owner and a
  * second copy is how the two drift apart:
@@ -11,13 +13,11 @@
  * - Contact details and brand strings — `src/config/site.ts`.
  *
  * The chat replies in `src/data/academy-knowledge.ts` also state several of these figures as
- * prose and do NOT read this document: they have to answer instantly and keep working with
+ * prose and do NOT read this file: they have to answer instantly and keep working with
  * Firestore unreachable, so they are static by design. A value changed here will therefore
- * disagree with whatever the bot says until that prose is rewritten. That split is known and
- * deliberate — the Settings tab names the files that do not follow.
+ * disagree with whatever the bot says until that prose is rewritten.
  *
- * Import-free, like `src/data/courses.ts`, so `scripts/seed-content.mjs` can import this file
- * directly rather than keeping a copy of the defaults that drifts.
+ * Import-free, like `src/data/courses.ts`.
  */
 export interface AppSettings {
   /** Rupees paid for a referral that goes on to complete the course. */
@@ -37,11 +37,8 @@ export interface AppSettings {
   gstin: string;
 }
 
-export const SETTINGS_COLLECTION = "settings";
-export const SETTINGS_DOC_ID = "app";
-
-/** What the app renders until Firestore answers, and if it never does. */
-export const DEFAULT_APP_SETTINGS: AppSettings = {
+/** The figures the app quotes, everywhere. There is no other copy and no editor for them. */
+export const APP_SETTINGS: AppSettings = {
   referralReward: 3000,
   super10Seats: 10,
   moneyBackDays: 7,

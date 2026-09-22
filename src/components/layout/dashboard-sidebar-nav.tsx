@@ -5,13 +5,11 @@ import {
   BookOpen,
   Users,
   TrendingUp,
-  Database,
   ArrowLeft,
   ShieldCheck,
   GraduationCap,
   Briefcase,
   Home,
-  Settings as SettingsIcon,
 } from "lucide-react";
 import { useCourses } from "@/providers/courses-provider";
 import { useStudents } from "@/providers/students-provider";
@@ -25,10 +23,8 @@ export type DashboardTab =
   | "students"
   | "courses"
   | "knowledge"
-  | "settings"
   | "users"
-  | "analytics"
-  | "cloud";
+  | "analytics";
 
 interface DashboardSidebarNavProps {
   activeTab: DashboardTab;
@@ -99,10 +95,6 @@ export function DashboardSidebarNav({
   // disagree with the number of rows on the page it opens.
   const accountsByRole: Record<AccountRole, number> = { student: 0, teacher: 0, admin: 0 };
   for (const student of students) accountsByRole[accountRoleOf(student)]++;
-
-  // Cloud & Seeder is a development tool — seeding overwrites the live catalogue. Kept in
-  // step with `canSeed` in admin-dashboard.tsx, which gates the same tab's content.
-  const canSeed = process.env.NODE_ENV === "development";
 
   const handleSelect = (tab: DashboardTab) => {
     onSelectTab(tab);
@@ -191,18 +183,6 @@ export function DashboardSidebarNav({
           onSelect={handleSelect}
         />
 
-        {/* Academy Settings. The figures the site quotes. Not a record list like the others:
-            one document of scalars, so it carries a label rather than a count. */}
-        <NavButton
-          tab="settings"
-          label="Settings"
-          icon={SettingsIcon}
-          iconActive="text-rose-400 dark:text-rose-600"
-          badge="Config"
-          activeTab={activeTab}
-          onSelect={handleSelect}
-        />
-
         {/* Admissions: who has paid, as distinct from who has an account. */}
         <NavButton
           tab="users"
@@ -223,19 +203,6 @@ export function DashboardSidebarNav({
           activeTab={activeTab}
           onSelect={handleSelect}
         />
-
-        {/* Firebase Cloud Sync — development only */}
-        {canSeed && (
-          <NavButton
-            tab="cloud"
-            label="Cloud & Seeder"
-            icon={Database}
-            iconActive="text-purple-400 dark:text-purple-600"
-            badge="Sync"
-            activeTab={activeTab}
-            onSelect={handleSelect}
-          />
-        )}
       </div>
     </div>
   );

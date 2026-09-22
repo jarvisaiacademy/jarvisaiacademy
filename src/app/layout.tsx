@@ -17,7 +17,6 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import { LanguageProvider } from "@/providers/language-provider";
 import { AuthProvider } from "@/providers/auth-provider";
 import { CoursesProvider } from "@/providers/courses-provider";
-import { SettingsProvider } from "@/providers/settings-provider";
 import { StudentsProvider } from "@/providers/students-provider";
 import { ShortcutGuide } from "@/components/ui/shortcut-guide";
 
@@ -120,13 +119,11 @@ export default function RootLayout({
           <LanguageProvider>
             <AuthProvider>
               <CoursesProvider>
-                <SettingsProvider>
-                  <StudentsProvider>
-                    {children}
-                    {/* Renders nothing until opened, so it adds no markup to the HTML. */}
-                    <ShortcutGuide />
-                  </StudentsProvider>
-                </SettingsProvider>
+                <StudentsProvider>
+                  {children}
+                  {/* Renders nothing until opened, so it adds no markup to the HTML. */}
+                  <ShortcutGuide />
+                </StudentsProvider>
               </CoursesProvider>
             </AuthProvider>
           </LanguageProvider>

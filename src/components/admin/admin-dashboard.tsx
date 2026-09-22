@@ -16,7 +16,6 @@ import {
   Plus,
   Pencil,
   Trash2,
-  Database,
   Sparkles,
   BookOpen,
   Layers,
@@ -29,11 +28,11 @@ import {
 } from "lucide-react";
 import { MobileMenuIcon } from "@/components/ui/mobile-menu-icon";
 import { useCourses } from "@/providers/courses-provider";
-import { useSettings } from "@/providers/settings-provider";
 import { useStudents } from "@/providers/students-provider";
 import { useAuth } from "@/providers/auth-provider";
 import { updateCandidateInFirestore } from "@/services/students-service";
 import { accountRoleOf, CandidateStatus, StudentRecord, type AccountRole } from "@/data/students";
+import { APP_SETTINGS } from "@/data/app-settings";
 import { academyKnowledge } from "@/data/academy-knowledge";
 import { isPublic } from "@/lib/courses-server";
 import { CourseItem, COURSE_CATEGORIES, CourseCategoryId, CourseStatus } from "@/data/courses";
@@ -46,7 +45,6 @@ import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
 import { ThemeSwitcher } from "@/components/layout/theme-switcher";
 import { UserProfile } from "@/components/layout/user-profile";
 import { AdminKnowledge } from "@/components/admin/admin-knowledge";
-import { AdminSettings } from "@/components/admin/admin-settings";
 import { Select } from "@/components/ui/select";
 import { PageHeader } from "@/components/ui/page-header";
 import { shortcutById } from "@/data/shortcuts";
@@ -137,7 +135,6 @@ export function AdminDashboard({
   onToggleSidebar,
 }: AdminDashboardProps) {
   const { showToast } = useToast();
-  const { settings } = useSettings();
   const { user, logout } = useAuth();
   const {
     students,
@@ -149,12 +146,10 @@ export function AdminDashboard({
   // were stored, and saving one failed the write because no such document existed.
   const {
     firestoreCourses: courses,
-    isLiveFromFirebase,
     loading: coursesLoading,
     addCourse,
     editCourse,
     removeCourse,
-    seedCourses,
   } = useCourses();
 
   // Firestore has no joins, so the courses table assembles its own. A course's `teacherIds` are
@@ -166,11 +161,6 @@ export function AdminDashboard({
 
   // The people a course can be assigned to: the accounts an admin has marked as faculty.
   const faculty = useMemo(() => students.filter((s) => s.is_teacher), [students]);
-
-  // Seeding overwrites the live catalogue from the built-in one, which is a development
-  // action, not something to leave armed on the deployed site. `next dev` is the only
-  // context where this is true; Netlify builds with NODE_ENV=production.
-  const canSeed = process.env.NODE_ENV === "development";
 
   const [localTab, setLocalTab] = useState<DashboardTab>("courses");
   const activeTab: DashboardTab = controlledTab || localTab;
@@ -192,9 +182,7 @@ export function AdminDashboard({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<CourseItem | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [isSeeding, setIsSeeding] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [seedConfirm, setSeedConfirm] = useState(false);
 
   // Form states for Add / Edit modal
   const [formId, setFormId] = useState("");
@@ -350,14 +338,14 @@ export function AdminDashboard({
     (r) => r.courseId === "super10" && r.action === "paid"
   ).length;
 
-  // The referral reward the academy advertises and the seat count the Super10 track is capped
-  // at. Both are saved on the Settings tab; the constants that used to sit here could only be
-  // changed by editing this file and deploying.
-  const { referralReward, super10Seats } = settings;
+  // The academy's business figures, hard-coded in `src/data/app-settings.ts`. Changing one is a
+  // code change and a deploy, on purpose: the same numbers are printed on the receipt and the
+  // enrolment card, and an editor that can disagree with the receipt is worse than no editor.
+  const { referralReward, super10Seats } = APP_SETTINGS;
   // Pricing is quoted all-inclusive, so the tax breakdown divides tax back out rather than
-  // adding it on. The settings document holds a percentage — 18, not 0.18 — so the fraction
-  // is derived here, in the one place that needs it.
-  const gstDivisor = 1 + settings.gstRatePercent / 100;
+  // adding it on. `gstRatePercent` is a percentage — 18, not 0.18 — so the fraction is derived
+  // here, in the one place that needs it.
+  const gstDivisor = 1 + APP_SETTINGS.gstRatePercent / 100;
 
   const exportCSV = () => {
     const headers = "TransactionID,StudentName,StudentEmail,Course,Amount,Status,Timestamp\n";
@@ -585,21 +573,6 @@ export function AdminDashboard({
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to delete course";
       showToast(msg, "error");
-    }
-  };
-
-  // Seed the built-in course catalogue into Firestore
-  const handleSeedCourses = async () => {
-    setSeedConfirm(false);
-    setIsSeeding(true);
-    try {
-      const res = await seedCourses();
-      showToast(`Successfully seeded ${res.count} courses!`, "success");
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to seed courses";
-      showToast(msg, "error");
-    } finally {
-      setIsSeeding(false);
     }
   };
 
@@ -1107,41 +1080,6 @@ export function AdminDashboard({
                   className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
                 />
 
-                {canSeed && (
-                  <>
-                    {seedConfirm ? (
-                      <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-500/10 p-1 rounded-lg border border-blue-200 dark:border-blue-500/30">
-                        <button
-                          type="button"
-                          onClick={handleSeedCourses}
-                          className="px-2 py-0.5 text-[10px] font-bold bg-blue-600 text-white rounded cursor-pointer"
-                          title="Feed the 12 built-in verified courses into Firestore"
-                        >
-                          Confirm
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setSeedConfirm(false)}
-                          className="px-1 text-[10px] text-neutral-500 cursor-pointer"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={isSeeding}
-                        onClick={() => setSeedConfirm(true)}
-                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-neutral-300 dark:border-white/15 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-white/10 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
-                        title="Feed the built-in verified courses into Firestore"
-                      >
-                        <Database className="w-3.5 h-3.5 text-blue-500" />
-                        <span>{isSeeding ? "Feeding..." : "Feed 12 Verified Courses"}</span>
-                      </button>
-                    )}
-                  </>
-                )}
-
                 <button
                   type="button"
                   onClick={handleOpenAdd}
@@ -1160,7 +1098,7 @@ export function AdminDashboard({
                   <thead>
                     <tr className="bg-neutral-50 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 border-b border-neutral-200 dark:border-white/10 font-medium">
                       <th className="py-3 px-4 sm:px-6 w-16">#</th>
-                      <th className="py-3 px-4 sm:px-6">Course Offering</th>
+                      <th className="py-3 px-4 sm:px-6">Courses</th>
                       <th className="py-3 px-4 sm:px-6">Category</th>
                       <th className="py-3 px-4 sm:px-6">Teacher</th>
                       <th className="py-3 px-4 sm:px-6">Tech Stack</th>
@@ -1182,30 +1120,20 @@ export function AdminDashboard({
 
                           {/* Title & Badge */}
                           <td className="py-3.5 px-4 sm:px-6">
-                            <div className="flex flex-col gap-0.5">
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold text-neutral-900 dark:text-white">
-                                  {course.title}
-                                </span>
-                                {course.badge && (
-                                  <span className="px-2 py-0.2 rounded-full text-[10px] font-semibold bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">
-                                    {course.badge}
-                                  </span>
-                                )}
-                                {/* A static pill said nothing on a row that was fine and left the
-                                    one hiding a course from the site looking like every other
-                                    row. The switch says both, and flips it where it is read. */}
-                                <StatusSwitch
-                                  checked={(course.status ?? "active") === "active"}
-                                  onCheckedChange={(next) =>
-                                    handleCourseStatus(course, next ? "active" : "inactive")
-                                  }
-                                  label={`Visibility of ${course.title}`}
-                                />
-                              </div>
-                              <span className="text-[11px] text-neutral-500 font-mono">
-                                id: {course.id}
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-neutral-900 dark:text-white">
+                                {course.title}
                               </span>
+                              {/* A static pill said nothing on a row that was fine and left the
+                                  one hiding a course from the site looking like every other
+                                  row. The switch says both, and flips it where it is read. */}
+                              <StatusSwitch
+                                checked={(course.status ?? "active") === "active"}
+                                onCheckedChange={(next) =>
+                                  handleCourseStatus(course, next ? "active" : "inactive")
+                                }
+                                label={`Visibility of ${course.title}`}
+                              />
                             </div>
                           </td>
 
@@ -1502,11 +1430,6 @@ export function AdminDashboard({
           <AdminKnowledge onHome={() => setActiveTab("home")} />
         )}
 
-        {/* ACADEMY SETTINGS — the figures the site quotes */}
-        {activeTab === "settings" && (
-          <AdminSettings onHome={() => setActiveTab("home")} />
-        )}
-
         {/* REVENUE & ANALYTICS */}
         {activeTab === "analytics" && (
           <div className="flex flex-col gap-4">
@@ -1537,7 +1460,7 @@ export function AdminDashboard({
                       the JSX — it read the same whether revenue rose or fell to zero. */}
                 </div>
                 <span className="text-[11px] text-neutral-500">
-                  Incl. {settings.gstRatePercent}% statutory GST
+                  Incl. {APP_SETTINGS.gstRatePercent}% statutory GST
                 </span>
               </div>
 
@@ -1619,7 +1542,7 @@ export function AdminDashboard({
                   </div>
                   <div className="flex justify-between py-1">
                     <span className="text-neutral-500">
-                      {settings.gstRatePercent}% Statutory GST:
+                      {APP_SETTINGS.gstRatePercent}% Statutory GST:
                     </span>
                     <span className="font-semibold text-blue-600 dark:text-blue-400">
                       ₹{Math.round(totalPaidRevenue - totalPaidRevenue / gstDivisor).toLocaleString("en-IN")}
@@ -1657,34 +1580,6 @@ export function AdminDashboard({
           </div>
         )}
 
-        {/* TAB 4: FIREBASE CLOUD SYNC & SEEDER */}
-        {activeTab === "cloud" && canSeed && (
-          <div className="flex flex-col gap-4">
-            <PageHeader
-              crumbs={[
-                { label: "Home", onSelect: () => setActiveTab("home") },
-                { label: "Cloud & Seeder" },
-              ]}
-                />
-
-            {/* Which origin the catalogue is coming from is the one fact this page carried —
-                it moves into a plain row rather than going away with the banner. */}
-            <div className="flex items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400">
-              <span>Course catalogue source</span>
-              {isLiveFromFirebase ? (
-                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-medium">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  Cloud Firestore Active
-                </span>
-              ) : (
-                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-300 font-medium">
-                  <span className="w-2 h-2 rounded-full bg-blue-500" />
-                  Built-in Catalog
-                </span>
-              )}
-            </div>
-          </div>
-        )}
       </main>
 
       {/* ADD / EDIT COURSE MODAL */}
@@ -1695,7 +1590,7 @@ export function AdminDashboard({
               <div className="flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-blue-500" />
                 <h3 className="text-base sm:text-lg font-bold">
-                  {editingCourse ? "Edit Course Offering" : "Create New Course Offering"}
+                  {editingCourse ? "Edit Course" : "Create New Course"}
                 </h3>
               </div>
               <button
