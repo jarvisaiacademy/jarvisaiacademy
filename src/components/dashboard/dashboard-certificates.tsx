@@ -54,6 +54,7 @@ export function DashboardCertificates() {
               <div className="grid grid-cols-2 divide-x divide-border border-t border-border bg-muted/20">
                 <button
                   type="button"
+                  onClick={() => window.open(`/dashboard/certificate/${cert.id}`, '_blank')}
                   className="flex items-center justify-center gap-2 py-3 text-xs font-medium text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" />
@@ -61,10 +62,14 @@ export function DashboardCertificates() {
                 </button>
                 <button
                   type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.origin + `/dashboard/certificate/${cert.id}`);
+                    alert("Verification link copied to clipboard!");
+                  }}
                   className="flex items-center justify-center gap-2 py-3 text-xs font-medium text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
-                  Verify Link
+                  Copy Link
                 </button>
               </div>
             </div>
