@@ -10,34 +10,15 @@ import { PageHeader } from "@/components/ui/page-header";
 import { DevIcon } from "@/components/ui/dev-icon";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { AdminPage } from "@/components/admin/admin-page";
+import { Field } from "@/components/admin/detail-field";
 import { isPublic } from "@/lib/courses-server";
+import { stackDisplay } from "@/data/courses";
 import type { AdminShellState } from "@/components/admin/admin-shell";
 
 interface AdminCourseDetailProps {
   courseId: string;
   /** The shell's chrome, so this page can drive the sidebar and go back to the tab list. */
   shell: AdminShellState;
-}
-
-/** One label/value pair of the read-only view. */
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1 min-w-0">
-      <span className="text-[10px] font-semibold uppercase tracking-wide text-neutral-400">
-        {label}
-      </span>
-      <div className="text-xs text-neutral-900 dark:text-neutral-100 break-words">{children}</div>
-    </div>
-  );
-}
-
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-5 flex flex-col gap-4">
-      <h2 className="text-xs font-bold text-neutral-900 dark:text-white">{title}</h2>
-      {children}
-    </section>
-  );
 }
 
 /**
@@ -181,8 +162,13 @@ export function AdminCourseDetail({ courseId, shell }: AdminCourseDetailProps) {
         <>
           {crumbs}
 
-          <section className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-5 flex flex-col gap-4">
-            <div className="flex flex-wrap items-center gap-3">
+          {/* One card, not one per section. The fields are all the same kind of thing, and six
+              boxed panels made a page this short read as six pages; the grid is the grouping
+              instead. Four entries to a row, and the long ones — the title, the description, the
+              topic list, the chat prompt — take the columns their content needs rather than
+              wrapping inside a quarter width. */}
+          <section className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-5 flex flex-col gap-5">
+            <div className="flex flex-wrap items-center gap-3 pb-4 border-b border-neutral-200 dark:border-white/10">
               <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-neutral-100 dark:bg-white/10 text-neutral-600 dark:text-neutral-300 border border-neutral-200 dark:border-white/10">
                 #{course.number}
               </span>
@@ -200,37 +186,35 @@ export function AdminCourseDetail({ courseId, shell }: AdminCourseDetailProps) {
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-5">
+              <Field label="Title" className="col-span-2">
+                {course.title}
+              </Field>
+              <Field label="Banner title" className="col-span-2">
+                {course.bannerTitle || "—"}
+              </Field>
+              <Field label="Banner subtitle">{course.bannerSubtitle || "—"}</Field>
+              <Field label="Badge">{course.badge || "—"}</Field>
+              <Field label="Badge type">{course.badgeType || "—"}</Field>
+              <Field label="Enrollment id">{course.enrollmentId || "—"}</Field>
               <Field label="Category">{course.categoryLabel || course.category}</Field>
               <Field label="Fee">
                 {course.fee} ({`₹${course.amount}`})
               </Field>
               <Field label="Duration">{course.duration}</Field>
               <Field label="Level">{course.level}</Field>
-            </div>
-          </section>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-            <Panel title="Catalogue copy">
-              <Field label="Title">{course.title}</Field>
-              <Field label="Banner title">{course.bannerTitle || "—"}</Field>
-              <Field label="Banner subtitle">{course.bannerSubtitle || "—"}</Field>
-              <Field label="Badge">{course.badge || "—"}</Field>
-              <Field label="Badge type">{course.badgeType || "—"}</Field>
-              <Field label="Enrollment id">{course.enrollmentId || "—"}</Field>
-            </Panel>
+              <Field label="Description" className="col-span-2">
+                <p className="leading-relaxed whitespace-pre-wrap">{course.description || "—"}</p>
+              </Field>
 
-            <Panel title="Description">
-              <p className="text-xs leading-relaxed text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap">
-                {course.description || "—"}
-              </p>
-            </Panel>
-
-            <Panel title="Tech stack">
-              {course.techStack.length === 0 ? (
-                <span className="text-xs text-neutral-400">None listed</span>
-              ) : (
-                <div className="flex flex-col gap-2.5">
+              {/* One or the other, never both: a logo beside its own name is the same fact twice,
+                  and the row of names under a row of marks was the page's tallest and emptiest
+                  block. Which one is `stackDisplay`'s call, so the tab agrees with this page. */}
+              <Field label="Tech stack" className="col-span-2">
+                {course.techStack.length === 0 ? (
+                  <span className="text-neutral-400">None listed</span>
+                ) : stackDisplay(course) === "icons" ? (
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {course.techIcons.map((icon) => (
                       <span
@@ -242,6 +226,7 @@ export function AdminCourseDetail({ courseId, shell }: AdminCourseDetailProps) {
                       </span>
                     ))}
                   </div>
+                ) : (
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {course.techStack.map((tech) => (
                       <span
@@ -252,60 +237,74 @@ export function AdminCourseDetail({ courseId, shell }: AdminCourseDetailProps) {
                       </span>
                     ))}
                   </div>
-                </div>
-              )}
-            </Panel>
+                )}
+              </Field>
 
-            <Panel title="Topics">
-              {course.topics.length === 0 ? (
-                <span className="text-xs text-neutral-400">None listed</span>
-              ) : (
-                <ol className="flex flex-col gap-2 list-none">
-                  {course.topics.map((topic, index) => (
-                    <li key={topic} className="flex items-start gap-2 text-xs">
-                      <span className="mt-0.5 shrink-0 w-4 h-4 rounded-full bg-neutral-100 dark:bg-white/5 text-[9px] font-bold text-neutral-500 flex items-center justify-center">
-                        {index + 1}
-                      </span>
-                      <span className="text-neutral-700 dark:text-neutral-300">{topic}</span>
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </Panel>
+              <Field label="Topics" className="col-span-2">
+                {course.topics.length === 0 ? (
+                  <span className="text-neutral-400">None listed</span>
+                ) : (
+                  <ol className="flex flex-col gap-2 list-none">
+                    {course.topics.map((topic, index) => (
+                      <li key={topic} className="flex items-start gap-2">
+                        <span className="mt-0.5 shrink-0 w-4 h-4 rounded-full bg-neutral-100 dark:bg-white/5 text-[9px] font-bold text-neutral-500 flex items-center justify-center">
+                          {index + 1}
+                        </span>
+                        <span>{topic}</span>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </Field>
 
-            <Panel title="Assigned teachers">
-              {(course.teacherIds ?? []).length === 0 ? (
-                <span className="text-xs text-neutral-400">Unassigned</span>
-              ) : (
-                <div className="flex flex-col gap-2.5">
-                  {(course.teacherIds ?? []).map((id) => {
-                    const teacher = teacherById.get(id);
-                    return (
-                      <div key={id} className="flex items-center gap-2.5">
-                        <UserAvatar user={teacher ?? {}} size="sm" />
-                        <div className="flex flex-col min-w-0">
+              <Field label="Assigned teachers" className="col-span-2">
+                {(course.teacherIds ?? []).length === 0 ? (
+                  <span className="text-neutral-400">Unassigned</span>
+                ) : (
+                  // Side by side rather than stacked: a course has a few teachers, and this is a
+                  // page to be read, not scrolled. Each chip opens that account's own page — but
+                  // only where the roster holds the account, because a link to an id nobody holds
+                  // is a link to a page that can only answer "no such account".
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {(course.teacherIds ?? []).map((id) => {
+                      const teacher = teacherById.get(id);
+
+                      const chip = (
+                        <>
+                          <UserAvatar user={teacher ?? {}} size="sm" />
                           <span className="text-xs font-semibold text-neutral-900 dark:text-white truncate">
                             {teacher?.name || id}
                           </span>
-                          {teacher?.email && (
-                            <span className="text-[10px] text-neutral-500 truncate">
-                              {teacher.email}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </Panel>
+                        </>
+                      );
 
-            <Panel title="Chat prompt">
-              <p className="text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
-                {course.actionPrompt || "—"}
-              </p>
-            </Panel>
-          </div>
+                      return teacher ? (
+                        <Link
+                          key={id}
+                          href={`/admin/teachers/${id}`}
+                          title={teacher.email}
+                          className="inline-flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-white/5 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors max-w-[14rem]"
+                        >
+                          {chip}
+                        </Link>
+                      ) : (
+                        <span
+                          key={id}
+                          className="inline-flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-white/5 max-w-[14rem]"
+                        >
+                          {chip}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+              </Field>
+
+              <Field label="Chat prompt" className="col-span-2 sm:col-span-4">
+                <p className="leading-relaxed">{course.actionPrompt || "—"}</p>
+              </Field>
+            </div>
+          </section>
         </>
       )}
     </>

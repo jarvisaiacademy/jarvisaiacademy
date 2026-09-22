@@ -75,6 +75,22 @@ const ICON_MAP: Record<string, string> = {
 };
 
 /**
+ * The map's key for a display name, so a course's icons can follow the tech stack an admin
+ * already types instead of being kept by hand beside it. "Next.js 15" and "React 19" carry
+ * versions the keys do not, so a trailing number is dropped before the second look.
+ *
+ * Returns null for a name with no key — a stack entry like "RAG" has no icon and should show
+ * none, which is also why the match is exact: a partial match could only ever pick the wrong
+ * brand, never a right one.
+ */
+export function iconKeyFor(name: string): string | null {
+  const base = name.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (ICON_MAP[base]) return base;
+  const versionless = base.replace(/[0-9]+$/, "");
+  return ICON_MAP[versionless] ? versionless : null;
+}
+
+/**
  * Some marks vanish on a dark surface. Devicon ships no white variants, so each
  * gets a CSS filter, chosen by how the asset is actually drawn:
  *

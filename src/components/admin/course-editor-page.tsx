@@ -7,10 +7,19 @@ import { useCourses } from "@/providers/courses-provider";
 import { useStudents } from "@/providers/students-provider";
 import { useToast } from "@/components/ui/toast";
 import { Select } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { StatusSwitch } from "@/components/ui/switch";
+import { iconKeyFor, DevIcon } from "@/components/ui/dev-icon";
 import { PageHeader } from "@/components/ui/page-header";
 import { AdminPage } from "@/components/admin/admin-page";
-import { CourseItem, CourseStatus } from "@/data/courses";
+import {
+  CourseItem,
+  CourseStatus,
+  COURSE_BADGES,
+  COURSE_DURATIONS,
+  COURSE_LEVELS,
+  TECH_STACK_OPTIONS,
+} from "@/data/courses";
 import type { AdminShellState } from "@/components/admin/admin-shell";
 
 interface CourseEditorPageProps {
@@ -22,31 +31,97 @@ interface CourseEditorPageProps {
 /**
  * The course form, as a page: `/admin/courses/new` and `/admin/courses/[id]/edit`.
  *
- * A page rather than a modal, because creating or editing a course is a piece of work — twenty
- * fields, a long description, topics — and that is worth a URL: it can be refreshed without
- * losing the screen, opened in a tab, and left with the browser's own back button.
+ * A page rather than a modal, because creating or editing a course is a piece of work — a long
+ * description, a topic list, half a dozen short fields — and that is worth a URL: it can be
+ * refreshed without losing the screen, opened in a tab, and left with the browser's own back
+ * button.
  *
- * Each field is seeded from `course` in its own state initialiser, so a field's value and the
- * course it came from cannot drift apart. That is also why the route passes a `key` — the form
- * resets by being remounted, never by an effect: the course object is replaced on every Firestore
- * snapshot, so a form that re-seeded when it changed would wipe whatever an admin was typing.
+ * Only what an admin actually decides is asked for. The id and the display number are the
+ * title's, the icons are the tech stack's, and the fee's digits are the amount — all derived on
+ * save, and shown read-only where they matter.
+ *
+ * This half only resolves the course and gets out of the way: `CourseForm` below owns the fields,
+ * and it is mounted only once the course is here. That ordering is the point. Every field is
+ * seeded in its own state initialiser, which runs once, at mount — and `firestoreCourses` is an
+ * empty array until the subscription answers, so a form mounted on the first render would seed
+ * itself from nothing and then never re-read. Keying on the course is what makes the initialisers
+ * correct rather than merely the first field's worth of data.
  */
 export function CourseEditorPage({ courseId, shell }: CourseEditorPageProps) {
+  const { firestoreCourses: courses, loading } = useCourses();
+
+  const course = courseId ? courses.find((c) => c.id === courseId) : null;
+
+  // `loading` first, or "No such course" flashes while the subscription is still answering.
+  if (courseId && loading) {
+    return (
+      <AdminPage shell={shell}>
+        <EditorCrumbs shell={shell} title={null} />
+        <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 text-center text-xs text-neutral-400 animate-pulse">
+          Loading course...
+        </div>
+      </AdminPage>
+    );
+  }
+
+  if (courseId && !course) {
+    return (
+      <AdminPage shell={shell}>
+        <EditorCrumbs shell={shell} title={null} />
+        <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 flex flex-col items-center gap-3 text-center">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            No course with this id, so there is nothing to edit. It may have been deleted.
+          </p>
+          <button
+            type="button"
+            onClick={() => shell.onNavigateTab("courses")}
+            className="px-3.5 py-1.5 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+          >
+            Back to Courses
+          </button>
+        </div>
+      </AdminPage>
+    );
+  }
+
+  return <CourseForm key={course?.id ?? "new"} course={course ?? null} shell={shell} />;
+}
+
+function EditorCrumbs({ shell, title }: { shell: AdminShellState; title: string | null }) {
+  return (
+    <PageHeader
+      crumbs={[
+        { label: "Home", onSelect: () => shell.onNavigateTab("home") },
+        { label: "Courses", onSelect: () => shell.onNavigateTab("courses") },
+        { label: title ? `Edit ${title}` : "New Course" },
+      ]}
+    />
+  );
+}
+
+/**
+ * The form itself. `course` is null for a new one, and non-null for every field that reads from
+ * it — the parent does not mount this until that is settled.
+ */
+function CourseForm({ course, shell }: { course: CourseItem | null; shell: AdminShellState }) {
   const { showToast } = useToast();
-  const { firestoreCourses: courses, loading, addCourse, editCourse } = useCourses();
+  const { addCourse, editCourse } = useCourses();
   const { students } = useStudents();
   const router = useRouter();
-
-  // Named `course` because the whole form below is written against it: null is the create case.
-  const course = courseId ? courses.find((c) => c.id === courseId) : null;
 
   // The people a course can be assigned to: the accounts an admin has marked as faculty.
   const faculty = useMemo(() => students.filter((s) => s.is_teacher), [students]);
 
-  const [formId, setFormId] = useState(() => course?.id ?? "");
-  const [formNumber, setFormNumber] = useState(
-    () => course?.number ?? String(courses.length + 1).padStart(2, "0")
-  );
+  // The vocabulary, plus whatever this course already holds. Without the second half, a name
+  // saved before the picker existed — "Next.js 15" carries a version the vocabulary does not, and
+  // the referral programme's stack is prose rather than technologies — would still be on the
+  // course but not in the list, so the closed trigger could show it and the popup could not.
+  const techStackOptions = useMemo(() => {
+    const known = new Set<string>(TECH_STACK_OPTIONS);
+    const extra = (course?.techStack ?? []).filter((tech) => !known.has(tech));
+    return [...TECH_STACK_OPTIONS, ...extra];
+  }, [course]);
+
   const [formTitle, setFormTitle] = useState(() => course?.title ?? "");
   const [formBannerTitle, setFormBannerTitle] = useState(
     () => course?.bannerTitle || course?.title || ""
@@ -70,14 +145,10 @@ export function CourseEditorPage({ courseId, shell }: CourseEditorPageProps) {
   );
   const [formLevel, setFormLevel] = useState(() => course?.level || "Beginner to Adv");
   const [formFee, setFormFee] = useState(() => course?.fee || "₹30,000");
-  const [formAmount, setFormAmount] = useState(() => course?.amount ?? 30000);
-  const [formTechStack, setFormTechStack] = useState(() =>
+  const [formTechStack, setFormTechStack] = useState<string[]>(() =>
     course
-      ? (course.techStack || []).join(", ")
-      : "Next.js, React, FastAPI, Python, PostgreSQL"
-  );
-  const [formTechIcons, setFormTechIcons] = useState(() =>
-    course ? (course.techIcons || []).join(", ") : "nextjs, react, fastapi, python, postgresql"
+      ? course.techStack || []
+      : ["Next.js", "React", "FastAPI", "Python", "PostgreSQL"]
   );
   const [formTopics, setFormTopics] = useState(() =>
     course
@@ -103,24 +174,26 @@ export function CourseEditorPage({ courseId, shell }: CourseEditorPageProps) {
 
     setIsSaving(true);
     try {
-      const techStackArr = formTechStack
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
+      const techStackArr = formTechStack;
 
-      const techIconsArr = formTechIcons
-        .split(",")
-        .map((s) => s.trim().toLowerCase())
-        .filter(Boolean);
+      // Derived, not picked: a stack name the icon map knows gets its mark, and one it does not
+      // (RAG, say) contributes nothing rather than a wrong brand.
+      const techIconsArr = techStackArr
+        .map(iconKeyFor)
+        .filter((key): key is string => key !== null);
 
       const topicsArr = formTopics
         .split("\n")
         .map((s) => s.trim())
         .filter(Boolean);
 
+      // The one fee box is the display string; the number the catalogue filters on is whatever
+      // digits it holds. "₹30,000" is 30000, and a word with no digits in it is 0 — which is
+      // also what the public catalogue reads as "sponsored".
+      const amount = Number(formFee.replace(/[^0-9]/g, "")) || 0;
+
       if (course) {
         await editCourse(course.id, {
-          number: formNumber.trim() || course.number,
           title: formTitle.trim(),
           bannerTitle: formBannerTitle.trim() || formTitle.trim(),
           bannerSubtitle: formBannerSubtitle.trim(),
@@ -132,7 +205,7 @@ export function CourseEditorPage({ courseId, shell }: CourseEditorPageProps) {
           duration: formDuration.trim(),
           level: formLevel.trim(),
           fee: formFee.trim(),
-          amount: Number(formAmount) || 0,
+          amount,
           techStack: techStackArr,
           techIcons: techIconsArr,
           topics: topicsArr,
@@ -146,9 +219,9 @@ export function CourseEditorPage({ courseId, shell }: CourseEditorPageProps) {
         // saved values can be read back.
         router.push(`/admin/courses/${course.id}`);
       } else {
+        // No id and no number in the payload: the provider slugs the title and defaults the
+        // number to the next in the list, so both are derived rather than typed.
         const created = await addCourse({
-          id: formId.trim() || undefined,
-          number: formNumber.trim() || String(courses.length + 1).padStart(2, "0"),
           title: formTitle.trim(),
           bannerTitle: formBannerTitle.trim() || formTitle.trim(),
           bannerSubtitle: formBannerSubtitle.trim(),
@@ -160,7 +233,7 @@ export function CourseEditorPage({ courseId, shell }: CourseEditorPageProps) {
           duration: formDuration.trim(),
           level: formLevel.trim(),
           fee: formFee.trim(),
-          amount: Number(formAmount) || 0,
+          amount,
           techStack: techStackArr,
           techIcons: techIconsArr,
           topics: topicsArr,
@@ -180,96 +253,27 @@ export function CourseEditorPage({ courseId, shell }: CourseEditorPageProps) {
     }
   };
 
-  const crumbs = (
-    <PageHeader
-      crumbs={[
-        { label: "Home", onSelect: () => shell.onNavigateTab("home") },
-        { label: "Courses", onSelect: () => shell.onNavigateTab("courses") },
-        { label: course ? `Edit ${course.title}` : "New Course" },
-      ]}
-    />
-  );
-
-  // `loading` first, or "No such course" flashes while the subscription is still answering.
-  if (courseId && loading) {
-    return (
-      <AdminPage shell={shell}>
-        {crumbs}
-        <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 text-center text-xs text-neutral-400 animate-pulse">
-          Loading course...
-        </div>
-      </AdminPage>
-    );
-  }
-
-  if (courseId && !course) {
-    return (
-      <AdminPage shell={shell}>
-        {crumbs}
-        <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 flex flex-col items-center gap-3 text-center">
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            No course with this id, so there is nothing to edit. It may have been deleted.
-          </p>
-          <button
-            type="button"
-            onClick={() => shell.onNavigateTab("courses")}
-            className="px-3.5 py-1.5 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-          >
-            Back to Courses
-          </button>
-        </div>
-      </AdminPage>
-    );
-  }
-
   return (
     <AdminPage shell={shell}>
-      {crumbs}
+      <EditorCrumbs shell={shell} title={course?.title ?? null} />
 
-      <div className="w-full max-w-3xl rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-5 sm:p-6 flex flex-col gap-5 text-neutral-900 dark:text-white">
+      <div className="w-full rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-5 sm:p-6 flex flex-col gap-5 text-neutral-900 dark:text-white">
         <div className="flex items-center gap-2 pb-3 border-b border-neutral-200 dark:border-white/10">
           <BookOpen className="w-5 h-5 text-blue-500" />
           <h2 className="text-sm sm:text-base font-bold">
             {course ? "Edit Course" : "Create New Course"}
           </h2>
+          {/* Both are derived from the title now, so they are shown rather than typed. Read-only
+              even here: the id is the Firestore document key and the URL, and moving it would
+              break every link to the course. */}
+          {course && (
+            <span className="ml-auto font-mono text-[10px] text-neutral-400">
+              /courses/{course.id} · #{course.number}
+            </span>
+          )}
         </div>
 
         <form onSubmit={handleSaveCourse} className="flex flex-col gap-4 text-xs">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Course ID / Slug */}
-            <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                Course Identifier (slug) *
-              </label>
-              <input
-                type="text"
-                value={formId}
-                onChange={(e) => setFormId(e.target.value)}
-                placeholder="e.g. genai-agents"
-                disabled={!!course}
-                className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white disabled:opacity-60"
-              />
-              <span className="text-[10px] text-neutral-400">
-                Unique key for routing &amp; Firestore document ID
-              </span>
-            </div>
-
-            {/* Display Number */}
-            <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                Index / Number (#)
-              </label>
-              <input
-                type="text"
-                value={formNumber}
-                onChange={(e) => setFormNumber(e.target.value)}
-                placeholder="e.g. 13"
-                className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-              />
-              <span className="text-[10px] text-neutral-400">Used for catalog sorting</span>
-            </div>
-          </div>
-
           {/* Title */}
           <div className="flex flex-col gap-1.5">
             <label className="font-semibold text-neutral-700 dark:text-neutral-300">
@@ -285,7 +289,7 @@ export function CourseEditorPage({ courseId, shell }: CourseEditorPageProps) {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Banner Title */}
             <div className="flex flex-col gap-1.5">
               <label className="font-semibold text-neutral-700 dark:text-neutral-300">
@@ -313,9 +317,44 @@ export function CourseEditorPage({ courseId, shell }: CourseEditorPageProps) {
                 className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
               />
             </div>
+
+            {/* Badge Text */}
+            <div className="flex flex-col gap-1.5">
+              <label className="font-semibold text-neutral-700 dark:text-neutral-300">
+                Badge Text (Optional)
+              </label>
+              <Combobox
+                label="Badge text"
+                options={COURSE_BADGES}
+                value={formBadge}
+                onValueChange={setFormBadge}
+                placeholder="e.g. Bestseller"
+                className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
+              />
+            </div>
+
+            {/* Badge Type */}
+            <div className="flex flex-col gap-1.5">
+              <label className="font-semibold text-neutral-700 dark:text-neutral-300">
+                Badge Style
+              </label>
+              <Select
+                label="Badge Style"
+                value={formBadgeType ?? ""}
+                onValueChange={(value) => setFormBadgeType(value as CourseItem["badgeType"] | "")}
+                options={[
+                  { value: "", label: "None" },
+                  { value: "bestseller", label: "Bestseller (Cyan/Blue)" },
+                  { value: "elite", label: "Elite (Gold/Amber)" },
+                  { value: "popular", label: "Popular (Indigo/Purple)" },
+                  { value: "ai", label: "AI Special (Violet/Magenta)" },
+                ]}
+                className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
+              />
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Category */}
             <div className="flex flex-col gap-1.5">
               <label className="font-semibold text-neutral-700 dark:text-neutral-300">
@@ -344,31 +383,16 @@ export function CourseEditorPage({ courseId, shell }: CourseEditorPageProps) {
               />
             </div>
 
-            {/* Category Label */}
-            <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                Category Label
-              </label>
-              <input
-                type="text"
-                value={formCategoryLabel}
-                onChange={(e) => setFormCategoryLabel(e.target.value)}
-                placeholder="e.g. AI & Data Science"
-                className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* Duration */}
             <div className="flex flex-col gap-1.5">
               <label className="font-semibold text-neutral-700 dark:text-neutral-300">
                 Duration
               </label>
-              <input
-                type="text"
+              <Combobox
+                label="Duration"
+                options={COURSE_DURATIONS}
                 value={formDuration}
-                onChange={(e) => setFormDuration(e.target.value)}
+                onValueChange={setFormDuration}
                 placeholder="60 Days (2 Months)"
                 className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
               />
@@ -377,10 +401,11 @@ export function CourseEditorPage({ courseId, shell }: CourseEditorPageProps) {
             {/* Level */}
             <div className="flex flex-col gap-1.5">
               <label className="font-semibold text-neutral-700 dark:text-neutral-300">Level</label>
-              <input
-                type="text"
+              <Combobox
+                label="Level"
+                options={COURSE_LEVELS}
                 value={formLevel}
-                onChange={(e) => setFormLevel(e.target.value)}
+                onValueChange={setFormLevel}
                 placeholder="Beginner to Adv"
                 className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
               />
@@ -388,61 +413,17 @@ export function CourseEditorPage({ courseId, shell }: CourseEditorPageProps) {
 
             {/* Fee */}
             <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                Fee (Display &amp; Amount)
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={formFee}
-                  onChange={(e) => setFormFee(e.target.value)}
-                  placeholder="₹30,000"
-                  className="w-1/2 px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white font-semibold"
-                />
-                <input
-                  type="number"
-                  value={formAmount}
-                  onChange={(e) => setFormAmount(Number(e.target.value))}
-                  placeholder="0"
-                  className="w-1/2 px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Badge Text */}
-            <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                Badge Text (Optional)
-              </label>
+              <label className="font-semibold text-neutral-700 dark:text-neutral-300">Fee</label>
               <input
                 type="text"
-                value={formBadge}
-                onChange={(e) => setFormBadge(e.target.value)}
-                placeholder="e.g. Bestseller, 100% Placement"
-                className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
+                value={formFee}
+                onChange={(e) => setFormFee(e.target.value)}
+                placeholder="₹30,000"
+                className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white font-semibold"
               />
-            </div>
-
-            {/* Badge Type */}
-            <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                Badge Style
-              </label>
-              <Select
-                label="Badge Style"
-                value={formBadgeType ?? ""}
-                onValueChange={(value) => setFormBadgeType(value as CourseItem["badgeType"] | "")}
-                options={[
-                  { value: "", label: "None" },
-                  { value: "bestseller", label: "Bestseller (Cyan/Blue)" },
-                  { value: "elite", label: "Elite (Gold/Amber)" },
-                  { value: "popular", label: "Popular (Indigo/Purple)" },
-                  { value: "ai", label: "AI Special (Violet/Magenta)" },
-                ]}
-                className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-              />
+              <span className="text-[10px] text-neutral-400">
+                Shown in the catalogue as typed; the number inside it is the amount.
+              </span>
             </div>
           </div>
 
@@ -460,35 +441,6 @@ export function CourseEditorPage({ courseId, shell }: CourseEditorPageProps) {
             />
           </div>
 
-          {/* Tech Stack & Icons */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                Tech Stack (Comma-separated)
-              </label>
-              <input
-                type="text"
-                value={formTechStack}
-                onChange={(e) => setFormTechStack(e.target.value)}
-                placeholder="Next.js 15, React 19, FastAPI, PostgreSQL"
-                className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                Tech Icons (DevIcon keys, comma-separated)
-              </label>
-              <input
-                type="text"
-                value={formTechIcons}
-                onChange={(e) => setFormTechIcons(e.target.value)}
-                placeholder="nextjs, react, fastapi, postgresql, python"
-                className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-              />
-            </div>
-          </div>
-
           {/* Curriculum Topics */}
           <div className="flex flex-col gap-1.5">
             <label className="font-semibold text-neutral-700 dark:text-neutral-300">
@@ -503,10 +455,34 @@ export function CourseEditorPage({ courseId, shell }: CourseEditorPageProps) {
             />
           </div>
 
-          {/* Visibility & Faculty. The status is how a course leaves the public site:
+          {/* Stack, Visibility & Faculty. The status is how a course leaves the public site:
               the catalogue, sitemap and /llms.txt all read through getPublicCourses,
               which drops anything inactive, and /courses/<slug> then 404s. */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="font-semibold text-neutral-700 dark:text-neutral-300">
+                Tech Stack
+              </label>
+              {/* Picked, not typed. A freehand list is where "TailwindCSS", "Tailwind CSS" and
+                  "tailwind" become three technologies with one logo between them, and where a
+                  name the icon map was never taught draws initials instead of a brand. */}
+              <Select
+                multiple
+                label="Tech stack"
+                value={formTechStack}
+                onValueChange={setFormTechStack}
+                options={techStackOptions.map((tech) => ({
+                  value: tech,
+                  label: tech,
+                  icon: <DevIcon name={tech} size={14} />,
+                }))}
+                className="w-full px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
+              />
+              <span className="text-[10px] text-neutral-400">
+                Each name also picks its own logo.
+              </span>
+            </div>
+
             <div className="flex flex-col gap-1.5">
               <label className="font-semibold text-neutral-700 dark:text-neutral-300">Status</label>
               <StatusSwitch
@@ -551,7 +527,9 @@ export function CourseEditorPage({ courseId, shell }: CourseEditorPageProps) {
               // Back where the admin came from: a course being edited has a page to return to,
               // a new one does not, so that goes back to the tab list.
               onClick={() =>
-                courseId ? router.push(`/admin/courses/${courseId}`) : shell.onNavigateTab("courses")
+                course
+                  ? router.push(`/admin/courses/${course.id}`)
+                  : shell.onNavigateTab("courses")
               }
               className="px-4 py-2 rounded-xl text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/5 transition-colors cursor-pointer font-medium"
             >
