@@ -18,21 +18,24 @@ export function DashboardCertificates() {
     if (!el) return;
     setGenerating(certId);
     try {
-      const { toPng } = await import("html-to-image");
+      const { toJpeg } = await import("html-to-image");
       const { jsPDF } = await import("jspdf");
 
-      const dataUrl = await toPng(el, {
+      const dataUrl = await toJpeg(el, {
         pixelRatio: 2, // High resolution
         backgroundColor: "#ffffff",
+        quality: 0.95, // Visually lossless, heavily compressed size
       });
       
       const pdf = new jsPDF({
         orientation: "landscape",
         unit: "mm",
         format: "a4",
+        compress: true, // Enable PDF object compression
       });
 
-      pdf.addImage(dataUrl, "PNG", 0, 0, 297, 210);
+      // Use FAST compression alias for the image
+      pdf.addImage(dataUrl, "JPEG", 0, 0, 297, 210, undefined, "FAST");
       pdf.save(`Jarvis_AI_Academy_Certificate_${certId}.pdf`);
     } catch (error) {
       console.error("PDF generation failed", error);
