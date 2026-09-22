@@ -1,22 +1,70 @@
 "use client";
 
-import React from "react";
+import React, { useRef, useState } from "react";
 import { motion } from "motion/react";
-import { Award, Lock, Download, ExternalLink } from "lucide-react";
+import { Award, Lock, Download, ExternalLink, Loader2 } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { useStudentCertificates } from "@/hooks/use-student-certificates";
+import { CertificateTemplate } from "@/components/dashboard/certificate-template";
 
 export function DashboardCertificates() {
   const { user } = useAuth();
   const certificates = useStudentCertificates(user?.email);
+  const certRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [generating, setGenerating] = useState<string | null>(null);
+
+  const generateAndDownloadPDF = async (certId: string) => {
+    const el = certRefs.current[certId];
+    if (!el) return;
+    setGenerating(certId);
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const { jsPDF } = await import("jspdf");
+
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+      });
+      
+      const pdf = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const imgData = canvas.toDataURL("image/jpeg", 1.0);
+      pdf.addImage(imgData, "JPEG", 0, 0, 297, 210);
+      pdf.save(`Jarvis_AI_Academy_Certificate_${certId}.pdf`);
+    } catch (error) {
+      console.error("PDF generation failed", error);
+      alert("Failed to generate PDF. Please try again.");
+    } finally {
+      setGenerating(null);
+    }
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.18 }}
-      className="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6"
+      className="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6 relative overflow-hidden"
     >
+      {/* Hidden container for rendering certificates before PDF generation */}
+      <div className="absolute top-[-9999px] left-[-9999px] opacity-0 pointer-events-none">
+        {certificates.map((cert) => (
+          <CertificateTemplate
+            key={`template-${cert.id}`}
+            cert={cert}
+            ref={(el) => {
+              certRefs.current[cert.id] = el;
+            }}
+          />
+        ))}
+      </div>
+
       <div className="flex flex-col gap-1">
         <h2 className="text-xl font-semibold text-foreground">My Certificates</h2>
         <p className="text-sm text-muted-foreground">
@@ -54,11 +102,16 @@ export function DashboardCertificates() {
               <div className="grid grid-cols-2 divide-x divide-border border-t border-border bg-muted/20">
                 <button
                   type="button"
-                  onClick={() => window.open(`/dashboard/certificate/${cert.id}`, '_blank')}
-                  className="flex items-center justify-center gap-2 py-3 text-xs font-medium text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
+                  disabled={generating === cert.id}
+                  onClick={() => generateAndDownloadPDF(cert.id)}
+                  className="flex items-center justify-center gap-2 py-3 text-xs font-medium text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Download className="w-3.5 h-3.5" />
-                  Download PDF
+                  {generating === cert.id ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Download className="w-3.5 h-3.5" />
+                  )}
+                  {generating === cert.id ? "Generating..." : "Download PDF"}
                 </button>
                 <button
                   type="button"
