@@ -10,7 +10,11 @@ import {
   Calendar,
   Clock,
   CheckCircle2,
-  PlayCircle
+  PlayCircle,
+  Code,
+  ListChecks,
+  Target,
+  Award
 } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { useCourses } from "@/providers/courses-provider";
@@ -56,7 +60,15 @@ export function DashboardCourses() {
       startDate: startDateObj.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
       endDate: endDateObj.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
       progress: record.action === "paid" ? mockProgress : 0,
-      description: courseObj?.description || "Master the fundamentals and advanced concepts in this comprehensive Jarvis AI Academy programme."
+      description: courseObj?.description || "Master the fundamentals and advanced concepts in this comprehensive Jarvis AI Academy programme.",
+      level: courseObj?.level || "All Levels",
+      category: courseObj?.categoryLabel || "Professional Programme",
+      techStack: courseObj?.techStack || ["React", "Node.js", "Firebase", "AI"],
+      topics: courseObj?.topics || [
+        "Core Programming Concepts",
+        "Advanced Architecture & Design",
+        "Real-world Project Implementation"
+      ]
     };
   };
 
@@ -232,11 +244,11 @@ export function DashboardCourses() {
                   </div>
 
                   {/* Metadata Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div className="flex flex-col gap-1.5 p-4 rounded-xl border border-border bg-card/50">
                       <div className="flex items-center gap-2 text-muted-foreground mb-1">
                         <Calendar className="w-4 h-4" />
-                        <span className="text-xs font-semibold uppercase tracking-wider">Start Date</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider">Start Date</span>
                       </div>
                       <span className="text-sm font-medium text-foreground">{details.startDate}</span>
                     </div>
@@ -244,7 +256,7 @@ export function DashboardCourses() {
                     <div className="flex flex-col gap-1.5 p-4 rounded-xl border border-border bg-card/50">
                       <div className="flex items-center gap-2 text-muted-foreground mb-1">
                         <CheckCircle2 className="w-4 h-4" />
-                        <span className="text-xs font-semibold uppercase tracking-wider">Estimated End</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider">End Date</span>
                       </div>
                       <span className="text-sm font-medium text-foreground">{details.endDate}</span>
                     </div>
@@ -252,19 +264,60 @@ export function DashboardCourses() {
                     <div className="flex flex-col gap-1.5 p-4 rounded-xl border border-border bg-card/50">
                       <div className="flex items-center gap-2 text-muted-foreground mb-1">
                         <Clock className="w-4 h-4" />
-                        <span className="text-xs font-semibold uppercase tracking-wider">Duration</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider">Duration</span>
                       </div>
                       <span className="text-sm font-medium text-foreground">{details.duration}</span>
                     </div>
                     
                     <div className="flex flex-col gap-1.5 p-4 rounded-xl border border-border bg-card/50">
                       <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                        <GraduationCap className="w-4 h-4" />
-                        <span className="text-xs font-semibold uppercase tracking-wider">Certification</span>
+                        <Target className="w-4 h-4" />
+                        <span className="text-[10px] font-semibold uppercase tracking-wider">Level</span>
                       </div>
-                      <span className="text-sm font-medium text-foreground">JAA Verified Credential</span>
+                      <span className="text-sm font-medium text-foreground">{details.level}</span>
                     </div>
                   </div>
+
+                  {/* Tech Stack */}
+                  {details.techStack.length > 0 && (
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-center gap-2 text-foreground">
+                        <Code className="w-5 h-5 text-emerald-500" />
+                        <h3 className="text-lg font-semibold">Technologies Used</h3>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {details.techStack.map((tech) => (
+                          <span
+                            key={tech}
+                            className="px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-card text-foreground shadow-sm"
+                          >
+                            {tech}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Topics / What you'll learn */}
+                  {details.topics.length > 0 && (
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-center gap-2 text-foreground">
+                        <ListChecks className="w-5 h-5 text-blue-500" />
+                        <h3 className="text-lg font-semibold">What You&apos;ll Learn</h3>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {details.topics.map((topic, i) => (
+                          <div
+                            key={i}
+                            className="flex items-start gap-3 p-4 rounded-xl border border-border bg-card/40 hover:bg-card/80 transition-colors"
+                          >
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                            <span className="text-sm text-foreground leading-snug">{topic}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })()}
