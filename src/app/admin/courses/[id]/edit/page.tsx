@@ -13,9 +13,9 @@ export default function AdminEditCourseRoute() {
 
   return (
     <AdminShell defaultTab="courses" restoreTab={false}>
-      {/* Keyed on the id: the form seeds every field from the course in its own state
-          initialiser, so a different course has to be a different component. */}
-      {(shell) => <CourseEditorPage key={params.id} courseId={params.id} shell={shell} />}
+      {/* No key needed here: the page holds no state until it has resolved the course, and keys
+          the form on that course itself. */}
+      {(shell) => <CourseEditorPage courseId={params.id} shell={shell} />}
     </AdminShell>
   );
 }

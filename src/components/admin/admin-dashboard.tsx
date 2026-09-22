@@ -9,7 +9,6 @@ import {
   ArrowLeft,
   Download,
   Search,
-  ShieldCheck,
   CheckCircle2,
   Clock,
   ExternalLink,
@@ -34,7 +33,13 @@ import { accountRoleOf, CandidateStatus, StudentRecord, type AccountRole } from 
 import { APP_SETTINGS } from "@/data/app-settings";
 import { academyKnowledge } from "@/data/academy-knowledge";
 import { isPublic } from "@/lib/courses-server";
-import { CourseItem, COURSE_CATEGORIES, CourseCategoryId, CourseStatus } from "@/data/courses";
+import {
+  CourseItem,
+  COURSE_CATEGORIES,
+  CourseCategoryId,
+  CourseStatus,
+  stackDisplay,
+} from "@/data/courses";
 import { DevIcon } from "@/components/ui/dev-icon";
 import { StatusSwitch } from "@/components/ui/switch";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -44,6 +49,7 @@ import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { AdminKnowledge } from "@/components/admin/admin-knowledge";
 import { AdminReferrals } from "@/components/admin/admin-referrals";
+import { ROLE_BADGE, RoleBadge } from "@/components/admin/role-badge";
 import { Select } from "@/components/ui/select";
 import { PageHeader } from "@/components/ui/page-header";
 import { TablePagination } from "@/components/ui/table-pagination";
@@ -82,33 +88,6 @@ function formatSignIn(iso: string): string {
     minute: "2-digit",
   });
 }
-
-/**
- * The three roles a person can hold on this site, and how each one's badge reads.
- *
- * Teacher is not stored anywhere — see `renderRole`. Sky rather than amber because amber
- * already means Super10 in this same table, and one row must not carry two amber chips.
- */
-const ROLE_BADGE = {
-  admin: {
-    label: "Admin",
-    icon: ShieldCheck,
-    badge:
-      "bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-500/30",
-  },
-  teacher: {
-    label: "Teacher",
-    icon: Briefcase,
-    badge:
-      "bg-sky-50 dark:bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-500/30",
-  },
-  student: {
-    label: "Student",
-    icon: GraduationCap,
-    badge:
-      "bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-white/10",
-  },
-} as const;
 
 /**
  * The framing around each role's roster table. The table is the same three times, so the
@@ -539,18 +518,9 @@ export function AdminDashboard({
 
   // The rule itself lives in `src/data/students.ts`, because the sidebar counts people by it
   // too — the number beside a tab and the number of rows behind it have to be the same number.
-  const renderRole = (student: StudentRecord) => {
-    const { label, icon: Icon, badge } = ROLE_BADGE[accountRoleOf(student)];
-
-    return (
-      <span
-        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${badge}`}
-      >
-        <Icon className="w-3 h-3" />
-        {label}
-      </span>
-    );
-  };
+  const renderRole = (student: StudentRecord) => (
+    <RoleBadge role={accountRoleOf(student)} />
+  );
 
   // The roster split three ways, one page per role, so every account is listed under the role
   // it holds rather than all of them under a "Students" heading. Built from the same rule the
@@ -1056,7 +1026,7 @@ export function AdminDashboard({
                           {/* Tech Stack */}
                           <td className="py-3.5 px-4 sm:px-6">
                             <div className="flex items-center gap-1.5 flex-wrap max-w-xs">
-                              {course.techIcons && course.techIcons.length > 0
+                              {stackDisplay(course) === "icons"
                                 ? course.techIcons.slice(0, 4).map((icon) => (
                                     <div
                                       key={icon}
@@ -1066,7 +1036,7 @@ export function AdminDashboard({
                                       <DevIcon name={icon} size={14} />
                                     </div>
                                   ))
-                                : course.techStack.slice(0, 3).map((tech) => (
+                                : course.techStack.slice(0, 4).map((tech) => (
                                     <span
                                       key={tech}
                                       className="px-1.5 py-0.5 rounded text-[10px] bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-400"
