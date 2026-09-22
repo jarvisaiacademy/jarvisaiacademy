@@ -685,8 +685,16 @@ export function AdminDashboard({
 
     return (
       <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden flex flex-col">
-        {/* One filter row, in the card above the table it filters. */}
+        {/* The count reads left and the control sits right, the way every other toolbar on the
+            dashboard is laid out. The count says what is on screen, so a filtered table cannot
+            silently disagree with the number beside it. */}
         <div className="flex items-center justify-between gap-3 flex-wrap px-4 sm:px-6 py-3 border-b border-neutral-200 dark:border-white/10">
+          <span className="text-[11px] text-neutral-400">
+            {isFiltered
+              ? `${visible.length} of ${rows.length} shown`
+              : `${rows.length} ${rows.length === 1 ? "account" : "accounts"}`}
+          </span>
+
           <Select
             label="Filter accounts by status"
             value={rosterStatus}
@@ -699,14 +707,6 @@ export function AdminDashboard({
             ]}
             className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
           />
-
-          {/* The banner pill counts the whole roster, which a filtered table would otherwise
-              silently disagree with. */}
-          {isFiltered && (
-            <span className="text-[11px] text-neutral-400">
-              {visible.length} of {rows.length} shown
-            </span>
-          )}
         </div>
 
         <div className="overflow-x-auto">
@@ -1027,7 +1027,7 @@ export function AdminDashboard({
                 />
 
             {/* Summary Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="p-4 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-2">
                 <div className="flex items-center justify-between text-xs text-neutral-500">
                   <span>Total Active Courses</span>
@@ -1073,22 +1073,25 @@ export function AdminDashboard({
                 </div>
                 <span className="text-[11px] text-neutral-400">Super10 Elite &amp; AWS DevOps</span>
               </div>
-            </div>
+            </div> */}
 
             {/* Courses Toolbar */}
             <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-              <div className="flex flex-1 items-center gap-3">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={courseSearch}
-                    onChange={(e) => setCourseSearch(e.target.value)}
-                    placeholder="Search course title, tech stack, topics..."
-                    className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white focus:outline-hidden focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={courseSearch}
+                  onChange={(e) => setCourseSearch(e.target.value)}
+                  placeholder="Search course title, tech stack, topics..."
+                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white focus:outline-hidden focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
 
+              {/* The filter sits with the controls on the right rather than beside the search,
+                  so the toolbars read the same way: what you are looking at on the left, what
+                  narrows it on the right. */}
+              <div className="flex items-center gap-2 flex-wrap self-end lg:self-auto">
                 <Select
                   label="Filter by category"
                   value={categoryFilter}
@@ -1103,9 +1106,7 @@ export function AdminDashboard({
                   ]}
                   className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
                 />
-              </div>
 
-              <div className="flex items-center gap-2 self-end lg:self-auto">
                 {canSeed && (
                   <>
                     {seedConfirm ? (
