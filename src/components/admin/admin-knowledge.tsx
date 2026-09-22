@@ -1,9 +1,17 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { BookOpen, Search, Info } from "lucide-react";
+import { Search, Info } from "lucide-react";
 import { academyKnowledge, replyPages } from "@/data/academy-knowledge";
 import { MarkdownRenderer } from "@/components/chat/markdown-renderer";
+import { PageHeader } from "@/components/ui/page-header";
+
+interface AdminKnowledgeProps {
+  /** Leaves the dashboard for the chat, as the header's arrow does on every other page. */
+  onBack: () => void;
+  /** Back up the trail to the dashboard's root. */
+  onHome: () => void;
+}
 
 /**
  * What the assistant answers with, read-only.
@@ -14,7 +22,7 @@ import { MarkdownRenderer } from "@/components/chat/markdown-renderer";
  * without having to ask it, and without the bot gaining a database dependency it would
  * have to be up for.
  */
-export function AdminKnowledge() {
+export function AdminKnowledge({ onBack, onHome }: AdminKnowledgeProps) {
   // Keys only. Reading `.text` here would call the `testimonials` getter, which draws a
   // fresh sample of people on every read.
   const topics = useMemo(() => Object.keys(academyKnowledge), []);
@@ -42,16 +50,11 @@ export function AdminKnowledge() {
   const pages = replyPages(selected);
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1 p-5 rounded-2xl bg-gradient-to-r from-indigo-600/10 via-blue-600/10 to-indigo-600/10 border border-indigo-500/20 shadow-xs">
-        <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-          <BookOpen className="w-5 h-5 text-indigo-500" />
-          Answer Book
-        </h2>
-        <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
-          Every reply the assistant can give, and the keyword that reaches it.
-        </p>
-      </div>
+    <div className="flex flex-col gap-4">
+      <PageHeader
+        crumbs={[{ label: "Home", onSelect: onHome }, { label: "Answer Book" }]}
+        onBack={onBack}
+      />
 
       <div className="flex items-start gap-2 p-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10">
         <Info className="w-3.5 h-3.5 text-neutral-500 mt-0.5 shrink-0" />

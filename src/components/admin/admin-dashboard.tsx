@@ -26,10 +26,8 @@ import {
   PanelLeft,
   Star,
   Briefcase,
-  Home,
 } from "lucide-react";
 import { MobileMenuIcon } from "@/components/ui/mobile-menu-icon";
-import { siteConfig } from "@/config/site";
 import { useCourses } from "@/providers/courses-provider";
 import { useSettings } from "@/providers/settings-provider";
 import { useStudents } from "@/providers/students-provider";
@@ -107,32 +105,21 @@ const ROLE_BADGE = {
 
 /**
  * The framing around each role's roster table. The table is the same three times, so the
- * words that differ — the page title, what the page is for, and what an empty page means —
- * are stated once here rather than inline three times.
+ * words that differ — the page title in the header, and what an empty page means — are
+ * stated once here rather than inline three times.
  */
 const ROLE_PAGE = {
   student: {
     title: "Students",
-    description:
-      "Accounts that signed in with Google and hold no other role. An admin can mark one as faculty from the Teacher column.",
     empty: "No learner accounts yet — nobody has signed in with Google.",
-    banner: "from-emerald-600/10 via-teal-600/10 to-blue-600/10 border-emerald-500/20",
-    pill: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
   },
   admin: {
     title: "Admins",
-    description: "Accounts on the admin allowlist. Each one can open this dashboard.",
     empty: "No admin accounts found.",
-    banner: "from-indigo-600/10 via-violet-600/10 to-purple-600/10 border-indigo-500/20",
-    pill: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300",
   },
   teacher: {
     title: "Teachers",
-    description:
-      "Accounts an admin has marked as faculty. The mark is what puts them here; removing it moves them back to Students.",
     empty: "No faculty yet — mark an account as Teacher from the Teacher column.",
-    banner: "from-sky-600/10 via-cyan-600/10 to-blue-600/10 border-sky-500/20",
-    pill: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
   },
 } as const satisfies Record<AccountRole, unknown>;
 
@@ -851,11 +838,9 @@ export function AdminDashboard({
   // wait and the failure for itself rather than the three of them sharing a single message.
   const renderRolePage = (role: AccountRole) => {
     const page = ROLE_PAGE[role];
-    const rows = rosterByRole[role];
-    const { icon: Icon } = ROLE_BADGE[role];
 
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4">
         {/* Search, not create: an account is created by signing in with Google and admin
             access is an email allowlist, so there is nothing this page could create. What an
             admin does here is find one, on a roster that is otherwise a long scroll. */}
@@ -876,26 +861,6 @@ export function AdminDashboard({
             </div>
           }
         />
-
-        {/* Header Banner */}
-        <div
-          className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r border shadow-xs ${page.banner}`}
-        >
-          <div className="flex flex-col gap-1">
-            <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
-              {page.title}
-            </h2>
-            <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
-              {page.description}
-            </p>
-          </div>
-          <span
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium self-start sm:self-auto ${page.pill}`}
-          >
-            <Icon className="w-3.5 h-3.5" />
-            {rows.length} {rows.length === 1 ? "Account" : "Accounts"}
-          </span>
-        </div>
 
         {studentsError ? (
           <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 text-center text-xs text-amber-600 dark:text-amber-400">
@@ -984,22 +949,9 @@ export function AdminDashboard({
     ];
 
     return (
-      <div className="flex flex-col gap-6">
-        {/* Header Banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-amber-600/10 via-orange-600/10 to-rose-600/10 border border-amber-500/20 shadow-xs">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
-              Home
-            </h2>
-            <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
-              Everything the dashboard knows, at a glance.
-            </p>
-          </div>
-          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium self-start sm:self-auto bg-amber-500/15 text-amber-700 dark:text-amber-300">
-            <Home className="w-3.5 h-3.5" />
-            {students.length} {students.length === 1 ? "Account" : "Accounts"}
-          </span>
-        </div>
+      <div className="flex flex-col gap-4">
+        {/* The root of the trail, so the crumb is this page and there is nothing to step up to. */}
+        <PageHeader crumbs={[{ label: "Home" }]} onBack={onBackToChat} />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {cards.map(({ label, icon: Icon, tint, value, hint }) => (
@@ -1070,7 +1022,14 @@ export function AdminDashboard({
 
         {/* TAB 1: COURSE MANAGEMENT (CRUD) */}
         {activeTab === "courses" && (
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-4">
+            {/* No action: the toolbar below already carries Add Course and the search, and a
+                second copy up here would be the same button twice. */}
+            <PageHeader
+              crumbs={[{ label: "Home", onSelect: () => setActiveTab("home") }, { label: "Courses" }]}
+              onBack={onBackToChat}
+            />
+
             {/* Summary Metrics */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="p-4 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-2">
@@ -1368,24 +1327,15 @@ export function AdminDashboard({
 
         {/* TAB 2: USERS & ADMISSIONS */}
         {activeTab === "users" && (
-          <div className="flex flex-col gap-6">
-            {/* Header Banner */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-emerald-600/10 via-teal-600/10 to-blue-600/10 border border-emerald-500/20 shadow-xs">
-              <div className="flex flex-col gap-1">
-                <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
-                  Learners &amp; Student Admissions
-                </h2>
-                <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
-                  Manage enrolled candidates, transaction IDs and payment verification.
-                </p>
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-medium">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  {totalPaidStudents} Enrolled Learners
-                </span>
-              </div>
-            </div>
+          <div className="flex flex-col gap-4">
+            <PageHeader
+              crumbs={[
+                { label: "Home", onSelect: () => setActiveTab("home") },
+                // Named for the tab that opens it, not for the heading the banner used to carry.
+                { label: "Users & Admissions" },
+              ]}
+              onBack={onBackToChat}
+            />
 
             {/* Quick Metrics */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1552,31 +1502,25 @@ export function AdminDashboard({
         {activeTab === "teachers" && renderRolePage("teacher")}
 
         {/* ANSWER BOOK — what the assistant replies with, read-only */}
-        {activeTab === "knowledge" && <AdminKnowledge />}
+        {activeTab === "knowledge" && (
+          <AdminKnowledge onBack={onBackToChat} onHome={() => setActiveTab("home")} />
+        )}
 
         {/* ACADEMY SETTINGS — the figures the site quotes */}
-        {activeTab === "settings" && <AdminSettings />}
+        {activeTab === "settings" && (
+          <AdminSettings onBack={onBackToChat} onHome={() => setActiveTab("home")} />
+        )}
 
         {/* REVENUE & ANALYTICS */}
         {activeTab === "analytics" && (
-          <div className="flex flex-col gap-6">
-            {/* Banner */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-600/10 border border-blue-500/20 shadow-xs">
-              <div className="flex flex-col gap-1">
-                <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
-                  Revenue &amp; Enrollment Analytics
-                </h2>
-                <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
-                  Comprehensive performance breakdown, gross revenue, and program capacity for {siteConfig.name}.
-                </p>
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-medium">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  Live Ledger
-                </span>
-              </div>
-            </div>
+          <div className="flex flex-col gap-4">
+            <PageHeader
+              crumbs={[
+                { label: "Home", onSelect: () => setActiveTab("home") },
+                { label: "Revenue & Analytics" },
+              ]}
+              onBack={onBackToChat}
+            />
 
             {/* 4 KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1720,32 +1664,31 @@ export function AdminDashboard({
 
         {/* TAB 4: FIREBASE CLOUD SYNC & SEEDER */}
         {activeTab === "cloud" && canSeed && (
-          <div className="flex flex-col gap-6">
-            {/* Cloud Status Banner */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-purple-600/10 via-blue-600/10 to-indigo-600/10 border border-purple-500/20 shadow-xs">
-              <div className="flex flex-col gap-1">
-                <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
-                  Google Firebase Firestore &amp; Seeder
-                </h2>
-                <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
-                  Manage real-time cloud data pipelines, seed initial courses, and monitor collection synchronization.
-                </p>
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                {isLiveFromFirebase ? (
-                  <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-medium">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    Cloud Firestore Active
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-300 font-medium">
-                    <span className="w-2 h-2 rounded-full bg-blue-500" />
-                    Built-in Catalog
-                  </span>
-                )}
-              </div>
-            </div>
+          <div className="flex flex-col gap-4">
+            <PageHeader
+              crumbs={[
+                { label: "Home", onSelect: () => setActiveTab("home") },
+                { label: "Cloud & Seeder" },
+              ]}
+              onBack={onBackToChat}
+            />
 
+            {/* Which origin the catalogue is coming from is the one fact this page carried —
+                it moves into a plain row rather than going away with the banner. */}
+            <div className="flex items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400">
+              <span>Course catalogue source</span>
+              {isLiveFromFirebase ? (
+                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-medium">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Cloud Firestore Active
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-300 font-medium">
+                  <span className="w-2 h-2 rounded-full bg-blue-500" />
+                  Built-in Catalog
+                </span>
+              )}
+            </div>
           </div>
         )}
       </main>

@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { Info, Loader2, RotateCcw, Save, Settings } from "lucide-react";
+import { Info, Loader2, RotateCcw, Save } from "lucide-react";
 import { AppSettings, DEFAULT_APP_SETTINGS } from "@/data/app-settings";
 import { useSettings } from "@/providers/settings-provider";
 import { useToast } from "@/components/ui/toast";
+import { PageHeader } from "@/components/ui/page-header";
 
 const inputClass =
   "w-full py-2 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs focus:outline-hidden focus:ring-1 focus:ring-indigo-500";
@@ -80,6 +81,13 @@ const FIELDS: FieldSpec[] = [
 /** A GSTIN is 15 characters: 2 state digits, 5 letters, 4 digits, then a check pattern. */
 const GSTIN_PATTERN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z]Z[0-9A-Z]$/;
 
+interface AdminSettingsProps {
+  /** Leaves the dashboard for the chat, as the header's arrow does on every other page. */
+  onBack: () => void;
+  /** Back up the trail to the dashboard's root. */
+  onHome: () => void;
+}
+
 /**
  * Academy Settings — the figures that are a decision rather than content.
  *
@@ -91,7 +99,7 @@ const GSTIN_PATTERN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z]Z[0-9A-Z]$/;
  * of these figures as prose. They are static on purpose — the bot must answer with Firestore
  * unreachable — so they do not follow a change made here, and the notice below says so.
  */
-export function AdminSettings() {
+export function AdminSettings({ onBack, onHome }: AdminSettingsProps) {
   const { settings, loading, saveSettings } = useSettings();
   const { showToast } = useToast();
 
@@ -158,16 +166,11 @@ export function AdminSettings() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1 p-5 rounded-2xl bg-gradient-to-r from-indigo-600/10 via-blue-600/10 to-indigo-600/10 border border-indigo-500/20 shadow-xs">
-        <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-          <Settings className="w-5 h-5 text-indigo-500" />
-          Academy Settings
-        </h2>
-        <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
-          The figures the academy quotes, editable without a deploy.
-        </p>
-      </div>
+    <div className="flex flex-col gap-4">
+      <PageHeader
+        crumbs={[{ label: "Home", onSelect: onHome }, { label: "Settings" }]}
+        onBack={onBack}
+      />
 
       <div className="flex items-start gap-2 p-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10">
         <Info className="w-3.5 h-3.5 text-neutral-500 mt-0.5 shrink-0" />
