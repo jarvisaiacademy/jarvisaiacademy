@@ -4,6 +4,7 @@ import {
   getDocs,
   setDoc,
   updateDoc,
+  deleteDoc,
   onSnapshot,
   query,
   Unsubscribe,
@@ -95,7 +96,20 @@ export async function upsertStudentRecord(user: RosterUserInput): Promise<void> 
 export async function updateCandidateInFirestore(
   uid: string,
   updates: Partial<
-    Pick<StudentRecord, "name" | "status" | "is_super10" | "is_teacher" | "role">
+    Pick<
+      StudentRecord,
+      | "name"
+      | "email"
+      | "status"
+      | "is_super10"
+      | "is_teacher"
+      | "role"
+      | "title"
+      | "specialization"
+      | "bio"
+      | "phone"
+      | "picture"
+    >
   >,
   userEmail?: string | null
 ): Promise<void> {
@@ -107,6 +121,80 @@ export async function updateCandidateInFirestore(
   }
 
   await updateDoc(doc(db, STUDENTS_COLLECTION, uid), updates);
+}
+
+export interface CreateTeacherInput {
+  name: string;
+  email: string;
+  title?: string;
+  specialization?: string;
+  bio?: string;
+  phone?: string;
+  status?: StudentRecord["status"];
+  existingUserId?: string;
+}
+
+/**
+ * Create a new teacher or promote an existing account in Firestore.
+ * Strictly restricted to verified admins.
+ */
+export async function createTeacherInFirestore(
+  input: CreateTeacherInput,
+  userEmail?: string | null
+): Promise<string> {
+  if (!checkIsAdmin(userEmail)) {
+    throw new Error("Unauthorized: Only verified admins can create or promote teachers.");
+  }
+  if (!db) {
+    throw new Error("Firestore is not initialized.");
+  }
+
+  const teacherId =
+    input.existingUserId?.trim() || doc(collection(db, STUDENTS_COLLECTION)).id;
+
+  const now = new Date().toISOString();
+  const teacherRecord: Partial<StudentRecord> = {
+    id: teacherId,
+    name: input.name.trim(),
+    email: input.email.trim(),
+    is_teacher: true,
+    role: "student",
+    status: input.status || "active",
+    title: input.title?.trim() || undefined,
+    specialization: input.specialization?.trim() || undefined,
+    bio: input.bio?.trim() || undefined,
+    phone: input.phone?.trim() || undefined,
+    lastLoginAt: now,
+  };
+
+  if (!input.existingUserId) {
+    teacherRecord.createdAt = now;
+  }
+
+  await setDoc(doc(db, STUDENTS_COLLECTION, teacherId), teacherRecord, { merge: true });
+  return teacherId;
+}
+
+/**
+ * Remove or delete a teacher from Firestore.
+ * Either unmarks them as teacher (`is_teacher: false`) or deletes their document permanently.
+ */
+export async function deleteTeacherInFirestore(
+  teacherId: string,
+  options: { permanent?: boolean; userEmail?: string | null } = {}
+): Promise<void> {
+  if (!checkIsAdmin(options.userEmail)) {
+    throw new Error("Unauthorized: Only verified admins can delete teachers.");
+  }
+  if (!db) {
+    throw new Error("Firestore is not initialized.");
+  }
+
+  if (options.permanent) {
+    await deleteDoc(doc(db, STUDENTS_COLLECTION, teacherId));
+  } else {
+    await updateDoc(doc(db, STUDENTS_COLLECTION, teacherId), { is_teacher: false });
+  }
 }
 
 /**

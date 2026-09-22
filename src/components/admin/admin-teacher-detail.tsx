@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
-import { Briefcase, ChevronRight } from "lucide-react";
+import { Briefcase, ChevronRight, Pencil } from "lucide-react";
 import { useStudents } from "@/providers/students-provider";
 import { useCourses } from "@/providers/courses-provider";
 import { useAuth } from "@/providers/auth-provider";
@@ -92,19 +92,29 @@ export function AdminTeacherDetail({ teacherId, shell }: AdminTeacherDetailProps
       ]}
       action={
         teacher ? (
-          <button
-            type="button"
-            disabled={isBusy}
-            onClick={handleToggleTeacher}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold border shadow-xs transition-colors cursor-pointer whitespace-nowrap disabled:opacity-50 ${
-              teacher.is_teacher
-                ? "bg-white dark:bg-white/5 border-neutral-200 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-500/30"
-                : "bg-sky-600 border-sky-600 text-white hover:bg-sky-500"
-            }`}
-          >
-            <Briefcase className="w-3.5 h-3.5" />
-            <span>{teacher.is_teacher ? "Remove Teacher" : "Mark as Teacher"}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/admin/teachers/${teacher.id}/edit`}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-100 shadow-xs transition-colors whitespace-nowrap"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              <span>Edit Teacher</span>
+            </Link>
+
+            <button
+              type="button"
+              disabled={isBusy}
+              onClick={handleToggleTeacher}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold border shadow-xs transition-colors cursor-pointer whitespace-nowrap disabled:opacity-50 ${
+                teacher.is_teacher
+                  ? "bg-white dark:bg-white/5 border-neutral-200 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-500/30"
+                  : "bg-sky-600 border-sky-600 text-white hover:bg-sky-500"
+              }`}
+            >
+              <Briefcase className="w-3.5 h-3.5" />
+              <span>{teacher.is_teacher ? "Remove Teacher" : "Mark as Teacher"}</span>
+            </button>
+          </div>
         ) : undefined
       }
     />
@@ -180,18 +190,36 @@ export function AdminTeacherDetail({ teacherId, shell }: AdminTeacherDetailProps
               <Field label="Email" className="col-span-2">
                 {teacher.email || "—"}
               </Field>
-              <Field label="Super10">{teacher.is_super10 ? "Yes" : "No"}</Field>
+              <Field label="Title / Role" className="col-span-2">
+                {teacher.title || "Faculty Member"}
+              </Field>
 
+              <Field label="Specialization" className="col-span-2">
+                {teacher.specialization || "—"}
+              </Field>
+              <Field label="Phone" className="col-span-2">
+                {teacher.phone || "—"}
+              </Field>
+
+              {teacher.bio && (
+                <Field label="Biography" className="col-span-2 sm:col-span-4">
+                  <p className="whitespace-pre-wrap text-xs text-neutral-700 dark:text-neutral-300">
+                    {teacher.bio}
+                  </p>
+                </Field>
+              )}
+
+              <Field label="Super10">{teacher.is_super10 ? "Yes" : "No"}</Field>
               <Field label="Sign-in provider">{teacher.signInProvider || "—"}</Field>
               <Field label="Email verified">{teacher.emailVerified ? "Yes" : "No"}</Field>
+              <Field label="Referral code">{teacher.referralCode || "—"}</Field>
+
               <Field label="Account created" className="col-span-2">
                 {formatWhen(teacher.createdAt)}
               </Field>
-
               <Field label="Last sign-in" className="col-span-2">
                 {formatWhen(teacher.lastLoginAt)}
               </Field>
-              <Field label="Referral code">{teacher.referralCode || "—"}</Field>
               <Field label="Signed up with">{teacher.referredByCode || "—"}</Field>
 
               <Field label="Referred by" className="col-span-2">
