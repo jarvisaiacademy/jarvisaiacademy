@@ -90,12 +90,12 @@ service cloud.firestore {
       // row before the sign-in upsert gets there could hand itself a seat or a faculty badge.
       // It may still store the false default — the sign-in backfill does exactly that — and
       // both read as false when absent, so an ordinary row is unaffected.
-      allow create: if isSelf(uid)
-        && (isAdmin()
-          || (request.resource.data.role == 'student'
-            && request.resource.data.get('is_super10', false) == false
-            && request.resource.data.get('is_teacher', false) == false))
-        && referralCreateIsHonest();
+      allow create: if isAdmin()
+        || (isSelf(uid)
+          && request.resource.data.role == 'student'
+          && request.resource.data.get('is_super10', false) == false
+          && request.resource.data.get('is_teacher', false) == false
+          && referralCreateIsHonest());
 
       // Separate from create, and this is the whole point of separating them: `resource.data`
       // does not exist on a create, so the two clauses cannot share a line.

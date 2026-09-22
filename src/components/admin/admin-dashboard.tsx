@@ -47,6 +47,7 @@ import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { AdminKnowledge } from "@/components/admin/admin-knowledge";
 import { AdminReferrals } from "@/components/admin/admin-referrals";
+import { AdminTeachers } from "@/components/admin/admin-teachers";
 import { ROLE_BADGE } from "@/components/admin/role-badge";
 import { Select } from "@/components/ui/select";
 import { PageHeader } from "@/components/ui/page-header";
@@ -187,7 +188,6 @@ export function AdminDashboard({
   // then holds nothing and subscribes to nothing.
   const rosterRole: AccountRole | null =
     activeTab === "students" ? "student"
-    : activeTab === "teachers" ? "teacher"
     : activeTab === "admins" ? "admin"
     : null;
 
@@ -1271,7 +1271,9 @@ export function AdminDashboard({
             `accountRoleOf` gives each account the strongest role it holds. */}
         {activeTab === "students" && renderRolePage("student")}
         {activeTab === "admins" && renderRolePage("admin")}
-        {activeTab === "teachers" && renderRolePage("teacher")}
+        {activeTab === "teachers" && (
+          <AdminTeachers onHome={() => setActiveTab("home")} />
+        )}
 
         {/* ANSWER BOOK — what the assistant replies with, read-only */}
         {activeTab === "knowledge" && (

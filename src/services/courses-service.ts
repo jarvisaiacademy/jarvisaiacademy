@@ -210,3 +210,59 @@ export async function seedDefaultCoursesToFirestore(
   await batch.commit();
   return { count: COURSES_DATA.length, courses: COURSES_DATA };
 }
+
+/**
+ * Synchronize course assignments for a teacher:
+ * ensures `course.teacherIds` includes `teacherId` if assigned, and excludes `teacherId` if unassigned.
+ */
+export async function syncTeacherCourseAssignments(
+  teacherId: string,
+  assignedCourseIds: string[],
+  userEmail?: string | null
+): Promise<void> {
+  if (!checkIsAdmin(userEmail)) {
+    throw new Error("Unauthorized: Only verified admins can update course assignments.");
+  }
+  if (!db) {
+    throw new Error("Firestore is not initialized.");
+  }
+
+  const firestore = db;
+  const coursesSnap = await getDocs(query(collection(firestore, COURSES_COLLECTION)));
+  const promises: Promise<void>[] = [];
+
+  coursesSnap.forEach((docSnap) => {
+    const courseId = docSnap.id;
+    const data = docSnap.data() as Partial<CourseItem>;
+    const currentTeachers = data.teacherIds || [];
+    const shouldBeAssigned = assignedCourseIds.includes(courseId);
+    const isCurrentlyAssigned = currentTeachers.includes(teacherId);
+
+    if (shouldBeAssigned && !isCurrentlyAssigned) {
+      promises.push(
+        updateDoc(doc(firestore, COURSES_COLLECTION, courseId), {
+          teacherIds: [...currentTeachers, teacherId],
+        })
+      );
+    } else if (!shouldBeAssigned && isCurrentlyAssigned) {
+      promises.push(
+        updateDoc(doc(firestore, COURSES_COLLECTION, courseId), {
+          teacherIds: currentTeachers.filter((id) => id !== teacherId),
+        })
+      );
+    }
+  });
+
+  await Promise.all(promises);
+}
+
+/**
+ * Remove a teacher from all assigned courses.
+ */
+export async function removeTeacherFromAllCourses(
+  teacherId: string,
+  userEmail?: string | null
+): Promise<void> {
+  return syncTeacherCourseAssignments(teacherId, [], userEmail);
+}
+
