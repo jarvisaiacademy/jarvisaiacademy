@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   GraduationCap,
   Briefcase,
+  Home,
   Settings as SettingsIcon,
 } from "lucide-react";
 import { useCourses } from "@/providers/courses-provider";
@@ -18,6 +19,7 @@ import { academyKnowledge } from "@/data/academy-knowledge";
 import { accountRoleOf, type AccountRole } from "@/data/students";
 
 export type DashboardTab =
+  | "home"
   | "admins"
   | "teachers"
   | "students"
@@ -118,14 +120,25 @@ export function DashboardSidebarNav({
         <span>Return to Chat</span>
       </button>
 
-      {/* Navigation Section. The three roles lead, because the question this dashboard is
-          usually opened to answer is "who is on the site and as what". */}
+      {/* Navigation Section. Home leads with the counts, then the three roles, because the
+          question this dashboard is usually opened to answer is "who is on the site and as
+          what". */}
       <div className="flex flex-col gap-1">
         <div className="flex items-center px-2 pb-1.5">
           <span className="text-[10px] font-bold tracking-wider text-neutral-400 dark:text-neutral-500 uppercase">
             Admin Management
           </span>
         </div>
+
+        <NavButton
+          tab="home"
+          label="Home"
+          icon={Home}
+          iconActive="text-amber-400 dark:text-amber-600"
+          badge={students.length}
+          activeTab={activeTab}
+          onSelect={handleSelect}
+        />
 
         <NavButton
           tab="admins"

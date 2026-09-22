@@ -9,7 +9,7 @@ import { AdminShell } from "@/components/admin/admin-shell";
  */
 export default function AdminRoute() {
   return (
-    <AdminShell defaultTab="courses">
+    <AdminShell defaultTab="home">
       {(shell) => (
         <AdminDashboard
           activeTab={shell.activeTab}

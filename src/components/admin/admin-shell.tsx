@@ -14,6 +14,7 @@ const TAB_STORAGE_KEY = "jarvis_admin_tab";
 // here fails to compile. "cloud" is development-only — its content is gated on
 // `canSeed`, so restoring it in production would render an empty dashboard.
 const VALID_TABS: Record<DashboardTab, true> = {
+  home: true,
   admins: true,
   teachers: true,
   students: true,

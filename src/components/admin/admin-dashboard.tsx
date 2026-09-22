@@ -26,6 +26,7 @@ import {
   PanelLeft,
   Star,
   Briefcase,
+  Home,
 } from "lucide-react";
 import { MobileMenuIcon } from "@/components/ui/mobile-menu-icon";
 import { siteConfig } from "@/config/site";
@@ -35,6 +36,8 @@ import { useStudents } from "@/providers/students-provider";
 import { useAuth } from "@/providers/auth-provider";
 import { updateCandidateInFirestore } from "@/services/students-service";
 import { accountRoleOf, CandidateStatus, StudentRecord, type AccountRole } from "@/data/students";
+import { academyKnowledge } from "@/data/academy-knowledge";
+import { isPublic } from "@/lib/courses-server";
 import { CourseItem, COURSE_CATEGORIES, CourseCategoryId, CourseStatus } from "@/data/courses";
 import { DevIcon } from "@/components/ui/dev-icon";
 import { StatusSwitch } from "@/components/ui/switch";
@@ -836,6 +839,118 @@ export function AdminDashboard({
     );
   };
 
+  // The overview. Every figure here is counted from what is stored — the roster and the
+  // catalogue — rather than from the browser's own admissions ledger, so Home and the tab a
+  // number belongs to can never disagree about it. The one exception is Super10, which is
+  // counted from the roster but capped from Settings.
+  const renderHome = () => {
+    const super10Accounts = students.filter((s) => s.is_super10 === true).length;
+
+    // One card per number, and one shape for all of them: what it counts, the figure, and a
+    // line saying exactly what was counted, since "Courses: 12" and "Live Courses: 9" would
+    // otherwise be two numbers nobody can reconcile.
+    const cards = [
+      {
+        label: "Accounts",
+        icon: Users,
+        tint: "text-amber-500",
+        value: students.length,
+        hint: "every account that has signed in",
+      },
+      {
+        label: "Admins",
+        icon: ROLE_BADGE.admin.icon,
+        tint: "text-indigo-500",
+        value: rosterByRole.admin.length,
+        hint: "can open this dashboard",
+      },
+      {
+        label: "Teachers",
+        icon: ROLE_BADGE.teacher.icon,
+        tint: "text-sky-500",
+        value: rosterByRole.teacher.length,
+        hint: "marked as faculty",
+      },
+      {
+        label: "Students",
+        icon: ROLE_BADGE.student.icon,
+        tint: "text-emerald-500",
+        value: rosterByRole.student.length,
+        hint: "signed in, no other role",
+      },
+      {
+        label: "Super10",
+        icon: Star,
+        tint: "text-amber-500",
+        value: super10Accounts,
+        hint: `of the ${super10Seats} seats the academy caps`,
+      },
+      {
+        label: "Courses",
+        icon: BookOpen,
+        tint: "text-blue-500",
+        value: courses.length,
+        hint: courses.length > 0 ? "in the stored catalogue" : "nothing stored yet",
+      },
+      {
+        label: "Live Courses",
+        icon: CheckCircle2,
+        tint: "text-emerald-500",
+        // The site's own predicate, not a re-derivation of it: absent status means published,
+        // and a count that disagreed with `/courses` would be worse than no count.
+        value: courses.filter(isPublic).length,
+        hint: "published on the public site",
+      },
+      {
+        label: "Answer Book",
+        icon: Layers,
+        tint: "text-indigo-500",
+        value: Object.keys(academyKnowledge).length,
+        hint: "entries the chat can answer from",
+      },
+    ];
+
+    return (
+      <div className="flex flex-col gap-6">
+        {/* Header Banner */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-amber-600/10 via-orange-600/10 to-rose-600/10 border border-amber-500/20 shadow-xs">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
+              Home
+            </h2>
+            <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
+              Everything the dashboard knows, at a glance.
+            </p>
+          </div>
+          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium self-start sm:self-auto bg-amber-500/15 text-amber-700 dark:text-amber-300">
+            <Home className="w-3.5 h-3.5" />
+            {students.length} {students.length === 1 ? "Account" : "Accounts"}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {cards.map(({ label, icon: Icon, tint, value, hint }) => (
+            <div
+              key={label}
+              className="p-4 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-2"
+            >
+              <div className="flex items-center justify-between text-xs text-neutral-500">
+                <span>{label}</span>
+                <Icon className={`w-4 h-4 ${tint}`} />
+              </div>
+              <div className="text-2xl font-bold text-neutral-900 dark:text-white">{value}</div>
+              <span className="text-[11px] text-neutral-400">{hint}</span>
+            </div>
+          ))}
+        </div>
+
+        {(studentsLoading || coursesLoading) && (
+          <p className="text-[11px] text-neutral-400">Still loading the rest of the roster...</p>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col min-h-screen w-full bg-neutral-50 dark:bg-[#121212] text-neutral-900 dark:text-neutral-100 overflow-y-auto">
       {/* Top Header */}
@@ -877,6 +992,9 @@ export function AdminDashboard({
 
       {/* Main Container */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
+        {/* HOME: the counts */}
+        {activeTab === "home" && renderHome()}
+
         {/* TAB 1: COURSE MANAGEMENT (CRUD) */}
         {activeTab === "courses" && (
           <div className="flex flex-col gap-6">
