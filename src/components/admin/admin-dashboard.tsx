@@ -328,6 +328,30 @@ export function AdminDashboard({
     }
   };
 
+  // Fills the roster defaults onto rows that predate the sign-in writing them. Those rows are
+  // invisible to the Students page, whose filter is `is_teacher == false` — a `==` never matches
+  // an absent field, so the sidebar counts them and the table cannot list them.
+  //
+  // Only the fields that are missing, so a value an admin set deliberately is never overwritten:
+  // a teacher keeps `true`, a banned candidate keeps `banned`. Once every row carries both, the
+  // loop finds nothing to write and costs one pass over data already in memory.
+  const healedRoster = useRef(false);
+  useEffect(() => {
+    if (healedRoster.current || students.length === 0) return;
+    healedRoster.current = true;
+
+    for (const candidate of students) {
+      const patch: { is_teacher?: boolean; status?: CandidateStatus } = {};
+      if (candidate.is_teacher === undefined) patch.is_teacher = false;
+      if (candidate.status === undefined) patch.status = "active";
+      if (Object.keys(patch).length === 0) continue;
+
+      updateCandidateInFirestore(candidate.id, patch, user?.email).catch((err) => {
+        console.warn("[AdminDashboard] Could not write roster defaults for", candidate.id, err);
+      });
+    }
+  }, [students, user?.email]);
+
   // The ledger is the enrolments that actually happened, read back from the tracker
   // the chat writes. A hardcoded set of demo students used to be merged in here, which
   // showed fabricated registrations as though they were real ones.

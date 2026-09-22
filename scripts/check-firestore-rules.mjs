@@ -206,6 +206,35 @@ await check("learner marks themselves faculty", false, () =>
     studentOne
   )
 );
+// The same self-grant on a *create* — a uid with no document yet, so the write is the row's
+// first. Distinct uids, because if the first case were wrongly allowed it would leave a
+// document behind and quietly turn the second into an update, testing the wrong path.
+await check("new learner creates their own row as faculty", false, () =>
+  patch(
+    docPath("users", "student-fresh-a"),
+    { role: { stringValue: "student" }, is_teacher: { booleanValue: true } },
+    tokenFor("student-fresh-a", "student-fresh-a@example.com")
+  )
+);
+await check("new learner creates their own row with a Super10 seat", false, () =>
+  patch(
+    docPath("users", "student-fresh-b"),
+    { role: { stringValue: "student" }, is_super10: { booleanValue: true } },
+    tokenFor("student-fresh-b", "student-fresh-b@example.com")
+  )
+);
+// The control for the two above: an ordinary first write still lands, defaults and all.
+await check("new learner creates their own row", true, () =>
+  patch(
+    docPath("users", "student-fresh-c"),
+    {
+      role: { stringValue: "student" },
+      is_teacher: { booleanValue: false },
+      is_super10: { booleanValue: false },
+    },
+    tokenFor("student-fresh-c", "student-fresh-c@example.com")
+  )
+);
 // But it is fenced like the others, not a lock on the row: a teacher still refreshes normally.
 await check("faculty learner edits their own name", true, () =>
   patch(
@@ -219,6 +248,23 @@ await check("faculty learner strips their own faculty mark", false, () =>
     docPath("users", "student-faculty"),
     { role: { stringValue: "student" }, is_teacher: { booleanValue: false } },
     facultyStudent
+  )
+);
+// The default the app writes on every sign-in (`ROSTER_FIELD_DEFAULTS` in
+// src/services/students-service.ts). It has to be allowed, or the write is a silent no-op:
+// `where('is_teacher','==',false)` skips a row where the field is absent, so an account that
+// never carried the flag is missing from the Students page until this lands on its own row.
+// The deny case directly above is the other half — this may fill in a default, never clear one.
+await check("learner writes the roster defaults onto their own row", true, () =>
+  patch(
+    docPath("users", "student-one"),
+    {
+      role: { stringValue: "student" },
+      email: { stringValue: "student-one@example.com" },
+      is_teacher: { booleanValue: false },
+      status: { stringValue: "active" },
+    },
+    studentOne
   )
 );
 

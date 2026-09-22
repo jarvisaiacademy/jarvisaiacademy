@@ -15,6 +15,19 @@ import { checkIsAdmin } from "@/providers/auth-provider";
 export const STUDENTS_COLLECTION = "users";
 
 /**
+ * The two fields the roster pages filter on, and the value the app already assumes for both.
+ *
+ * They have to be *written* for those filters to work at all: Firestore's `==` skips a document
+ * where the field is absent, so a sign-up that never wrote `is_teacher` is missing from
+ * `where('is_teacher','==',false)` — the Students tab renders empty while the sidebar, which
+ * reads the whole collection, still counts the account.
+ *
+ * Mirrors `USER_FIELD_DEFAULTS` in `scripts/db-data.mjs`, which is what heals accounts created
+ * before this write existed.
+ */
+const ROSTER_FIELD_DEFAULTS = { is_teacher: false, status: "active" };
+
+/**
  * Structural shape accepted by `upsertStudentRecord`.
  * Intentionally avoids importing from `@/providers/auth-provider` so that
  * auth-provider can import this service without creating a cycle.
@@ -36,9 +49,10 @@ export interface RosterUserInput {
  * Upsert the authenticated user into the `users` roster collection.
  * Never throws — roster sync is best-effort and must not block auth.
  *
- * Deliberately never writes `status` or `is_super10`: those belong to the admin, and the
- * `users` rule forbids a learner changing them, so writing them here would fail the whole
- * upsert for exactly the learner who is signed in.
+ * `status` and `is_super10` belong to the admin, and the `users` rule forbids a learner
+ * changing either — so they stay out of the payload, where a refusal would take the whole
+ * upsert down with it. The one exception is the default `status`, written afterwards on its
+ * own so that a refused write costs nothing; see `ROSTER_FIELD_DEFAULTS`.
  */
 export async function upsertStudentRecord(user: RosterUserInput): Promise<void> {
   if (!db) return;
@@ -60,6 +74,15 @@ export async function upsertStudentRecord(user: RosterUserInput): Promise<void> 
     await setDoc(doc(db, STUDENTS_COLLECTION, user.id), payload, { merge: true });
   } catch (err) {
     console.warn("[StudentsService] Could not upsert student record:", err);
+  }
+
+  // Separate from the payload above, and after it, because the rules fence both of these
+  // against a learner's update: on an account an admin has deliberately moved off its default
+  // — a teacher, a banned candidate — this is refused and the upsert above still stands.
+  try {
+    await setDoc(doc(db, STUDENTS_COLLECTION, user.id), ROSTER_FIELD_DEFAULTS, { merge: true });
+  } catch {
+    // An admin-owned value. Leaving it alone is the correct outcome.
   }
 }
 
