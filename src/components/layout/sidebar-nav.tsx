@@ -303,60 +303,24 @@ export function SidebarNav({
         </button>
       )}
 
-      {/* Student Navigation (only for signed-in students) */}
+      {/* Student Dashboard Navigation (only for signed-in students) */}
       {mounted && showStudentItems && (
-        <>
-          <button
-            type="button"
-            onClick={() => onOpenStudentView?.("profile")}
-            onMouseEnter={(e) => handleMouseEnter("my_profile", e)}
-            onMouseLeave={handleMouseLeave}
-            aria-haspopup="dialog"
-            aria-expanded={activeHoverItem === "my_profile"}
-            aria-current={activeItem === "my_profile" ? "page" : undefined}
-            className={`group flex items-center gap-2.5 w-full px-3 py-2 text-sm rounded-lg transition-colors text-left cursor-pointer ${navStateClass(activeItem === "my_profile")}`}
-          >
-            <NavIcon icon={UserRound} />
-            <span>My Profile</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onOpenStudentView?.("courses")}
-            onMouseEnter={(e) => handleMouseEnter("my_courses", e)}
-            onMouseLeave={handleMouseLeave}
-            aria-haspopup="dialog"
-            aria-expanded={activeHoverItem === "my_courses"}
-            aria-current={activeItem === "my_courses" ? "page" : undefined}
-            className={`group flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg transition-colors text-left cursor-pointer ${navStateClass(activeItem === "my_courses")}`}
-          >
-            <div className="flex items-center gap-2.5">
-              <NavIcon icon={GraduationCap} />
-              <span>My Courses</span>
-            </div>
-            {enrollmentCount > 0 && (
-              <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-neutral-200/80 dark:bg-white/10 text-neutral-600 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
-                {enrollmentCount}
-              </span>
-            )}
-          </button>
-
-          {/* Courses an admin granted this account — distinct from the paid
-              enrolments above, so it keeps its own row. */}
-          <button
-            type="button"
-            onClick={onOpenLearning}
-            onMouseEnter={(e) => handleMouseEnter("learning", e)}
-            onMouseLeave={handleMouseLeave}
-            aria-haspopup="dialog"
-            aria-expanded={activeHoverItem === "learning"}
-            aria-current={activeItem === "learning" ? "page" : undefined}
-            className={`group flex items-center gap-2.5 w-full px-3 py-2 text-sm rounded-lg transition-colors text-left cursor-pointer ${navStateClass(activeItem === "learning")}`}
-          >
-            <NavIcon icon={BookOpen} />
-            <span>My Learning</span>
-          </button>
-        </>
+        <button
+          type="button"
+          onClick={() => onOpenStudentView?.("profile")}
+          aria-current={activeItem?.startsWith("my_") ? "page" : undefined}
+          className={`group flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg transition-colors text-left cursor-pointer ${navStateClass(!!activeItem?.startsWith("my_"))}`}
+        >
+          <div className="flex items-center gap-2.5">
+            <NavIcon icon={LayoutDashboard} />
+            <span>My Dashboard</span>
+          </div>
+          {enrollmentCount > 0 && (
+            <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-neutral-200/80 dark:bg-white/10 text-neutral-600 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
+              {enrollmentCount}
+            </span>
+          )}
+        </button>
       )}
 
       {/* Courses */}
