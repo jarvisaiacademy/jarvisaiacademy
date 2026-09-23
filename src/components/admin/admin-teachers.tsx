@@ -3,23 +3,21 @@
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import {
+  ArrowLeft,
   Briefcase,
+  ChevronRight,
   Plus,
+  RotateCcw,
   Search,
   Eye,
   Pencil,
   Trash2,
-  BookOpen,
-  Users,
-  CheckCircle2,
-  GraduationCap,
 } from "lucide-react";
 import { useStudents } from "@/providers/students-provider";
 import { useCourses } from "@/providers/courses-provider";
 import { useAuth } from "@/providers/auth-provider";
 import { useToast } from "@/components/ui/toast";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { PageHeader } from "@/components/ui/page-header";
 import { Select } from "@/components/ui/select";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { DEFAULT_PAGE_SIZE, type PageSize } from "@/services/pagination";
@@ -34,8 +32,21 @@ interface AdminTeachersProps {
   onHome: () => void;
 }
 
+function formatSignIn(iso?: string): string {
+  if (!iso) return "—";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 export function AdminTeachers({ onHome }: AdminTeachersProps) {
-  const { students, loading: studentsLoading } = useStudents();
+  const { students, loading: studentsLoading, refreshStudents } = useStudents();
   const { firestoreCourses: courses, loading: coursesLoading } = useCourses();
   const { user } = useAuth();
   const { showToast } = useToast();
@@ -44,6 +55,7 @@ export function AdminTeachers({ onHome }: AdminTeachersProps) {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(0);
@@ -66,20 +78,6 @@ export function AdminTeachers({ onHome }: AdminTeachersProps) {
     }
     return map;
   }, [teachers, courses]);
-
-  // Quick statistics
-  const activeTeachersCount = useMemo(
-    () => teachers.filter((t) => (t.status ?? "active") === "active").length,
-    [teachers]
-  );
-
-  const coursesCoveredCount = useMemo(() => {
-    const assignedIds = new Set<string>();
-    courses.forEach((c) => {
-      if ((c.teacherIds ?? []).length > 0) assignedIds.add(c.id);
-    });
-    return assignedIds.size;
-  }, [courses]);
 
   // Filtering
   const filteredTeachers = useMemo(() => {
@@ -122,6 +120,19 @@ export function AdminTeachers({ onHome }: AdminTeachersProps) {
   const handleStatusFilterChange = (val: string) => {
     setStatusFilter(val);
     setCurrentPage(0);
+  };
+
+  // Refresh handler
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshStudents();
+      showToast("Faculty list refreshed", "success");
+    } catch {
+      showToast("Failed to refresh faculty list", "error");
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   // Toggle quick status
@@ -173,96 +184,110 @@ export function AdminTeachers({ onHome }: AdminTeachersProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Header */}
-      <PageHeader
-        crumbs={[{ label: "Home", onSelect: onHome }, { label: "Teachers" }]}
-        action={
-          <Link
-            href="/admin/teachers/new"
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-100 text-xs font-semibold shadow-xs transition-colors cursor-pointer whitespace-nowrap"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add Teacher</span>
-          </Link>
-        }
-      />
+      {/* Breadcrumb at the top left side outside the list card (no back button outside) */}
+      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs">
+        <button
+          type="button"
+          onClick={onHome}
+          className="text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors cursor-pointer"
+        >
+          Home
+        </button>
+        <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
+        <span className="font-semibold text-neutral-900 dark:text-white">
+          Teachers
+        </span>
+      </nav>
 
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-1.5">
-          <div className="flex items-center justify-between text-xs text-neutral-500">
-            <span>Total Faculty</span>
-            <Users className="w-4 h-4 text-sky-500" />
-          </div>
-          <span className="text-2xl font-bold text-neutral-900 dark:text-white">
-            {teachers.length}
-          </span>
-          <span className="text-[11px] text-neutral-400">Instructors and mentors</span>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-1.5">
-          <div className="flex items-center justify-between text-xs text-neutral-500">
-            <span>Active Faculty</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-          </div>
-          <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-            {activeTeachersCount}
-          </span>
-          <span className="text-[11px] text-neutral-400">Currently taking batches</span>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-1.5">
-          <div className="flex items-center justify-between text-xs text-neutral-500">
-            <span>Courses Assigned</span>
-            <BookOpen className="w-4 h-4 text-indigo-500" />
-          </div>
-          <span className="text-2xl font-bold text-neutral-900 dark:text-white">
-            {coursesCoveredCount} / {courses.length}
-          </span>
-          <span className="text-[11px] text-neutral-400">Programs with faculty leads</span>
-        </div>
-      </div>
-
-      {/* Table Section */}
+      {/* Big Teacher List Card */}
       <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden flex flex-col">
-        {/* Toolbar */}
-        <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-200 dark:border-white/10">
-          <div>
-            <h3 className="text-base font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
-              <GraduationCap className="w-4 h-4 text-sky-500" />
-              <span>Faculty Directory</span>
-            </h3>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-              Manage instructor profiles, course teaching allocations, and faculty status.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            <div className="relative">
-              <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                placeholder="Search teachers or courses..."
-                className="w-48 sm:w-64 pl-9 pr-3 py-1.5 text-xs rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white focus:outline-hidden focus:ring-1 focus:ring-blue-500"
-              />
+        {/* Inside Card Header Bar */}
+        <div className="p-4 sm:p-5 flex flex-col gap-5 border-b border-neutral-200 dark:border-white/10">
+          <div className="flex items-center justify-between gap-3">
+            {/* Back button inside the card */}
+            <div className="flex items-center">
+              <button
+                type="button"
+                onClick={onHome}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 border border-neutral-200 dark:border-white/10 transition-colors cursor-pointer"
+                title="Back to Home"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Back</span>
+              </button>
             </div>
 
-            <Select
-              label="Filter by status"
-              value={statusFilter}
-              onValueChange={handleStatusFilterChange}
-              options={[
-                { value: "all", label: "All Statuses" },
-                { value: "active", label: "Active Only" },
-                { value: "inactive", label: "Inactive" },
-                { value: "banned", label: "Banned" },
-              ]}
-              className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
-            />
+            {/* In the Center: Teachers Heading with Refresh icon at its side */}
+            <div className="flex items-center justify-center gap-2">
+              <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
+                Teachers
+              </h2>
+              <button
+                type="button"
+                disabled={isRefreshing || studentsLoading}
+                onClick={handleRefresh}
+                className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors cursor-pointer disabled:opacity-50"
+                title="Refresh Faculty Directory"
+              >
+                <RotateCcw
+                  className={`w-4 h-4 ${isRefreshing || studentsLoading ? "animate-spin" : ""}`}
+                />
+              </button>
+            </div>
+
+            {/* Right: Green Pill Add Teacher button */}
+            <div className="flex items-center">
+              <Link
+                href="/admin/teachers/new"
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-colors cursor-pointer whitespace-nowrap"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Teacher</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Search bar at right side & data above label at left side */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-1">
+            {/* Left side: count data above label in normal text size */}
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-neutral-900 dark:text-white leading-tight">
+                {filteredTeachers.length}
+              </span>
+              <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                Teachers
+              </span>
+            </div>
+
+            {/* Right side: Search bar and Status filter */}
+            <div className="flex items-center gap-2.5 flex-1 sm:flex-none justify-end flex-wrap sm:flex-nowrap">
+              <div className="relative w-full sm:w-64">
+                <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  placeholder="Search teachers..."
+                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+
+              <Select
+                label="Filter by status"
+                value={statusFilter}
+                onValueChange={handleStatusFilterChange}
+                options={[
+                  { value: "all", label: "All Statuses" },
+                  { value: "active", label: "Active Only" },
+                  { value: "inactive", label: "Inactive" },
+                  { value: "banned", label: "Banned" },
+                ]}
+                className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs whitespace-nowrap"
+              />
+            </div>
           </div>
         </div>
+
 
         {/* Table */}
         <div className="overflow-x-auto">
@@ -271,7 +296,7 @@ export function AdminTeachers({ onHome }: AdminTeachersProps) {
               <tr className="bg-neutral-50 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 border-b border-neutral-200 dark:border-white/10 font-medium">
                 <th className="py-3 px-4 sm:px-6">Teacher</th>
                 <th className="py-3 px-4 sm:px-6">Designation & Expertise</th>
-                <th className="py-3 px-4 sm:px-6">Teaches</th>
+                <th className="py-3 px-4 sm:px-6">Last Sign-in</th>
                 <th className="py-3 px-4 sm:px-6">Status</th>
                 <th className="py-3 px-4 sm:px-6 text-right">Actions</th>
               </tr>
@@ -285,7 +310,6 @@ export function AdminTeachers({ onHome }: AdminTeachersProps) {
                 </tr>
               ) : pagedTeachers.length > 0 ? (
                 pagedTeachers.map((teacher) => {
-                  const taughtCourses = coursesByTeacherId.get(teacher.id) || [];
                   const isBanned = teacher.status === "banned";
                   const isInactive = teacher.status === "inactive";
 
@@ -332,26 +356,9 @@ export function AdminTeachers({ onHome }: AdminTeachersProps) {
                         </div>
                       </td>
 
-                      {/* Teaches (Assigned Courses) */}
-                      <td className="py-3.5 px-4 sm:px-6">
-                        {taughtCourses.length > 0 ? (
-                          <div className="flex flex-wrap gap-1 max-w-xs">
-                            {taughtCourses.map((c) => (
-                              <Link
-                                key={c.id}
-                                href={`/admin/courses/${c.id}`}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-neutral-100 dark:bg-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/15 transition-colors"
-                              >
-                                <span className="opacity-60">#{c.number}</span>
-                                <span className="truncate max-w-[120px]">{c.title}</span>
-                              </Link>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-[11px] text-neutral-400 italic">
-                            No courses assigned
-                          </span>
-                        )}
+                      {/* Last Sign-in */}
+                      <td className="py-3.5 px-4 sm:px-6 text-neutral-500 text-[11px] whitespace-nowrap">
+                        {formatSignIn(teacher.lastLoginAt)}
                       </td>
 
                       {/* Status */}
@@ -457,7 +464,7 @@ export function AdminTeachers({ onHome }: AdminTeachersProps) {
                         <p className="text-xs">No teachers registered yet.</p>
                         <Link
                           href="/admin/teachers/new"
-                          className="px-3.5 py-1.5 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-semibold shadow-xs"
+                          className="px-4 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-xs"
                         >
                           Add Your First Teacher
                         </Link>
