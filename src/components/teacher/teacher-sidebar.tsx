@@ -1,37 +1,35 @@
 "use client";
 
-import { motion } from "motion/react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { LayoutDashboard, ArrowLeft, Home, UserRound, BookOpen, Users } from "lucide-react";
 import { SidebarHeader } from "@/components/layout/sidebar-header";
 import { UserProfile } from "@/components/layout/user-profile";
 import { SocialLinks } from "@/components/common/social-links";
 import { useAuth } from "@/providers/auth-provider";
-import { LayoutDashboard, ArrowLeft, Home, UserRound, BookOpen, Users } from "lucide-react";
-import { type TeacherTab } from "./teacher-shell";
+import { motion } from "motion/react";
 
 interface TeacherSidebarProps {
   isOpen: boolean;
   onToggle: () => void;
   isMobile?: boolean;
-  activeTab: TeacherTab;
-  onSelectTab: (tab: TeacherTab) => void;
   onBackToChat: () => void;
 }
 
 interface NavButtonProps {
-  tab: TeacherTab;
+  href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   iconActive: string;
-  activeTab: TeacherTab;
-  onSelect: (tab: TeacherTab) => void;
 }
 
-function NavButton({ tab, label, icon: Icon, iconActive, activeTab, onSelect }: NavButtonProps) {
-  const active = activeTab === tab;
+function NavButton({ href, label, icon: Icon, iconActive }: NavButtonProps) {
+  const pathname = usePathname();
+  const active = pathname === href || (href !== "/teacher" && pathname.startsWith(href));
+
   return (
-    <button
-      type="button"
-      onClick={() => onSelect(tab)}
+    <Link
+      href={href}
       className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer text-left ${
         active
           ? "bg-foreground text-background shadow-sm"
@@ -40,7 +38,7 @@ function NavButton({ tab, label, icon: Icon, iconActive, activeTab, onSelect }: 
     >
       <Icon className={`w-4 h-4 shrink-0 ${active ? "text-background" : iconActive}`} />
       <span>{label}</span>
-    </button>
+    </Link>
   );
 }
 
@@ -48,8 +46,6 @@ export function TeacherSidebar({
   isOpen,
   onToggle,
   isMobile,
-  activeTab,
-  onSelectTab,
   onBackToChat,
 }: TeacherSidebarProps) {
   const { user, isLoggedIn, logout } = useAuth();
@@ -75,36 +71,28 @@ export function TeacherSidebar({
         </div>
 
         <NavButton
-          tab="home"
+          href="/teacher"
           label="Home"
           icon={Home}
           iconActive="text-amber-500 dark:text-amber-400"
-          activeTab={activeTab}
-          onSelect={onSelectTab}
         />
         <NavButton
-          tab="profile"
+          href="/teacher/profile"
           label="My Profile"
           icon={UserRound}
           iconActive="text-sky-500 dark:text-sky-400"
-          activeTab={activeTab}
-          onSelect={onSelectTab}
         />
         <NavButton
-          tab="courses"
+          href="/teacher/courses"
           label="My Courses"
           icon={BookOpen}
           iconActive="text-emerald-500 dark:text-emerald-400"
-          activeTab={activeTab}
-          onSelect={onSelectTab}
         />
         <NavButton
-          tab="referrals"
+          href="/teacher/referrals"
           label="My Referral"
           icon={Users}
           iconActive="text-pink-500 dark:text-pink-400"
-          activeTab={activeTab}
-          onSelect={onSelectTab}
         />
       </div>
     </div>

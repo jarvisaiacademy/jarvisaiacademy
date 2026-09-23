@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { TeacherShell } from "@/components/teacher/teacher-shell";
 
 export const metadata: Metadata = {
   title: "Teacher Dashboard",
@@ -7,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return <TeacherShell>{children}</TeacherShell>;
 }

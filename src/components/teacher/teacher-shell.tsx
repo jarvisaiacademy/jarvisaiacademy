@@ -9,48 +9,34 @@ import { useAuth } from "@/providers/auth-provider";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
-export type TeacherTab = "home" | "profile" | "courses" | "referrals";
-
-const VALID_TABS: Record<TeacherTab, true> = {
-  home: true,
-  profile: true,
-  courses: true,
-  referrals: true,
-};
-
-function isTeacherTab(value: string | null): value is TeacherTab {
-  return !!value && value in VALID_TABS;
-}
-
-const TAB_STORAGE_KEY = "jarvis_teacher_tab";
-
-export interface TeacherShellState {
-  activeTab: TeacherTab;
-  onSelectTab: (tab: TeacherTab) => void;
+export interface TeacherShellContextState {
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
 }
 
-interface TeacherShellProps {
-  defaultTab: TeacherTab;
-  restoreTab?: boolean;
-  children: (shell: TeacherShellState) => React.ReactNode;
+const TeacherShellContext = React.createContext<TeacherShellContextState | null>(null);
+
+export function useTeacherShell() {
+  const ctx = React.useContext(TeacherShellContext);
+  if (!ctx) throw new Error("useTeacherShell must be used within TeacherShell");
+  return ctx;
 }
 
-export function TeacherShell({ defaultTab, restoreTab = true, children }: TeacherShellProps) {
+interface TeacherShellProps {
+  children: React.ReactNode;
+}
+
+export function TeacherShell({ children }: TeacherShellProps) {
   const { isOpen, toggle, isMobile } = useSidebar(true);
   const { user, isLoggedIn, logout } = useAuth();
   const router = useRouter();
   
   const [mounted, setMounted] = useState(false);
   const [isTeacher, setIsTeacher] = useState<boolean | null>(null);
-  const [tab, setTab] = useState<TeacherTab>(defaultTab);
 
   useEffect(() => {
-    const stored = sessionStorage.getItem(TAB_STORAGE_KEY);
-    if (restoreTab && isTeacherTab(stored)) setTab(stored);
     setMounted(true);
-  }, [restoreTab]);
+  }, []);
 
   useEffect(() => {
     if (!mounted) return;
@@ -90,40 +76,26 @@ export function TeacherShell({ defaultTab, restoreTab = true, children }: Teache
     }
   }, [isTeacher, router]);
 
-  const handleSelectTab = useCallback((next: TeacherTab) => {
-    setTab(next);
-    try {
-      sessionStorage.setItem(TAB_STORAGE_KEY, next);
-    } catch {
-      // ignore
-    }
-  }, []);
-
   const goHome = useCallback(() => router.push("/"), [router]);
 
   if (!mounted || isTeacher === null || isTeacher === false) return null;
 
   return (
     <ToastProvider>
-      <div className="flex h-dvh w-screen overflow-hidden bg-background text-foreground font-sans selection:bg-[#9d5932] selection:text-white transition-colors duration-150">
-        <TeacherSidebar
-          isOpen={isOpen}
-          onToggle={toggle}
-          isMobile={isMobile}
-          activeTab={tab}
-          onSelectTab={handleSelectTab}
-          onBackToChat={goHome}
-        />
+      <TeacherShellContext.Provider value={{ sidebarOpen: isOpen, onToggleSidebar: toggle }}>
+        <div className="flex h-dvh w-screen overflow-hidden bg-background text-foreground font-sans selection:bg-[#9d5932] selection:text-white transition-colors duration-150">
+          <TeacherSidebar
+            isOpen={isOpen}
+            onToggle={toggle}
+            isMobile={isMobile}
+            onBackToChat={goHome}
+          />
 
-        <main className="flex-1 flex flex-col h-full min-h-0 min-w-0 bg-background relative overflow-hidden transition-colors duration-150">
-          {children({
-            activeTab: tab,
-            onSelectTab: handleSelectTab,
-            sidebarOpen: isOpen,
-            onToggleSidebar: toggle,
-          })}
-        </main>
-      </div>
+          <main className="flex-1 flex flex-col h-full min-h-0 min-w-0 bg-background relative overflow-hidden transition-colors duration-150">
+            {children}
+          </main>
+        </div>
+      </TeacherShellContext.Provider>
     </ToastProvider>
   );
 }

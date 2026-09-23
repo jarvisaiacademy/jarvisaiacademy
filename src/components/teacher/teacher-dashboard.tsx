@@ -11,15 +11,12 @@ import type { CourseItem } from "@/data/courses";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { TeacherCourseView } from "./teacher-course-view";
 
-import type { TeacherTab } from "@/components/teacher/teacher-shell";
-
 interface TeacherDashboardProps {
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
-  activeTab?: TeacherTab;
 }
 
-export function TeacherDashboard({ sidebarOpen, onToggleSidebar, activeTab = "home" }: TeacherDashboardProps) {
+export function TeacherDashboard({ sidebarOpen, onToggleSidebar }: TeacherDashboardProps) {
   const { user } = useAuth();
   const { courses } = useCourses();
   
@@ -102,152 +99,87 @@ export function TeacherDashboard({ sidebarOpen, onToggleSidebar, activeTab = "ho
 
   return (
     <div className="flex flex-col min-h-screen w-full bg-neutral-50 dark:bg-[#121212] text-neutral-900 dark:text-neutral-100 overflow-y-auto">
-      {activeTab === "home" && (
-        <AdminHeader 
-          sidebarOpen={sidebarOpen} 
-          onToggleSidebar={onToggleSidebar} 
-          title="Teacher Dashboard" 
-        />
-      )}
+      <AdminHeader 
+        sidebarOpen={sidebarOpen} 
+        onToggleSidebar={onToggleSidebar} 
+        title="Teacher Dashboard" 
+      />
       
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
-        {activeTab === "courses" && selectedCourseId ? (
-          <TeacherCourseView 
-            course={teacherCourses.find(c => c.id === selectedCourseId)!} 
-            enrollments={enrollments.filter(e => e.courseId === selectedCourseId)}
-            onBack={() => handleSelectCourse(null)} 
-          />
-        ) : (
-          <>
-            {activeTab === "home" && (
-              <>
-                {/* Welcome hero — clean, centered, ChatGPT-style */}
-                <div className="flex flex-col items-center gap-4 pt-4 pb-2 text-center max-w-2xl mx-auto w-full">
-                  {/* Avatar */}
-                  <div className="relative">
-                    {user?.picture ? (
-                      <img
-                        src={user.picture}
-                        alt={user.name || "Teacher"}
-                        className="w-16 h-16 rounded-full object-cover ring-2 ring-neutral-200 dark:ring-white/10 ring-offset-2 ring-offset-background"
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center w-16 h-16 rounded-full bg-neutral-100 dark:bg-white/5 text-neutral-900 dark:text-white text-lg font-semibold ring-2 ring-neutral-200 dark:ring-white/10 ring-offset-2 ring-offset-background">
-                        {user?.name?.slice(0, 2).toUpperCase() ?? "JA"}
-                      </div>
-                    )}
-                    {/* online dot */}
-                    <span className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-background" />
+            <div className="flex flex-col items-center gap-4 pt-4 pb-2 text-center max-w-2xl mx-auto w-full">
+              {/* Avatar */}
+              <div className="relative">
+                {user?.picture ? (
+                  <img
+                    src={user.picture}
+                    alt={user.name || "Teacher"}
+                    className="w-16 h-16 rounded-full object-cover ring-2 ring-neutral-200 dark:ring-white/10 ring-offset-2 ring-offset-background"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center w-16 h-16 rounded-full bg-neutral-100 dark:bg-white/5 text-neutral-900 dark:text-white text-lg font-semibold ring-2 ring-neutral-200 dark:ring-white/10 ring-offset-2 ring-offset-background">
+                    {user?.name?.slice(0, 2).toUpperCase() ?? "JA"}
                   </div>
+                )}
+                {/* online dot */}
+                <span className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-background" />
+              </div>
 
-                  {/* Greeting */}
-                  <div className="flex flex-col gap-1">
-                    <h2 className="text-2xl font-semibold text-neutral-900 dark:text-white tracking-tight">
-                      Good{" "}
-                      {(() => {
-                        const h = new Date().getHours();
-                        return h < 12 ? "morning" : h < 17 ? "afternoon" : "evening";
-                      })()}
-                      , {user?.name?.split(" ")[0] || "Teacher"}
-                    </h2>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                      Faculty Member since {user?.createdAt ? new Date(user.createdAt).getFullYear() : new Date().getFullYear()} · Jarvis AI Academy
-                    </p>
-                  </div>
-                </div>
-
-                {/* Thin divider */}
-                <div className="max-w-2xl mx-auto w-full mt-2 mb-2">
-                  <hr className="border-neutral-200 dark:border-white/10" />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mt-4">
-                  <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-3 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        My Courses
-                      </span>
-                      <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                        <LayoutDashboard className="w-4 h-4" />
-                      </div>
-                    </div>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-bold text-neutral-900 dark:text-white">
-                        {teacherCourses.length}
-                      </span>
-                      <span className="text-sm text-neutral-500">Active</span>
-                    </div>
-                  </div>
-
-                  <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-3 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Total Enrolled Students
-                      </span>
-                      <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-                        <Users className="w-4 h-4" />
-                      </div>
-                    </div>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-bold text-neutral-900 dark:text-white">
-                        {totalStudents}
-                      </span>
-                      <span className="text-sm text-neutral-500">Across {teacherCourses.length} courses</span>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {activeTab === "courses" && (
-              <div className="flex flex-col gap-4">
-                <h2 className="text-lg font-semibold tracking-tight text-neutral-900 dark:text-white flex items-center gap-2">
-                  <GraduationCap className="w-5 h-5 text-neutral-400" />
-                  Course Roster
+              {/* Greeting */}
+              <div className="flex flex-col gap-1">
+                <h2 className="text-2xl font-semibold text-neutral-900 dark:text-white tracking-tight">
+                  Good{" "}
+                  {(() => {
+                    const h = new Date().getHours();
+                    return h < 12 ? "morning" : h < 17 ? "afternoon" : "evening";
+                  })()}
+                  , {user?.name?.split(" ")[0] || "Teacher"}
                 </h2>
-          
-          {teacherCourses.length === 0 ? (
-            <div className="p-12 text-center border border-neutral-200 dark:border-white/10 rounded-2xl bg-white dark:bg-[#1c1c1c]">
-              <p className="text-neutral-500">You are not assigned to any courses yet.</p>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  Faculty Member since {user?.createdAt ? new Date(user.createdAt).getFullYear() : new Date().getFullYear()} · Jarvis AI Academy
+                </p>
+              </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {teacherCourses.map((course) => {
-                const courseEnrollments = enrollments.filter(e => e.courseId === course.id);
-                return (
-                  <div 
-                    key={course.id} 
-                    onClick={() => handleSelectCourse(course.id)}
-                    className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-sm flex flex-col justify-between cursor-pointer hover:border-neutral-300 dark:hover:border-white/20 transition-all hover:-translate-y-0.5"
-                  >
-                    <div>
-                      <div className="flex items-start justify-between mb-2">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-300">
-                          {course.categoryLabel}
-                        </span>
-                      </div>
-                      <h3 className="text-base font-semibold text-neutral-900 dark:text-white line-clamp-2 leading-snug mb-1">
-                        {course.title}
-                      </h3>
-                    </div>
-                    
-                    <div className="mt-4 pt-4 border-t border-neutral-100 dark:border-white/10 flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
-                        <Users className="w-4 h-4" />
-                        <span className="text-sm font-medium">
-                          {courseEnrollments.length} {courseEnrollments.length === 1 ? 'Student' : 'Students'}
-                        </span>
-                      </div>
-                    </div>
+
+            {/* Thin divider */}
+            <div className="max-w-2xl mx-auto w-full mt-2 mb-2">
+              <hr className="border-neutral-200 dark:border-white/10" />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mt-4">
+              <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-3 transition-colors">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                    My Courses
+                  </span>
+                  <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                    <LayoutDashboard className="w-4 h-4" />
                   </div>
-                );
-              })}
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-neutral-900 dark:text-white">
+                    {teacherCourses.length}
+                  </span>
+                  <span className="text-sm text-neutral-500">Active</span>
+                </div>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-3 transition-colors">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                    Total Enrolled Students
+                  </span>
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                    <Users className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-neutral-900 dark:text-white">
+                    {totalStudents}
+                  </span>
+                  <span className="text-sm text-neutral-500">Across {teacherCourses.length} courses</span>
+                </div>
+              </div>
             </div>
-          )}
-        </div>
-        )}
-        </>
-        )}
       </main>
     </div>
   );
