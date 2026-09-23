@@ -9,6 +9,7 @@ import { collection, query, where, onSnapshot } from "firebase/firestore";
 import type { EnrollmentRecord } from "@/hooks/use-student-enrollments";
 import type { CourseItem } from "@/data/courses";
 import { AdminHeader } from "@/components/admin/admin-header";
+import { TeacherCourseView } from "./teacher-course-view";
 
 interface TeacherDashboardProps {
   sidebarOpen: boolean;
@@ -20,6 +21,22 @@ export function TeacherDashboard({ sidebarOpen, onToggleSidebar }: TeacherDashbo
   const { courses } = useCourses();
   
   const [enrollments, setEnrollments] = useState<EnrollmentRecord[]>([]);
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+
+  // Restore selected course from sessionStorage on mount
+  useEffect(() => {
+    const stored = sessionStorage.getItem("jarvis_teacher_course");
+    if (stored) setSelectedCourseId(stored);
+  }, []);
+
+  const handleSelectCourse = (id: string | null) => {
+    setSelectedCourseId(id);
+    if (id) {
+      sessionStorage.setItem("jarvis_teacher_course", id);
+    } else {
+      sessionStorage.removeItem("jarvis_teacher_course");
+    }
+  };
 
   // Find courses assigned to this teacher
   const teacherCourses = useMemo(() => {
@@ -89,57 +106,64 @@ export function TeacherDashboard({ sidebarOpen, onToggleSidebar }: TeacherDashbo
       />
       
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
-        
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Welcome back, {user?.name?.split(" ")[0] || "Teacher"}
-          </h1>
-          <p className="text-sm sm:text-base text-neutral-500 dark:text-neutral-400">
-            Here&apos;s an overview of your assigned courses and students.
-          </p>
-        </div>
+        {selectedCourseId ? (
+          <TeacherCourseView 
+            course={teacherCourses.find(c => c.id === selectedCourseId)!} 
+            enrollments={enrollments.filter(e => e.courseId === selectedCourseId)}
+            onBack={() => handleSelectCourse(null)} 
+          />
+        ) : (
+          <>
+            <div className="flex flex-col gap-2">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                Welcome back, {user?.name?.split(" ")[0] || "Teacher"}
+              </h1>
+              <p className="text-sm sm:text-base text-neutral-500 dark:text-neutral-400">
+                Here&apos;s an overview of your assigned courses and students.
+              </p>
+            </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-          <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-3 transition-colors">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                My Courses
-              </span>
-              <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                <LayoutDashboard className="w-4 h-4" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-3 transition-colors">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                    My Courses
+                  </span>
+                  <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                    <LayoutDashboard className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-neutral-900 dark:text-white">
+                    {teacherCourses.length}
+                  </span>
+                  <span className="text-sm text-neutral-500">Active</span>
+                </div>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-3 transition-colors">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                    Total Enrolled Students
+                  </span>
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                    <Users className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-neutral-900 dark:text-white">
+                    {totalStudents}
+                  </span>
+                  <span className="text-sm text-neutral-500">Across {teacherCourses.length} courses</span>
+                </div>
               </div>
             </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-neutral-900 dark:text-white">
-                {teacherCourses.length}
-              </span>
-              <span className="text-sm text-neutral-500">Active</span>
-            </div>
-          </div>
 
-          <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-3 transition-colors">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                Total Enrolled Students
-              </span>
-              <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-                <Users className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-neutral-900 dark:text-white">
-                {totalStudents}
-              </span>
-              <span className="text-sm text-neutral-500">Across {teacherCourses.length} courses</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <h2 className="text-lg font-semibold tracking-tight text-neutral-900 dark:text-white flex items-center gap-2">
-            <GraduationCap className="w-5 h-5 text-neutral-400" />
-            Course Roster
-          </h2>
+            <div className="flex flex-col gap-4">
+              <h2 className="text-lg font-semibold tracking-tight text-neutral-900 dark:text-white flex items-center gap-2">
+                <GraduationCap className="w-5 h-5 text-neutral-400" />
+                Course Roster
+              </h2>
           
           {teacherCourses.length === 0 ? (
             <div className="p-12 text-center border border-neutral-200 dark:border-white/10 rounded-2xl bg-white dark:bg-[#1c1c1c]">
@@ -150,7 +174,11 @@ export function TeacherDashboard({ sidebarOpen, onToggleSidebar }: TeacherDashbo
               {teacherCourses.map((course) => {
                 const courseEnrollments = enrollments.filter(e => e.courseId === course.id);
                 return (
-                  <div key={course.id} className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-sm flex flex-col justify-between">
+                  <div 
+                    key={course.id} 
+                    onClick={() => handleSelectCourse(course.id)}
+                    className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-sm flex flex-col justify-between cursor-pointer hover:border-neutral-300 dark:hover:border-white/20 transition-all hover:-translate-y-0.5"
+                  >
                     <div>
                       <div className="flex items-start justify-between mb-2">
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-300">
@@ -176,7 +204,8 @@ export function TeacherDashboard({ sidebarOpen, onToggleSidebar }: TeacherDashbo
             </div>
           )}
         </div>
-
+        </>
+        )}
       </main>
     </div>
   );
