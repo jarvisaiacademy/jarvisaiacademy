@@ -6,9 +6,9 @@ import { ChatMessages, ChatMessage } from "./chat-messages";
 import { ChatComposer } from "./ChatComposer";
 import { EnrollmentData } from "./enrollment-card";
 import { useAuth } from "@/providers/auth-provider";
+import { useCourses } from "@/providers/courses-provider";
 import { siteConfig } from "@/config/site";
 import { academyKnowledge, type TopicResponseData } from "@/data/academy-knowledge";
-import { COURSES_DATA } from "@/data/courses";
 
 const SAMPLE_STARTER_QUESTION = `Hi! I want to transition into AI & Full-Stack software engineering. How does ${siteConfig.name} help learners reach production-ready skills?`;
 
@@ -86,6 +86,7 @@ export function ChatCanvas({
   initialPrompt,
   onRequireLogin,
 }: ChatCanvasProps) {
+  const { courses } = useCourses();
   const [messages, setMessages] = useState<ChatMessage[]>(initialConversation);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -387,6 +388,36 @@ export function ChatCanvas({
       return academyKnowledge.enquiry;
     }
 
+    // Dynamic course matching from Firestore database
+    const matchedCourse = courses.find((c) => {
+      const idMatch = lower.includes(c.id.toLowerCase());
+      const titleMatch = lower.includes(c.title.toLowerCase());
+      const numberMatch = c.number && lower.includes(c.number.toLowerCase());
+      return idMatch || titleMatch || numberMatch;
+    });
+
+    if (matchedCourse) {
+      if (academyKnowledge[matchedCourse.id]) {
+        return academyKnowledge[matchedCourse.id];
+      }
+      return {
+        text: `### 🎓 **${matchedCourse.title}**\n\n` +
+          `* **Track**: ${matchedCourse.categoryLabel || matchedCourse.category}\n` +
+          `* **Duration**: **${matchedCourse.duration}**\n` +
+          `* **Tuition Fee**: **${matchedCourse.fee}**\n` +
+          `* **Curriculum Overview**: ${matchedCourse.description}\n\n` +
+          (matchedCourse.topics?.length ? `**Key Modules**:\n${matchedCourse.topics.map((t: string) => `* ${t}`).join("\n")}\n\n` : "") +
+          (matchedCourse.techStack?.length ? `**Tech Stack**: ${matchedCourse.techStack.join(", ")}\n\n` : "") +
+          `> "${matchedCourse.bannerSubtitle || matchedCourse.description}"\n\n` +
+          `Would you like to enroll in **${matchedCourse.title}** or ask about the syllabus?`,
+        suggestions: [
+          `I want to enroll in ${matchedCourse.title}`,
+          "What is the fee structure & payment options?",
+          "Tell me about the Super10 Elite Batch with 100% placement assurance",
+        ],
+      };
+    }
+
     return {
       text: `Thank you for your question about **"${prompt}"**!\n\nAt **Jarvis AI Academy**, our programs feature:\n* **Duration**: Fast-track **60 Days (2 Months)** build-first training.\n* **Tuition**: **₹30,000** all-inclusive — the Super10 Elite track is fully sponsored at **₹0**.\n* **🎁 Refer & Earn**: Refer a student and receive **₹3,000** cash reward once they complete the full 60-day course!\n\n🌐 **Connect With Us Online**:\n* 💼 **LinkedIn**: [@jarvisaiacademy](https://www.linkedin.com/company/jarvisaiacademy/)\n* 📸 **Instagram**: [@jarvisaiacademy](https://www.instagram.com/jarvisaiacademy/)\n* 🎥 **YouTube**: [@JarvisAIAcademy](https://www.youtube.com/@JarvisAIAcademy)\n* 𝕏 **X (Twitter)**: [@jarvisaiacademy](https://x.com/jarvisaiacademy)\n* 📘 **Facebook**: [@jarvisaiacademy](https://www.facebook.com/jarvisaiacademy/)\n\nWould you like to explore our course syllabus, the **Super10** batch, or start enrollment?`,
       suggestions: [
@@ -395,7 +426,7 @@ export function ChatCanvas({
         "How does the ₹3,000 Refer & Earn program work?",
       ],
     };
-  }, []);
+  }, [courses]);
 
   // Handle prompt submit
   const handlePromptSubmit = useCallback(
@@ -443,10 +474,8 @@ export function ChatCanvas({
       };
 
       // A course row sends a catalogue id, which is not a knowledge-base key, so ask
-      // for the programme by name and let the keyword router pick its section. The
-      // catalogue's own `actionPrompt` cannot be used: the flagship's is the checkout
-      // ask, which would open the payment portal instead of describing the programme.
-      const course = COURSES_DATA.find((c) => c.id === topic);
+      // for the programme by name and let the keyword router pick its section.
+      const course = courses.find((c) => c.id === topic);
       const userText = topicPrompts[topic] || `Tell me about ${course?.title ?? topic}`;
       const userMsg: ChatMessage = {
         id: `user-${Date.now()}`,
@@ -465,7 +494,7 @@ export function ChatCanvas({
         );
       }, 300);
     },
-    [determineReply, streamAIResponse]
+    [courses, determineReply, streamAIResponse]
   );
 
   // Handle topic click from sidebar
