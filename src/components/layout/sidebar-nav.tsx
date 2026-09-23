@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   SquarePen,
@@ -27,8 +27,9 @@ import {
 import { SidebarHoverCard } from "./sidebar-hover-card";
 import { SidebarSection } from "./sidebar-section";
 import { useAuth } from "@/providers/auth-provider";
+import { useCourses } from "@/providers/courses-provider";
 import { useStudentEnrollments } from "@/hooks/use-student-enrollments";
-import { COURSES_DATA, type CourseItem } from "@/data/courses";
+import type { CourseItem } from "@/data/courses";
 
 /**
  * The two catalogue entries that already have a nav row of their own — Super10
@@ -37,12 +38,9 @@ import { COURSES_DATA, type CourseItem } from "@/data/courses";
  */
 const DEDICATED_ROWS = new Set(["super10", "referral"]);
 
-const COURSE_ROWS = COURSES_DATA.filter((course) => !DEDICATED_ROWS.has(course.id));
-
 /**
  * A coloured glyph per programme, so the list scans the way the catalogue grid
- * does. Presentation only — which is why it lives here and not in COURSES_DATA,
- * whose shape Firestore and the admin form also depend on.
+ * does. Presentation only.
  */
 const COURSE_GLYPHS: Record<
   string,
@@ -59,20 +57,6 @@ const COURSE_GLYPHS: Record<
   "app-support": { icon: Wrench, color: "text-rose-500 dark:text-rose-400" },
   "web-laravel": { icon: Globe, color: "text-pink-500 dark:text-pink-400" },
 };
-
-/** Hover-card copy for a course row, read off the catalogue rather than restated. */
-function courseHoverData(id: string) {
-  const course = COURSE_ROWS.find((c) => c.id === id);
-  if (!course) return undefined;
-  return {
-    title: course.title,
-    // Duration and fee are already on the card's hero object, so the body copy is
-    // only the description.
-    description: course.description,
-    gradientClass: `bg-gradient-to-br ${course.gradient}`,
-    course,
-  };
-}
 
 interface NavHoverItemData {
   title: string;
@@ -281,9 +265,29 @@ export function SidebarNav({
     };
   }, []);
 
+  const { courses } = useCourses();
+  const courseRows = React.useMemo(
+    () => courses.filter((course) => !DEDICATED_ROWS.has(course.id) && (course.status ?? "active") !== "inactive"),
+    [courses]
+  );
+
+  const getCourseHoverData = useCallback(
+    (id: string) => {
+      const course = courseRows.find((c) => c.id === id);
+      if (!course) return undefined;
+      return {
+        title: course.title,
+        description: course.description,
+        gradientClass: course.gradient ? `bg-gradient-to-br ${course.gradient}` : "bg-gradient-to-br from-[#339af0] via-[#4dabf7] to-[#74c0fc]",
+        course,
+      };
+    },
+    [courseRows]
+  );
+
   // Course rows are not in `navHoverData`, so the card falls back to the catalogue.
   const hoverItem = activeHoverItem
-    ? navHoverData[activeHoverItem] ?? courseHoverData(activeHoverItem)
+    ? navHoverData[activeHoverItem] ?? getCourseHoverData(activeHoverItem)
     : undefined;
 
   return (
@@ -471,7 +475,7 @@ export function SidebarNav({
       />
 
       <SidebarSection label="Courses">
-        {COURSE_ROWS.map((course) => {
+        {courseRows.map((course) => {
           // A course with no glyph still gets the icon column, so its label stays
           // on the same line as every other row's.
           const Icon = COURSE_GLYPHS[course.id]?.icon ?? BookOpen;
