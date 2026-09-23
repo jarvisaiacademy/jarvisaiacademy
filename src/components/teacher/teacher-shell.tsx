@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Sidebar } from "@/components/layout/sidebar";
+import { TeacherSidebar } from "./teacher-sidebar";
 import { ToastProvider } from "@/components/ui/toast";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useAuth } from "@/providers/auth-provider";
@@ -75,14 +75,10 @@ export function TeacherShell({ children }: TeacherShellProps) {
   return (
     <ToastProvider>
       <div className="flex h-dvh w-screen overflow-hidden bg-background text-foreground font-sans selection:bg-[#9d5932] selection:text-white transition-colors duration-150">
-        <Sidebar
+        <TeacherSidebar
           isOpen={isOpen}
           onToggle={toggle}
           isMobile={isMobile}
-          isLoggedIn={isLoggedIn}
-          user={user}
-          onLogout={logout}
-          onOpenProfile={() => {}}
           onBackToChat={goHome}
         />
 
