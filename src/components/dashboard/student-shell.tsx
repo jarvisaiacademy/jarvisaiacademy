@@ -7,13 +7,14 @@ import { ToastProvider } from "@/components/ui/toast";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useAuth } from "@/providers/auth-provider";
 
-export type StudentTab = "home" | "profile" | "courses" | "certificates";
+export type StudentTab = "home" | "profile" | "courses" | "certificates" | "referrals";
 
 const VALID_TABS: Record<StudentTab, true> = {
   home: true,
   profile: true,
   courses: true,
   certificates: true,
+  referrals: true,
 };
 
 function isStudentTab(value: string | null): value is StudentTab {
