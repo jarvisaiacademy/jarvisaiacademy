@@ -260,6 +260,27 @@ export function AdminDashboard({
     }
   };
 
+  const handleUpdateReferralCode = async (uid: string, current: string | undefined) => {
+    const next = window.prompt("Enter a 4-letter VIP referral code (or leave blank to remove and use auto-generated):", current || "");
+    if (next === null) return; // cancelled
+    
+    const cleaned = next.trim().toUpperCase().replace(/[^A-Z]/g, "");
+    if (next.trim() !== "" && cleaned.length !== 4) {
+      showToast("VIP Code must be exactly 4 letters.", "error");
+      return;
+    }
+
+    setBusyCandidateId(uid);
+    try {
+      await updateCandidateInFirestore(uid, { referralCode: next.trim() === "" ? "" : cleaned }, user?.email);
+      showToast(cleaned ? "VIP Code assigned" : "VIP Code removed", "success");
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : "Failed to update candidate", "error");
+    } finally {
+      setBusyCandidateId(null);
+    }
+  };
+
   // Fills the roster defaults onto rows that predate the sign-in writing them. Those rows are
   // invisible to the Students page, whose filter is `is_teacher == false` — a `==` never matches
   // an absent field, so the sidebar counts them and the table cannot list them.
@@ -572,6 +593,7 @@ export function AdminDashboard({
                 <th className="py-3 px-4 sm:px-6">Account</th>
                 <th className="py-3 px-4 sm:px-6">Status</th>
                 <th className="py-3 px-4 sm:px-6">Super10</th>
+                <th className="py-3 px-4 sm:px-6">Referral Code</th>
                 <th className="py-3 px-4 sm:px-6">Last Sign-in</th>
               </tr>
             </thead>
@@ -622,6 +644,17 @@ export function AdminDashboard({
                         offLabel="Not Super10"
                         label={`Super10 status for ${student.name || student.email}`}
                       />
+                    </td>
+
+                    <td className="py-3.5 px-4 sm:px-6">
+                      <button
+                        type="button"
+                        disabled={busyCandidateId === student.id}
+                        onClick={() => handleUpdateReferralCode(student.id, student.referralCode)}
+                        className="px-2 py-1 rounded-md text-[10px] font-semibold border transition-colors disabled:opacity-50 text-neutral-600 dark:text-neutral-300 bg-white dark:bg-white/5 border-neutral-200 dark:border-white/10 hover:bg-neutral-100 dark:hover:bg-white/10"
+                      >
+                        {student.referralCode ? student.referralCode : "Assign VIP"}
+                      </button>
                     </td>
 
                     <td className="py-3.5 px-4 sm:px-6 text-neutral-500 text-[11px]">
