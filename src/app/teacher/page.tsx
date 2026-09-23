@@ -4,7 +4,6 @@ import React from "react";
 import { TeacherShell, type TeacherTab } from "@/components/teacher/teacher-shell";
 import { TeacherDashboard } from "@/components/teacher/teacher-dashboard";
 import { DashboardProfile } from "@/components/dashboard/dashboard-profile";
-import { DashboardCourses } from "@/components/dashboard/dashboard-courses";
 import { DashboardReferrals } from "@/components/dashboard/dashboard-referrals";
 import { AdminHeader } from "@/components/admin/admin-header";
 
@@ -29,14 +28,14 @@ export default function TeacherRoute() {
           )}
 
           <div className="flex-1 overflow-y-auto min-h-0">
-            {activeTab === "home" && (
+            {(activeTab === "home" || activeTab === "courses") && (
               <TeacherDashboard
                 sidebarOpen={sidebarOpen}
                 onToggleSidebar={onToggleSidebar}
+                activeTab={activeTab}
               />
             )}
             {activeTab === "profile" && <DashboardProfile />}
-            {activeTab === "courses" && <DashboardCourses />}
             {activeTab === "referrals" && <DashboardReferrals />}
           </div>
         </div>
