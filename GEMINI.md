@@ -20,4 +20,11 @@ If you are on `production` or `development`, immediately branch off before commi
 git checkout -b <type>/<description>
 ```
 
+## 3. Caching & Firebase Quota Rules (STRICTLY ENFORCED)
+- **Public & Anonymous Surfaces**: MUST use cached endpoints (`/api/public-content` or `getPublicCourses()`) with ISR (`revalidate = 300`). NEVER attach real-time `onSnapshot` listeners to public or non-authenticated surfaces (prevents burning Firebase free tier quota).
+- **Course Status Filtering**: All public components (catalogue, chat, sidebar) MUST filter out `status === "inactive"`. Inactive courses belong only in the Admin dashboard.
+- **Admin Surfaces**: Admin dashboard views (`/admin`) MUST keep real-time listeners (`onSnapshot`) or direct Firestore queries so saved changes are visible immediately to operators.
+- **Roster & Pagination**: Large collections (`users`, `enrollments`) MUST be queried with pagination constraints (`limit()`, `startAfter()`, `where()`). NEVER query full collections unconstrained.
+- **Client Auth State & Role Caching**: Auth and role tokens (`jarvis_auth_user`, `jarvis_is_teacher`) MUST be cached in `localStorage` and guarded with `auth.authStateReady()` to prevent premature redirects to `/` on page reloads.
+
 Refer to [`RELEASE_WORKFLOW.md`](./RELEASE_WORKFLOW.md) for the full lifecycle.
