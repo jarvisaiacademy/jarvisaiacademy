@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { Home, UserRound, BookOpen, Award, ArrowLeft, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Home, UserRound, BookOpen, Award, ArrowLeft, Users, LayoutDashboard } from "lucide-react";
 import { type StudentTab } from "./student-shell";
 import { useAuth } from "@/providers/auth-provider";
 import { useStudentEnrollments } from "@/hooks/use-student-enrollments";
@@ -50,6 +51,8 @@ export function StudentSidebarNav({
   const { user } = useAuth();
   const enrollments = useStudentEnrollments(user?.email);
   const hasCompletedCourse = enrollments.some(e => e.action === "paid");
+  
+  const router = useRouter();
 
   return (
     <div className="flex flex-col gap-5 px-3 py-2 text-neutral-800 dark:text-neutral-200">
