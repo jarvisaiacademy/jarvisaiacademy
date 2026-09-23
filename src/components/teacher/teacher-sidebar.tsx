@@ -5,19 +5,51 @@ import { SidebarHeader } from "@/components/layout/sidebar-header";
 import { UserProfile } from "@/components/layout/user-profile";
 import { SocialLinks } from "@/components/common/social-links";
 import { useAuth } from "@/providers/auth-provider";
-import { LayoutDashboard, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, ArrowLeft, Home, UserRound, BookOpen, Users } from "lucide-react";
+import { type TeacherTab } from "./teacher-shell";
 
 interface TeacherSidebarProps {
   isOpen: boolean;
   onToggle: () => void;
   isMobile?: boolean;
+  activeTab: TeacherTab;
+  onSelectTab: (tab: TeacherTab) => void;
   onBackToChat: () => void;
+}
+
+interface NavButtonProps {
+  tab: TeacherTab;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  iconActive: string;
+  activeTab: TeacherTab;
+  onSelect: (tab: TeacherTab) => void;
+}
+
+function NavButton({ tab, label, icon: Icon, iconActive, activeTab, onSelect }: NavButtonProps) {
+  const active = activeTab === tab;
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(tab)}
+      className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer text-left ${
+        active
+          ? "bg-foreground text-background shadow-sm"
+          : "text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-white/10"
+      }`}
+    >
+      <Icon className={`w-4 h-4 shrink-0 ${active ? "text-background" : iconActive}`} />
+      <span>{label}</span>
+    </button>
+  );
 }
 
 export function TeacherSidebar({
   isOpen,
   onToggle,
   isMobile,
+  activeTab,
+  onSelectTab,
   onBackToChat,
 }: TeacherSidebarProps) {
   const { user, isLoggedIn, logout } = useAuth();
@@ -42,13 +74,38 @@ export function TeacherSidebar({
           </span>
         </div>
 
-        <button
-          type="button"
-          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer text-left bg-foreground text-background shadow-sm"
-        >
-          <LayoutDashboard className="w-4 h-4 shrink-0 text-background" />
-          <span>Dashboard</span>
-        </button>
+        <NavButton
+          tab="home"
+          label="Home"
+          icon={Home}
+          iconActive="text-amber-500 dark:text-amber-400"
+          activeTab={activeTab}
+          onSelect={onSelectTab}
+        />
+        <NavButton
+          tab="profile"
+          label="My Profile"
+          icon={UserRound}
+          iconActive="text-sky-500 dark:text-sky-400"
+          activeTab={activeTab}
+          onSelect={onSelectTab}
+        />
+        <NavButton
+          tab="courses"
+          label="My Courses"
+          icon={BookOpen}
+          iconActive="text-emerald-500 dark:text-emerald-400"
+          activeTab={activeTab}
+          onSelect={onSelectTab}
+        />
+        <NavButton
+          tab="referrals"
+          label="My Referral"
+          icon={Users}
+          iconActive="text-pink-500 dark:text-pink-400"
+          activeTab={activeTab}
+          onSelect={onSelectTab}
+        />
       </div>
     </div>
   );
