@@ -7,7 +7,12 @@ import {
   setPersistence,
   connectAuthEmulator,
 } from "firebase/auth";
-import { getFirestore, Firestore, connectFirestoreEmulator } from "firebase/firestore";
+import {
+  getFirestore,
+  initializeFirestore,
+  Firestore,
+  connectFirestoreEmulator,
+} from "firebase/firestore";
 
 /**
  * Firebase web config, read from the environment and nothing else.
@@ -48,7 +53,14 @@ const isBrowser = typeof window !== "undefined";
 if (isFirebaseConfigured) {
   try {
     app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-    db = getFirestore(app);
+    try {
+      db = initializeFirestore(app, {
+        ignoreUndefinedProperties: true,
+        experimentalAutoDetectLongPolling: true,
+      });
+    } catch {
+      db = getFirestore(app);
+    }
 
     if (isBrowser) {
       auth = getAuth(app);
