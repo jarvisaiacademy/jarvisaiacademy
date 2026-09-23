@@ -316,8 +316,12 @@ export function CourseCatalogResponse({
   const [selectedCategory, setSelectedCategory] =
     useState<CourseCategoryId>("all");
   const [hoveredCourseId, setHoveredCourseId] = useState<string | null>(null);
+  const activeCourses = React.useMemo(
+    () => courses.filter((course) => (course.status ?? "active") !== "inactive"),
+    [courses]
+  );
 
-  const filteredCourses = courses.filter((course) => {
+  const filteredCourses = activeCourses.filter((course) => {
     if (selectedCategory === "all") return true;
     return course.category === selectedCategory;
   });
