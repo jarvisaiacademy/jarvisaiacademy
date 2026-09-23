@@ -3,6 +3,8 @@
 import React from "react";
 import { Home, UserRound, BookOpen, Award, ArrowLeft } from "lucide-react";
 import { type StudentTab } from "./student-shell";
+import { useAuth } from "@/providers/auth-provider";
+import { useStudentEnrollments } from "@/hooks/use-student-enrollments";
 
 interface NavButtonProps {
   tab: StudentTab;
@@ -45,6 +47,10 @@ export function StudentSidebarNav({
   onSelectTab,
   onBackToChat,
 }: StudentSidebarNavProps) {
+  const { user } = useAuth();
+  const enrollments = useStudentEnrollments(user?.email);
+  const hasCompletedCourse = enrollments.some(e => e.action === "paid");
+
   return (
     <div className="flex flex-col gap-5 px-3 py-2 text-neutral-800 dark:text-neutral-200">
       {/* Return to Chat */}
@@ -89,14 +95,16 @@ export function StudentSidebarNav({
           activeTab={activeTab}
           onSelect={onSelectTab}
         />
-        <NavButton
-          tab="certificates"
-          label="Certificates"
-          icon={Award}
-          iconActive="text-purple-500 dark:text-purple-400"
-          activeTab={activeTab}
-          onSelect={onSelectTab}
-        />
+        {hasCompletedCourse && (
+          <NavButton
+            tab="certificates"
+            label="Certificates"
+            icon={Award}
+            iconActive="text-purple-500 dark:text-purple-400"
+            activeTab={activeTab}
+            onSelect={onSelectTab}
+          />
+        )}
       </div>
     </div>
   );
