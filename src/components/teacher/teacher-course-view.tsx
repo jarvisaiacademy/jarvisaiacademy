@@ -39,6 +39,11 @@ export function TeacherCourseView({ course, enrollments, onBack }: TeacherCourse
       </div>
 
       <div className="bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-sm">
+        {enrollments.length === 0 && (
+          <div className="px-4 py-3 bg-amber-50 dark:bg-amber-500/10 border-b border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-200 text-xs font-medium flex items-center justify-center">
+            You have no real enrollments yet. Displaying mock data for layout visualization.
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-neutral-50 dark:bg-black/20 border-b border-neutral-200 dark:border-white/10">
@@ -50,11 +55,51 @@ export function TeacherCourseView({ course, enrollments, onBack }: TeacherCourse
             </thead>
             <tbody className="divide-y divide-neutral-200 dark:divide-white/5">
               {enrollments.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="px-4 py-8 text-center text-neutral-500">
-                    No students enrolled yet.
-                  </td>
-                </tr>
+                <>
+                  {/* Mock UI Rows for visualization */}
+                  <tr className="hover:bg-neutral-50 dark:hover:bg-white/[0.02] transition-colors opacity-60">
+                    <td className="px-4 py-3 text-neutral-900 dark:text-neutral-100 font-medium flex items-center gap-2">
+                      john.doe@example.com
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-white/10 text-neutral-600 dark:text-neutral-400 font-bold uppercase tracking-widest">Mock</span>
+                    </td>
+                    <td className="px-4 py-3 text-neutral-500">
+                      2026-09-23
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400">
+                        paid
+                      </span>
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-neutral-50 dark:hover:bg-white/[0.02] transition-colors opacity-60">
+                    <td className="px-4 py-3 text-neutral-900 dark:text-neutral-100 font-medium flex items-center gap-2">
+                      jane.smith@example.com
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-white/10 text-neutral-600 dark:text-neutral-400 font-bold uppercase tracking-widest">Mock</span>
+                    </td>
+                    <td className="px-4 py-3 text-neutral-500">
+                      2026-09-21
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400">
+                        paid
+                      </span>
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-neutral-50 dark:hover:bg-white/[0.02] transition-colors opacity-60">
+                    <td className="px-4 py-3 text-neutral-900 dark:text-neutral-100 font-medium flex items-center gap-2">
+                      alex.jones@example.com
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-white/10 text-neutral-600 dark:text-neutral-400 font-bold uppercase tracking-widest">Mock</span>
+                    </td>
+                    <td className="px-4 py-3 text-neutral-500">
+                      2026-09-18
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400">
+                        paid
+                      </span>
+                    </td>
+                  </tr>
+                </>
               ) : (
                 enrollments.map((enrollment) => (
                   <tr key={enrollment.id} className="hover:bg-neutral-50 dark:hover:bg-white/[0.02] transition-colors">
