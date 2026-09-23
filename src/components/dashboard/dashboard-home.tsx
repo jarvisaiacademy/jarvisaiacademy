@@ -172,7 +172,7 @@ export function DashboardHome({ onSelectTab }: DashboardHomeProps) {
               onClick={() => onSelectTab("courses")}
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-foreground text-background text-xs font-semibold hover:opacity-90 active:scale-95 transition-all cursor-pointer"
             >
-              Browse Courses
+              Browse All Courses
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
