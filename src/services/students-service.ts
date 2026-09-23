@@ -109,6 +109,7 @@ export async function updateCandidateInFirestore(
       | "bio"
       | "phone"
       | "picture"
+      | "referralCode"
     >
   >,
   userEmail?: string | null
