@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Home, UserRound, BookOpen, Award, ArrowLeft } from "lucide-react";
+import { Home, UserRound, BookOpen, Award, ArrowLeft, Users } from "lucide-react";
 import { type StudentTab } from "./student-shell";
 import { useAuth } from "@/providers/auth-provider";
 import { useStudentEnrollments } from "@/hooks/use-student-enrollments";
@@ -92,6 +92,14 @@ export function StudentSidebarNav({
           label="My Courses"
           icon={BookOpen}
           iconActive="text-emerald-500 dark:text-emerald-400"
+          activeTab={activeTab}
+          onSelect={onSelectTab}
+        />
+        <NavButton
+          tab="referrals"
+          label="My Referral"
+          icon={Users}
+          iconActive="text-pink-500 dark:text-pink-400"
           activeTab={activeTab}
           onSelect={onSelectTab}
         />

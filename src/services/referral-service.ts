@@ -23,8 +23,13 @@ const USERS_COLLECTION = "users";
 export async function publishReferralCode(uid: string): Promise<void> {
   if (!db) return;
 
-  const code = referralCodeFor(uid);
   try {
+    const userDoc = await getDoc(doc(db, USERS_COLLECTION, uid));
+    const storedCode = userDoc.exists() ? userDoc.data()?.referralCode : undefined;
+
+    // Use VIP code if assigned, otherwise auto-generate
+    const code = storedCode || referralCodeFor(uid);
+
     await setDoc(doc(db, USERS_COLLECTION, uid), { referralCode: code }, { merge: true });
     await setDoc(doc(db, REFERRALS_COLLECTION, code), { uid }, { merge: true });
   } catch (err) {

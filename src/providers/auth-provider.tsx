@@ -23,6 +23,7 @@ export interface User {
   emailVerified?: boolean;
   signInProvider?: string;
   createdAt?: string;
+  referralCode?: string;
 }
 
 export interface GoogleLoginResult {

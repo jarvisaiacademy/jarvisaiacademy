@@ -161,8 +161,8 @@ export function DashboardCourses() {
 
             {/* Catalogue Preview */}
             {courses.length > 0 && (
-              <SettingsSection title="Explore Programmes">
-                {courses.slice(0, 3).map((course) => (
+              <SettingsSection title={enrollments.length === 0 ? "All Programmes" : "Explore Programmes"}>
+                {(enrollments.length === 0 ? courses : courses.slice(0, 3)).map((course) => (
                   <div key={course.id} className="flex items-start gap-3.5 px-4 py-3.5 hover:bg-muted/20 transition-colors">
                     <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-muted/50 text-foreground/60 shrink-0 mt-0.5">
                       <BookOpen className="w-4 h-4" />

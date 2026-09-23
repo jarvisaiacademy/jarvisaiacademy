@@ -6,13 +6,7 @@ import {
   Mail, 
   UserRound, 
   Calendar, 
-  ShieldCheck, 
-  Globe, 
-  Link, 
-  Trophy,
-  Star,
-  Zap,
-  Code,
+  ShieldCheck,
   Award
 } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
@@ -138,22 +132,6 @@ export function DashboardProfile() {
           icon={<Calendar className="w-4 h-4" />}
           label="Member Since"
           value={joinedAt}
-        />
-      </SettingsSection>
-      
-      {/* Social Links */}
-      <SettingsSection title="Developer Profiles">
-        <DetailRow
-          icon={<Globe className="w-4 h-4" />}
-          label="GitHub Profile"
-          value="github.com/jarvis-elite-dev"
-          badge="Connected"
-        />
-        <DetailRow
-          icon={<Link className="w-4 h-4" />}
-          label="LinkedIn Profile"
-          value="linkedin.com/in/jarvis-elite-dev"
-          badge="Connected"
         />
       </SettingsSection>
     </motion.div>

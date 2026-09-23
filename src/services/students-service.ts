@@ -9,7 +9,7 @@ import {
   query,
   Unsubscribe,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import { StudentRecord } from "@/data/students";
 import { checkIsAdmin } from "@/providers/auth-provider";
 
@@ -109,6 +109,7 @@ export async function updateCandidateInFirestore(
       | "bio"
       | "phone"
       | "picture"
+      | "referralCode"
     >
   >,
   userEmail?: string | null
@@ -120,7 +121,18 @@ export async function updateCandidateInFirestore(
     throw new Error("Firestore is not initialized.");
   }
 
-  await updateDoc(doc(db, STUDENTS_COLLECTION, uid), updates);
+  const cleaned: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(updates)) {
+    if (value !== undefined) {
+      cleaned[key] = value;
+    }
+  }
+
+  await updateDoc(doc(db, STUDENTS_COLLECTION, uid), cleaned);
+
+  if ("referralCode" in cleaned && cleaned.referralCode) {
+    await setDoc(doc(db, "referrals", cleaned.referralCode as string), { uid }, { merge: true });
+  }
 }
 
 export interface CreateTeacherInput {
@@ -149,6 +161,13 @@ export async function createTeacherInFirestore(
     throw new Error("Firestore is not initialized.");
   }
 
+  const currentUser = auth?.currentUser;
+  if (!currentUser) {
+    throw new Error(
+      "No active Firebase Auth session found. Please ensure you are signed in with your admin Google account."
+    );
+  }
+
   const teacherId =
     input.existingUserId?.trim() || doc(collection(db, STUDENTS_COLLECTION)).id;
 
@@ -160,16 +179,16 @@ export async function createTeacherInFirestore(
     is_teacher: true,
     role: "student",
     status: input.status || "active",
-    title: input.title?.trim() || undefined,
-    specialization: input.specialization?.trim() || undefined,
-    bio: input.bio?.trim() || undefined,
-    phone: input.phone?.trim() || undefined,
     lastLoginAt: now,
   };
 
   if (!input.existingUserId) {
     teacherRecord.createdAt = now;
   }
+  if (input.title?.trim()) teacherRecord.title = input.title.trim();
+  if (input.specialization?.trim()) teacherRecord.specialization = input.specialization.trim();
+  if (input.bio?.trim()) teacherRecord.bio = input.bio.trim();
+  if (input.phone?.trim()) teacherRecord.phone = input.phone.trim();
 
   await setDoc(doc(db, STUDENTS_COLLECTION, teacherId), teacherRecord, { merge: true });
   return teacherId;
