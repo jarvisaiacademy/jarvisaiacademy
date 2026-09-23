@@ -114,16 +114,47 @@ export function TeacherDashboard({ sidebarOpen, onToggleSidebar }: TeacherDashbo
           />
         ) : (
           <>
-            <div className="flex flex-col gap-2">
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-                Welcome back, {user?.name?.split(" ")[0] || "Teacher"}
-              </h1>
-              <p className="text-sm sm:text-base text-neutral-500 dark:text-neutral-400">
-                Here&apos;s an overview of your assigned courses and students.
-              </p>
+            {/* Welcome hero — clean, centered, ChatGPT-style */}
+            <div className="flex flex-col items-center gap-4 pt-4 pb-2 text-center max-w-2xl mx-auto w-full">
+              {/* Avatar */}
+              <div className="relative">
+                {user?.picture ? (
+                  <img
+                    src={user.picture}
+                    alt={user.name || "Teacher"}
+                    className="w-16 h-16 rounded-full object-cover ring-2 ring-neutral-200 dark:ring-white/10 ring-offset-2 ring-offset-background"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center w-16 h-16 rounded-full bg-neutral-100 dark:bg-white/5 text-neutral-900 dark:text-white text-lg font-semibold ring-2 ring-neutral-200 dark:ring-white/10 ring-offset-2 ring-offset-background">
+                    {user?.name?.slice(0, 2).toUpperCase() ?? "JA"}
+                  </div>
+                )}
+                {/* online dot */}
+                <span className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-background" />
+              </div>
+
+              {/* Greeting */}
+              <div className="flex flex-col gap-1">
+                <h2 className="text-2xl font-semibold text-neutral-900 dark:text-white tracking-tight">
+                  Good{" "}
+                  {(() => {
+                    const h = new Date().getHours();
+                    return h < 12 ? "morning" : h < 17 ? "afternoon" : "evening";
+                  })()}
+                  , {user?.name?.split(" ")[0] || "Teacher"}
+                </h2>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  Faculty Member since {user?.createdAt ? new Date(user.createdAt).getFullYear() : new Date().getFullYear()} · Jarvis AI Academy
+                </p>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            {/* Thin divider */}
+            <div className="max-w-2xl mx-auto w-full">
+              <hr className="border-neutral-200 dark:border-white/10" />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mt-4">
               <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-3 transition-colors">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
