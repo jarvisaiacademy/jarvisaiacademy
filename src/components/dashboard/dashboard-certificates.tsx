@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import { motion } from "motion/react";
-import { Award, Lock, Download, ExternalLink, Loader2 } from "lucide-react";
+import { Award, Lock, Download, ExternalLink, Loader2, ArrowRight } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { useStudentEnrollments } from "@/hooks/use-student-enrollments";
 import { CertificateRecord } from "@/hooks/use-student-certificates";
@@ -100,9 +100,9 @@ export function DashboardCertificates() {
               {/* Course Info */}
               <div className="flex flex-col min-w-0 flex-1 gap-1.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  {/* <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                     CERT-{cert.id.split("-").pop()}
-                  </span>
+                  </span> */}
                   <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
                     <Award className="w-3.5 h-3.5" />
                     Completed
@@ -120,7 +120,9 @@ export function DashboardCertificates() {
               
               {/* Arrow */}
               <div className="flex items-center justify-center shrink-0 sm:px-4 text-muted-foreground group-hover:text-emerald-600 transition-colors mt-2 sm:mt-0">
-                <span className="text-sm font-medium">View Certificate &rarr;</span>
+                <span className="text-sm font-medium flex items-center gap-1.5">
+                  View Certificate <ArrowRight className="w-4 h-4" />
+                </span>
               </div>
             </button>
           ))}

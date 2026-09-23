@@ -799,7 +799,13 @@ export function AdminDashboard({
       <AdminHeader sidebarOpen={sidebarOpen} onToggleSidebar={onToggleSidebar} />
 
       {/* Main Container */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
+      <main
+        className={`flex-1 w-full mx-auto py-6 sm:py-8 flex flex-col gap-6 sm:gap-8 ${
+          activeTab === "teachers"
+            ? "max-w-none px-3 sm:px-6"
+            : "max-w-7xl px-4 sm:px-8"
+        }`}
+      >
         {/* HOME: the counts */}
         {activeTab === "home" && renderHome()}
 
