@@ -100,9 +100,9 @@ export function DashboardCertificates() {
               {/* Course Info */}
               <div className="flex flex-col min-w-0 flex-1 gap-1.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  {/* <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                     CERT-{cert.id.split("-").pop()}
-                  </span>
+                  </span> */}
                   <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
                     <Award className="w-3.5 h-3.5" />
                     Completed
