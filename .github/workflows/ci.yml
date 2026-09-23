@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - development
+      - production
+  pull_request:
+    branches:
+      - development
+      - production
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  branch-policy:
+    name: Branch & Release Policy Guard
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate Release Branching Policy
+        run: |
+          BASE_BRANCH="${{ github.base_ref }}"
+          HEAD_BRANCH="${{ github.head_ref }}"
+
+          echo "Base branch (target): $BASE_BRANCH"
+          echo "Head branch (source): $HEAD_BRANCH"
+
+          # Rule: PRs targeting production must only originate from development (release promotion)
+          if [ "$BASE_BRANCH" = "production" ] && [ "$HEAD_BRANCH" != "development" ]; then
+            echo "::error::Direct PRs targeting 'production' must only originate from 'development' (release promotion)."
+            echo "::error::Task branches (feat/*, fix/*, chore/*, refactor/*) must target 'development'."
+            exit 1
+          fi
+
+          echo "Release and branch policy check passed."
+
+  verify:
+    name: Lint, Typecheck & Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12
+          run_install: false
+
+      - name: Setup Node.js (v22)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck and Lint (pnpm check)
+        run: pnpm check
+
+      - name: Validate Course Routing
+        run: node scripts/check-course-routing.mjs
+
+      - name: Validate Referral Code Derivation
+        run: node scripts/check-referral-codes.mjs
