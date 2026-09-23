@@ -129,6 +129,10 @@ export async function updateCandidateInFirestore(
   }
 
   await updateDoc(doc(db, STUDENTS_COLLECTION, uid), cleaned);
+
+  if ("referralCode" in cleaned && cleaned.referralCode) {
+    await setDoc(doc(db, "referrals", cleaned.referralCode as string), { uid }, { merge: true });
+  }
 }
 
 export interface CreateTeacherInput {
