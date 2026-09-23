@@ -388,8 +388,9 @@ export function ChatCanvas({
       return academyKnowledge.enquiry;
     }
 
-    // Dynamic course matching from Firestore database
-    const matchedCourse = courses.find((c) => {
+    // Dynamic course matching from Firestore database (active courses only)
+    const activeCourses = courses.filter((c) => (c.status ?? "active") !== "inactive");
+    const matchedCourse = activeCourses.find((c) => {
       const idMatch = lower.includes(c.id.toLowerCase());
       const titleMatch = lower.includes(c.title.toLowerCase());
       const numberMatch = c.number && lower.includes(c.number.toLowerCase());
