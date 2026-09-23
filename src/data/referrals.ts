@@ -1,26 +1,39 @@
 /**
  * Referral codes — the single definition of what one is.
  *
- * Updated format: 4 uppercase alphabetic characters (e.g. "ABCD"). No numbers, no dashes.
+ * Import-free like `src/data/courses.ts` and `src/data/app-settings.ts`, and for the same
+ * reason: `scripts/db-data.mjs` imports this file directly, and the backfill and the browser
+ * have to agree on what a code is. One function rather than two copies is the cheapest way to
+ * guarantee that.
  */
 
-const CODE_BODY_LENGTH = 4;
-const CODE_ALPHABET = /^[A-Z]+$/;
+export const REFERRAL_CODE_PREFIX = "JAR-";
+const CODE_BODY_LENGTH = 8;
+const CODE_ALPHABET = /^[A-Z0-9]+$/;
 
-/** The code belonging to an account, in its canonical spelling. */
 export function referralCodeFor(uid: string): string {
-  // Filter out any non-alphabetic characters from the uid and take the first 4
-  const lettersOnly = uid.replace(/[^A-Za-z]/g, "").toUpperCase();
-  // Pad with some default letters if uid somehow doesn't have 4 letters
-  const padded = (lettersOnly + "JARV").slice(0, CODE_BODY_LENGTH);
-  return padded;
+  return REFERRAL_CODE_PREFIX + uid.slice(0, CODE_BODY_LENGTH).toUpperCase();
 }
 
-/**
- * Whatever a learner typed, as the code to look up — or "" when it cannot be one.
- */
 export function normalizeReferralCode(input: string): string {
-  const typed = input.trim().toUpperCase().replace(/[^A-Z]/g, "");
-  if (!typed || typed.length !== CODE_BODY_LENGTH) return "";
-  return typed;
+  if (typeof input !== "string") return "";
+
+  // Normalize all whitespace, including whitespace inside the value.
+  let value = input.replace(/\s+/g, "").toUpperCase();
+
+  // Accept either JAR-XXXXXXXX or XXXXXXXX.
+  if (value.startsWith(REFERRAL_CODE_PREFIX)) {
+    value = value.slice(REFERRAL_CODE_PREFIX.length);
+  }
+
+  // Do not strip invalid characters: stripping causes collisions.
+  if (!CODE_ALPHABET.test(value)) {
+    return "";
+  }
+
+  if (value.length < CODE_BODY_LENGTH) {
+    return "";
+  }
+
+  return `${REFERRAL_CODE_PREFIX}${value.slice(0, CODE_BODY_LENGTH)}`;
 }

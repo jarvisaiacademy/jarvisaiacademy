@@ -18,7 +18,7 @@ export function DashboardReferrals() {
   const { user } = useAuth();
   const [copied, setCopied] = useState(false);
 
-  const referralCode = user?.referralCode || (user?.id ? referralCodeFor(user.id) : "JARV");
+  const referralCode = user?.referralCode || (user?.id ? referralCodeFor(user.id) : "JAR-04BPH3SW");
 
   const handleCopy = () => {
     navigator.clipboard.writeText(referralCode);
