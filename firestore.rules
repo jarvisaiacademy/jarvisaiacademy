@@ -170,8 +170,11 @@ service cloud.firestore {
     }
     
     // Enrollments: students can read/write their own enrollments. Admins can read all.
+    // Teachers can read enrollments for courses they instruct.
     match /enrollments/{enrollmentId} {
-      allow read: if isAdmin() || (request.auth != null && resource.data.studentEmail == request.auth.token.email);
+      allow read: if isAdmin() 
+        || (request.auth != null && resource.data.studentEmail == request.auth.token.email)
+        || (request.auth != null && request.auth.uid in get(/databases/$(database)/documents/courses/$(resource.data.courseId)).data.teacherIds);
       allow create: if isAdmin() || (request.auth != null && request.resource.data.studentEmail == request.auth.token.email);
       allow update: if isAdmin() || (request.auth != null && request.resource.data.studentEmail == request.auth.token.email && resource.data.studentEmail == request.auth.token.email);
       allow delete: if isAdmin();
