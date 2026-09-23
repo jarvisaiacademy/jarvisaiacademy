@@ -111,7 +111,7 @@ export function TeacherDashboard({ sidebarOpen, onToggleSidebar, activeTab = "ho
       )}
       
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
-        {selectedCourseId ? (
+        {activeTab === "courses" && selectedCourseId ? (
           <TeacherCourseView 
             course={teacherCourses.find(c => c.id === selectedCourseId)!} 
             enrollments={enrollments.filter(e => e.courseId === selectedCourseId)}
