@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import { motion } from "motion/react";
-import { Award, Lock, Download, ExternalLink, Loader2 } from "lucide-react";
+import { Award, Lock, Download, ExternalLink, Loader2, ArrowRight } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { useStudentEnrollments } from "@/hooks/use-student-enrollments";
 import { CertificateRecord } from "@/hooks/use-student-certificates";
@@ -120,7 +120,9 @@ export function DashboardCertificates() {
               
               {/* Arrow */}
               <div className="flex items-center justify-center shrink-0 sm:px-4 text-muted-foreground group-hover:text-emerald-600 transition-colors mt-2 sm:mt-0">
-                <span className="text-sm font-medium">View Certificate &rarr;</span>
+                <span className="text-sm font-medium flex items-center gap-1.5">
+                  View Certificate <ArrowRight className="w-4 h-4" />
+                </span>
               </div>
             </button>
           ))}
