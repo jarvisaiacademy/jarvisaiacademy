@@ -52,20 +52,51 @@ export function StudentShell({ defaultTab, restoreTab = true, children }: Studen
   const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState<StudentTab>(defaultTab);
 
+  const [isTeacher, setIsTeacher] = useState<boolean | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("jarvis_is_teacher") === "true";
+  });
+
   useEffect(() => {
     const stored = sessionStorage.getItem(TAB_STORAGE_KEY);
     if (restoreTab && isStudentTab(stored)) setTab(stored);
     setMounted(true);
   }, [restoreTab]);
 
+  useEffect(() => {
+    if (!user?.id) {
+      setIsTeacher(false);
+      return;
+    }
+    let active = true;
+    import("firebase/firestore").then(({ doc, getDoc }) => {
+      import("@/lib/firebase").then(({ db }) => {
+        if (!db) return;
+        getDoc(doc(db, "users", user.id)).then((snapshot) => {
+          if (active && snapshot.exists()) {
+            const isT = snapshot.data().is_teacher === true;
+            setIsTeacher(isT);
+            if (isT) {
+              localStorage.setItem("jarvis_is_teacher", "true");
+            } else {
+              localStorage.removeItem("jarvis_is_teacher");
+            }
+          }
+        });
+      });
+    });
+    return () => { active = false; };
+  }, [user?.id]);
+
   // Admins have their own dashboard; guests need to log in first.
-  const isAuthorized = mounted && isLoggedIn && !user?.isAdmin;
+  const isAuthorized = mounted && isLoggedIn && !user?.isAdmin && isTeacher === false;
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || isTeacher === null) return;
     if (!isLoggedIn) router.replace("/");
     else if (user?.isAdmin) router.replace("/admin");
-  }, [mounted, isLoggedIn, user?.isAdmin, router]);
+    else if (isTeacher) router.replace("/teacher");
+  }, [mounted, isLoggedIn, user?.isAdmin, isTeacher, router]);
 
   const handleSelectTab = useCallback((next: StudentTab) => {
     setTab(next);

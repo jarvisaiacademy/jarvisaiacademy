@@ -185,13 +185,33 @@ export function SidebarNav({
   const { user, isLoggedIn } = useAuth();
   const router = useRouter();
   const enrollmentCount = useStudentEnrollments(user?.email).length;
-  const showStudentItems = isLoggedIn && !user?.isAdmin;
 
   // The auth provider restores the session from localStorage during render, so
   // the server sees no user and the client's first render does. Rendering
   // auth-gated items before mount therefore mismatches the server HTML.
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const [isTeacher, setIsTeacher] = useState(false);
+
+  const showStudentItems = isLoggedIn && !user?.isAdmin && !isTeacher;
+
+  useEffect(() => {
+    setMounted(true);
+    if (user?.id) {
+      import("firebase/firestore").then(({ doc, getDoc }) => {
+        import("@/lib/firebase").then(({ db }) => {
+          if (db) {
+            getDoc(doc(db, "users", user.id)).then((snapshot) => {
+              if (snapshot.exists()) {
+                setIsTeacher(snapshot.data().is_teacher === true);
+              }
+            });
+          }
+        });
+      });
+    } else {
+      setIsTeacher(false);
+    }
+  }, [user?.id]);
   const [activeHoverItem, setActiveHoverItem] = useState<string | null>(null);
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
   const [sidebarRight, setSidebarRight] = useState<number | undefined>(undefined);
@@ -322,6 +342,24 @@ export function SidebarNav({
               {enrollmentCount}
             </span>
           )}
+        </button>
+      )}
+
+      {/* Teacher Dashboard Navigation */}
+      {mounted && isTeacher && (
+        <button
+          type="button"
+          onClick={() => router.push("/teacher")}
+          aria-current={activeItem?.startsWith("teacher_") ? "page" : undefined}
+          className={`group flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg transition-colors text-left cursor-pointer ${navStateClass(!!activeItem?.startsWith("teacher_"))}`}
+        >
+          <div className="flex items-center gap-2.5">
+            <NavIcon icon={LayoutDashboard} />
+            <span>Teacher Dashboard</span>
+          </div>
+          <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-500/30 transition-colors">
+            Faculty
+          </span>
         </button>
       )}
 

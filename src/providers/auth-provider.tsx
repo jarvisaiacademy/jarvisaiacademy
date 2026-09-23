@@ -109,6 +109,7 @@ function saveUserSession(mappedUser: User | null) {
       }
     } else {
       localStorage.removeItem("jarvis_auth_user");
+      localStorage.removeItem("jarvis_is_teacher");
       if (typeof document !== "undefined") {
         document.documentElement.classList.remove("is-auth");
       }
