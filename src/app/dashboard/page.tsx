@@ -7,6 +7,7 @@ import { DashboardHome } from "@/components/dashboard/dashboard-home";
 import { DashboardProfile } from "@/components/dashboard/dashboard-profile";
 import { DashboardCourses } from "@/components/dashboard/dashboard-courses";
 import { DashboardCertificates } from "@/components/dashboard/dashboard-certificates";
+import { DashboardReferrals } from "@/components/dashboard/dashboard-referrals";
 import { type StudentTab } from "@/components/dashboard/student-shell";
 
 const TAB_TITLES: Record<StudentTab, string> = {
@@ -14,6 +15,7 @@ const TAB_TITLES: Record<StudentTab, string> = {
   profile: "My Profile",
   courses: "My Courses",
   certificates: "Certificates",
+  referrals: "My Referral",
 };
 
 /**
@@ -40,6 +42,7 @@ export default function StudentDashboardPage() {
             {activeTab === "profile" && <DashboardProfile />}
             {activeTab === "courses" && <DashboardCourses />}
             {activeTab === "certificates" && <DashboardCertificates />}
+            {activeTab === "referrals" && <DashboardReferrals />}
           </div>
         </div>
       )}

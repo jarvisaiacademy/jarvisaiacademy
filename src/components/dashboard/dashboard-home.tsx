@@ -41,7 +41,7 @@ export function DashboardHome({ onSelectTab }: DashboardHomeProps) {
   const enrollments = useStudentEnrollments(user?.email);
 
   const firstName = user?.name?.split(" ")[0] || "there";
-  const referralCode = user?.id ? referralCodeFor(user.id) : "—";
+  const referralCode = user?.referralCode || (user?.id ? referralCodeFor(user.id) : "JARV");
   const joinedYear = user?.createdAt
     ? new Date(user.createdAt).getFullYear()
     : new Date().getFullYear();
