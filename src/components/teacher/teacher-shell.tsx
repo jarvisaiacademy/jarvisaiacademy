@@ -6,7 +6,7 @@ import { TeacherSidebar } from "./teacher-sidebar";
 import { ToastProvider } from "@/components/ui/toast";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useAuth } from "@/providers/auth-provider";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
 export interface TeacherShellContextState {
@@ -32,7 +32,10 @@ export function TeacherShell({ children }: TeacherShellProps) {
   const router = useRouter();
   
   const [mounted, setMounted] = useState(false);
-  const [isTeacher, setIsTeacher] = useState<boolean | null>(null);
+  const [isTeacher, setIsTeacher] = useState<boolean | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("jarvis_is_teacher") === "true";
+  });
 
   useEffect(() => {
     setMounted(true);
@@ -40,30 +43,40 @@ export function TeacherShell({ children }: TeacherShellProps) {
 
   useEffect(() => {
     if (!mounted) return;
-    
-    if (!user) {
-      if (isLoggedIn === false) {
-        // Not logged in
-        router.replace("/");
-      }
+
+    if (user?.isAdmin) {
+      setIsTeacher(true);
       return;
     }
 
     const checkTeacherRole = async () => {
-      if (!db) {
-        setIsTeacher(false);
-        return;
-      }
+      if (!db) return;
+
       try {
-        const userDoc = await getDoc(doc(db, "users", user.id));
+        if (auth && typeof auth.authStateReady === "function") {
+          await auth.authStateReady();
+        }
+
+        const currentUid = auth?.currentUser?.uid || user?.id;
+        if (!currentUid) {
+          if (isLoggedIn === false && !localStorage.getItem("jarvis_auth_user")) {
+            setIsTeacher(false);
+            localStorage.removeItem("jarvis_is_teacher");
+            router.replace("/");
+          }
+          return;
+        }
+
+        const userDoc = await getDoc(doc(db, "users", currentUid));
         if (userDoc.exists() && userDoc.data().is_teacher === true) {
           setIsTeacher(true);
-        } else {
+          localStorage.setItem("jarvis_is_teacher", "true");
+        } else if (!user?.isAdmin) {
           setIsTeacher(false);
+          localStorage.removeItem("jarvis_is_teacher");
         }
       } catch (err) {
-        console.error("Failed to fetch user record:", err);
-        setIsTeacher(false);
+        console.error("Failed to verify teacher role:", err);
       }
     };
 
@@ -71,10 +84,10 @@ export function TeacherShell({ children }: TeacherShellProps) {
   }, [user, isLoggedIn, mounted, router]);
 
   useEffect(() => {
-    if (isTeacher === false) {
+    if (mounted && isTeacher === false) {
       router.replace("/");
     }
-  }, [isTeacher, router]);
+  }, [mounted, isTeacher, router]);
 
   const goHome = useCallback(() => router.push("/"), [router]);
 
