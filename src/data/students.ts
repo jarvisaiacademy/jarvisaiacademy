@@ -42,6 +42,14 @@ export interface StudentRecord {
   referredBy?: string;
   /** ISO timestamp of when the claim was made. Cosmetic; nothing is decided from it. */
   referredAt?: string;
+  /** Professional title / designation e.g. "Senior Full-Stack Instructor" */
+  title?: string;
+  /** Primary tech stack or domain expertise e.g. "React, Node.js, AI Systems" */
+  specialization?: string;
+  /** Brief biography / teaching background */
+  bio?: string;
+  /** Contact phone number */
+  phone?: string;
 }
 
 /**
