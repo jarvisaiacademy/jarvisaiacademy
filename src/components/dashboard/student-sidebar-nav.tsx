@@ -52,26 +52,7 @@ export function StudentSidebarNav({
   const enrollments = useStudentEnrollments(user?.email);
   const hasCompletedCourse = enrollments.some(e => e.action === "paid");
   
-  const [isTeacher, setIsTeacher] = React.useState(false);
   const router = useRouter();
-  
-  React.useEffect(() => {
-    if (user?.id) {
-      import("firebase/firestore").then(({ doc, getDoc }) => {
-        import("@/lib/firebase").then(({ db }) => {
-          if (db) {
-            getDoc(doc(db, "users", user.id)).then((snapshot) => {
-              if (snapshot.exists()) {
-                setIsTeacher(snapshot.data().is_teacher === true);
-              }
-            });
-          }
-        });
-      });
-    } else {
-      setIsTeacher(false);
-    }
-  }, [user?.id]);
 
   return (
     <div className="flex flex-col gap-5 px-3 py-2 text-neutral-800 dark:text-neutral-200">
@@ -84,23 +65,6 @@ export function StudentSidebarNav({
         <ArrowLeft className="w-4 h-4 text-neutral-500" />
         <span>Return to Chat</span>
       </button>
-
-      {/* Teacher Dashboard Switch */}
-      {isTeacher && (
-        <button
-          type="button"
-          onClick={() => router.push("/teacher")}
-          className="flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors cursor-pointer border shadow-xs bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-500/20"
-        >
-          <div className="flex items-center gap-2">
-            <LayoutDashboard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span>Teacher Dashboard</span>
-          </div>
-          <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-md bg-emerald-200/50 dark:bg-emerald-500/30">
-            Switch
-          </span>
-        </button>
-      )}
 
       {/* Navigation */}
       <div className="flex flex-col gap-1">

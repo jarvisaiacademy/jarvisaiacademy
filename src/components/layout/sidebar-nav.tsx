@@ -185,13 +185,14 @@ export function SidebarNav({
   const { user, isLoggedIn } = useAuth();
   const router = useRouter();
   const enrollmentCount = useStudentEnrollments(user?.email).length;
-  const showStudentItems = isLoggedIn && !user?.isAdmin;
 
   // The auth provider restores the session from localStorage during render, so
   // the server sees no user and the client's first render does. Rendering
   // auth-gated items before mount therefore mismatches the server HTML.
   const [mounted, setMounted] = useState(false);
   const [isTeacher, setIsTeacher] = useState(false);
+
+  const showStudentItems = isLoggedIn && !user?.isAdmin && !isTeacher;
 
   useEffect(() => {
     setMounted(true);
