@@ -71,3 +71,53 @@ export function useStudentEnrollments(email?: string | null): EnrollmentRecord[]
 
   return records;
 }
+
+/**
+ * All enrolment records in the system (for admin views).
+ * Attaches a real-time listener on the 'enrollments' collection.
+ */
+export function useAllEnrollments(): { enrollments: EnrollmentRecord[]; loading: boolean } {
+  const [enrollments, setEnrollments] = useState<EnrollmentRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!db) {
+      setEnrollments([]);
+      setLoading(false);
+      return;
+    }
+
+    const q = query(collection(db, ENROLLMENTS_COLLECTION));
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const fetched = snapshot.docs.map(
+          (doc) =>
+            ({
+              id: doc.id,
+              ...doc.data(),
+            } as EnrollmentRecord)
+        );
+
+        fetched.sort((a, b) => {
+          const tA = new Date(a.timestamp).getTime() || 0;
+          const tB = new Date(b.timestamp).getTime() || 0;
+          return tB - tA;
+        });
+
+        setEnrollments(fetched);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("[useAllEnrollments] Error fetching all enrollments:", error);
+        setEnrollments([]);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  return { enrollments, loading };
+}
+

@@ -3,49 +3,41 @@
 import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  UserCheck,
-  UserPlus,
-  Briefcase,
   ChevronRight,
   ArrowLeft,
   X,
   Plus,
   Pencil,
+  ShieldCheck,
+  UserCheck,
+  UserPlus,
 } from "lucide-react";
 import { useStudents } from "@/providers/students-provider";
-import { useCourses } from "@/providers/courses-provider";
 import { useAuth } from "@/providers/auth-provider";
 import { useToast } from "@/components/ui/toast";
 import { Select } from "@/components/ui/select";
 import { AdminPage } from "@/components/admin/admin-page";
 import {
-  createTeacherInFirestore,
-  createStudentInFirestore,
+  createAdminInFirestore,
   updateCandidateInFirestore,
-  syncStudentEnrollments,
 } from "@/services/students-service";
-import {
-  syncTeacherCourseAssignments,
-  removeTeacherFromAllCourses,
-} from "@/services/courses-service";
 import type { AdminShellState } from "@/components/admin/admin-shell";
 import type { CandidateStatus, StudentRecord } from "@/data/students";
 
-interface TeacherEditorPageProps {
+interface AdminEditorPageProps {
   shell: AdminShellState;
-  /** Omitted when creating a teacher */
-  teacherId?: string;
+  /** Omitted when creating an admin */
+  adminId?: string;
 }
 
-export function TeacherEditorPage({ teacherId, shell }: TeacherEditorPageProps) {
+export function AdminEditorPage({ adminId, shell }: AdminEditorPageProps) {
   const router = useRouter();
   const { students, loading: studentsLoading } = useStudents();
-  const { loading: coursesLoading } = useCourses();
 
-  const teacher = teacherId ? students.find((s) => s.id === teacherId) : null;
+  const admin = adminId ? students.find((s) => s.id === adminId) : null;
 
   // Waiting on the roster subscription
-  if (teacherId && (studentsLoading || students.length === 0)) {
+  if (adminId && (studentsLoading || students.length === 0)) {
     return (
       <AdminPage shell={shell} maxWidth="max-w-none px-3 sm:px-6">
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs">
@@ -63,12 +55,12 @@ export function TeacherEditorPage({ teacherId, shell }: TeacherEditorPageProps) 
           <button
             type="button"
             onClick={() => {
-              shell.onNavigateTab("teachers");
+              shell.onNavigateTab("admins");
               router.push("/admin");
             }}
             className="text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors cursor-pointer"
           >
-            Teachers
+            Admins
           </button>
           <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
           <span className="font-semibold text-neutral-900 dark:text-white">
@@ -76,13 +68,13 @@ export function TeacherEditorPage({ teacherId, shell }: TeacherEditorPageProps) 
           </span>
         </nav>
         <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 text-center text-xs text-neutral-400 animate-pulse">
-          Loading teacher details...
+          Loading admin details...
         </div>
       </AdminPage>
     );
   }
 
-  if (teacherId && !teacher) {
+  if (adminId && !admin) {
     return (
       <AdminPage shell={shell} maxWidth="max-w-none px-3 sm:px-6">
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs">
@@ -100,12 +92,12 @@ export function TeacherEditorPage({ teacherId, shell }: TeacherEditorPageProps) 
           <button
             type="button"
             onClick={() => {
-              shell.onNavigateTab("teachers");
+              shell.onNavigateTab("admins");
               router.push("/admin");
             }}
             className="text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors cursor-pointer"
           >
-            Teachers
+            Admins
           </button>
           <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
           <span className="font-semibold text-neutral-900 dark:text-white">
@@ -114,17 +106,17 @@ export function TeacherEditorPage({ teacherId, shell }: TeacherEditorPageProps) 
         </nav>
         <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 flex flex-col items-center gap-3 text-center">
           <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            No teacher account with this id. It may have been removed or the link is incorrect.
+            No admin account with this id. It may have been removed or the link is incorrect.
           </p>
           <button
             type="button"
             onClick={() => {
-              shell.onNavigateTab("teachers");
+              shell.onNavigateTab("admins");
               router.push("/admin");
             }}
             className="px-3.5 py-1.5 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
           >
-            Back to Teachers
+            Back to Admins
           </button>
         </div>
       </AdminPage>
@@ -132,77 +124,64 @@ export function TeacherEditorPage({ teacherId, shell }: TeacherEditorPageProps) 
   }
 
   return (
-    <TeacherForm
-      key={teacher?.id ?? "new"}
-      teacher={teacher ?? null}
+    <AdminForm
+      key={admin?.id ?? "new"}
+      admin={admin ?? null}
       shell={shell}
-      coursesLoading={coursesLoading}
     />
   );
 }
 
-interface TeacherFormProps {
-  teacher: StudentRecord | null;
+interface AdminFormProps {
+  admin: StudentRecord | null;
   shell: AdminShellState;
-  coursesLoading: boolean;
 }
 
-function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
+function AdminForm({ admin, shell }: AdminFormProps) {
   const router = useRouter();
   const { user } = useAuth();
   const { showToast } = useToast();
   const { students } = useStudents();
-  const { firestoreCourses: courses } = useCourses();
 
-  // Mode: "manual" (enter new details) or "promote" (select an existing student)
+  // Mode: "manual" (enter new details) or "promote" (select an existing user)
   const [createMode, setCreateMode] = useState<"manual" | "promote">("manual");
-  const [selectedStudentId, setSelectedStudentId] = useState<string>("");
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
 
-  // Filter non-teacher students for promote option
-  const nonTeacherStudents = useMemo(
-    () => students.filter((s) => !s.is_teacher && s.role !== "admin"),
+  // Filter non-admin users for promote option
+  const nonAdminUsers = useMemo(
+    () => students.filter((s) => s.role !== "admin"),
     [students]
   );
 
-  // Initial assigned courses for this teacher
-  const initialCourseIds = useMemo(() => {
-    if (!teacher) return [];
-    return courses
-      .filter((c) => (c.teacherIds ?? []).includes(teacher.id))
-      .map((c) => c.id);
-  }, [courses, teacher]);
-
-  const [name, setName] = useState(() => teacher?.name ?? "");
-  const [email, setEmail] = useState(() => teacher?.email ?? "");
-  const [title, setTitle] = useState(() => teacher?.title ?? "");
-  const [specialization, setSpecialization] = useState(() => teacher?.specialization ?? "");
-  const [phone, setPhone] = useState(() => teacher?.phone ?? "");
-  const [bio, setBio] = useState(() => teacher?.bio ?? "");
+  const [name, setName] = useState(() => admin?.name ?? "");
+  const [email, setEmail] = useState(() => admin?.email ?? "");
+  const [title, setTitle] = useState(() => admin?.title ?? "");
+  const [specialization, setSpecialization] = useState(() => admin?.specialization ?? "");
+  const [phone, setPhone] = useState(() => admin?.phone ?? "");
+  const [bio, setBio] = useState(() => admin?.bio ?? "");
   const [status, setStatus] = useState<CandidateStatus>(() =>
-    teacher?.status === "inactive" || teacher?.status === "banned" ? "inactive" : "active"
+    admin?.status === "inactive" || admin?.status === "banned" ? "inactive" : "active"
   );
-  const [role, setRole] = useState<"teacher" | "student">(() =>
-    teacher ? (teacher.is_teacher ? "teacher" : "student") : "teacher"
-  );
-  const [assignedCourseIds, setAssignedCourseIds] = useState<string[]>(initialCourseIds);
   const [isSaving, setIsSaving] = useState(false);
 
-  // When a student is picked in promote mode, pre-fill their name & email
-  const handleSelectStudentToPromote = (studentId: string) => {
-    setSelectedStudentId(studentId);
-    const found = nonTeacherStudents.find((s) => s.id === studentId);
+  // When an existing user is picked in promote mode, pre-fill their name & email
+  const handleSelectUserToPromote = (userId: string) => {
+    setSelectedUserId(userId);
+    const found = nonAdminUsers.find((s) => s.id === userId);
     if (found) {
       setName(found.name || "");
       setEmail(found.email || "");
       if (found.phone) setPhone(found.phone);
+      if (found.title) setTitle(found.title);
+      if (found.specialization) setSpecialization(found.specialization);
     }
   };
 
   const handleCancel = () => {
-    if (teacher) {
-      router.push(`/admin/teachers/${teacher.id}`);
+    if (admin) {
+      router.push(`/admin/admins/${admin.id}`);
     } else {
-      shell.onNavigateTab("teachers");
+      shell.onNavigateTab("admins");
       router.push("/admin");
     }
   };
@@ -211,7 +190,7 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
     e.preventDefault();
 
     if (!name.trim()) {
-      showToast("Name is required", "error");
+      showToast("Admin name is required", "error");
       return;
     }
     if (!email.trim() || !email.includes("@")) {
@@ -221,15 +200,28 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
 
     setIsSaving(true);
     try {
-      let savedTeacherId = teacher?.id;
       const cleanEmail = email.trim().toLowerCase();
       const cleanName = name.trim();
-      const newIsTeacher = role === "teacher";
 
-      if (teacher) {
-        // UPDATE existing teacher
+      if (admin) {
+        // UPDATE existing admin
         await updateCandidateInFirestore(
-          teacher.id,
+          admin.id,
+          {
+            name: cleanName,
+            email: cleanEmail,
+            role: "admin",
+            title: title.trim() || undefined,
+            specialization: specialization.trim() || undefined,
+            bio: bio.trim() || undefined,
+            phone: phone.trim() || undefined,
+            status,
+          },
+          user?.email
+        );
+      } else {
+        // CREATE new admin or PROMOTE existing account
+        await createAdminInFirestore(
           {
             name: cleanName,
             email: cleanEmail,
@@ -238,99 +230,39 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
             bio: bio.trim() || undefined,
             phone: phone.trim() || undefined,
             status,
-            is_teacher: newIsTeacher,
+            existingUserId:
+              createMode === "promote" && selectedUserId ? selectedUserId : undefined,
           },
           user?.email
         );
-      } else {
-        // CREATE new teacher or PROMOTE existing account
-        if (newIsTeacher) {
-          savedTeacherId = await createTeacherInFirestore(
-            {
-              name: cleanName,
-              email: cleanEmail,
-              title: title.trim() || undefined,
-              specialization: specialization.trim() || undefined,
-              bio: bio.trim() || undefined,
-              phone: phone.trim() || undefined,
-              status,
-              existingUserId:
-                createMode === "promote" && selectedStudentId ? selectedStudentId : undefined,
-            },
-            user?.email
-          );
-        } else {
-          savedTeacherId = await createStudentInFirestore(
-            {
-              name: cleanName,
-              email: cleanEmail,
-              title: title.trim() || undefined,
-              specialization: specialization.trim() || undefined,
-              bio: bio.trim() || undefined,
-              phone: phone.trim() || undefined,
-              status,
-              enrolledCourseIds: assignedCourseIds,
-            },
-            user?.email
-          );
-        }
-      }
-
-      // Synchronize course assignments / enrollments based on role
-      if (savedTeacherId) {
-        if (newIsTeacher) {
-          await syncTeacherCourseAssignments(savedTeacherId, assignedCourseIds, user?.email);
-        } else {
-          if (teacher && teacher.is_teacher) {
-            await removeTeacherFromAllCourses(savedTeacherId, user?.email);
-          }
-          await syncStudentEnrollments(cleanEmail, cleanName, assignedCourseIds, courses, user?.email);
-        }
       }
 
       showToast(
-        teacher
-          ? `${newIsTeacher ? "Teacher" : "Student"} "${cleanName}" updated successfully`
-          : `${newIsTeacher ? "Teacher" : "Student"} "${cleanName}" created successfully`,
+        admin
+          ? `Admin "${cleanName}" updated successfully`
+          : `Admin "${cleanName}" created successfully`,
         "success"
       );
 
-      if (teacher) {
-        if (newIsTeacher) {
-          router.push(`/admin/teachers/${teacher.id}`);
-        } else {
-          router.push(`/admin/students/${teacher.id}`);
-        }
+      if (admin) {
+        router.push(`/admin/admins/${admin.id}`);
       } else {
-        if (newIsTeacher) {
-          shell.onNavigateTab("teachers");
-        } else {
-          shell.onNavigateTab("students");
-        }
+        shell.onNavigateTab("admins");
         router.push("/admin");
       }
     } catch (err: unknown) {
-      console.error("[TeacherForm] Failed to save teacher:", err);
+      console.error("[AdminForm] Failed to save admin:", err);
       const errMsg = err instanceof Error ? err.message : String(err);
       if (
         errMsg.toLowerCase().includes("permission") ||
         errMsg.toLowerCase().includes("permission-denied")
       ) {
         showToast(
-          `Permission denied for ${user?.email || "this account"}. Please publish the latest firestore.rules in Firebase Console.`,
-          "error"
-        );
-      } else if (
-        errMsg.includes("ERR_BLOCKED_BY_CLIENT") ||
-        errMsg.includes("blocked") ||
-        errMsg.includes("unavailable")
-      ) {
-        showToast(
-          "Network request blocked by a browser extension (e.g. ad blocker, Brave Shields, or privacy tool). Please disable it or whitelist this site to save.",
+          `Permission denied for ${user?.email || "this account"}. Verified admin permissions required.`,
           "error"
         );
       } else {
-        showToast(errMsg || "Failed to save teacher", "error");
+        showToast(errMsg || "Failed to save admin", "error");
       }
     } finally {
       setIsSaving(false);
@@ -356,23 +288,23 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
           <button
             type="button"
             onClick={() => {
-              shell.onNavigateTab("teachers");
+              shell.onNavigateTab("admins");
               router.push("/admin");
             }}
             className="text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors cursor-pointer"
           >
-            Teachers
+            Admins
           </button>
           <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
           <span className="font-semibold text-neutral-900 dark:text-white">
-            {teacher ? `Edit ${teacher.name || "Teacher"}` : "Add Teacher"}
+            {admin ? `Edit ${admin.name || "Admin"}` : "Add Admin"}
           </span>
         </nav>
 
         {/* Big Card containing form */}
         <form onSubmit={handleSubmit} className="w-full pb-16">
           <div className="w-full rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden flex flex-col">
-            {/* Header: Back button on left, centered Heading Add New Teacher */}
+            {/* Header: Back button on left, centered Heading */}
             <div className="p-4 sm:p-5 border-b border-neutral-200 dark:border-white/10">
               <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
                 {/* Back button inside the card */}
@@ -381,17 +313,17 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                     type="button"
                     onClick={handleCancel}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 border border-neutral-200 dark:border-white/10 transition-colors cursor-pointer"
-                    title="Back to Teachers"
+                    title="Back to Admins"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
                     <span>Back</span>
                   </button>
                 </div>
 
-                {/* Center: Heading Add New Teacher */}
+                {/* Center: Heading Add New Admin */}
                 <div className="flex items-center justify-center">
                   <h1 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white text-center">
-                    {teacher ? "Edit Teacher" : "Add New Teacher"}
+                    {admin ? "Edit Admin" : "Add New Admin"}
                   </h1>
                 </div>
 
@@ -402,15 +334,15 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
 
             {/* Card Body */}
             <div className="p-5 sm:p-7 flex flex-col gap-6">
-              {/* Creator Mode Selector (Only on New Teacher) */}
-              {!teacher && (
+              {/* Creator Mode Selector (Only on New Admin) */}
+              {!admin && (
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10">
                   <div className="flex flex-col">
                     <span className="text-xs font-semibold text-neutral-900 dark:text-white">
-                      Teacher Source
+                      Admin Source
                     </span>
                     <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                      Create a faculty profile directly or promote an existing registered learner.
+                      Create a new administrator account directly or promote an existing user.
                     </span>
                   </div>
 
@@ -444,24 +376,24 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                 </div>
               )}
 
-              {/* Existing Learner Picker (in Promote mode) */}
-              {!teacher && createMode === "promote" && (
-                <div className="p-4 rounded-xl bg-sky-50/50 dark:bg-sky-500/5 border border-sky-200 dark:border-sky-500/20 flex flex-col gap-2.5">
-                  <div className="flex items-center gap-2 text-sky-800 dark:text-sky-300 text-xs font-semibold">
-                    <Briefcase className="w-4 h-4" />
-                    <span>Select Learner Account to Promote to Faculty</span>
+              {/* Existing User Picker (in Promote mode) */}
+              {!admin && createMode === "promote" && (
+                <div className="p-4 rounded-xl bg-indigo-50/50 dark:bg-indigo-500/5 border border-indigo-200 dark:border-indigo-500/20 flex flex-col gap-2.5">
+                  <div className="flex items-center gap-2 text-indigo-800 dark:text-indigo-300 text-xs font-semibold">
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Select User Account to Promote to Administrator</span>
                   </div>
 
-                  {nonTeacherStudents.length === 0 ? (
+                  {nonAdminUsers.length === 0 ? (
                     <p className="text-xs text-neutral-500">
-                      No non-faculty student accounts available to promote. Use &quot;New Profile&quot; instead.
+                      No registered user accounts available to promote. Use &quot;New Profile&quot; instead.
                     </p>
                   ) : (
                     <Select
                       label="Select account to promote"
-                      value={selectedStudentId}
-                      onValueChange={handleSelectStudentToPromote}
-                      options={nonTeacherStudents.map((s) => ({
+                      value={selectedUserId}
+                      onValueChange={handleSelectUserToPromote}
+                      options={nonAdminUsers.map((s) => ({
                         value: s.id,
                         label: `${s.name || "Unnamed"} (${s.email})`,
                       }))}
@@ -471,7 +403,7 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                 </div>
               )}
 
-              {/* 4-GRID at the Add Page */}
+              {/* 4-GRID */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
                 {/* 1. Full Name */}
                 <div className="flex flex-col gap-1.5">
@@ -483,7 +415,7 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Dr. Rajesh Sharma"
+                    placeholder="e.g. Sugat Raj"
                     className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
@@ -498,7 +430,7 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="e.g. rajesh@jarvisaiacademy.com"
+                    placeholder="e.g. admin@jarvisaiacademy.com"
                     className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
@@ -512,7 +444,7 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. Lead AI Instructor"
+                    placeholder="e.g. Platform Administrator"
                     className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
@@ -531,38 +463,21 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                   />
                 </div>
 
-                {/* 5. Specialization & Expertise */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
+                {/* 5. Specialization & Responsibilities (spans 2 columns on lg) */}
+                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-2 lg:col-span-2">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Specialization & Expertise
+                    Specialization & Department
                   </label>
                   <input
                     type="text"
                     value={specialization}
                     onChange={(e) => setSpecialization(e.target.value)}
-                    placeholder="e.g. Full-Stack Web, React, Python"
+                    placeholder="e.g. Security, Curriculum Operations, Infrastructure & Billing"
                     className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
 
-                {/* 6. Account Role Dropdown */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
-                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Account Role
-                  </label>
-                  <Select
-                    label="Account Role"
-                    value={role}
-                    onValueChange={(val) => setRole(val as "teacher" | "student")}
-                    options={[
-                      { value: "teacher", label: "Teacher / Faculty" },
-                      { value: "student", label: "Student / Learner" },
-                    ]}
-                    className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
-                  />
-                </div>
-
-                {/* 7. Account Status (spans 1 column on lg) */}
+                {/* 6. Account Status (spans 1 column on lg) */}
                 <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Account Status
@@ -572,82 +487,46 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                     value={status}
                     onValueChange={(val) => setStatus(val as CandidateStatus)}
                     options={[
-                      { value: "active", label: role === "teacher" ? "Active Faculty" : "Active Student" },
-                      { value: "inactive", label: role === "teacher" ? "Inactive / On Leave" : "Inactive / Paused" },
+                      { value: "active", label: "Active Administrator" },
+                      { value: "inactive", label: "Inactive / Suspended" },
                     ]}
                     className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
                   />
                 </div>
 
-                {/* 8. Assigned Courses (spans 1 column on lg) */}
+                {/* 7. Authority Level (spans 1 column on lg) */}
                 <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    {role === "teacher" ? "Assigned Courses" : "Enrolled Courses"}
+                    Authority Level
                   </label>
-                  {coursesLoading ? (
-                    <div className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-400 text-xs animate-pulse">
-                      Loading courses...
-                    </div>
-                  ) : (
-                    <Select
-                      multiple
-                      label="Assign courses"
-                      value={assignedCourseIds}
-                      onValueChange={setAssignedCourseIds}
-                      options={courses.map((c) => ({
-                        value: c.id,
-                        label: `#${c.number} ${c.title}`,
-                      }))}
-                      formatValue={(ids) => {
-                        const list = ids as string[];
-                        if (list.length === 0) return "No courses";
-                        if (list.length === 1) {
-                          const found = courses.find((c) => c.id === list[0]);
-                          return found ? `#${found.number} ${found.title}` : list[0];
-                        }
-                        return `${list.length} courses`;
-                      }}
-                      className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
-                    />
-                  )}
+                  <Select
+                    label="Authority Level"
+                    value="full"
+                    onValueChange={() => {}}
+                    options={[
+                      { value: "full", label: "Full Administrative Access" },
+                    ]}
+                    className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+                  />
                 </div>
 
-                {/* Badges for assigned courses if any */}
-                {assignedCourseIds.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 col-span-1 sm:col-span-2 lg:col-span-4 -mt-1">
-                    {assignedCourseIds.map((cid) => {
-                      const c = courses.find((item) => item.id === cid);
-                      if (!c) return null;
-                      return (
-                        <span
-                          key={cid}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-neutral-100 dark:bg-white/10 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-white/10"
-                        >
-                          <span className="font-bold opacity-60">#{c.number}</span>
-                          <span>{c.title}</span>
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* 8. Biography & Teaching Experience (spans all 4 columns) */}
+                {/* 8. Biography & Internal Notes (spans all 4 columns) */}
                 <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-2 lg:col-span-4">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Biography & Teaching Experience
+                    Biography & Internal Administrative Notes
                   </label>
                   <textarea
                     rows={4}
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
-                    placeholder="Provide a brief summary of industry background, past projects, or teaching philosophy..."
+                    placeholder="Enter internal notes, organizational role, primary contact responsibilities..."
                     className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 resize-y"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Bottom Bar: Cancel on left with cancel icon, Add Teacher pill button on right */}
+            {/* Bottom Bar: Cancel on left with cancel icon, Add / Save Admin pill button on right */}
             <div className="px-5 sm:px-7 py-4 border-t border-neutral-200 dark:border-white/10 flex items-center justify-between gap-3 bg-neutral-50/50 dark:bg-white/[0.02]">
               {/* Bottom Left: Cancel button with cancel icon */}
               <button
@@ -660,7 +539,7 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                 <span>Cancel</span>
               </button>
 
-              {/* Bottom Right: Add / Save Teacher pill button */}
+              {/* Bottom Right: Add / Save Admin pill button */}
               <button
                 type="submit"
                 disabled={isSaving}
@@ -668,12 +547,12 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
               >
                 {isSaving ? (
                   <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : teacher ? (
+                ) : admin ? (
                   <Pencil className="w-3.5 h-3.5" />
                 ) : (
                   <Plus className="w-4 h-4" />
                 )}
-                <span>{teacher ? "Save Changes" : "Add Teacher"}</span>
+                <span>{admin ? "Save Changes" : "Add Admin"}</span>
               </button>
             </div>
           </div>

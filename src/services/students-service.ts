@@ -7,10 +7,12 @@ import {
   deleteDoc,
   onSnapshot,
   query,
+  where,
   Unsubscribe,
 } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
 import { StudentRecord } from "@/data/students";
+import type { CourseItem } from "@/data/courses";
 import { checkIsAdmin } from "@/providers/auth-provider";
 
 export const STUDENTS_COLLECTION = "users";
@@ -110,6 +112,7 @@ export async function updateCandidateInFirestore(
       | "phone"
       | "picture"
       | "referralCode"
+      | "enrolledCourseIds"
     >
   >,
   userEmail?: string | null
@@ -209,12 +212,272 @@ export async function deleteTeacherInFirestore(
     throw new Error("Firestore is not initialized.");
   }
 
+  const firestore = db;
   if (options.permanent) {
-    await deleteDoc(doc(db, STUDENTS_COLLECTION, teacherId));
+    await deleteDoc(doc(firestore, STUDENTS_COLLECTION, teacherId));
   } else {
-    await updateDoc(doc(db, STUDENTS_COLLECTION, teacherId), { is_teacher: false });
+    await updateDoc(doc(firestore, STUDENTS_COLLECTION, teacherId), { is_teacher: false });
   }
 }
+
+export interface CreateAdminInput {
+  name: string;
+  email: string;
+  title?: string;
+  specialization?: string;
+  bio?: string;
+  phone?: string;
+  status?: StudentRecord["status"];
+  existingUserId?: string;
+}
+
+/**
+ * Create a new admin or promote an existing user to admin in Firestore.
+ * Strictly restricted to verified admins.
+ */
+export async function createAdminInFirestore(
+  input: CreateAdminInput,
+  userEmail?: string | null
+): Promise<string> {
+  if (!checkIsAdmin(userEmail)) {
+    throw new Error("Unauthorized: Only verified admins can create or promote admins.");
+  }
+  if (!db) {
+    throw new Error("Firestore is not initialized.");
+  }
+
+  const currentUser = auth?.currentUser;
+  if (!currentUser) {
+    throw new Error(
+      "No active Firebase Auth session found. Please ensure you are signed in with your admin Google account."
+    );
+  }
+
+  const firestore = db;
+  const adminId =
+    input.existingUserId?.trim() || doc(collection(firestore, STUDENTS_COLLECTION)).id;
+
+  const now = new Date().toISOString();
+  const adminRecord: Partial<StudentRecord> = {
+    id: adminId,
+    name: input.name.trim(),
+    email: input.email.trim().toLowerCase(),
+    role: "admin",
+    status: input.status || "active",
+    lastLoginAt: now,
+  };
+
+  if (!input.existingUserId) {
+    adminRecord.createdAt = now;
+  }
+  if (input.title?.trim()) adminRecord.title = input.title.trim();
+  if (input.specialization?.trim()) adminRecord.specialization = input.specialization.trim();
+  if (input.bio?.trim()) adminRecord.bio = input.bio.trim();
+  if (input.phone?.trim()) adminRecord.phone = input.phone.trim();
+
+  await setDoc(doc(firestore, STUDENTS_COLLECTION, adminId), adminRecord, { merge: true });
+  return adminId;
+}
+
+/**
+ * Remove or demote an admin in Firestore.
+ * Either demotes them to a student (`role: "student"`) or deletes their document permanently.
+ */
+export async function deleteAdminInFirestore(
+  adminId: string,
+  options: { permanent?: boolean; userEmail?: string | null } = {}
+): Promise<void> {
+  if (!checkIsAdmin(options.userEmail)) {
+    throw new Error("Unauthorized: Only verified admins can remove admins.");
+  }
+  if (!db) {
+    throw new Error("Firestore is not initialized.");
+  }
+
+  const firestore = db;
+  if (options.permanent) {
+    await deleteDoc(doc(firestore, STUDENTS_COLLECTION, adminId));
+  } else {
+    await updateDoc(doc(firestore, STUDENTS_COLLECTION, adminId), {
+      role: "student",
+      status: "inactive",
+    });
+  }
+}
+
+
+export interface CreateStudentInput {
+  name: string;
+  email: string;
+  title?: string;
+  specialization?: string;
+  bio?: string;
+  phone?: string;
+  status?: StudentRecord["status"];
+  is_super10?: boolean;
+  referralCode?: string;
+  enrolledCourseIds?: string[];
+}
+
+/**
+ * Create a new student record in Firestore.
+ * Strictly restricted to verified admins.
+ */
+export async function createStudentInFirestore(
+  input: CreateStudentInput,
+  userEmail?: string | null
+): Promise<string> {
+  if (!checkIsAdmin(userEmail)) {
+    throw new Error("Unauthorized: Only verified admins can create students.");
+  }
+  if (!db) {
+    throw new Error("Firestore is not initialized.");
+  }
+
+  const currentUser = auth?.currentUser;
+  if (!currentUser) {
+    throw new Error(
+      "No active Firebase Auth session found. Please ensure you are signed in with your admin Google account."
+    );
+  }
+
+  const firestore = db;
+  const studentId = doc(collection(firestore, STUDENTS_COLLECTION)).id;
+  const now = new Date().toISOString();
+
+  const studentRecord: Partial<StudentRecord> = {
+    id: studentId,
+    name: input.name.trim(),
+    email: input.email.trim().toLowerCase(),
+    is_teacher: false,
+    role: "student",
+    status: input.status || "active",
+    is_super10: !!input.is_super10,
+    lastLoginAt: now,
+    createdAt: now,
+  };
+
+  if (input.title?.trim()) studentRecord.title = input.title.trim();
+  if (input.specialization?.trim()) studentRecord.specialization = input.specialization.trim();
+  if (input.bio?.trim()) studentRecord.bio = input.bio.trim();
+  if (input.phone?.trim()) studentRecord.phone = input.phone.trim();
+  if (input.referralCode?.trim()) studentRecord.referralCode = input.referralCode.trim();
+  if (input.enrolledCourseIds) studentRecord.enrolledCourseIds = input.enrolledCourseIds;
+
+  await setDoc(doc(firestore, STUDENTS_COLLECTION, studentId), studentRecord, { merge: true });
+
+  if (input.referralCode?.trim()) {
+    try {
+      await setDoc(doc(firestore, "referrals", input.referralCode.trim()), { uid: studentId }, { merge: true });
+    } catch (err) {
+      console.warn("[StudentsService] Could not write referral code doc:", err);
+    }
+  }
+
+  return studentId;
+}
+
+/**
+ * Remove or deactivate a student in Firestore.
+ * Either marks them as inactive or deletes their document permanently.
+ */
+export async function deleteStudentInFirestore(
+  studentId: string,
+  options: { permanent?: boolean; userEmail?: string | null; studentEmail?: string } = {}
+): Promise<void> {
+  if (!checkIsAdmin(options.userEmail)) {
+    throw new Error("Unauthorized: Only verified admins can delete students.");
+  }
+  if (!db) {
+    throw new Error("Firestore is not initialized.");
+  }
+
+  const firestore = db;
+
+  if (options.permanent) {
+    await deleteDoc(doc(firestore, STUDENTS_COLLECTION, studentId));
+    if (options.studentEmail) {
+      try {
+        const q = query(
+          collection(firestore, "enrollments"),
+          where("studentEmail", "==", options.studentEmail)
+        );
+        const snap = await getDocs(q);
+        const deletes = snap.docs.map((d) => deleteDoc(doc(firestore, "enrollments", d.id)));
+        await Promise.all(deletes);
+      } catch (err) {
+        console.warn("[StudentsService] Could not clean up enrollments for deleted student:", err);
+      }
+    }
+  } else {
+    await updateDoc(doc(firestore, STUDENTS_COLLECTION, studentId), { status: "inactive" });
+  }
+}
+
+/**
+ * Synchronize course enrollments for a student in Firestore 'enrollments' collection.
+ */
+export async function syncStudentEnrollments(
+  studentEmail: string,
+  studentName: string,
+  enrolledCourseIds: string[],
+  courses: CourseItem[],
+  userEmail?: string | null
+): Promise<void> {
+  if (!checkIsAdmin(userEmail)) {
+    throw new Error("Unauthorized: Only verified admins can sync enrollments.");
+  }
+  if (!db) {
+    throw new Error("Firestore is not initialized.");
+  }
+
+  const firestore = db;
+  const q = query(
+    collection(firestore, "enrollments"),
+    where("studentEmail", "==", studentEmail)
+  );
+  const snap = await getDocs(q);
+  const existingByCourseId = new Map<string, string>();
+
+  snap.forEach((d) => {
+    const data = d.data();
+    if (data.courseId) {
+      existingByCourseId.set(data.courseId, d.id);
+    }
+  });
+
+  const promises: Promise<unknown>[] = [];
+
+  // Add enrollments for newly assigned courses
+  for (const courseId of enrolledCourseIds) {
+    if (!existingByCourseId.has(courseId)) {
+      const course = courses.find((c) => c.id === courseId);
+      const docRef = doc(collection(firestore, "enrollments"));
+      promises.push(
+        setDoc(docRef, {
+          action: "paid",
+          courseId,
+          courseName: course ? course.title : "Course",
+          amount: course ? course.amount : 0,
+          transactionId: `ADMIN_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          studentName,
+          studentEmail,
+          timestamp: new Date().toISOString(),
+        })
+      );
+    }
+  }
+
+  // Remove enrollments for courses that are no longer assigned
+  for (const [courseId, docId] of existingByCourseId.entries()) {
+    if (!enrolledCourseIds.includes(courseId)) {
+      promises.push(deleteDoc(doc(firestore, "enrollments", docId)));
+    }
+  }
+
+  await Promise.all(promises);
+}
+
 
 /**
  * Fetch the full student roster. Returns null if Firestore is unavailable.

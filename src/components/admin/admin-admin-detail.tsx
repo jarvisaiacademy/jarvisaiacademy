@@ -1,19 +1,18 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronRight, ArrowLeft, Pencil } from "lucide-react";
+import { ChevronRight, ArrowLeft, Pencil, ShieldCheck } from "lucide-react";
 import { useStudents } from "@/providers/students-provider";
-import { useCourses } from "@/providers/courses-provider";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { RoleBadge } from "@/components/admin/role-badge";
 import { AdminPage } from "@/components/admin/admin-page";
 import { accountRoleOf, type CandidateStatus } from "@/data/students";
 import type { AdminShellState } from "@/components/admin/admin-shell";
 
-interface AdminTeacherDetailProps {
-  teacherId: string;
+interface AdminAdminDetailProps {
+  adminId: string;
   shell: AdminShellState;
 }
 
@@ -31,21 +30,14 @@ function formatWhen(iso?: string) {
   });
 }
 
-export function AdminTeacherDetail({ teacherId, shell }: AdminTeacherDetailProps) {
+export function AdminAdminDetail({ adminId, shell }: AdminAdminDetailProps) {
   const router = useRouter();
   const { students, loading } = useStudents();
-  const { firestoreCourses, loading: coursesLoading } = useCourses();
 
-  const teacher = students.find((s) => s.id === teacherId);
+  const admin = students.find((s) => s.id === adminId);
 
-  // The courses this teacher instructs
-  const teaches = useMemo(
-    () => firestoreCourses.filter((course) => (course.teacherIds ?? []).includes(teacherId)),
-    [firestoreCourses, teacherId]
-  );
-
-  const goToTeachers = () => {
-    shell.onNavigateTab("teachers");
+  const goToAdmins = () => {
+    shell.onNavigateTab("admins");
     router.push("/admin");
   };
 
@@ -65,26 +57,26 @@ export function AdminTeacherDetail({ teacherId, shell }: AdminTeacherDetailProps
       <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
       <button
         type="button"
-        onClick={goToTeachers}
+        onClick={goToAdmins}
         className="text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors cursor-pointer"
       >
-        Teachers
+        Admins
       </button>
       <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
       <span className="font-semibold text-neutral-900 dark:text-white">
-        Teacher Details
+        Admin Details
       </span>
     </nav>
   );
 
   // Loading state
-  if (loading || (students.length === 0 && !teacher) || coursesLoading) {
+  if (loading || (students.length === 0 && !admin)) {
     return (
       <AdminPage shell={shell} maxWidth="max-w-none px-3 sm:px-6">
         <div className="flex flex-col gap-4">
           {breadcrumbNav}
           <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-10 text-center text-xs text-neutral-400 animate-pulse">
-            Loading teacher details...
+            Loading admin details...
           </div>
         </div>
       </AdminPage>
@@ -92,21 +84,21 @@ export function AdminTeacherDetail({ teacherId, shell }: AdminTeacherDetailProps
   }
 
   // Not found state
-  if (!teacher) {
+  if (!admin) {
     return (
       <AdminPage shell={shell} maxWidth="max-w-none px-3 sm:px-6">
         <div className="flex flex-col gap-4">
           {breadcrumbNav}
           <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 flex flex-col items-center gap-3 text-center">
             <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              No teacher account found with this ID. It may have been removed or the link is incorrect.
+              No admin account found with this ID. It may have been removed or the link is incorrect.
             </p>
             <button
               type="button"
-              onClick={goToTeachers}
+              onClick={goToAdmins}
               className="px-3.5 py-1.5 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
             >
-              Back to Teachers
+              Back to Admins
             </button>
           </div>
         </div>
@@ -114,7 +106,7 @@ export function AdminTeacherDetail({ teacherId, shell }: AdminTeacherDetailProps
     );
   }
 
-  const status: CandidateStatus = teacher.status ?? "active";
+  const status: CandidateStatus = admin.status ?? "active";
 
   return (
     <AdminPage shell={shell} maxWidth="max-w-none px-3 sm:px-6">
@@ -122,18 +114,18 @@ export function AdminTeacherDetail({ teacherId, shell }: AdminTeacherDetailProps
         {/* Breadcrumb at the left side at top outside the card */}
         {breadcrumbNav}
 
-        {/* Big Card matching Add/Edit Teacher pages */}
+        {/* Big Card matching Teacher and Student Details */}
         <div className="w-full rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden flex flex-col">
-          {/* Card Header: Back button on left, centered Heading Teacher Details */}
+          {/* Card Header: Back button on left, centered Heading Admin Details */}
           <div className="p-4 sm:p-5 border-b border-neutral-200 dark:border-white/10">
             <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
               {/* Back button inside the card */}
               <div className="flex items-center">
                 <button
                   type="button"
-                  onClick={goToTeachers}
+                  onClick={goToAdmins}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 border border-neutral-200 dark:border-white/10 transition-colors cursor-pointer"
-                  title="Back to Teachers"
+                  title="Back to Admins"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>Back</span>
@@ -143,7 +135,7 @@ export function AdminTeacherDetail({ teacherId, shell }: AdminTeacherDetailProps
               {/* Center: Heading */}
               <div className="flex items-center justify-center">
                 <h1 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white text-center">
-                  Teacher Details
+                  Admin Details
                 </h1>
               </div>
 
@@ -154,20 +146,26 @@ export function AdminTeacherDetail({ teacherId, shell }: AdminTeacherDetailProps
 
           {/* Card Body */}
           <div className="p-5 sm:p-7 flex flex-col gap-6">
-            {/* Identity Bar (No card wrapper) */}
+            {/* Identity Bar */}
             <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-neutral-200 dark:border-white/10">
               <div className="flex items-center gap-3 min-w-0">
-                <UserAvatar user={teacher} size="md" />
+                <UserAvatar user={admin} size="md" />
                 <div className="flex flex-col min-w-0">
-                  <span className="text-base font-bold text-neutral-900 dark:text-white truncate">
-                    {teacher.name || "Unnamed Teacher"}
-                  </span>
-                  <span className="text-xs text-neutral-500 truncate">{teacher.email}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base font-bold text-neutral-900 dark:text-white truncate">
+                      {admin.name || "Unnamed Admin"}
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                      <ShieldCheck className="w-3 h-3" />
+                      <span>Administrator</span>
+                    </span>
+                  </div>
+                  <span className="text-xs text-neutral-500 truncate">{admin.email}</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
-                <RoleBadge role={accountRoleOf(teacher)} />
+                <RoleBadge role={accountRoleOf(admin)} />
                 <span
                   className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${
                     status === "active"
@@ -190,7 +188,7 @@ export function AdminTeacherDetail({ teacherId, shell }: AdminTeacherDetailProps
               {/* 1. Full Name */}
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
-                  {teacher.name || "—"}
+                  {admin.name || "—"}
                 </span>
                 <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                   Full Name
@@ -200,7 +198,7 @@ export function AdminTeacherDetail({ teacherId, shell }: AdminTeacherDetailProps
               {/* 2. Email Address */}
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
-                  {teacher.email || "—"}
+                  {admin.email || "—"}
                 </span>
                 <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                   Email Address
@@ -210,7 +208,7 @@ export function AdminTeacherDetail({ teacherId, shell }: AdminTeacherDetailProps
               {/* 3. Title / Designation */}
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
-                  {teacher.title || "Faculty Member"}
+                  {admin.title || "Platform Administrator"}
                 </span>
                 <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                   Title / Designation
@@ -220,67 +218,50 @@ export function AdminTeacherDetail({ teacherId, shell }: AdminTeacherDetailProps
               {/* 4. Phone Number */}
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
-                  {teacher.phone || "—"}
+                  {admin.phone || "—"}
                 </span>
                 <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                   Phone Number
                 </span>
               </div>
 
-              {/* 5. Specialization & Expertise (spans 2 columns on lg) */}
+              {/* 5. Specialization & Responsibilities (spans 2 columns on lg) */}
               <div className="flex flex-col min-w-0 col-span-1 sm:col-span-2 lg:col-span-2">
                 <span className="text-sm font-semibold text-neutral-900 dark:text-white">
-                  {teacher.specialization || "—"}
+                  {admin.specialization || "Platform Management & Operations"}
                 </span>
                 <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                  Specialization & Expertise
+                  Specialization & Department
                 </span>
               </div>
 
               {/* 6. Account Status (spans 1 column on lg) */}
               <div className="flex flex-col min-w-0 col-span-1 sm:col-span-1 lg:col-span-1">
                 <span className="text-sm font-semibold text-neutral-900 dark:text-white capitalize">
-                  {teacher.status || "active"}
+                  {admin.status || "active"}
                 </span>
                 <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                   Account Status
                 </span>
               </div>
 
-              {/* 7. Assigned Courses (spans 1 column on lg) */}
+              {/* 7. Authority Level (spans 1 column on lg) */}
               <div className="flex flex-col min-w-0 col-span-1 sm:col-span-1 lg:col-span-1">
                 <span className="text-sm font-semibold text-neutral-900 dark:text-white">
-                  {teaches.length} {teaches.length === 1 ? "Course" : "Courses"}
+                  Full Authority
                 </span>
                 <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                  Assigned Courses
+                  Access Level
                 </span>
               </div>
 
-              {/* Assigned Course Badges */}
-              {teaches.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 col-span-1 sm:col-span-2 lg:col-span-4 -mt-2">
-                  {teaches.map((c) => (
-                    <Link
-                      key={c.id}
-                      href={`/admin/courses/${c.id}`}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-neutral-100 dark:bg-white/10 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-white/10 hover:border-emerald-500 transition-colors"
-                    >
-                      <span className="font-bold opacity-60">#{c.number}</span>
-                      <span>{c.title}</span>
-                      <ChevronRight className="w-3 h-3 text-neutral-400" />
-                    </Link>
-                  ))}
-                </div>
-              )}
-
-              {/* 8. Biography & Teaching Experience (spans all 4 columns) */}
+              {/* 8. Biography & Internal Notes (spans all 4 columns) */}
               <div className="flex flex-col min-w-0 col-span-1 sm:col-span-2 lg:col-span-4">
                 <p className="text-sm font-normal text-neutral-800 dark:text-neutral-200 whitespace-pre-wrap leading-relaxed">
-                  {teacher.bio || "No biography provided."}
+                  {admin.bio || "Platform administrator with verified administrative rights across students, faculty, and course registries."}
                 </p>
                 <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                  Biography & Teaching Experience
+                  Biography & Internal Notes
                 </span>
               </div>
 
@@ -288,7 +269,7 @@ export function AdminTeacherDetail({ teacherId, shell }: AdminTeacherDetailProps
               {/* Last Sign-in */}
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
-                  {formatWhen(teacher.lastLoginAt)}
+                  {formatWhen(admin.lastLoginAt)}
                 </span>
                 <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                   Last Sign-in
@@ -298,27 +279,27 @@ export function AdminTeacherDetail({ teacherId, shell }: AdminTeacherDetailProps
               {/* Account Created */}
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
-                  {formatWhen(teacher.createdAt)}
+                  {formatWhen(admin.createdAt)}
                 </span>
                 <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                   Account Created
                 </span>
               </div>
 
-              {/* Super10 Status */}
+              {/* Auth Provider */}
               <div className="flex flex-col min-w-0">
-                <span className="text-sm font-semibold text-neutral-900 dark:text-white">
-                  {teacher.is_super10 ? "Super10 Scholar" : "Standard"}
+                <span className="text-sm font-semibold text-neutral-900 dark:text-white capitalize">
+                  {admin.signInProvider || "google.com"}
                 </span>
                 <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                  Super10 Status
+                  Sign-In Method
                 </span>
               </div>
 
               {/* Email Verification */}
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-semibold text-neutral-900 dark:text-white">
-                  {teacher.emailVerified ? "Verified" : "Unverified"}
+                  {admin.emailVerified ? "Verified" : "Unverified"}
                 </span>
                 <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                   Email Verification
@@ -327,25 +308,25 @@ export function AdminTeacherDetail({ teacherId, shell }: AdminTeacherDetailProps
             </div>
           </div>
 
-          {/* Card Footer: Back on left, Edit Teacher green pill button on right */}
+          {/* Card Footer: Back on left, Edit Admin green pill button on right */}
           <div className="px-5 sm:px-7 py-4 border-t border-neutral-200 dark:border-white/10 flex items-center justify-between gap-3 bg-neutral-50/50 dark:bg-white/[0.02]">
             {/* Bottom Left: Back button */}
             <button
               type="button"
-              onClick={goToTeachers}
+              onClick={goToAdmins}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 border border-neutral-200 dark:border-white/10 transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Back to Teachers</span>
+              <span>Back to Admins</span>
             </button>
 
-            {/* Bottom Right: Edit Teacher green pill button */}
+            {/* Bottom Right: Edit Admin green pill button */}
             <Link
-              href={`/admin/teachers/${teacher.id}/edit`}
+              href={`/admin/admins/${admin.id}/edit`}
               className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-colors cursor-pointer"
             >
               <Pencil className="w-3.5 h-3.5" />
-              <span>Edit Teacher</span>
+              <span>Edit Admin</span>
             </Link>
           </div>
         </div>
@@ -354,4 +335,4 @@ export function AdminTeacherDetail({ teacherId, shell }: AdminTeacherDetailProps
   );
 }
 
-export default AdminTeacherDetail;
+export default AdminAdminDetail;

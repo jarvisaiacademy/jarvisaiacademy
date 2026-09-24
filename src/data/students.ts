@@ -50,6 +50,8 @@ export interface StudentRecord {
   bio?: string;
   /** Contact phone number */
   phone?: string;
+  /** Enrolled course IDs */
+  enrolledCourseIds?: string[];
 }
 
 /**

@@ -291,6 +291,44 @@ await check("admin bans a candidate", true, () =>
 await check("admin grants Super10", true, () =>
   patch(docPath("users", "student-two"), { is_super10: { booleanValue: true } }, admin)
 );
+await check("admin creates a new student row", true, () =>
+  patch(
+    docPath("users", "admin-created-student"),
+    {
+      name: { stringValue: "Roster Student" },
+      email: { stringValue: "roster-student@example.com" },
+      role: { stringValue: "student" },
+      is_teacher: { booleanValue: false },
+      status: { stringValue: "active" },
+    },
+    admin
+  )
+);
+await check("admin creates a new teacher row", true, () =>
+  patch(
+    docPath("users", "admin-created-teacher"),
+    {
+      name: { stringValue: "Roster Teacher" },
+      email: { stringValue: "roster-teacher@example.com" },
+      role: { stringValue: "student" },
+      is_teacher: { booleanValue: true },
+      status: { stringValue: "active" },
+    },
+    admin
+  )
+);
+await check("admin creates a new admin row", true, () =>
+  patch(
+    docPath("users", "admin-created-admin"),
+    {
+      name: { stringValue: "Roster Admin" },
+      email: { stringValue: "roster-admin@example.com" },
+      role: { stringValue: "admin" },
+      status: { stringValue: "active" },
+    },
+    admin
+  )
+);
 // The roster is gated by an email list, so the harness says which addresses are on it rather
 // than assuming. A new admin added to the list but not to these rules is a silent regression:
 // the dashboard renders, then every read below comes back permission-denied.

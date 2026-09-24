@@ -86,7 +86,6 @@ service cloud.firestore {
     // sees no one else's; only an admin sees the rest.
     match /users/{uid} {
       allow read: if isSelf(uid) || isAdmin();
-      allow write: if isAdmin();
 
       // The extra clause stops a learner promoting themselves. The client writes `role` from
       // its own email check, so without it a visitor could store role: 'admin' on their own
@@ -98,11 +97,12 @@ service cloud.firestore {
       // row before the sign-in upsert gets there could hand itself a seat or a faculty badge.
       // It may still store the false default — the sign-in backfill does exactly that — and
       // both read as false when absent, so an ordinary row is unaffected.
-      allow create: if isSelf(uid)
-        && request.resource.data.role == 'student'
-        && request.resource.data.get('is_super10', false) == false
-        && request.resource.data.get('is_teacher', false) == false
-        && referralCreateIsHonest();
+      allow create: if isAdmin()
+        || (isSelf(uid)
+          && request.resource.data.role == 'student'
+          && request.resource.data.get('is_super10', false) == false
+          && request.resource.data.get('is_teacher', false) == false
+          && referralCreateIsHonest());
 
       // Separate from create, and this is the whole point of separating them: `resource.data`
       // does not exist on a create, so the two clauses cannot share a line.
@@ -115,16 +115,19 @@ service cloud.firestore {
       //
       // `get(field, default)` on both sides makes a merge-write compare the stored value to
       // itself, so a payload that simply omits the field is not read as "changing" it.
-      allow update: if isSelf(uid)
-        && request.resource.data.role == 'student'
-        && request.resource.data.get('status', 'active') == resource.data.get('status', 'active')
-        && request.resource.data.get('is_super10', false) == resource.data.get('is_super10', false)
-        && request.resource.data.get('is_teacher', false) == resource.data.get('is_teacher', false)
-        && (
-             request.resource.data.get('referralCode', '') == resource.data.get('referralCode', '') ||
-             request.resource.data.get('referralCode', '').matches('^JAR-[A-Z0-9]{8}$')
-           )
-        && referralUpdateIsHonest();
+      allow update: if isAdmin()
+        || (isSelf(uid)
+          && request.resource.data.role == 'student'
+          && request.resource.data.get('status', 'active') == resource.data.get('status', 'active')
+          && request.resource.data.get('is_super10', false) == resource.data.get('is_super10', false)
+          && request.resource.data.get('is_teacher', false) == resource.data.get('is_teacher', false)
+          && (
+               request.resource.data.get('referralCode', '') == resource.data.get('referralCode', '') ||
+               request.resource.data.get('referralCode', '').matches('^JAR-[A-Z0-9]{8}$')
+             )
+          && referralUpdateIsHonest());
+
+      allow delete: if isAdmin();
     }
 
     // The referral code index: one document per code, holding the uid it belongs to.

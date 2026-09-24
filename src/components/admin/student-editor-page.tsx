@@ -3,14 +3,12 @@
 import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  UserCheck,
-  UserPlus,
-  Briefcase,
   ChevronRight,
   ArrowLeft,
   X,
   Plus,
   Pencil,
+  Sparkles,
 } from "lucide-react";
 import { useStudents } from "@/providers/students-provider";
 import { useCourses } from "@/providers/courses-provider";
@@ -18,9 +16,10 @@ import { useAuth } from "@/providers/auth-provider";
 import { useToast } from "@/components/ui/toast";
 import { Select } from "@/components/ui/select";
 import { AdminPage } from "@/components/admin/admin-page";
+import { useAllEnrollments } from "@/hooks/use-student-enrollments";
 import {
-  createTeacherInFirestore,
   createStudentInFirestore,
+  createTeacherInFirestore,
   updateCandidateInFirestore,
   syncStudentEnrollments,
 } from "@/services/students-service";
@@ -31,21 +30,22 @@ import {
 import type { AdminShellState } from "@/components/admin/admin-shell";
 import type { CandidateStatus, StudentRecord } from "@/data/students";
 
-interface TeacherEditorPageProps {
+interface StudentEditorPageProps {
   shell: AdminShellState;
-  /** Omitted when creating a teacher */
-  teacherId?: string;
+  /** Omitted when creating a student */
+  studentId?: string;
 }
 
-export function TeacherEditorPage({ teacherId, shell }: TeacherEditorPageProps) {
+export function StudentEditorPage({ studentId, shell }: StudentEditorPageProps) {
   const router = useRouter();
   const { students, loading: studentsLoading } = useStudents();
   const { loading: coursesLoading } = useCourses();
+  const { loading: enrollmentsLoading } = useAllEnrollments();
 
-  const teacher = teacherId ? students.find((s) => s.id === teacherId) : null;
+  const student = studentId ? students.find((s) => s.id === studentId) : null;
 
   // Waiting on the roster subscription
-  if (teacherId && (studentsLoading || students.length === 0)) {
+  if (studentId && (studentsLoading || students.length === 0)) {
     return (
       <AdminPage shell={shell} maxWidth="max-w-none px-3 sm:px-6">
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs">
@@ -63,12 +63,12 @@ export function TeacherEditorPage({ teacherId, shell }: TeacherEditorPageProps) 
           <button
             type="button"
             onClick={() => {
-              shell.onNavigateTab("teachers");
+              shell.onNavigateTab("students");
               router.push("/admin");
             }}
             className="text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors cursor-pointer"
           >
-            Teachers
+            Students
           </button>
           <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
           <span className="font-semibold text-neutral-900 dark:text-white">
@@ -76,13 +76,13 @@ export function TeacherEditorPage({ teacherId, shell }: TeacherEditorPageProps) 
           </span>
         </nav>
         <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 text-center text-xs text-neutral-400 animate-pulse">
-          Loading teacher details...
+          Loading student details...
         </div>
       </AdminPage>
     );
   }
 
-  if (teacherId && !teacher) {
+  if (studentId && !student) {
     return (
       <AdminPage shell={shell} maxWidth="max-w-none px-3 sm:px-6">
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs">
@@ -100,12 +100,12 @@ export function TeacherEditorPage({ teacherId, shell }: TeacherEditorPageProps) 
           <button
             type="button"
             onClick={() => {
-              shell.onNavigateTab("teachers");
+              shell.onNavigateTab("students");
               router.push("/admin");
             }}
             className="text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors cursor-pointer"
           >
-            Teachers
+            Students
           </button>
           <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
           <span className="font-semibold text-neutral-900 dark:text-white">
@@ -114,17 +114,17 @@ export function TeacherEditorPage({ teacherId, shell }: TeacherEditorPageProps) 
         </nav>
         <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 flex flex-col items-center gap-3 text-center">
           <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            No teacher account with this id. It may have been removed or the link is incorrect.
+            No student account with this id. It may have been removed or the link is incorrect.
           </p>
           <button
             type="button"
             onClick={() => {
-              shell.onNavigateTab("teachers");
+              shell.onNavigateTab("students");
               router.push("/admin");
             }}
             className="px-3.5 py-1.5 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
           >
-            Back to Teachers
+            Back to Students
           </button>
         </div>
       </AdminPage>
@@ -132,77 +132,65 @@ export function TeacherEditorPage({ teacherId, shell }: TeacherEditorPageProps) 
   }
 
   return (
-    <TeacherForm
-      key={teacher?.id ?? "new"}
-      teacher={teacher ?? null}
+    <StudentForm
+      key={student?.id ?? "new"}
+      student={student ?? null}
       shell={shell}
-      coursesLoading={coursesLoading}
+      coursesLoading={coursesLoading || enrollmentsLoading}
     />
   );
 }
 
-interface TeacherFormProps {
-  teacher: StudentRecord | null;
+interface StudentFormProps {
+  student: StudentRecord | null;
   shell: AdminShellState;
   coursesLoading: boolean;
 }
 
-function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
+function StudentForm({ student, shell, coursesLoading }: StudentFormProps) {
   const router = useRouter();
   const { user } = useAuth();
   const { showToast } = useToast();
-  const { students } = useStudents();
   const { firestoreCourses: courses } = useCourses();
+  const { enrollments } = useAllEnrollments();
 
-  // Mode: "manual" (enter new details) or "promote" (select an existing student)
-  const [createMode, setCreateMode] = useState<"manual" | "promote">("manual");
-  const [selectedStudentId, setSelectedStudentId] = useState<string>("");
-
-  // Filter non-teacher students for promote option
-  const nonTeacherStudents = useMemo(
-    () => students.filter((s) => !s.is_teacher && s.role !== "admin"),
-    [students]
-  );
-
-  // Initial assigned courses for this teacher
+  // Initial enrolled courses for this student
   const initialCourseIds = useMemo(() => {
-    if (!teacher) return [];
-    return courses
-      .filter((c) => (c.teacherIds ?? []).includes(teacher.id))
-      .map((c) => c.id);
-  }, [courses, teacher]);
+    if (!student) return [];
+    const ids = new Set<string>(student.enrolledCourseIds || []);
+    const email = (student.email || "").toLowerCase();
+    if (email) {
+      for (const e of enrollments) {
+        if ((e.studentEmail || "").toLowerCase() === email && e.action === "paid") {
+          ids.add(e.courseId);
+        }
+      }
+    }
+    return Array.from(ids);
+  }, [student, enrollments]);
 
-  const [name, setName] = useState(() => teacher?.name ?? "");
-  const [email, setEmail] = useState(() => teacher?.email ?? "");
-  const [title, setTitle] = useState(() => teacher?.title ?? "");
-  const [specialization, setSpecialization] = useState(() => teacher?.specialization ?? "");
-  const [phone, setPhone] = useState(() => teacher?.phone ?? "");
-  const [bio, setBio] = useState(() => teacher?.bio ?? "");
+  const [name, setName] = useState(() => student?.name ?? "");
+  const [email, setEmail] = useState(() => student?.email ?? "");
+  const [title, setTitle] = useState(() => student?.title ?? "");
+  const [specialization, setSpecialization] = useState(() => student?.specialization ?? "");
+  const [phone, setPhone] = useState(() => student?.phone ?? "");
+  const [bio, setBio] = useState(() => student?.bio ?? "");
   const [status, setStatus] = useState<CandidateStatus>(() =>
-    teacher?.status === "inactive" || teacher?.status === "banned" ? "inactive" : "active"
+    student?.status === "inactive" || student?.status === "banned" ? "inactive" : "active"
   );
-  const [role, setRole] = useState<"teacher" | "student">(() =>
-    teacher ? (teacher.is_teacher ? "teacher" : "student") : "teacher"
+  const [role, setRole] = useState<"student" | "teacher">(() =>
+    student?.is_teacher ? "teacher" : "student"
   );
+  const [isSuper10, setIsSuper10] = useState<boolean>(() => student?.is_super10 ?? false);
+  const [referralCode, setReferralCode] = useState(() => student?.referralCode ?? "");
   const [assignedCourseIds, setAssignedCourseIds] = useState<string[]>(initialCourseIds);
   const [isSaving, setIsSaving] = useState(false);
 
-  // When a student is picked in promote mode, pre-fill their name & email
-  const handleSelectStudentToPromote = (studentId: string) => {
-    setSelectedStudentId(studentId);
-    const found = nonTeacherStudents.find((s) => s.id === studentId);
-    if (found) {
-      setName(found.name || "");
-      setEmail(found.email || "");
-      if (found.phone) setPhone(found.phone);
-    }
-  };
-
   const handleCancel = () => {
-    if (teacher) {
-      router.push(`/admin/teachers/${teacher.id}`);
+    if (student) {
+      router.push(`/admin/students/${student.id}`);
     } else {
-      shell.onNavigateTab("teachers");
+      shell.onNavigateTab("students");
       router.push("/admin");
     }
   };
@@ -221,15 +209,15 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
 
     setIsSaving(true);
     try {
-      let savedTeacherId = teacher?.id;
+      let savedStudentId = student?.id;
       const cleanEmail = email.trim().toLowerCase();
       const cleanName = name.trim();
       const newIsTeacher = role === "teacher";
 
-      if (teacher) {
-        // UPDATE existing teacher
+      if (student) {
+        // UPDATE existing student
         await updateCandidateInFirestore(
-          teacher.id,
+          student.id,
           {
             name: cleanName,
             email: cleanEmail,
@@ -238,14 +226,17 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
             bio: bio.trim() || undefined,
             phone: phone.trim() || undefined,
             status,
+            is_super10: isSuper10,
+            referralCode: referralCode.trim() || undefined,
+            enrolledCourseIds: assignedCourseIds,
             is_teacher: newIsTeacher,
           },
           user?.email
         );
       } else {
-        // CREATE new teacher or PROMOTE existing account
+        // CREATE new student or teacher
         if (newIsTeacher) {
-          savedTeacherId = await createTeacherInFirestore(
+          savedStudentId = await createTeacherInFirestore(
             {
               name: cleanName,
               email: cleanEmail,
@@ -254,13 +245,11 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
               bio: bio.trim() || undefined,
               phone: phone.trim() || undefined,
               status,
-              existingUserId:
-                createMode === "promote" && selectedStudentId ? selectedStudentId : undefined,
             },
             user?.email
           );
         } else {
-          savedTeacherId = await createStudentInFirestore(
+          savedStudentId = await createStudentInFirestore(
             {
               name: cleanName,
               email: cleanEmail,
@@ -269,6 +258,8 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
               bio: bio.trim() || undefined,
               phone: phone.trim() || undefined,
               status,
+              is_super10: isSuper10,
+              referralCode: referralCode.trim() || undefined,
               enrolledCourseIds: assignedCourseIds,
             },
             user?.email
@@ -277,29 +268,37 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
       }
 
       // Synchronize course assignments / enrollments based on role
-      if (savedTeacherId) {
+      if (savedStudentId) {
         if (newIsTeacher) {
-          await syncTeacherCourseAssignments(savedTeacherId, assignedCourseIds, user?.email);
+          await syncTeacherCourseAssignments(savedStudentId, assignedCourseIds, user?.email);
         } else {
-          if (teacher && teacher.is_teacher) {
-            await removeTeacherFromAllCourses(savedTeacherId, user?.email);
+          if (student && student.is_teacher) {
+            await removeTeacherFromAllCourses(savedStudentId, user?.email);
           }
-          await syncStudentEnrollments(cleanEmail, cleanName, assignedCourseIds, courses, user?.email);
+          if (cleanEmail) {
+            await syncStudentEnrollments(
+              cleanEmail,
+              cleanName,
+              assignedCourseIds,
+              courses,
+              user?.email
+            );
+          }
         }
       }
 
       showToast(
-        teacher
+        student
           ? `${newIsTeacher ? "Teacher" : "Student"} "${cleanName}" updated successfully`
           : `${newIsTeacher ? "Teacher" : "Student"} "${cleanName}" created successfully`,
         "success"
       );
 
-      if (teacher) {
+      if (student) {
         if (newIsTeacher) {
-          router.push(`/admin/teachers/${teacher.id}`);
+          router.push(`/admin/teachers/${student.id}`);
         } else {
-          router.push(`/admin/students/${teacher.id}`);
+          router.push(`/admin/students/${student.id}`);
         }
       } else {
         if (newIsTeacher) {
@@ -310,27 +309,18 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
         router.push("/admin");
       }
     } catch (err: unknown) {
-      console.error("[TeacherForm] Failed to save teacher:", err);
+      console.error("[StudentForm] Failed to save student:", err);
       const errMsg = err instanceof Error ? err.message : String(err);
       if (
         errMsg.toLowerCase().includes("permission") ||
         errMsg.toLowerCase().includes("permission-denied")
       ) {
         showToast(
-          `Permission denied for ${user?.email || "this account"}. Please publish the latest firestore.rules in Firebase Console.`,
-          "error"
-        );
-      } else if (
-        errMsg.includes("ERR_BLOCKED_BY_CLIENT") ||
-        errMsg.includes("blocked") ||
-        errMsg.includes("unavailable")
-      ) {
-        showToast(
-          "Network request blocked by a browser extension (e.g. ad blocker, Brave Shields, or privacy tool). Please disable it or whitelist this site to save.",
+          `Permission denied for ${user?.email || "this account"}. Please check Firebase rules.`,
           "error"
         );
       } else {
-        showToast(errMsg || "Failed to save teacher", "error");
+        showToast(errMsg || "Failed to save student", "error");
       }
     } finally {
       setIsSaving(false);
@@ -356,23 +346,23 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
           <button
             type="button"
             onClick={() => {
-              shell.onNavigateTab("teachers");
+              shell.onNavigateTab("students");
               router.push("/admin");
             }}
             className="text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors cursor-pointer"
           >
-            Teachers
+            Students
           </button>
           <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
           <span className="font-semibold text-neutral-900 dark:text-white">
-            {teacher ? `Edit ${teacher.name || "Teacher"}` : "Add Teacher"}
+            {student ? `Edit ${student.name || "Student"}` : "Add Student"}
           </span>
         </nav>
 
         {/* Big Card containing form */}
         <form onSubmit={handleSubmit} className="w-full pb-16">
           <div className="w-full rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden flex flex-col">
-            {/* Header: Back button on left, centered Heading Add New Teacher */}
+            {/* Header: Back button on left, centered Heading */}
             <div className="p-4 sm:p-5 border-b border-neutral-200 dark:border-white/10">
               <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
                 {/* Back button inside the card */}
@@ -381,17 +371,17 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                     type="button"
                     onClick={handleCancel}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 border border-neutral-200 dark:border-white/10 transition-colors cursor-pointer"
-                    title="Back to Teachers"
+                    title="Back to Students"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
                     <span>Back</span>
                   </button>
                 </div>
 
-                {/* Center: Heading Add New Teacher */}
+                {/* Center: Heading Add New Student */}
                 <div className="flex items-center justify-center">
                   <h1 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white text-center">
-                    {teacher ? "Edit Teacher" : "Add New Teacher"}
+                    {student ? "Edit Student" : "Add New Student"}
                   </h1>
                 </div>
 
@@ -402,76 +392,7 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
 
             {/* Card Body */}
             <div className="p-5 sm:p-7 flex flex-col gap-6">
-              {/* Creator Mode Selector (Only on New Teacher) */}
-              {!teacher && (
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-semibold text-neutral-900 dark:text-white">
-                      Teacher Source
-                    </span>
-                    <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                      Create a faculty profile directly or promote an existing registered learner.
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 p-1 rounded-xl bg-neutral-200/60 dark:bg-white/5 border border-neutral-200 dark:border-white/10 self-stretch sm:self-auto">
-                    <button
-                      type="button"
-                      onClick={() => setCreateMode("manual")}
-                      className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                        createMode === "manual"
-                          ? "bg-white dark:bg-white/15 text-neutral-900 dark:text-white shadow-xs"
-                          : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
-                      }`}
-                    >
-                      <UserPlus className="w-3.5 h-3.5" />
-                      <span>New Profile</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setCreateMode("promote")}
-                      className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                        createMode === "promote"
-                          ? "bg-white dark:bg-white/15 text-neutral-900 dark:text-white shadow-xs"
-                          : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
-                      }`}
-                    >
-                      <UserCheck className="w-3.5 h-3.5" />
-                      <span>Promote Registered User</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Existing Learner Picker (in Promote mode) */}
-              {!teacher && createMode === "promote" && (
-                <div className="p-4 rounded-xl bg-sky-50/50 dark:bg-sky-500/5 border border-sky-200 dark:border-sky-500/20 flex flex-col gap-2.5">
-                  <div className="flex items-center gap-2 text-sky-800 dark:text-sky-300 text-xs font-semibold">
-                    <Briefcase className="w-4 h-4" />
-                    <span>Select Learner Account to Promote to Faculty</span>
-                  </div>
-
-                  {nonTeacherStudents.length === 0 ? (
-                    <p className="text-xs text-neutral-500">
-                      No non-faculty student accounts available to promote. Use &quot;New Profile&quot; instead.
-                    </p>
-                  ) : (
-                    <Select
-                      label="Select account to promote"
-                      value={selectedStudentId}
-                      onValueChange={handleSelectStudentToPromote}
-                      options={nonTeacherStudents.map((s) => ({
-                        value: s.id,
-                        label: `${s.name || "Unnamed"} (${s.email})`,
-                      }))}
-                      className="py-2.5 px-3 rounded-xl bg-white dark:bg-white/10 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
-                    />
-                  )}
-                </div>
-              )}
-
-              {/* 4-GRID at the Add Page */}
+              {/* 4-GRID */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
                 {/* 1. Full Name */}
                 <div className="flex flex-col gap-1.5">
@@ -483,7 +404,7 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Dr. Rajesh Sharma"
+                    placeholder="e.g. Aarav Patel"
                     className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
@@ -498,21 +419,21 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="e.g. rajesh@jarvisaiacademy.com"
+                    placeholder="e.g. aarav@gmail.com"
                     className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
 
-                {/* 3. Title / Designation */}
+                {/* 3. Target Track / Goal */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Title / Designation
+                    Target Track / Designation
                   </label>
                   <input
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. Lead AI Instructor"
+                    placeholder="e.g. Aspiring Full-Stack Developer"
                     className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
@@ -531,16 +452,16 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                   />
                 </div>
 
-                {/* 5. Specialization & Expertise */}
+                {/* 5. Specialization & Interests (1 col on lg) */}
                 <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Specialization & Expertise
+                    Specialization & Domain Interests
                   </label>
                   <input
                     type="text"
                     value={specialization}
                     onChange={(e) => setSpecialization(e.target.value)}
-                    placeholder="e.g. Full-Stack Web, React, Python"
+                    placeholder="e.g. Next.js, TypeScript, AI"
                     className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
@@ -553,10 +474,10 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                   <Select
                     label="Account Role"
                     value={role}
-                    onValueChange={(val) => setRole(val as "teacher" | "student")}
+                    onValueChange={(val) => setRole(val as "student" | "teacher")}
                     options={[
-                      { value: "teacher", label: "Teacher / Faculty" },
                       { value: "student", label: "Student / Learner" },
+                      { value: "teacher", label: "Teacher / Faculty" },
                     ]}
                     className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
                   />
@@ -579,7 +500,7 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                   />
                 </div>
 
-                {/* 8. Assigned Courses (spans 1 column on lg) */}
+                {/* 8. Enrolled Courses (spans 1 column on lg) */}
                 <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     {role === "teacher" ? "Assigned Courses" : "Enrolled Courses"}
@@ -631,23 +552,54 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                   </div>
                 )}
 
-                {/* 8. Biography & Teaching Experience (spans all 4 columns) */}
+                {/* 8. Super10 Scholar Cohort (spans 2 columns on lg) */}
+                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-2">
+                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    Super10 Scholar Cohort
+                  </label>
+                  <Select
+                    label="Super10 Status"
+                    value={isSuper10 ? "yes" : "no"}
+                    onValueChange={(val) => setIsSuper10(val === "yes")}
+                    options={[
+                      { value: "no", label: "Standard Student" },
+                      { value: "yes", label: "Super10 Elite Scholar" },
+                    ]}
+                    className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+                  />
+                </div>
+
+                {/* 9. Referral Code (spans 2 columns on lg) */}
+                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-2">
+                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    VIP Referral Code
+                  </label>
+                  <input
+                    type="text"
+                    value={referralCode}
+                    onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                    placeholder="e.g. JAR-VIP001"
+                    className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 font-mono"
+                  />
+                </div>
+
+                {/* 10. Biography & Student Notes (spans all 4 columns) */}
                 <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-2 lg:col-span-4">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Biography & Teaching Experience
+                    Biography & Learning Goals / Notes
                   </label>
                   <textarea
                     rows={4}
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
-                    placeholder="Provide a brief summary of industry background, past projects, or teaching philosophy..."
+                    placeholder="Enter academic background, project aspirations, mentor notes, or career goals..."
                     className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 resize-y"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Bottom Bar: Cancel on left with cancel icon, Add Teacher pill button on right */}
+            {/* Bottom Bar: Cancel on left with cancel icon, Add / Save Student pill button on right */}
             <div className="px-5 sm:px-7 py-4 border-t border-neutral-200 dark:border-white/10 flex items-center justify-between gap-3 bg-neutral-50/50 dark:bg-white/[0.02]">
               {/* Bottom Left: Cancel button with cancel icon */}
               <button
@@ -660,7 +612,7 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                 <span>Cancel</span>
               </button>
 
-              {/* Bottom Right: Add / Save Teacher pill button */}
+              {/* Bottom Right: Add / Save Student pill button */}
               <button
                 type="submit"
                 disabled={isSaving}
@@ -668,12 +620,12 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
               >
                 {isSaving ? (
                   <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : teacher ? (
+                ) : student ? (
                   <Pencil className="w-3.5 h-3.5" />
                 ) : (
                   <Plus className="w-4 h-4" />
                 )}
-                <span>{teacher ? "Save Changes" : "Add Teacher"}</span>
+                <span>{student ? "Save Changes" : "Add Student"}</span>
               </button>
             </div>
           </div>
