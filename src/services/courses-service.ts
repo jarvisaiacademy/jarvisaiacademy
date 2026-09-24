@@ -218,7 +218,8 @@ export async function seedDefaultCoursesToFirestore(
 export async function syncTeacherCourseAssignments(
   teacherId: string,
   assignedCourseIds: string[],
-  userEmail?: string | null
+  userEmail?: string | null,
+  teacherEmail?: string | null
 ): Promise<void> {
   if (!checkIsAdmin(userEmail)) {
     throw new Error("Unauthorized: Only verified admins can update course assignments.");
@@ -230,24 +231,30 @@ export async function syncTeacherCourseAssignments(
   const firestore = db;
   const coursesSnap = await getDocs(query(collection(firestore, COURSES_COLLECTION)));
   const promises: Promise<void>[] = [];
+  const cleanTeacherEmail = teacherEmail?.trim().toLowerCase();
 
   coursesSnap.forEach((docSnap) => {
     const courseId = docSnap.id;
     const data = docSnap.data() as Partial<CourseItem>;
     const currentTeachers = data.teacherIds || [];
     const shouldBeAssigned = assignedCourseIds.includes(courseId);
-    const isCurrentlyAssigned = currentTeachers.includes(teacherId);
+    const isCurrentlyAssigned =
+      currentTeachers.includes(teacherId) ||
+      (cleanTeacherEmail ? currentTeachers.includes(cleanTeacherEmail) : false);
 
     if (shouldBeAssigned && !isCurrentlyAssigned) {
+      const updated = Array.from(
+        new Set([...currentTeachers, teacherId, ...(cleanTeacherEmail ? [cleanTeacherEmail] : [])])
+      );
       promises.push(
         updateDoc(doc(firestore, COURSES_COLLECTION, courseId), {
-          teacherIds: [...currentTeachers, teacherId],
+          teacherIds: updated,
         })
       );
     } else if (!shouldBeAssigned && isCurrentlyAssigned) {
       promises.push(
         updateDoc(doc(firestore, COURSES_COLLECTION, courseId), {
-          teacherIds: currentTeachers.filter((id) => id !== teacherId),
+          teacherIds: currentTeachers.filter((id) => id !== teacherId && id !== cleanTeacherEmail),
         })
       );
     }

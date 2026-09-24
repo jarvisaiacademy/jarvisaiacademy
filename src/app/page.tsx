@@ -15,7 +15,7 @@ import { useAuth } from "@/providers/auth-provider";
 
 export default function Home() {
   const { isOpen, toggle, isMobile } = useSidebar(true);
-  const { user, isLoggedIn, logout, clearAuthError } = useAuth();
+  const { user, isLoggedIn, logout, clearAuthError, isTeacher } = useAuth();
   const router = useRouter();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -93,10 +93,21 @@ export default function Home() {
   };
   const handleCloseLearning = () => setIsLearningOpen(false);
   // The identity chip opens "the dashboard", which is not the same place twice: an
-  // academy admin lands on the admin route, a student on the courses an admin
+  // academy admin lands on the admin route, a teacher on the faculty route, a student on the courses an admin
   // granted them. Only reachable while signed in — both chips render only for a user.
-  const handleOpenProfile = () =>
-    user?.isAdmin ? router.push("/admin") : router.push("/dashboard");
+  const handleOpenProfile = () => {
+    if (user?.isAdmin) {
+      router.push("/admin");
+    } else if (
+      user?.isTeacher ||
+      isTeacher ||
+      (typeof window !== "undefined" && localStorage.getItem("jarvis_is_teacher") === "true")
+    ) {
+      router.push("/teacher");
+    } else {
+      router.push("/dashboard");
+    }
+  };
   const handleLogout = () => {
     setStudentView(null);
     setIsLearningOpen(false);
@@ -189,13 +200,31 @@ export default function Home() {
         <LoginModal
           isOpen={isLoginOpen}
           onClose={handleCloseLogin}
-          onSuccess={() => {
+          onSuccess={(loginResult) => {
             setIsLoginOpen(false);
             // Replay whatever the guest was blocked on. Read through the ref, not the
             // gate, so it runs even though `isLoggedIn` has not re-rendered yet.
             const pending = pendingActionRef.current;
             pendingActionRef.current = null;
-            pending?.();
+            if (pending) {
+              pending();
+            } else {
+              // Direct sign-in: route directly to role-specific dashboard
+              const isAdminUser = loginResult?.isAdmin ?? user?.isAdmin;
+              const isTeacherUser =
+                loginResult?.isTeacher ??
+                user?.isTeacher ??
+                isTeacher ??
+                (typeof window !== "undefined" && localStorage.getItem("jarvis_is_teacher") === "true");
+
+              if (isAdminUser) {
+                router.push("/admin");
+              } else if (isTeacherUser) {
+                router.push("/teacher");
+              } else {
+                router.push("/dashboard");
+              }
+            }
           }}
         />
       </div>

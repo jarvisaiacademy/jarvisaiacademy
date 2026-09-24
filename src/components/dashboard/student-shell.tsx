@@ -47,7 +47,7 @@ interface StudentShellProps {
  */
 export function StudentShell({ defaultTab, restoreTab = true, children }: StudentShellProps) {
   const { isOpen, toggle, isMobile } = useSidebar(true);
-  const { user, isLoggedIn, logout } = useAuth();
+  const { user, isLoggedIn, isTeacher: authIsTeacher } = useAuth();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState<StudentTab>(defaultTab);
@@ -64,39 +64,35 @@ export function StudentShell({ defaultTab, restoreTab = true, children }: Studen
   }, [restoreTab]);
 
   useEffect(() => {
+    if (authIsTeacher || user?.isTeacher) {
+      setIsTeacher(true);
+      return;
+    }
     if (!user?.id) {
       setIsTeacher(false);
       return;
     }
     let active = true;
-    import("firebase/firestore").then(({ doc, getDoc }) => {
-      import("@/lib/firebase").then(({ db }) => {
-        if (!db) return;
-        getDoc(doc(db, "users", user.id)).then((snapshot) => {
-          if (active && snapshot.exists()) {
-            const isT = snapshot.data().is_teacher === true;
-            setIsTeacher(isT);
-            if (isT) {
-              localStorage.setItem("jarvis_is_teacher", "true");
-            } else {
-              localStorage.removeItem("jarvis_is_teacher");
-            }
-          }
-        });
+    import("@/providers/auth-provider").then(({ checkTeacherStatus }) => {
+      checkTeacherStatus(user.id, user.email).then((isT) => {
+        if (active) {
+          setIsTeacher(isT);
+        }
       });
     });
     return () => { active = false; };
-  }, [user?.id]);
+  }, [user?.id, user?.email, authIsTeacher, user?.isTeacher]);
 
-  // Admins have their own dashboard; guests need to log in first.
-  const isAuthorized = mounted && isLoggedIn && !user?.isAdmin && isTeacher === false;
+  const teacherResolved = isTeacher === true || authIsTeacher === true || user?.isTeacher === true;
+  // Admins have their own dashboard; teachers go to faculty dashboard; guests need to log in first.
+  const isAuthorized = mounted && isLoggedIn && !user?.isAdmin && !teacherResolved && isTeacher === false;
 
   useEffect(() => {
     if (!mounted || isTeacher === null) return;
     if (!isLoggedIn) router.replace("/");
     else if (user?.isAdmin) router.replace("/admin");
-    else if (isTeacher) router.replace("/teacher");
-  }, [mounted, isLoggedIn, user?.isAdmin, isTeacher, router]);
+    else if (teacherResolved) router.replace("/teacher");
+  }, [mounted, isLoggedIn, user?.isAdmin, isTeacher, teacherResolved, router]);
 
   const handleSelectTab = useCallback((next: StudentTab) => {
     setTab(next);

@@ -41,7 +41,12 @@ export function TeacherDashboard({ sidebarOpen, onToggleSidebar }: TeacherDashbo
   // Find courses assigned to this teacher
   const teacherCourses = useMemo(() => {
     if (!user) return [];
-    return courses.filter((c) => c.teacherIds?.includes(user.id));
+    const cleanEmail = user.email?.trim().toLowerCase();
+    return courses.filter(
+      (c) =>
+        c.teacherIds?.includes(user.id) ||
+        (cleanEmail ? c.teacherIds?.includes(cleanEmail) : false)
+    );
   }, [courses, user]);
 
   useEffect(() => {

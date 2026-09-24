@@ -2,15 +2,14 @@
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
-import { Pencil, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ChevronRight, ArrowLeft, Pencil, Trash2, BookOpen } from "lucide-react";
 import { useCourses } from "@/providers/courses-provider";
 import { useStudents } from "@/providers/students-provider";
 import { useToast } from "@/components/ui/toast";
-import { PageHeader } from "@/components/ui/page-header";
 import { DevIcon } from "@/components/ui/dev-icon";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { AdminPage } from "@/components/admin/admin-page";
-import { Field } from "@/components/admin/detail-field";
 import { isPublic } from "@/lib/courses-server";
 import { stackDisplay } from "@/data/courses";
 import type { AdminShellState } from "@/components/admin/admin-shell";
@@ -21,20 +20,8 @@ interface AdminCourseDetailProps {
   shell: AdminShellState;
 }
 
-/**
- * One course, read-only, with the two things an admin came here to do.
- *
- * It reads `firestoreCourses` rather than `courses`: that is the raw admin subscription, with no
- * status filter, so a course an admin has retired still has a page — which is exactly the one
- * worth looking at before relisting it. `getPublicCourses`/`isPublic` hide those and would render
- * "No such course" for a course that plainly exists on the tab.
- *
- * Edit is a link to the course's editor page rather than a modal: the form is a piece of work,
- * so it gets a URL. The save goes through the provider, whose subscription this page is already
- * reading, so the view redraws with the new values — no refetch, and no second copy to keep in
- * step.
- */
 export function AdminCourseDetail({ courseId, shell }: AdminCourseDetailProps) {
+  const router = useRouter();
   const { firestoreCourses, loading, removeCourse } = useCourses();
   const { students } = useStudents();
   const { showToast } = useToast();
@@ -44,19 +31,19 @@ export function AdminCourseDetail({ courseId, shell }: AdminCourseDetailProps) {
 
   const course = firestoreCourses.find((c) => c.id === courseId);
 
-  // By id rather than a filter per id: `teacherIds` is a lookup list, and the roster is small.
-  // Unresolved ids are kept and rendered as the id — a teacher whose account the roster has not
-  // handed over yet is still assigned, and saying "Unassigned" would be a lie.
+  // By id rather than a filter per id: teacher lookup map
   const teacherById = useMemo(() => new Map(students.map((s) => [s.id, s])), [students]);
 
-  const goToCourses = () => shell.onNavigateTab("courses");
+  const goToCourses = () => {
+    shell.onNavigateTab("courses");
+    router.push("/admin");
+  };
 
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
       await removeCourse(courseId);
       showToast("Course deleted successfully", "success");
-      // The document is gone from the subscription, so this page has nothing left to show.
       goToCourses();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to delete course";
@@ -66,154 +53,311 @@ export function AdminCourseDetail({ courseId, shell }: AdminCourseDetailProps) {
     }
   };
 
-  const chrome = (children: React.ReactNode) => (
-    <AdminPage shell={shell}>{children}</AdminPage>
+  // Breadcrumb at top left outside the card
+  const breadcrumbNav = (
+    <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs">
+      <button
+        type="button"
+        onClick={() => {
+          shell.onNavigateTab("home");
+          router.push("/admin");
+        }}
+        className="text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors cursor-pointer"
+      >
+        Home
+      </button>
+      <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
+      <button
+        type="button"
+        onClick={goToCourses}
+        className="text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors cursor-pointer"
+      >
+        Courses
+      </button>
+      <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
+      <span className="font-semibold text-neutral-900 dark:text-white">
+        Course Details
+      </span>
+    </nav>
   );
 
-  const crumbs = (
-    <PageHeader
-      crumbs={[
-        { label: "Home", onSelect: () => shell.onNavigateTab("home") },
-        { label: "Courses", onSelect: goToCourses },
-        { label: course?.title || "Course" },
-      ]}
-      action={
-        course ? (
-          isConfirmingDelete ? (
-            <div className="flex items-center gap-1 bg-red-50 dark:bg-red-500/10 p-1 rounded-lg border border-red-200 dark:border-red-500/30">
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="px-2 py-0.5 text-[10px] font-bold bg-red-600 text-white rounded cursor-pointer disabled:opacity-60"
-              >
-                {isDeleting ? "Deleting..." : "Confirm"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsConfirmingDelete(false)}
-                className="px-1 text-[10px] text-neutral-500 cursor-pointer"
-              >
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <>
-              <Link
-                href={`/admin/courses/${course.id}/edit`}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer whitespace-nowrap"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-                <span>Edit</span>
-              </Link>
-              <button
-                type="button"
-                onClick={() => setIsConfirmingDelete(true)}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-500/30 text-xs font-semibold shadow-xs transition-colors cursor-pointer whitespace-nowrap"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Delete</span>
-              </button>
-            </>
-          )
-        ) : undefined
-      }
-    />
-  );
-
-  // `loading` first, or "No such course" flashes on every load: the subscription resolves a
-  // commit after mount, so a found course is missing for one frame.
-  if (loading) {
-    return chrome(
-      <>
-        {crumbs}
-        <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 text-center text-xs text-neutral-400 animate-pulse">
-          Loading course...
+  // Loading state
+  if (loading || (firestoreCourses.length === 0 && !course)) {
+    return (
+      <AdminPage shell={shell} maxWidth="max-w-none px-3 sm:px-6">
+        <div className="flex flex-col gap-4">
+          {breadcrumbNav}
+          <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-10 text-center text-xs text-neutral-400 animate-pulse">
+            Loading course details...
+          </div>
         </div>
-      </>
+      </AdminPage>
     );
   }
 
+  // Not found state
   if (!course) {
-    return chrome(
-      <>
-        {crumbs}
-        <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 flex flex-col items-center gap-3 text-center">
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            No course with this id. It may have been deleted, or the link may be wrong.
-          </p>
-          <button
-            type="button"
-            onClick={goToCourses}
-            className="px-3.5 py-1.5 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-          >
-            Back to Courses
-          </button>
+    return (
+      <AdminPage shell={shell} maxWidth="max-w-none px-3 sm:px-6">
+        <div className="flex flex-col gap-4">
+          {breadcrumbNav}
+          <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 flex flex-col items-center gap-3 text-center">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              No course found with this ID. It may have been deleted or the link is incorrect.
+            </p>
+            <button
+              type="button"
+              onClick={goToCourses}
+              className="px-3.5 py-1.5 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            >
+              Back to Courses
+            </button>
+          </div>
         </div>
-      </>
+      </AdminPage>
     );
   }
 
   const active = isPublic(course);
 
   return (
-    <>
-      {chrome(
-        <>
-          {crumbs}
+    <AdminPage shell={shell} maxWidth="max-w-none px-3 sm:px-6">
+      <div className="flex flex-col gap-4">
+        {/* Breadcrumb at the left side at top outside the card */}
+        {breadcrumbNav}
 
-          {/* One card, not one per section. The fields are all the same kind of thing, and six
-              boxed panels made a page this short read as six pages; the grid is the grouping
-              instead. Four entries to a row, and the long ones — the title, the description, the
-              topic list, the chat prompt — take the columns their content needs rather than
-              wrapping inside a quarter width. */}
-          <section className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-5 flex flex-col gap-5">
-            <div className="flex flex-wrap items-center gap-3 pb-4 border-b border-neutral-200 dark:border-white/10">
-              <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-neutral-100 dark:bg-white/10 text-neutral-600 dark:text-neutral-300 border border-neutral-200 dark:border-white/10">
-                #{course.number}
-              </span>
-              <h1 className="text-base font-bold text-neutral-900 dark:text-white">
-                {course.title}
-              </h1>
-              <span
-                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-                  active
-                    ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30"
-                    : "bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-white/10"
-                }`}
-              >
-                {active ? "Active" : "Inactive"}
-              </span>
+        {/* Big Card matching View Teacher layout */}
+        <div className="w-full rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden flex flex-col">
+          {/* Card Header: Back button on left, centered Heading Course Details */}
+          <div className="p-4 sm:p-5 border-b border-neutral-200 dark:border-white/10">
+            <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
+              {/* Back button inside the card */}
+              <div className="flex items-center">
+                <button
+                  type="button"
+                  onClick={goToCourses}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 border border-neutral-200 dark:border-white/10 transition-colors cursor-pointer"
+                  title="Back to Courses"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Back</span>
+                </button>
+              </div>
+
+              {/* Center: Heading */}
+              <div className="flex items-center justify-center">
+                <h1 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white text-center">
+                  Course Details
+                </h1>
+              </div>
+
+              {/* Spacer to balance the Back button for mathematical centering */}
+              <div className="w-[72px] invisible" aria-hidden="true" />
+            </div>
+          </div>
+
+          {/* Card Body */}
+          <div className="p-5 sm:p-7 flex flex-col gap-6">
+            {/* Identity Bar (No card wrapper, matching Teacher Detail) */}
+            <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-neutral-200 dark:border-white/10">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-white/10 border border-neutral-200 dark:border-white/10 flex items-center justify-center shrink-0">
+                  <BookOpen className="w-6 h-6 text-neutral-700 dark:text-neutral-300" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-neutral-400">
+                      #{course.number}
+                    </span>
+                    <span className="text-base font-bold text-neutral-900 dark:text-white truncate">
+                      {course.title}
+                    </span>
+                  </div>
+                  <span className="text-xs text-neutral-500 truncate">
+                    {course.categoryLabel || course.category} · {course.fee} · {course.duration}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {course.badge && (
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-neutral-100 dark:bg-white/10 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-white/10">
+                    {course.badge}
+                  </span>
+                )}
+                <span
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${
+                    active
+                      ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30"
+                      : "bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-white/10"
+                  }`}
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      active ? "bg-emerald-500" : "bg-neutral-400"
+                    }`}
+                  />
+                  <span>{active ? "Active" : "Inactive"}</span>
+                </span>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-5">
-              <Field label="Title" className="col-span-2">
-                {course.title}
-              </Field>
-              <Field label="Banner title" className="col-span-2">
-                {course.bannerTitle || "—"}
-              </Field>
-              <Field label="Banner subtitle">{course.bannerSubtitle || "—"}</Field>
-              <Field label="Badge">{course.badge || "—"}</Field>
-              <Field label="Badge type">{course.badgeType || "—"}</Field>
-              <Field label="Enrollment id">{course.enrollmentId || "—"}</Field>
-              <Field label="Category">{course.categoryLabel || course.category}</Field>
-              <Field label="Fee">
-                {course.fee} ({`₹${course.amount}`})
-              </Field>
-              <Field label="Duration">{course.duration}</Field>
-              <Field label="Level">{course.level}</Field>
+            {/* 4-GRID (Data on Top, Label Below — No insider card boxes) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* 1. Title */}
+              <div className="flex flex-col min-w-0 col-span-1 sm:col-span-2 lg:col-span-2">
+                <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
+                  {course.title}
+                </span>
+                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  Course Title
+                </span>
+              </div>
 
-              <Field label="Description" className="col-span-2">
-                <p className="leading-relaxed whitespace-pre-wrap">{course.description || "—"}</p>
-              </Field>
+              {/* 2. Banner Title */}
+              <div className="flex flex-col min-w-0 col-span-1 sm:col-span-2 lg:col-span-2">
+                <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
+                  {course.bannerTitle || "—"}
+                </span>
+                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  Short Banner Title
+                </span>
+              </div>
 
-              {/* One or the other, never both: a logo beside its own name is the same fact twice,
-                  and the row of names under a row of marks was the page's tallest and emptiest
-                  block. Which one is `stackDisplay`'s call, so the tab agrees with this page. */}
-              <Field label="Tech stack" className="col-span-2">
+              {/* 3. Banner Subtitle */}
+              <div className="flex flex-col min-w-0 col-span-1 sm:col-span-2 lg:col-span-2">
+                <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
+                  {course.bannerSubtitle || "—"}
+                </span>
+                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  Banner Subtitle
+                </span>
+              </div>
+
+              {/* 4. Badge */}
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
+                  {course.badge || "—"}
+                </span>
+                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  Badge
+                </span>
+              </div>
+
+              {/* 5. Badge Type */}
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate capitalize">
+                  {course.badgeType || "—"}
+                </span>
+                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  Badge Style
+                </span>
+              </div>
+
+              {/* 6. Enrollment ID */}
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate font-mono">
+                  {course.enrollmentId || "—"}
+                </span>
+                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  Enrollment ID
+                </span>
+              </div>
+
+              {/* 7. Category */}
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
+                  {course.categoryLabel || course.category}
+                </span>
+                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  Category
+                </span>
+              </div>
+
+              {/* 8. Fee */}
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
+                  {course.fee} (₹{course.amount.toLocaleString("en-IN")})
+                </span>
+                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  Fee & Amount
+                </span>
+              </div>
+
+              {/* 9. Duration */}
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
+                  {course.duration}
+                </span>
+                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  Duration
+                </span>
+              </div>
+
+              {/* 10. Level */}
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
+                  {course.level}
+                </span>
+                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  Course Level
+                </span>
+              </div>
+
+              {/* 11. Status */}
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-semibold text-neutral-900 dark:text-white capitalize">
+                  {course.status ?? "active"}
+                </span>
+                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  Status
+                </span>
+              </div>
+
+              {/* 12. Assigned Teachers */}
+              <div className="flex flex-col min-w-0 col-span-1 sm:col-span-2 lg:col-span-2">
+                <span className="text-sm font-semibold text-neutral-900 dark:text-white">
+                  {(course.teacherIds ?? []).length} {((course.teacherIds ?? []).length === 1 ? "Teacher" : "Teachers")}
+                </span>
+                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  Assigned Faculty
+                </span>
+              </div>
+
+              {/* Assigned Teacher Badges/Chips */}
+              {(course.teacherIds ?? []).length > 0 && (
+                <div className="flex flex-wrap gap-1.5 col-span-1 sm:col-span-2 lg:col-span-4 -mt-2">
+                  {(course.teacherIds ?? []).map((id) => {
+                    const teacher = teacherById.get(id);
+                    return teacher ? (
+                      <Link
+                        key={id}
+                        href={`/admin/teachers/${id}`}
+                        title={teacher.email}
+                        className="inline-flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-white/5 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors"
+                      >
+                        <UserAvatar user={teacher} size="sm" />
+                        <span className="text-xs font-semibold text-neutral-900 dark:text-white truncate">
+                          {teacher.name || id}
+                        </span>
+                        <ChevronRight className="w-3 h-3 text-neutral-400" />
+                      </Link>
+                    ) : (
+                      <span
+                        key={id}
+                        className="inline-flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-white/5 text-xs text-neutral-500"
+                      >
+                        {id}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* 13. Tech Stack */}
+              <div className="flex flex-col min-w-0 col-span-1 sm:col-span-2 lg:col-span-4">
                 {course.techStack.length === 0 ? (
-                  <span className="text-neutral-400">None listed</span>
+                  <span className="text-sm font-semibold text-neutral-400">None listed</span>
                 ) : stackDisplay(course) === "icons" ? (
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {course.techIcons.map((icon) => (
@@ -231,22 +375,36 @@ export function AdminCourseDetail({ courseId, shell }: AdminCourseDetailProps) {
                     {course.techStack.map((tech) => (
                       <span
                         key={tech}
-                        className="px-1.5 py-0.5 rounded text-[10px] bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-400"
+                        className="px-2 py-0.5 rounded text-[11px] bg-neutral-100 dark:bg-white/5 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-white/10"
                       >
                         {tech}
                       </span>
                     ))}
                   </div>
                 )}
-              </Field>
+                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                  Tech Stack
+                </span>
+              </div>
 
-              <Field label="Topics" className="col-span-2">
+              {/* 14. Course Description */}
+              <div className="flex flex-col min-w-0 col-span-1 sm:col-span-2 lg:col-span-4">
+                <p className="text-sm font-normal text-neutral-800 dark:text-neutral-200 whitespace-pre-wrap leading-relaxed">
+                  {course.description || "No description provided."}
+                </p>
+                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                  Course Description
+                </span>
+              </div>
+
+              {/* 15. Curriculum Highlights */}
+              <div className="flex flex-col min-w-0 col-span-1 sm:col-span-2 lg:col-span-4">
                 {course.topics.length === 0 ? (
-                  <span className="text-neutral-400">None listed</span>
+                  <span className="text-sm font-semibold text-neutral-400">None listed</span>
                 ) : (
                   <ol className="flex flex-col gap-2 list-none">
                     {course.topics.map((topic, index) => (
-                      <li key={topic} className="flex items-start gap-2">
+                      <li key={topic} className="flex items-start gap-2 text-sm text-neutral-800 dark:text-neutral-200">
                         <span className="mt-0.5 shrink-0 w-4 h-4 rounded-full bg-neutral-100 dark:bg-white/5 text-[9px] font-bold text-neutral-500 flex items-center justify-center">
                           {index + 1}
                         </span>
@@ -255,59 +413,78 @@ export function AdminCourseDetail({ courseId, shell }: AdminCourseDetailProps) {
                     ))}
                   </ol>
                 )}
-              </Field>
+                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                  Curriculum Highlights
+                </span>
+              </div>
 
-              <Field label="Assigned teachers" className="col-span-2">
-                {(course.teacherIds ?? []).length === 0 ? (
-                  <span className="text-neutral-400">Unassigned</span>
-                ) : (
-                  // Side by side rather than stacked: a course has a few teachers, and this is a
-                  // page to be read, not scrolled. Each chip opens that account's own page — but
-                  // only where the roster holds the account, because a link to an id nobody holds
-                  // is a link to a page that can only answer "no such account".
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {(course.teacherIds ?? []).map((id) => {
-                      const teacher = teacherById.get(id);
-
-                      const chip = (
-                        <>
-                          <UserAvatar user={teacher ?? {}} size="sm" />
-                          <span className="text-xs font-semibold text-neutral-900 dark:text-white truncate">
-                            {teacher?.name || id}
-                          </span>
-                        </>
-                      );
-
-                      return teacher ? (
-                        <Link
-                          key={id}
-                          href={`/admin/teachers/${id}`}
-                          title={teacher.email}
-                          className="inline-flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-white/5 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors max-w-[14rem]"
-                        >
-                          {chip}
-                        </Link>
-                      ) : (
-                        <span
-                          key={id}
-                          className="inline-flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-white/5 max-w-[14rem]"
-                        >
-                          {chip}
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-              </Field>
-
-              <Field label="Chat prompt" className="col-span-2 sm:col-span-4">
-                <p className="leading-relaxed">{course.actionPrompt || "—"}</p>
-              </Field>
+              {/* 16. Chat Prompt */}
+              <div className="flex flex-col min-w-0 col-span-1 sm:col-span-2 lg:col-span-4">
+                <p className="text-sm font-mono text-xs text-neutral-800 dark:text-neutral-200 leading-relaxed">
+                  {course.actionPrompt || "—"}
+                </p>
+                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                  AI Chat Inquiry Prompt
+                </span>
+              </div>
             </div>
-          </section>
-        </>
-      )}
-    </>
+          </div>
+
+          {/* Card Footer: Back on left, Delete and Edit Course green pill button on right */}
+          <div className="px-5 sm:px-7 py-4 border-t border-neutral-200 dark:border-white/10 flex items-center justify-between gap-3 bg-neutral-50/50 dark:bg-white/[0.02]">
+            {/* Bottom Left: Back button */}
+            <button
+              type="button"
+              onClick={goToCourses}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 border border-neutral-200 dark:border-white/10 transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Courses</span>
+            </button>
+
+            {/* Bottom Right: Delete + Edit Course green pill button */}
+            <div className="flex items-center gap-2">
+              {isConfirmingDelete ? (
+                <div className="flex items-center gap-1.5 bg-red-50 dark:bg-red-500/10 p-1 rounded-xl border border-red-200 dark:border-red-500/30">
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    className="px-3 py-1 text-xs font-bold bg-red-600 text-white rounded-lg cursor-pointer disabled:opacity-60"
+                  >
+                    {isDeleting ? "Deleting..." : "Confirm Delete"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsConfirmingDelete(false)}
+                    className="px-2 text-xs text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsConfirmingDelete(true)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 border border-neutral-200 dark:border-white/10 transition-colors cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete</span>
+                </button>
+              )}
+
+              <Link
+                href={`/admin/courses/${course.id}/edit`}
+                className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-colors cursor-pointer"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                <span>Edit Course</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </AdminPage>
   );
 }
 

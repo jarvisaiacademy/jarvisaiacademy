@@ -166,7 +166,7 @@ export function SidebarNav({
   activeItem,
   isMobile,
 }: SidebarNavProps) {
-  const { user, isLoggedIn } = useAuth();
+  const { user, isLoggedIn, isTeacher: authIsTeacher } = useAuth();
   const router = useRouter();
   const enrollmentCount = useStudentEnrollments(user?.email).length;
 
@@ -174,28 +174,23 @@ export function SidebarNav({
   // the server sees no user and the client's first render does. Rendering
   // auth-gated items before mount therefore mismatches the server HTML.
   const [mounted, setMounted] = useState(false);
-  const [isTeacher, setIsTeacher] = useState(false);
+  const [localIsTeacher, setLocalIsTeacher] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("jarvis_is_teacher") === "true";
+  });
 
+  const isTeacher = !!(authIsTeacher || user?.isTeacher || localIsTeacher);
   const showStudentItems = isLoggedIn && !user?.isAdmin && !isTeacher;
 
   useEffect(() => {
     setMounted(true);
-    if (user?.id) {
-      import("firebase/firestore").then(({ doc, getDoc }) => {
-        import("@/lib/firebase").then(({ db }) => {
-          if (db) {
-            getDoc(doc(db, "users", user.id)).then((snapshot) => {
-              if (snapshot.exists()) {
-                setIsTeacher(snapshot.data().is_teacher === true);
-              }
-            });
-          }
-        });
-      });
-    } else {
-      setIsTeacher(false);
+    if (typeof window !== "undefined") {
+      setLocalIsTeacher(localStorage.getItem("jarvis_is_teacher") === "true");
     }
-  }, [user?.id]);
+    if (authIsTeacher || user?.isTeacher) {
+      setLocalIsTeacher(true);
+    }
+  }, [user?.id, authIsTeacher, user?.isTeacher]);
   const [activeHoverItem, setActiveHoverItem] = useState<string | null>(null);
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
   const [sidebarRight, setSidebarRight] = useState<number | undefined>(undefined);

@@ -33,7 +33,8 @@ if (end === -1) throw new Error("could not find the end of determineReply");
 
 const body = src
   .slice(arrowBrace + 1, end)
-  .replace(/academyKnowledge\.(\w+)/g, '"$1"');
+  .replace(/academyKnowledge\.(\w+)/g, '"$1"')
+  .replace(/\((\w+): string\)/g, "($1)");
 const determineReply = new Function("prompt", body);
 
 // --- catalogue ids and titles ----------------------------------------------
