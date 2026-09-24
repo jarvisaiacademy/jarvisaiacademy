@@ -267,11 +267,6 @@ Ready to refer someone? Share their details with our admissions desk or have the
     get text() {
       return buildTestimonialsText();
     },
-    // The two offers the reply used to tack onto the end of its prose, now tappable.
-    suggestions: [
-      "Can I connect with an alumnus?",
-      "Who are your hiring partner companies?",
-    ],
   },
   certificate: {
     text: `🛡️ **Digital Credential & Certificate Verification**:

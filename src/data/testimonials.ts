@@ -24,111 +24,111 @@ export interface TestimonialPerson {
 
 export const TESTIMONIAL_POOL: TestimonialPerson[] = [
   {
-    name: "Gurpreet Kaur",
+    name: "Ananya Deshmukh",
     role: "Software Engineer",
-    company: "Monzo",
-    location: "London, UK",
+    company: "Product startup",
+    location: "Pune, Maharashtra",
     quote:
       "I came from a non-IT background, so I had a lot of doubt in the beginning. The daily project reviews kept me on track, and in 60 days I was writing full-stack code properly.",
     photo: "/testimonials/person-01.jpg",
   },
   {
-    name: "Karthik Iyer",
+    name: "Aditya Kulkarni",
     role: "Backend Engineer",
-    company: "Stripe",
-    location: "Austin, US",
+    company: "FinTech company",
+    location: "Mumbai, Maharashtra",
     quote:
-      "The system design mock interviews were the main reason I cleared my loop. We did them again and again until I could explain my choices without hesitating.",
+      "The system design mock interviews helped me explain my choices with more confidence.",
     photo: "/testimonials/person-02.jpg",
   },
   {
-    name: "Ananya Deshmukh",
+    name: "Sayali Patil",
     role: "Full Stack Developer",
-    company: "Deliveroo",
-    location: "Manchester, UK",
+    company: "Software studio",
+    location: "Nagpur, Maharashtra",
     quote:
-      "In most courses you watch videos for a month before you touch anything real. Here we were writing production code from the first week itself.",
+      "We started writing and building projects early, which helped me learn by doing instead of only watching lessons.",
     photo: "/testimonials/person-03.jpg",
   },
   {
-    name: "Farhan Qureshi",
+    name: "Omkar Jadhav",
     role: "Data Engineer",
-    company: "Datadog",
-    location: "Boston, US",
+    company: "Data platform team",
+    location: "Pune, Maharashtra",
     quote:
-      "The capstone felt like an actual sprint. By the time I joined my team, the way we worked was already familiar to me.",
+      "The capstone gave me practice planning and delivering a project in small, reviewable steps.",
     photo: "/testimonials/person-04.jpg",
   },
   {
-    name: "Meghna Barman",
+    name: "Gauri Shinde",
     role: "Application Support Engineer",
-    company: "Ocado Technology",
-    location: "Bristol, UK",
+    company: "Cloud services firm",
+    location: "Nashik, Maharashtra",
     quote:
-      "Sitting with the mentors and debugging on live systems taught me more than any tutorial did. You pick up the shortcuts only when something is actually broken.",
+      "Working through debugging exercises with a mentor helped me get more comfortable investigating issues.",
     photo: "/testimonials/person-05.jpg",
   },
   {
-    name: "Nithin Reddy",
+    name: "Rohan More",
     role: "GenAI Engineer",
-    company: "Notion",
-    location: "San Francisco, US",
+    company: "AI startup",
+    location: "Mumbai, Maharashtra",
     quote:
-      "We built a retrieval pipeline end to end, not a toy one. That project is still the first thing I show in interviews.",
+      "Building a retrieval pipeline end to end gave me a project I could use to explain my approach in interviews.",
     photo: "/testimonials/person-06.jpg",
   },
   {
-    name: "Sneha Nair",
+    name: "Prajakta Joshi",
     role: "DevOps Engineer",
-    company: "Checkout.com",
-    location: "London, UK",
+    company: "SaaS company",
+    location: "Pune, Maharashtra",
     quote:
-      "Getting my code reviewed every single day for 60 days changed the way I work. Those habits are what I use on every pull request now.",
+      "Regular code reviews helped me build habits I can carry into future team projects.",
     photo: "/testimonials/person-07.jpg",
   },
   {
-    name: "Hardik Patel",
+    name: "Sarthak Bhosale",
     role: "Backend AI Engineer",
-    company: "Cloudflare",
-    location: "Austin, US",
+    company: "Software company",
+    location: "Thane, Maharashtra",
     quote:
-      "The mentors did not let anything slide. No ticket was ever left half finished, and that standard stayed with me after the course.",
+      "Breaking work into finished tasks taught me to follow a project through instead of leaving pieces incomplete.",
     photo: "/testimonials/person-08.jpg",
   },
   {
-    name: "Ritika Rathore",
+    name: "Mitali Pawar",
     role: "Frontend Engineer",
-    company: "Wise",
-    location: "Birmingham, UK",
+    company: "Product company",
+    location: "Kolhapur, Maharashtra",
     quote:
-      "I came from a design background and was worried the coding part would go over my head. The frontend track started exactly where I was and built up from there.",
+      "The frontend track started with the fundamentals and helped me build confidence as I moved into larger projects.",
     photo: "/testimonials/person-09.jpg",
   },
   {
-    name: "Debashish Mohanty",
+    name: "Nikhil Chavan",
     role: "Database Administrator",
-    company: "Ramp",
-    location: "New York, US",
+    company: "IT services firm",
+    location: "Nagpur, Maharashtra",
     quote:
-      "I joined knowing only basic SQL. By the end I could look at a slow query, understand the plan behind it and fix it.",
+      "I joined knowing basic SQL. The exercises helped me read a query plan and understand how to improve a slow query.",
     photo: "/testimonials/person-10.jpg",
   },
   {
-    name: "Tenzin Dolma",
+    name: "Isha Gawade",
     role: "Full Stack Engineer",
-    company: "Figma",
-    location: "Seattle, US",
+    company: "SaaS startup",
+    location: "Chhatrapati Sambhajinagar, Maharashtra",
     quote:
-      "The 60-day structure made me finish what I started. That was the one skill I was missing, and it changed how I work.",
+      "The 60-day structure helped me stay consistent and finish the projects I started.",
     photo: "/testimonials/person-11.jpg",
   },
   {
-    name: "Suhas Gowda",
+    name: "Akash Wagh",
     role: "Software Engineer",
-    company: "Sky",
-    location: "Leeds, UK",
+    company: "Technology company",
+    location: "Pune, Maharashtra",
     quote:
-      "Because we worked on live commercial projects, my portfolio had real work in it instead of practice exercises.",
+      "Working on practical projects helped me build a portfolio that shows how I approach real engineering tasks.",
     photo: "/testimonials/person-12.jpg",
   },
 ];
@@ -151,17 +151,14 @@ function shuffle<T>(items: T[]): T[] {
  * Empty alt text on purpose — the name follows in bold, so the image would only
  * repeat it to a screen reader.
  *
- * Ends on the people, with no closing question — the offers that follow are the entry's
- * `suggestions`, rendered as follow-up chips. A question in the body here reads as part of
- * the answer and cannot be tapped.
  */
 export function buildTestimonialsText(count = 3): string {
   const people = shuffle(TESTIMONIAL_POOL).slice(0, count);
 
   return [
-    `🏆 **Student Success Stories & Placements**:`,
+    `🏆 **Illustrative Maharashtra Student Stories**:`,
     ``,
-    `Our alumni have moved into software and AI engineering roles across the UK and US:`,
+    `These fictional profiles and AI-generated portraits are examples, not verified alumni placements:`,
     ``,
     ...people.map(
       (person) =>
