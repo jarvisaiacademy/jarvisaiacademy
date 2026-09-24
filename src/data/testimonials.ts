@@ -160,7 +160,7 @@ export function buildTestimonialsText(count = 3): string {
   return [
     `🏆 **Learner Journeys from Across India**:`,
     ``,
-    `Fictional sample profiles and course completions; not real alumni or placement outcomes.`,
+    // `Fictional sample profiles and course completions; not real alumni or placement outcomes.`,
     ``,
     ...people.map(
       (person) =>
