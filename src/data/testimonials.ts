@@ -1,22 +1,13 @@
 /**
- * The alumni the testimonials reply quotes.
- *
- * The pool is hard-coded here rather than read from Firestore, for the same reason
- * `src/data/academy-knowledge.ts` carries its prose: the reply has to answer with the
- * database unreachable, and a `testimonials` collection that nothing writes to could only
- * ever make that answer emptier.
- *
- * **These twelve people do not exist.** Their names, employers and quotes were written to
- * demonstrate the reply, and their portraits under `public/testimonials/` are AI-generated,
- * not photographs of anyone. Replacing them with the academy's real alumni — their own
- * names, roles, employers and photographs, once they have agreed to be quoted — is a change
- * to this array alone.
+ * Fictional profiles and AI-generated portraits used to demonstrate the testimonial reply.
+ * Replacing these with real alumni details requires their consent.
  */
 export interface TestimonialPerson {
   name: string;
   role: string;
   company: string;
   location: string;
+  course: string;
   quote: string;
   /** Public path to the portrait. */
   photo: string;
@@ -24,111 +15,123 @@ export interface TestimonialPerson {
 
 export const TESTIMONIAL_POOL: TestimonialPerson[] = [
   {
-    name: "Ananya Deshmukh",
+    name: "Ananya Nair",
     role: "Software Engineer",
     company: "Product startup",
-    location: "Pune, Maharashtra",
+    location: "Kochi, Kerala",
+    course: "Full-Stack AI & Web Engineering",
     quote:
-      "I came from a non-IT background, so I had a lot of doubt in the beginning. The daily project reviews kept me on track, and in 60 days I was writing full-stack code properly.",
+      "After completing Full-Stack AI & Web Engineering, I could explain how the frontend, API, and data layer fit together in the projects I built.",
     photo: "/testimonials/person-01.jpg",
   },
   {
-    name: "Aditya Kulkarni",
+    name: "Arjun Reddy",
     role: "Backend Engineer",
     company: "FinTech company",
-    location: "Mumbai, Maharashtra",
+    location: "Hyderabad, Telangana",
+    course: "Backend Engineering (Python + FastAPI + Django)",
     quote:
-      "The system design mock interviews helped me explain my choices with more confidence.",
+      "Completing Backend Engineering gave me hands-on practice building REST APIs with FastAPI and working through database-backed features.",
     photo: "/testimonials/person-02.jpg",
   },
   {
-    name: "Sayali Patil",
-    role: "Full Stack Developer",
+    name: "Kavya Iyer",
+    role: "Frontend Developer",
     company: "Software studio",
-    location: "Nagpur, Maharashtra",
+    location: "Chennai, Tamil Nadu",
+    course: "Frontend Engineering (ReactJS + Tailwind)",
     quote:
-      "We started writing and building projects early, which helped me learn by doing instead of only watching lessons.",
+      "After completing Frontend Engineering, I could build responsive React screens and explain the choices I made in each project.",
     photo: "/testimonials/person-03.jpg",
   },
   {
-    name: "Omkar Jadhav",
-    role: "Data Engineer",
+    name: "Aarav Das",
+    role: "Data Analyst",
     company: "Data platform team",
-    location: "Pune, Maharashtra",
+    location: "Guwahati, Assam",
+    course: "Data Analyst (PowerBI + SQL + SAP + Python)",
     quote:
-      "The capstone gave me practice planning and delivering a project in small, reviewable steps.",
+      "Completing the Data Analyst course helped me turn SQL and PowerBI exercises into a dashboard project I can walk through.",
     photo: "/testimonials/person-04.jpg",
   },
   {
-    name: "Gauri Shinde",
+    name: "Meera Sharma",
     role: "Application Support Engineer",
     company: "Cloud services firm",
-    location: "Nashik, Maharashtra",
+    location: "Jaipur, Rajasthan",
+    course: "Application Support & Cloud Ops (Linux + MySQL)",
     quote:
-      "Working through debugging exercises with a mentor helped me get more comfortable investigating issues.",
+      "After completing Application Support & Cloud Ops, I became more systematic about reading Linux logs and investigating MySQL issues.",
     photo: "/testimonials/person-05.jpg",
   },
   {
-    name: "Rohan More",
+    name: "Rohan Verma",
     role: "GenAI Engineer",
     company: "AI startup",
-    location: "Mumbai, Maharashtra",
+    location: "Lucknow, Uttar Pradesh",
+    course: "Generative AI, RAG & Agentic Systems",
     quote:
-      "Building a retrieval pipeline end to end gave me a project I could use to explain my approach in interviews.",
+      "Completing Generative AI, RAG & Agentic Systems gave me a project where I can explain the retrieval steps and trade-offs.",
     photo: "/testimonials/person-06.jpg",
   },
   {
-    name: "Prajakta Joshi",
+    name: "Ishita Singh",
     role: "DevOps Engineer",
     company: "SaaS company",
-    location: "Pune, Maharashtra",
+    location: "New Delhi, Delhi",
+    course: "DevOps & Cloud Engineer (AWS + Docker + CI/CD)",
     quote:
-      "Regular code reviews helped me build habits I can carry into future team projects.",
+      "After completing DevOps & Cloud Engineer, I could describe how Docker, AWS, and CI/CD fit together in a deployment pipeline.",
     photo: "/testimonials/person-07.jpg",
   },
   {
-    name: "Sarthak Bhosale",
-    role: "Backend AI Engineer",
+    name: "Sarthak Bose",
+    role: "Software Engineer",
     company: "Software company",
-    location: "Thane, Maharashtra",
+    location: "Kolkata, West Bengal",
+    course: "Super10 Elite Batch (100% Placement)",
     quote:
-      "Breaking work into finished tasks taught me to follow a project through instead of leaving pieces incomplete.",
+      "Completing the Super10 Elite Batch gave me practice reviewing code, working through capstones, and discussing system design.",
     photo: "/testimonials/person-08.jpg",
   },
   {
-    name: "Mitali Pawar",
-    role: "Frontend Engineer",
+    name: "Priya Rao",
+    role: "Business Analyst",
     company: "Product company",
-    location: "Kolhapur, Maharashtra",
+    location: "Bengaluru, Karnataka",
+    course: "Business Analyst (PowerBI + MySQL + BRD + Jira)",
     quote:
-      "The frontend track started with the fundamentals and helped me build confidence as I moved into larger projects.",
+      "After completing the Business Analyst course, I could connect requirements, SQL queries, and dashboard findings in a project.",
     photo: "/testimonials/person-09.jpg",
   },
   {
-    name: "Nikhil Chavan",
+    name: "Aman Kumar",
     role: "Database Administrator",
     company: "IT services firm",
-    location: "Nagpur, Maharashtra",
+    location: "Patna, Bihar",
+    course: "Database Admin (Oracle + PL/SQL + MongoDB)",
     quote:
-      "I joined knowing basic SQL. The exercises helped me read a query plan and understand how to improve a slow query.",
+      "Completing Database Admin helped me read query plans and understand practical ways to improve a slow query.",
     photo: "/testimonials/person-10.jpg",
   },
   {
-    name: "Isha Gawade",
-    role: "Full Stack Engineer",
+    name: "Ayesha Khan",
+    role: "Laravel Developer",
     company: "SaaS startup",
-    location: "Chhatrapati Sambhajinagar, Maharashtra",
+    location: "Bhopal, Madhya Pradesh",
+    course: "Full-Stack Web (Laravel + PHP + MySQL)",
     quote:
-      "The 60-day structure helped me stay consistent and finish the projects I started.",
+      "After completing Full-Stack Web, I could build a Laravel feature from its database model through to the user-facing page.",
     photo: "/testimonials/person-11.jpg",
   },
   {
-    name: "Akash Wagh",
-    role: "Software Engineer",
+    name: "Naveen Reddy",
+    role: "Full Stack Engineer",
     company: "Technology company",
-    location: "Pune, Maharashtra",
+    location: "Visakhapatnam, Andhra Pradesh",
+    course: "Full-Stack AI & Web Engineering",
     quote:
-      "Working on practical projects helped me build a portfolio that shows how I approach real engineering tasks.",
+      "Completing Full-Stack AI & Web Engineering helped me build a portfolio project and explain the engineering decisions behind it.",
     photo: "/testimonials/person-12.jpg",
   },
 ];
@@ -150,19 +153,18 @@ function shuffle<T>(items: T[]): T[] {
  * The portrait is markdown image syntax; `MarkdownRenderer` styles it into a circle.
  * Empty alt text on purpose — the name follows in bold, so the image would only
  * repeat it to a screen reader.
- *
  */
 export function buildTestimonialsText(count = 3): string {
   const people = shuffle(TESTIMONIAL_POOL).slice(0, count);
 
   return [
-    `🏆 **Illustrative Maharashtra Student Stories**:`,
+    `🏆 **Learner Journeys from Across India**:`,
     ``,
-    `These fictional profiles and AI-generated portraits are examples, not verified alumni placements:`,
+    `Fictional sample profiles and course completions; not real alumni or placement outcomes.`,
     ``,
     ...people.map(
       (person) =>
-        `* ![](${person.photo}) **${person.name}** - ${person.role}, ${person.company} · ${person.location}  \n  *"${person.quote}"*`
+        `* ![](${person.photo}) **${person.name}** - ${person.role}, ${person.company} · ${person.location}  \n  **Course completed:** ${person.course}  \n  *"${person.quote}"*`
     ),
   ].join("\n");
 }
