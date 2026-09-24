@@ -8,7 +8,8 @@ import {
   getAdditionalUserInfo,
   User as FirebaseUser,
 } from "firebase/auth";
-import { auth, googleProvider, isFirebaseConfigured } from "@/lib/firebase";
+import { auth, googleProvider, isFirebaseConfigured, db } from "@/lib/firebase";
+import { doc, getDoc, collection, query, where, getDocs, setDoc } from "firebase/firestore";
 import { upsertStudentRecord } from "@/services/students-service";
 import { publishReferralCode } from "@/services/referral-service";
 
@@ -17,8 +18,9 @@ export interface User {
   name: string;
   email: string;
   picture?: string;
-  role?: "admin" | "student";
+  role?: "admin" | "teacher" | "student";
   isAdmin?: boolean;
+  isTeacher?: boolean;
   /** Everything the Google account handed us, carried through for the candidate record. */
   emailVerified?: boolean;
   signInProvider?: string;
@@ -38,12 +40,16 @@ export interface GoogleLoginResult {
   /** The signed-in account id, or "" when there is no session. Carried here so the caller does
    * not have to wait for a re-render to learn who just signed in. */
   uid: string;
+  role?: "admin" | "teacher" | "student";
+  isAdmin?: boolean;
+  isTeacher?: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   isLoggedIn: boolean;
   isAdmin: boolean;
+  isTeacher: boolean;
   authError: string | null;
   loginWithGoogle: () => Promise<GoogleLoginResult>;
   logout: () => Promise<void>;
@@ -104,6 +110,11 @@ function saveUserSession(mappedUser: User | null) {
   try {
     if (mappedUser) {
       localStorage.setItem("jarvis_auth_user", JSON.stringify(mappedUser));
+      if (mappedUser.isTeacher) {
+        localStorage.setItem("jarvis_is_teacher", "true");
+      } else {
+        localStorage.removeItem("jarvis_is_teacher");
+      }
       if (typeof document !== "undefined") {
         document.documentElement.classList.add("is-auth");
       }
@@ -126,13 +137,75 @@ function getInitialUser(): User | null {
     if (stored && stored !== "null") {
       const parsed = JSON.parse(stored);
       parsed.isAdmin = checkIsAdmin(parsed.email);
-      parsed.role = parsed.isAdmin ? "admin" : "student";
+      parsed.isTeacher = localStorage.getItem("jarvis_is_teacher") === "true";
+      parsed.role = parsed.isAdmin ? "admin" : parsed.isTeacher ? "teacher" : "student";
       return parsed;
     }
   } catch {
     // ignore
   }
   return null;
+}
+
+export async function checkTeacherStatus(uid: string, email?: string | null): Promise<boolean> {
+  if (!db || !email) return false;
+  const cleanEmail = email.trim().toLowerCase();
+
+  try {
+    // 1. Direct user document check
+    const userDoc = await getDoc(doc(db, "users", uid));
+    if (userDoc.exists() && userDoc.data().is_teacher === true) {
+      localStorage.setItem("jarvis_is_teacher", "true");
+      return true;
+    }
+
+    // 2. Check teachers collection registry by email
+    const teacherDoc = await getDoc(doc(db, "teachers", cleanEmail));
+    if (teacherDoc.exists() && teacherDoc.data().is_teacher !== false) {
+      localStorage.setItem("jarvis_is_teacher", "true");
+      try {
+        await setDoc(doc(db, "users", uid), { is_teacher: true }, { merge: true });
+      } catch {
+        // best effort sync
+      }
+      return true;
+    }
+
+    // 3. Fallback: check users collection for pre-created teacher profile by email
+    const q = query(collection(db, "users"), where("email", "==", cleanEmail));
+    const snap = await getDocs(q);
+    const foundDoc = snap.docs.find((d) => d.data().is_teacher === true);
+    if (foundDoc) {
+      localStorage.setItem("jarvis_is_teacher", "true");
+      try {
+        const foundData = foundDoc.data();
+        await setDoc(
+          doc(db, "teachers", cleanEmail),
+          {
+            email: cleanEmail,
+            name: foundData.name || "",
+            is_teacher: true,
+            teacherId: uid,
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        );
+        await setDoc(doc(db, "users", uid), { is_teacher: true }, { merge: true });
+      } catch {
+        // best effort sync
+      }
+      return true;
+    }
+  } catch (err) {
+    console.warn("[Auth] Failed to check teacher status:", err);
+  }
+
+  // If already verified in local cache, keep it as fallback
+  if (typeof window !== "undefined" && localStorage.getItem("jarvis_is_teacher") === "true") {
+    return true;
+  }
+
+  return false;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -150,16 +223,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (isFirebaseConfigured && auth) {
       // Listen for authenticated user updates without wiping local session on initial tick
-      const unsubscribe = onAuthStateChanged(auth, (fbUser: FirebaseUser | null) => {
+      const unsubscribe = onAuthStateChanged(auth, async (fbUser: FirebaseUser | null) => {
         if (fbUser) {
           const isAdmin = checkIsAdmin(fbUser.email);
+          let isTeacher = false;
+          if (!isAdmin && fbUser.email) {
+            isTeacher = await checkTeacherStatus(fbUser.uid, fbUser.email);
+          }
+          const role: "admin" | "teacher" | "student" = isAdmin
+            ? "admin"
+            : isTeacher
+            ? "teacher"
+            : "student";
+
           const mappedUser: User = {
             id: fbUser.uid,
             name: fbUser.displayName || fbUser.email?.split("@")[0] || "Learner",
             email: fbUser.email || "",
             picture: fbUser.photoURL || undefined,
             isAdmin,
-            role: isAdmin ? "admin" : "student",
+            isTeacher,
+            role,
             emailVerified: fbUser.emailVerified,
             signInProvider: fbUser.providerData[0]?.providerId,
             // Null for a session restored from persistence rather than a fresh sign-in, and
@@ -183,6 +267,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email: user.email,
       picture: user.picture,
       role: user.role,
+      isTeacher: user.isTeacher,
       emailVerified: user.emailVerified,
       signInProvider: user.signInProvider,
       createdAt: user.createdAt,
@@ -208,20 +293,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const result = await signInWithPopup(auth, googleProvider);
       const fbUser = result.user;
       const isAdmin = checkIsAdmin(fbUser.email);
+      let isTeacher = false;
+      if (!isAdmin && fbUser.email) {
+        isTeacher = await checkTeacherStatus(fbUser.uid, fbUser.email);
+      }
+      const role: "admin" | "teacher" | "student" = isAdmin
+        ? "admin"
+        : isTeacher
+        ? "teacher"
+        : "student";
+
       const mappedUser: User = {
         id: fbUser.uid,
         name: fbUser.displayName || fbUser.email?.split("@")[0] || "Learner",
         email: fbUser.email || "",
         picture: fbUser.photoURL || undefined,
         isAdmin,
-        role: isAdmin ? "admin" : "student",
+        isTeacher,
+        role,
       };
       setUser(mappedUser);
       saveUserSession(mappedUser);
       // Null when the provider gives no such detail; treated as a returning account, since
       // asking a long-standing learner to re-enter a code is the worse of the two mistakes.
       const isNewUser = getAdditionalUserInfo(result)?.isNewUser ?? false;
-      return { ok: true, isNewUser, uid: fbUser.uid };
+      return { ok: true, isNewUser, uid: fbUser.uid, isAdmin, isTeacher, role };
     } catch (err: unknown) {
       const error = err as { code?: string; message?: string };
       const message = describeAuthError(error);
@@ -250,6 +346,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const isAdmin = !!user?.isAdmin;
+  const isTeacher = !!user?.isTeacher;
 
   return (
     <AuthContext.Provider
@@ -257,6 +354,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         isLoggedIn: !!user,
         isAdmin,
+        isTeacher,
         authError,
         loginWithGoogle,
         logout,

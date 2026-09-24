@@ -50,6 +50,7 @@ import { AdminReferrals } from "@/components/admin/admin-referrals";
 import { AdminAdmins } from "@/components/admin/admin-admins";
 import { AdminStudents } from "@/components/admin/admin-students";
 import { AdminTeachers } from "@/components/admin/admin-teachers";
+import { AdminCourses } from "@/components/admin/admin-courses";
 import { ROLE_BADGE } from "@/components/admin/role-badge";
 import { Select } from "@/components/ui/select";
 import { PageHeader } from "@/components/ui/page-header";
@@ -161,10 +162,6 @@ export function AdminDashboard({
   const [filterOpen, setFilterOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  // Courses management state
-  const [courseSearch, setCourseSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   // Candidate rows are edited on the spot — the two admin-owned fields are the whole
   // edit surface, so a modal would be a dialog around two controls.
@@ -203,12 +200,6 @@ export function AdminDashboard({
     count: () => (rosterRole ? countRoster(rosterRole, rosterStatus) : Promise.resolve(0)),
   });
 
-  const coursePage = usePagedQuery<CourseItem>({
-    enabled: activeTab === "courses",
-    filterKey: `courses|${categoryFilter}`,
-    buildQuery: (_page, size, cursor) => buildCoursesQuery(categoryFilter, size, cursor),
-    count: () => countCourses(categoryFilter),
-  });
 
   // The ledger is the browser's own localStorage list, so there is no query to page and nothing
   // to ask Firestore for: it is sliced where it already sits, with the same footer.
@@ -235,19 +226,6 @@ export function AdminDashboard({
     }
   };
 
-  // Flipped from the table row rather than only from the editor: hiding a course is the one
-  // course change an admin makes in a hurry, and opening a modal to make it was the long way.
-  const handleCourseStatus = async (course: CourseItem, status: CourseStatus) => {
-    try {
-      await editCourse(course.id, { status });
-      showToast(
-        status === "active" ? `"${course.title}" is listed publicly` : `"${course.title}" is hidden`,
-        "success"
-      );
-    } catch (err: unknown) {
-      showToast(err instanceof Error ? err.message : "Failed to update the course", "error");
-    }
-  };
 
   const handleToggleSuper10 = async (uid: string, current: boolean) => {
     const next = !current;
@@ -419,83 +397,6 @@ export function AdminDashboard({
     URL.revokeObjectURL(url);
   };
 
-  // Only the search box narrows this, and only against the rows Firestore returned for the
-  // page. The category is a query constraint now — `buildCoursesQuery` carries it — so it has
-  // already been applied to `coursePage.rows` by the time this runs. Firestore has no substring
-  // match, which is why the search could not move to the server with it.
-  const filteredCourses = coursePage.rows.filter((c) => {
-    const query = courseSearch.toLowerCase();
-    if (!query) return true;
-    return (
-      c.title.toLowerCase().includes(query) ||
-      c.id.toLowerCase().includes(query) ||
-      c.description.toLowerCase().includes(query) ||
-      c.techStack.some((t) => t.toLowerCase().includes(query)) ||
-      c.topics.some((top) => top.toLowerCase().includes(query))
-    );
-  });
-
-  // The teacher cell. `course.teacherIds` is only ids, so each one is resolved against the
-  // roster for the name and the account for the picture. A course with none says so rather
-  // than showing an empty cell, which reads as a rendering fault.
-  //
-  // Read-only: this used to link to a per-teacher page, which is gone. A teacher is an
-  // account, so the place to act on one is the Teachers page.
-  const renderTeacherCell = (course: CourseItem) => {
-    const assigned = (course.teacherIds ?? [])
-      .map((id) => {
-        const user = studentsById.get(id);
-        if (!user) return null;
-        return {
-          id,
-          name: user.name || "Unnamed",
-          email: user.email,
-          picture: user.picture,
-        };
-      })
-      .filter((t): t is NonNullable<typeof t> => t !== null);
-
-    if (assigned.length === 0) {
-      return <span className="text-[11px] text-neutral-400">Unassigned</span>;
-    }
-
-    const [first, ...rest] = assigned;
-
-    return (
-      <div className="flex items-center gap-2.5">
-        <div className="flex -space-x-2 shrink-0">
-          {assigned.slice(0, 3).map((teacher) => (
-            <span key={teacher.id} title={teacher.name} className="rounded-full">
-              <UserAvatar user={teacher} size="sm" />
-            </span>
-          ))}
-        </div>
-        <div className="flex flex-col min-w-0">
-          <span className="font-semibold text-neutral-900 dark:text-white truncate">
-            {first.name}
-          </span>
-          {rest.length > 0 && (
-            <span className="text-[10px] text-neutral-500">+{rest.length} more</span>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  // Creating and editing are pages now, not modals: this table only links to them. A
-  // twenty-field form is a piece of work worth a URL, refreshable and openable in a tab.
-
-  // Delete course
-  const handleDeleteCourse = async (courseId: string) => {
-    try {
-      await removeCourse(courseId);
-      setDeleteConfirmId(null);
-      showToast("Course deleted successfully", "success");
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to delete course";
-      showToast(msg, "error");
-    }
-  };
 
   // A candidate's status cell. Three states in two controls, and only an admin can move them:
   // the `users` rule pins both fields to their stored values for a self-write, so a banned
@@ -822,7 +723,7 @@ export function AdminDashboard({
       {/* Main Container */}
       <main
         className={`flex-1 w-full mx-auto py-6 sm:py-8 flex flex-col gap-6 sm:gap-8 ${
-          activeTab === "teachers" || activeTab === "students" || activeTab === "admins"
+          activeTab === "teachers" || activeTab === "students" || activeTab === "admins" || activeTab === "courses"
             ? "max-w-none px-3 sm:px-6"
             : "max-w-7xl px-4 sm:px-8"
         }`}
@@ -832,285 +733,7 @@ export function AdminDashboard({
 
         {/* TAB 1: COURSE MANAGEMENT (CRUD) */}
         {activeTab === "courses" && (
-          <div className="flex flex-col gap-4">
-            {/* The create button sits in the trail's action column, where every other page
-                puts its one action, rather than beside the search in the toolbar. */}
-            <PageHeader
-              crumbs={[{ label: "Home", onSelect: () => setActiveTab("home") }, { label: "Courses" }]}
-              action={
-                <Link
-                  href="/admin/courses/new"
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer whitespace-nowrap"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Course</span>
-                </Link>
-              }
-            />
-
-            {/* Summary Metrics */}
-            {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="p-4 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-2">
-                <div className="flex items-center justify-between text-xs text-neutral-500">
-                  <span>Total Active Courses</span>
-                  <BookOpen className="w-4 h-4 text-blue-500" />
-                </div>
-                <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                  {courses.length} Offerings
-                </div>
-                <span className="text-[11px] text-neutral-400">
-                  {courses.length > 0 ? "Stored in Firestore" : "Nothing stored yet"}
-                </span>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-2">
-                <div className="flex items-center justify-between text-xs text-neutral-500">
-                  <span>Web &amp; Full-Stack</span>
-                  <Layers className="w-4 h-4 text-sky-500" />
-                </div>
-                <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                  {courses.filter((c) => c.category === "web").length} Tracks
-                </div>
-                <span className="text-[11px] text-neutral-400">React, Next.js, Python, Laravel</span>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-2">
-                <div className="flex items-center justify-between text-xs text-neutral-500">
-                  <span>AI &amp; Data Science</span>
-                  <Sparkles className="w-4 h-4 text-purple-500" />
-                </div>
-                <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                  {courses.filter((c) => c.category === "ai").length} Tracks
-                </div>
-                <span className="text-[11px] text-neutral-400">GenAI, Agents, PowerBI, Analytics</span>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-2">
-                <div className="flex items-center justify-between text-xs text-neutral-500">
-                  <span>Cloud &amp; Placement</span>
-                  <Award className="w-4 h-4 text-amber-500" />
-                </div>
-                <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                  {courses.filter((c) => c.category === "elite" || c.category === "devops").length} Tracks
-                </div>
-                <span className="text-[11px] text-neutral-400">Super10 Elite &amp; AWS DevOps</span>
-              </div>
-            </div> */}
-
-            {/* Courses Toolbar. Both controls right-aligned, the filter outermost, so the
-                search reads the same way here as it does in the roster's trail action and in
-                the ledger's card header. */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
-              <div className="relative w-full sm:w-64">
-                <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={courseSearch}
-                  onChange={(e) => setCourseSearch(e.target.value)}
-                  placeholder="Search course title, tech stack, topics..."
-                  aria-label="Search courses"
-                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white focus:outline-hidden focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-
-              <Select
-                label="Filter by category"
-                value={categoryFilter}
-                onValueChange={setCategoryFilter}
-                options={[
-                  { value: "all", label: "All Categories" },
-                  { value: "web", label: "Web & Full-Stack" },
-                  { value: "ai", label: "AI & Data Science" },
-                  { value: "devops", label: "DevOps & Cloud" },
-                  { value: "database", label: "Database & Systems" },
-                  { value: "elite", label: "Super10 Elite" },
-                ]}
-                className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
-              />
-            </div>
-
-            {/* Courses Table */}
-            <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden flex flex-col">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-neutral-50 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 border-b border-neutral-200 dark:border-white/10 font-medium">
-                      <th className="py-3 px-4 sm:px-6 w-16">#</th>
-                      <th className="py-3 px-4 sm:px-6">Courses</th>
-                      <th className="py-3 px-4 sm:px-6">Status</th>
-                      <th className="py-3 px-4 sm:px-6">Category</th>
-                      <th className="py-3 px-4 sm:px-6">Teacher</th>
-                      <th className="py-3 px-4 sm:px-6">Tech Stack</th>
-                      <th className="py-3 px-4 sm:px-6">Duration &amp; Fee</th>
-                      <th className="py-3 px-4 sm:px-6 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-200 dark:divide-white/5">
-                    {filteredCourses.length > 0 ? (
-                      filteredCourses.map((course) => (
-                        <tr
-                          key={course.id}
-                          className="hover:bg-neutral-50/80 dark:hover:bg-white/5 transition-colors"
-                        >
-                          {/* Order / Number */}
-                          <td className="py-3.5 px-4 sm:px-6 font-mono font-bold text-neutral-400">
-                            {course.number || "—"}
-                          </td>
-
-                          {/* Title */}
-                          <td className="py-3.5 px-4 sm:px-6">
-                            <span className="font-semibold text-neutral-900 dark:text-white">
-                              {course.title}
-                            </span>
-                          </td>
-
-                          {/* Visibility — a static pill said nothing on a row that was fine and
-                              left the one hiding a course from the site looking like every other
-                              row. The switch says both, and flips it where it is read. */}
-                          <td className="py-3.5 px-4 sm:px-6">
-                            <StatusSwitch
-                              checked={(course.status ?? "active") === "active"}
-                              onCheckedChange={(next) =>
-                                handleCourseStatus(course, next ? "active" : "inactive")
-                              }
-                              label={`Visibility of ${course.title}`}
-                            />
-                          </td>
-
-                          {/* Category */}
-                          <td className="py-3.5 px-4 sm:px-6">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-neutral-100 dark:bg-white/5 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-white/10">
-                              {course.categoryLabel || course.category}
-                            </span>
-                          </td>
-
-                          {/* Assigned Teacher — the face first, because that is what an admin
-                              recognises the row by. */}
-                          <td className="py-3.5 px-4 sm:px-6">{renderTeacherCell(course)}</td>
-
-                          {/* Tech Stack */}
-                          <td className="py-3.5 px-4 sm:px-6">
-                            <div className="flex items-center gap-1.5 flex-wrap max-w-xs">
-                              {stackDisplay(course) === "icons"
-                                ? course.techIcons.slice(0, 4).map((icon) => (
-                                    <div
-                                      key={icon}
-                                      className="p-1 rounded-md bg-neutral-100 dark:bg-white/5"
-                                      title={icon}
-                                    >
-                                      <DevIcon name={icon} size={14} />
-                                    </div>
-                                  ))
-                                : course.techStack.slice(0, 4).map((tech) => (
-                                    <span
-                                      key={tech}
-                                      className="px-1.5 py-0.5 rounded text-[10px] bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-400"
-                                    >
-                                      {tech}
-                                    </span>
-                                  ))}
-                              {course.techStack.length > 4 && (
-                                <span className="text-[10px] text-neutral-400">
-                                  +{course.techStack.length - 4}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-
-                          {/* Duration & Fee */}
-                          <td className="py-3.5 px-4 sm:px-6">
-                            <div className="flex flex-col">
-                              <span className="font-semibold text-neutral-900 dark:text-white">
-                                {course.fee}
-                              </span>
-                              <span className="text-[11px] text-neutral-500">
-                                {course.duration}
-                              </span>
-                            </div>
-                          </td>
-
-                          {/* Actions */}
-                          <td className="py-3.5 px-4 sm:px-6 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              {/* Both of these are links rather than buttons, unlike the
-                                  delete beside them: a course has pages of its own now, so
-                                  these are somewhere a middle-click or a new tab can go. */}
-                              <Link
-                                href={`/admin/courses/${course.id}`}
-                                className="p-1.5 rounded-lg text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                                title="View Course"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Link>
-
-                              <Link
-                                href={`/admin/courses/${course.id}/edit`}
-                                className="p-1.5 rounded-lg text-neutral-600 dark:text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors cursor-pointer"
-                                title="Edit Course"
-                              >
-                                <Pencil className="w-4 h-4" />
-                              </Link>
-
-                              {deleteConfirmId === course.id ? (
-                                <div className="flex items-center gap-1 bg-red-50 dark:bg-red-500/10 p-1 rounded-lg border border-red-200 dark:border-red-500/30">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteCourse(course.id)}
-                                    className="px-2 py-0.5 text-[10px] font-bold bg-red-600 text-white rounded cursor-pointer"
-                                  >
-                                    Confirm
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setDeleteConfirmId(null)}
-                                    className="px-1 text-[10px] text-neutral-500 cursor-pointer"
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => setDeleteConfirmId(course.id)}
-                                  className="p-1.5 rounded-lg text-neutral-600 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors cursor-pointer"
-                                  title="Delete Course"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={8} className="text-center py-10 text-neutral-400">
-                          {/* An empty store, an empty category and a search that hid the page's
-                              rows read the same in the table and mean opposite things, so they
-                              are not given the same sentence. `courses` is still the whole
-                              stored catalogue, which is what makes the first case knowable. */}
-                          {courses.length === 0
-                            ? "No courses are stored yet. Add one here, or seed the catalogue."
-                            : courseSearch.trim()
-                              ? "No courses on this page match your search."
-                              : "No courses in this category."}
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              <TablePagination
-                page={coursePage.page}
-                pageSize={coursePage.pageSize}
-                total={coursePage.total}
-                onPageChange={coursePage.setPage}
-                onPageSizeChange={coursePage.setPageSize}
-                noun="courses"
-              />
-            </div>
-          </div>
+          <AdminCourses onHome={() => setActiveTab("home")} />
         )}
 
         {/* TAB 2: USERS & ADMISSIONS */}

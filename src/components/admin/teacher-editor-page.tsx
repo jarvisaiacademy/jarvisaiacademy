@@ -245,6 +245,15 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
       } else {
         // CREATE new teacher or PROMOTE existing account
         if (newIsTeacher) {
+          let targetExistingId =
+            createMode === "promote" && selectedStudentId ? selectedStudentId : undefined;
+          if (!targetExistingId) {
+            const matched = students.find((s) => s.email?.trim().toLowerCase() === cleanEmail);
+            if (matched) {
+              targetExistingId = matched.id;
+            }
+          }
+
           savedTeacherId = await createTeacherInFirestore(
             {
               name: cleanName,
@@ -254,8 +263,7 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
               bio: bio.trim() || undefined,
               phone: phone.trim() || undefined,
               status,
-              existingUserId:
-                createMode === "promote" && selectedStudentId ? selectedStudentId : undefined,
+              existingUserId: targetExistingId,
             },
             user?.email
           );
@@ -279,7 +287,12 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
       // Synchronize course assignments / enrollments based on role
       if (savedTeacherId) {
         if (newIsTeacher) {
-          await syncTeacherCourseAssignments(savedTeacherId, assignedCourseIds, user?.email);
+          await syncTeacherCourseAssignments(
+            savedTeacherId,
+            assignedCourseIds,
+            user?.email,
+            cleanEmail
+          );
         } else {
           if (teacher && teacher.is_teacher) {
             await removeTeacherFromAllCourses(savedTeacherId, user?.email);

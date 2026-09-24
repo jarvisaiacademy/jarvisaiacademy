@@ -27,8 +27,13 @@ export default function TeacherCourseDetailRoute() {
   useEffect(() => {
     if (!db || !course || !user) return;
     
+    const cleanEmail = user.email?.trim().toLowerCase();
+    const isAssigned =
+      course.teacherIds?.includes(user.id) ||
+      (cleanEmail ? course.teacherIds?.includes(cleanEmail) : false);
+
     // Security check: Make sure this teacher actually owns this course
-    if (!course.teacherIds?.includes(user.id)) {
+    if (!isAssigned) {
       router.replace("/teacher/courses");
       return;
     }

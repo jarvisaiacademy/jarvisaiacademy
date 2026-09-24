@@ -28,7 +28,7 @@ interface TeacherShellProps {
 
 export function TeacherShell({ children }: TeacherShellProps) {
   const { isOpen, toggle, isMobile } = useSidebar(true);
-  const { user, isLoggedIn, logout } = useAuth();
+  const { user, isLoggedIn, isTeacher: authIsTeacher } = useAuth();
   const router = useRouter();
   
   const [mounted, setMounted] = useState(false);
@@ -42,22 +42,27 @@ export function TeacherShell({ children }: TeacherShellProps) {
   }, []);
 
   useEffect(() => {
+    if (authIsTeacher || user?.isTeacher) {
+      setIsTeacher(true);
+    }
+  }, [authIsTeacher, user?.isTeacher]);
+
+  useEffect(() => {
     if (!mounted) return;
 
-    if (user?.isAdmin) {
+    if (user?.isAdmin || authIsTeacher || user?.isTeacher) {
       setIsTeacher(true);
       return;
     }
 
     const checkTeacherRole = async () => {
-      if (!db) return;
-
       try {
         if (auth && typeof auth.authStateReady === "function") {
           await auth.authStateReady();
         }
 
         const currentUid = auth?.currentUser?.uid || user?.id;
+        const currentEmail = auth?.currentUser?.email || user?.email;
         if (!currentUid) {
           if (isLoggedIn === false && !localStorage.getItem("jarvis_auth_user")) {
             setIsTeacher(false);
@@ -67,9 +72,10 @@ export function TeacherShell({ children }: TeacherShellProps) {
           return;
         }
 
-        const userDoc = await getDoc(doc(db, "users", currentUid));
-        if (userDoc.exists() && userDoc.data().is_teacher === true) {
-          setIsTeacher(true);
+        const { checkTeacherStatus } = await import("@/providers/auth-provider");
+        const isT = await checkTeacherStatus(currentUid, currentEmail);
+        setIsTeacher(isT);
+        if (isT) {
           localStorage.setItem("jarvis_is_teacher", "true");
         } else if (!user?.isAdmin) {
           setIsTeacher(false);
@@ -81,13 +87,13 @@ export function TeacherShell({ children }: TeacherShellProps) {
     };
 
     checkTeacherRole();
-  }, [user, isLoggedIn, mounted, router]);
+  }, [user, isLoggedIn, mounted, authIsTeacher, router]);
 
   useEffect(() => {
-    if (mounted && isTeacher === false) {
-      router.replace("/");
+    if (mounted && isTeacher === false && !authIsTeacher && !user?.isTeacher) {
+      router.replace(isLoggedIn ? "/dashboard" : "/");
     }
-  }, [mounted, isTeacher, router]);
+  }, [mounted, isTeacher, authIsTeacher, user?.isTeacher, isLoggedIn, router]);
 
   const goHome = useCallback(() => router.push("/"), [router]);
 

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Loader2, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence, useDragControls } from "motion/react";
-import { useAuth } from "@/providers/auth-provider";
+import { useAuth, GoogleLoginResult } from "@/providers/auth-provider";
 import { normalizeReferralCode } from "@/data/referrals";
 import { resolveReferralCode, recordReferral } from "@/services/referral-service";
 import { siteConfig } from "@/config/site";
@@ -11,7 +11,7 @@ import { siteConfig } from "@/config/site";
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
+  onSuccess?: (result?: GoogleLoginResult) => void;
 }
 
 // One message for both ways a code can come back empty — unreadable when typed and unknown once
@@ -22,6 +22,7 @@ const REFERRAL_NOT_FOUND = "That code wasn't recognised. Check it and try again.
 export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
   const { loginWithGoogle, authError } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginResult, setLoginResult] = useState<GoogleLoginResult | null>(null);
   // Sign-in is one step and the referral prompt is a second, rather than a dialog of its own:
   // there is one way in (`handleGoogleLogin`) and this is where it already ends up.
   const [step, setStep] = useState<"signin" | "referral">("signin");
@@ -80,8 +81,8 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [isOpen, onClose]);
 
-  const finish = () => {
-    onSuccess?.();
+  const finish = (res?: GoogleLoginResult) => {
+    onSuccess?.(res ?? loginResult ?? undefined);
     onClose();
   };
 
@@ -91,12 +92,13 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
     try {
       const result = await loginWithGoogle();
       if (!result.ok) return; // modal stays open and renders `authError` below
+      setLoginResult(result);
       if (result.isNewUser) {
         setSignedInUid(result.uid);
         setStep("referral");
         return;
       }
-      finish();
+      finish(result);
     } finally {
       setIsSubmitting(false);
     }
@@ -248,7 +250,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
 
                 <button
                   type="button"
-                  onClick={finish}
+                  onClick={() => finish()}
                   disabled={isApplying}
                   className="w-full py-2.5 px-5 rounded-full text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/5 transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                 >
