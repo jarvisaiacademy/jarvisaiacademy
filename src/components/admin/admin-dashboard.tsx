@@ -47,6 +47,8 @@ import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { AdminKnowledge } from "@/components/admin/admin-knowledge";
 import { AdminReferrals } from "@/components/admin/admin-referrals";
+import { AdminAdmins } from "@/components/admin/admin-admins";
+import { AdminStudents } from "@/components/admin/admin-students";
 import { AdminTeachers } from "@/components/admin/admin-teachers";
 import { ROLE_BADGE } from "@/components/admin/role-badge";
 import { Select } from "@/components/ui/select";
@@ -503,7 +505,6 @@ export function AdminDashboard({
   // switch is disabled and reads "Banned" — a block a stray flick could lift would be no block
   // at all — and Unban is the way back.
   const renderCandidateStatus = (student: StudentRecord) => {
-    const isBanned = student.status === "banned";
     // Absent means active. The sign-in upsert deliberately never writes `status`, so treating a
     // missing one as anything but active would paint the whole roster red.
     const isActive = (student.status ?? "active") === "active";
@@ -514,23 +515,11 @@ export function AdminDashboard({
       <div className="flex items-center gap-3">
         <StatusSwitch
           checked={isActive}
-          offLabel={isBanned ? "Banned" : "Inactive"}
-          disabled={busy || isBanned}
+          offLabel="Inactive"
+          disabled={busy}
           onCheckedChange={(next) => handleCandidateStatus(student.id, next ? "active" : "inactive")}
           label={`Active status for ${who}`}
         />
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => handleCandidateStatus(student.id, isBanned ? "active" : "banned")}
-          className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold border transition-colors cursor-pointer disabled:opacity-50 ${
-            isBanned
-              ? "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/15 border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-500/25"
-              : "text-neutral-600 dark:text-neutral-300 bg-white dark:bg-white/5 border-neutral-200 dark:border-white/10 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-500/30"
-          }`}
-        >
-          {isBanned ? "Unban" : "Ban"}
-        </button>
       </div>
     );
   };
@@ -580,7 +569,6 @@ export function AdminDashboard({
               { value: "all", label: "All Statuses" },
               { value: "active", label: "Active" },
               { value: "inactive", label: "Inactive" },
-              { value: "banned", label: "Banned" },
             ]}
             className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
           />
@@ -834,7 +822,7 @@ export function AdminDashboard({
       {/* Main Container */}
       <main
         className={`flex-1 w-full mx-auto py-6 sm:py-8 flex flex-col gap-6 sm:gap-8 ${
-          activeTab === "teachers"
+          activeTab === "teachers" || activeTab === "students" || activeTab === "admins"
             ? "max-w-none px-3 sm:px-6"
             : "max-w-7xl px-4 sm:px-8"
         }`}
@@ -1308,8 +1296,12 @@ export function AdminDashboard({
 
         {/* ONE PAGE PER ROLE. The three together list every account exactly once, because
             `accountRoleOf` gives each account the strongest role it holds. */}
-        {activeTab === "students" && renderRolePage("student")}
-        {activeTab === "admins" && renderRolePage("admin")}
+        {activeTab === "students" && (
+          <AdminStudents onHome={() => setActiveTab("home")} />
+        )}
+        {activeTab === "admins" && (
+          <AdminAdmins onHome={() => setActiveTab("home")} />
+        )}
         {activeTab === "teachers" && (
           <AdminTeachers onHome={() => setActiveTab("home")} />
         )}
