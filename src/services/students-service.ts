@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   setDoc,
   updateDoc,
@@ -40,7 +41,8 @@ export interface RosterUserInput {
   name: string;
   email: string;
   picture?: string;
-  role?: "admin" | "student";
+  role?: "admin" | "teacher" | "student";
+  isTeacher?: boolean;
   /** Straight off the Firebase Auth user; whatever the Google account actually gave us. */
   emailVerified?: boolean;
   signInProvider?: string;
@@ -59,11 +61,12 @@ export interface RosterUserInput {
 export async function upsertStudentRecord(user: RosterUserInput): Promise<void> {
   if (!db) return;
 
-  const payload = {
+  const isTeacher = user.isTeacher === true || user.role === "teacher";
+  const payload: Record<string, unknown> = {
     id: user.id,
     name: user.name,
     email: user.email,
-    role: user.role || "student",
+    role: "student",
     lastLoginAt: new Date().toISOString(),
     ...(user.picture ? { picture: user.picture } : {}),
     ...(user.emailVerified === undefined ? {} : { emailVerified: user.emailVerified }),
@@ -71,19 +74,23 @@ export async function upsertStudentRecord(user: RosterUserInput): Promise<void> 
     ...(user.createdAt ? { createdAt: user.createdAt } : {}),
   };
 
+  if (isTeacher) {
+    payload.is_teacher = true;
+  }
+
   try {
     await setDoc(doc(db, STUDENTS_COLLECTION, user.id), payload, { merge: true });
   } catch (err) {
     console.warn("[StudentsService] Could not upsert student record:", err);
   }
 
-  // Separate from the payload above, and after it, because the rules fence both of these
-  // against a learner's update: on an account an admin has deliberately moved off its default
-  // — a teacher, a banned candidate — this is refused and the upsert above still stands.
-  try {
-    await setDoc(doc(db, STUDENTS_COLLECTION, user.id), ROSTER_FIELD_DEFAULTS, { merge: true });
-  } catch {
-    // An admin-owned value. Leaving it alone is the correct outcome.
+  // Only apply default is_teacher: false if user is NOT a teacher
+  if (!isTeacher) {
+    try {
+      await setDoc(doc(db, STUDENTS_COLLECTION, user.id), ROSTER_FIELD_DEFAULTS, { merge: true });
+    } catch {
+      // An admin-owned value. Leaving it alone is the correct outcome.
+    }
   }
 }
 
@@ -138,6 +145,42 @@ export async function updateCandidateInFirestore(
   }
 }
 
+export interface UpdateStudentSelfProfileInput {
+  name?: string;
+  phone?: string;
+  title?: string;
+  specialization?: string;
+  bio?: string;
+}
+
+/**
+ * Self-service candidate profile update in Firestore.
+ * Strictly limited to candidate-editable fields (name, phone, title, specialization, bio).
+ * Permitted by Firestore rules for authenticated account owner (isSelf(uid)).
+ */
+export async function updateStudentSelfProfile(
+  uid: string,
+  updates: UpdateStudentSelfProfileInput
+): Promise<void> {
+  if (!db) {
+    throw new Error("Firestore is not initialized.");
+  }
+
+  const currentUser = auth?.currentUser;
+  if (!currentUser || currentUser.uid !== uid) {
+    throw new Error("Unauthorized: You can only update your own profile.");
+  }
+
+  const cleaned: Record<string, unknown> = {};
+  if (updates.name !== undefined) cleaned.name = updates.name.trim();
+  if (updates.phone !== undefined) cleaned.phone = updates.phone.trim();
+  if (updates.title !== undefined) cleaned.title = updates.title.trim();
+  if (updates.specialization !== undefined) cleaned.specialization = updates.specialization.trim();
+  if (updates.bio !== undefined) cleaned.bio = updates.bio.trim();
+
+  await updateDoc(doc(db, STUDENTS_COLLECTION, uid), cleaned);
+}
+
 export interface CreateTeacherInput {
   name: string;
   email: string;
@@ -171,14 +214,32 @@ export async function createTeacherInFirestore(
     );
   }
 
-  const teacherId =
-    input.existingUserId?.trim() || doc(collection(db, STUDENTS_COLLECTION)).id;
+  const cleanEmail = input.email.trim().toLowerCase();
+
+  // 1. Resolve teacherId: existingUserId, or find in users by email, or generate new ID
+  let teacherId = input.existingUserId?.trim();
+
+  if (!teacherId) {
+    try {
+      const q = query(collection(db, STUDENTS_COLLECTION), where("email", "==", cleanEmail));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        teacherId = snap.docs[0].id;
+      }
+    } catch (err) {
+      console.warn("[StudentsService] Could not query existing user by email:", err);
+    }
+  }
+
+  if (!teacherId) {
+    teacherId = doc(collection(db, STUDENTS_COLLECTION)).id;
+  }
 
   const now = new Date().toISOString();
   const teacherRecord: Partial<StudentRecord> = {
     id: teacherId,
     name: input.name.trim(),
-    email: input.email.trim(),
+    email: cleanEmail,
     is_teacher: true,
     role: "student",
     status: input.status || "active",
@@ -193,7 +254,30 @@ export async function createTeacherInFirestore(
   if (input.bio?.trim()) teacherRecord.bio = input.bio.trim();
   if (input.phone?.trim()) teacherRecord.phone = input.phone.trim();
 
+  // Save into users collection
   await setDoc(doc(db, STUDENTS_COLLECTION, teacherId), teacherRecord, { merge: true });
+
+  // Record in teachers collection for fast role verification during login
+  try {
+    await setDoc(
+      doc(db, "teachers", cleanEmail),
+      {
+        id: teacherId,
+        email: cleanEmail,
+        name: input.name.trim(),
+        is_teacher: true,
+        updatedAt: now,
+        ...(input.title?.trim() ? { title: input.title.trim() } : {}),
+        ...(input.specialization?.trim() ? { specialization: input.specialization.trim() } : {}),
+        ...(input.bio?.trim() ? { bio: input.bio.trim() } : {}),
+        ...(input.phone?.trim() ? { phone: input.phone.trim() } : {}),
+      },
+      { merge: true }
+    );
+  } catch (err) {
+    console.warn("[StudentsService] Could not write to teachers registry:", err);
+  }
+
   return teacherId;
 }
 
@@ -203,7 +287,7 @@ export async function createTeacherInFirestore(
  */
 export async function deleteTeacherInFirestore(
   teacherId: string,
-  options: { permanent?: boolean; userEmail?: string | null } = {}
+  options: { permanent?: boolean; userEmail?: string | null; teacherEmail?: string | null } = {}
 ): Promise<void> {
   if (!checkIsAdmin(options.userEmail)) {
     throw new Error("Unauthorized: Only verified admins can delete teachers.");
@@ -213,10 +297,31 @@ export async function deleteTeacherInFirestore(
   }
 
   const firestore = db;
+  let emailToRemove = options.teacherEmail?.trim().toLowerCase();
+
+  if (!emailToRemove) {
+    try {
+      const docSnap = await getDoc(doc(firestore, STUDENTS_COLLECTION, teacherId));
+      if (docSnap.exists()) {
+        emailToRemove = docSnap.data().email?.trim().toLowerCase();
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   if (options.permanent) {
     await deleteDoc(doc(firestore, STUDENTS_COLLECTION, teacherId));
   } else {
     await updateDoc(doc(firestore, STUDENTS_COLLECTION, teacherId), { is_teacher: false });
+  }
+
+  if (emailToRemove) {
+    try {
+      await deleteDoc(doc(firestore, "teachers", emailToRemove));
+    } catch {
+      // ignore
+    }
   }
 }
 

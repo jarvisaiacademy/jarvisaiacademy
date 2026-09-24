@@ -2,15 +2,19 @@
 
 import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, Check } from "lucide-react";
+import {
+  ChevronRight,
+  ArrowLeft,
+  X,
+  Plus,
+  Pencil,
+} from "lucide-react";
 import { useCourses } from "@/providers/courses-provider";
 import { useStudents } from "@/providers/students-provider";
 import { useToast } from "@/components/ui/toast";
 import { Select } from "@/components/ui/select";
 import { Combobox } from "@/components/ui/combobox";
-import { StatusSwitch } from "@/components/ui/switch";
 import { iconKeyFor, DevIcon } from "@/components/ui/dev-icon";
-import { PageHeader } from "@/components/ui/page-header";
 import { AdminPage } from "@/components/admin/admin-page";
 import {
   CourseItem,
@@ -30,24 +34,9 @@ interface CourseEditorPageProps {
 
 /**
  * The course form, as a page: `/admin/courses/new` and `/admin/courses/[id]/edit`.
- *
- * A page rather than a modal, because creating or editing a course is a piece of work — a long
- * description, a topic list, half a dozen short fields — and that is worth a URL: it can be
- * refreshed without losing the screen, opened in a tab, and left with the browser's own back
- * button.
- *
- * Only what an admin actually decides is asked for. The id and the display number are the
- * title's, the icons are the tech stack's, and the fee's digits are the amount — all derived on
- * save, and shown read-only where they matter.
- *
- * This half only resolves the course and gets out of the way: `CourseForm` below owns the fields,
- * and it is mounted only once the course is here. That ordering is the point. Every field is
- * seeded in its own state initialiser, which runs once, at mount — and `firestoreCourses` is an
- * empty array until the subscription answers, so a form mounted on the first render would seed
- * itself from nothing and then never re-read. Keying on the course is what makes the initialisers
- * correct rather than merely the first field's worth of data.
  */
 export function CourseEditorPage({ courseId, shell }: CourseEditorPageProps) {
+  const router = useRouter();
   const { firestoreCourses: courses, loading } = useCourses();
 
   const course = courseId ? courses.find((c) => c.id === courseId) : null;
@@ -55,10 +44,38 @@ export function CourseEditorPage({ courseId, shell }: CourseEditorPageProps) {
   // `loading` first, or "No such course" flashes while the subscription is still answering.
   if (courseId && loading) {
     return (
-      <AdminPage shell={shell}>
-        <EditorCrumbs shell={shell} title={null} />
-        <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 text-center text-xs text-neutral-400 animate-pulse">
-          Loading course...
+      <AdminPage shell={shell} maxWidth="max-w-none px-3 sm:px-6">
+        <div className="flex flex-col gap-4">
+          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs">
+            <button
+              type="button"
+              onClick={() => {
+                shell.onNavigateTab("home");
+                router.push("/admin");
+              }}
+              className="text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors cursor-pointer"
+            >
+              Home
+            </button>
+            <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
+            <button
+              type="button"
+              onClick={() => {
+                shell.onNavigateTab("courses");
+                router.push("/admin");
+              }}
+              className="text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors cursor-pointer"
+            >
+              Courses
+            </button>
+            <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
+            <span className="font-semibold text-neutral-900 dark:text-white">
+              Loading...
+            </span>
+          </nav>
+          <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 text-center text-xs text-neutral-400 animate-pulse">
+            Loading course...
+          </div>
         </div>
       </AdminPage>
     );
@@ -66,19 +83,50 @@ export function CourseEditorPage({ courseId, shell }: CourseEditorPageProps) {
 
   if (courseId && !course) {
     return (
-      <AdminPage shell={shell}>
-        <EditorCrumbs shell={shell} title={null} />
-        <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 flex flex-col items-center gap-3 text-center">
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            No course with this id, so there is nothing to edit. It may have been deleted.
-          </p>
-          <button
-            type="button"
-            onClick={() => shell.onNavigateTab("courses")}
-            className="px-3.5 py-1.5 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-          >
-            Back to Courses
-          </button>
+      <AdminPage shell={shell} maxWidth="max-w-none px-3 sm:px-6">
+        <div className="flex flex-col gap-4">
+          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs">
+            <button
+              type="button"
+              onClick={() => {
+                shell.onNavigateTab("home");
+                router.push("/admin");
+              }}
+              className="text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors cursor-pointer"
+            >
+              Home
+            </button>
+            <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
+            <button
+              type="button"
+              onClick={() => {
+                shell.onNavigateTab("courses");
+                router.push("/admin");
+              }}
+              className="text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors cursor-pointer"
+            >
+              Courses
+            </button>
+            <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
+            <span className="font-semibold text-neutral-900 dark:text-white">
+              Not Found
+            </span>
+          </nav>
+          <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-8 flex flex-col items-center gap-3 text-center">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              No course with this id, so there is nothing to edit. It may have been deleted.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                shell.onNavigateTab("courses");
+                router.push("/admin");
+              }}
+              className="px-3.5 py-1.5 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            >
+              Back to Courses
+            </button>
+          </div>
         </div>
       </AdminPage>
     );
@@ -87,21 +135,8 @@ export function CourseEditorPage({ courseId, shell }: CourseEditorPageProps) {
   return <CourseForm key={course?.id ?? "new"} course={course ?? null} shell={shell} />;
 }
 
-function EditorCrumbs({ shell, title }: { shell: AdminShellState; title: string | null }) {
-  return (
-    <PageHeader
-      crumbs={[
-        { label: "Home", onSelect: () => shell.onNavigateTab("home") },
-        { label: "Courses", onSelect: () => shell.onNavigateTab("courses") },
-        { label: title ? `Edit ${title}` : "New Course" },
-      ]}
-    />
-  );
-}
-
 /**
- * The form itself. `course` is null for a new one, and non-null for every field that reads from
- * it — the parent does not mount this until that is settled.
+ * The form itself. `course` is null for a new one, and non-null for every field that reads from it.
  */
 function CourseForm({ course, shell }: { course: CourseItem | null; shell: AdminShellState }) {
   const { showToast } = useToast();
@@ -109,13 +144,9 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
   const { students } = useStudents();
   const router = useRouter();
 
-  // The people a course can be assigned to: the accounts an admin has marked as faculty.
+  // The people a course can be assigned to: accounts marked as faculty
   const faculty = useMemo(() => students.filter((s) => s.is_teacher), [students]);
 
-  // The vocabulary, plus whatever this course already holds. Without the second half, a name
-  // saved before the picker existed — "Next.js 15" carries a version the vocabulary does not, and
-  // the referral programme's stack is prose rather than technologies — would still be on the
-  // course but not in the list, so the closed trigger could show it and the popup could not.
   const techStackOptions = useMemo(() => {
     const known = new Set<string>(TECH_STACK_OPTIONS);
     const extra = (course?.techStack ?? []).filter((tech) => !known.has(tech));
@@ -155,14 +186,21 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
       ? (course.topics || []).join("\n")
       : "Module 1: Architecture\nModule 2: Real-time APIs\nModule 3: Cloud Deployment"
   );
-  // The prompt the chat answers this course from. Derived rather than held in state: there has
-  // never been an input for it, so it is seeded from the course and re-derived from the title on
-  // save, and a setter nothing calls is just a field that looks editable and is not.
+
   const actionPrompt =
     course?.actionPrompt || (course ? `Tell me about the ${course.title} course` : "");
   const [formStatus, setFormStatus] = useState<CourseStatus>(() => course?.status ?? "active");
   const [formTeacherIds, setFormTeacherIds] = useState<string[]>(() => course?.teacherIds ?? []);
   const [isSaving, setIsSaving] = useState(false);
+
+  const handleCancel = () => {
+    if (course) {
+      router.push(`/admin/courses/${course.id}`);
+    } else {
+      shell.onNavigateTab("courses");
+      router.push("/admin");
+    }
+  };
 
   // Save course (Add or Edit)
   const handleSaveCourse = async (e: React.FormEvent) => {
@@ -176,8 +214,6 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
     try {
       const techStackArr = formTechStack;
 
-      // Derived, not picked: a stack name the icon map knows gets its mark, and one it does not
-      // (RAG, say) contributes nothing rather than a wrong brand.
       const techIconsArr = techStackArr
         .map(iconKeyFor)
         .filter((key): key is string => key !== null);
@@ -187,9 +223,6 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
         .map((s) => s.trim())
         .filter(Boolean);
 
-      // The one fee box is the display string; the number the catalogue filters on is whatever
-      // digits it holds. "₹30,000" is 30000, and a word with no digits in it is 0 — which is
-      // also what the public catalogue reads as "sponsored".
       const amount = Number(formFee.replace(/[^0-9]/g, "")) || 0;
 
       if (course) {
@@ -215,12 +248,8 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
           teacherIds: formTeacherIds,
         });
         showToast(`Course "${formTitle}" updated successfully!`, "success");
-        // Straight to the course: this page's job is done, and the detail view is where the
-        // saved values can be read back.
         router.push(`/admin/courses/${course.id}`);
       } else {
-        // No id and no number in the payload: the provider slugs the title and defaults the
-        // number to the next in the list, so both are derived rather than typed.
         const created = await addCourse({
           title: formTitle.trim(),
           bannerTitle: formBannerTitle.trim() || formTitle.trim(),
@@ -254,295 +283,386 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
   };
 
   return (
-    <AdminPage shell={shell}>
-      <EditorCrumbs shell={shell} title={course?.title ?? null} />
+    <AdminPage shell={shell} maxWidth="max-w-none px-3 sm:px-6">
+      <div className="flex flex-col gap-4">
+        {/* Breadcrumb at the left side at top outside the card */}
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs">
+          <button
+            type="button"
+            onClick={() => {
+              shell.onNavigateTab("home");
+              router.push("/admin");
+            }}
+            className="text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors cursor-pointer"
+          >
+            Home
+          </button>
+          <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
+          <button
+            type="button"
+            onClick={() => {
+              shell.onNavigateTab("courses");
+              router.push("/admin");
+            }}
+            className="text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors cursor-pointer"
+          >
+            Courses
+          </button>
+          <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
+          <span className="font-semibold text-neutral-900 dark:text-white">
+            {course ? `Edit ${course.title}` : "Add Course"}
+          </span>
+        </nav>
 
-      <div className="w-full rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs p-5 sm:p-6 flex flex-col gap-5 text-neutral-900 dark:text-white">
-        <div className="flex items-center gap-2 pb-3 border-b border-neutral-200 dark:border-white/10">
-          <BookOpen className="w-5 h-5 text-blue-500" />
-          <h2 className="text-sm sm:text-base font-bold">
-            {course ? "Edit Course" : "Create New Course"}
-          </h2>
-          {/* Both are derived from the title now, so they are shown rather than typed. Read-only
-              even here: the id is the Firestore document key and the URL, and moving it would
-              break every link to the course. */}
-          {course && (
-            <span className="ml-auto font-mono text-[10px] text-neutral-400">
-              /courses/{course.id} · #{course.number}
-            </span>
-          )}
-        </div>
+        {/* Big Card containing form */}
+        <form onSubmit={handleSaveCourse} className="w-full pb-16">
+          <div className="w-full rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden flex flex-col">
+            {/* Header: Back button on left, centered Heading */}
+            <div className="p-4 sm:p-5 border-b border-neutral-200 dark:border-white/10">
+              <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
+                {/* Back button inside the card */}
+                <div className="flex items-center">
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 border border-neutral-200 dark:border-white/10 transition-colors cursor-pointer"
+                    title="Back to Courses"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Back</span>
+                  </button>
+                </div>
 
-        <form onSubmit={handleSaveCourse} className="flex flex-col gap-4 text-xs">
-          {/* Title */}
-          <div className="flex flex-col gap-1.5">
-            <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-              Course Title *
-            </label>
-            <input
-              type="text"
-              required
-              value={formTitle}
-              onChange={(e) => setFormTitle(e.target.value)}
-              placeholder="e.g. Autonomous AI Agents & LangGraph"
-              className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white font-medium"
-            />
-          </div>
+                {/* Center: Heading Add New Course / Edit Course */}
+                <div className="flex items-center justify-center">
+                  <h1 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white text-center">
+                    {course ? "Edit Course" : "Add New Course"}
+                  </h1>
+                </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Banner Title */}
-            <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                Short Banner Title
-              </label>
-              <input
-                type="text"
-                value={formBannerTitle}
-                onChange={(e) => setFormBannerTitle(e.target.value)}
-                placeholder="e.g. AI Agents & LangGraph"
-                className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-              />
+                {/* Right spacer for centering */}
+                <div className="flex items-center justify-end min-w-[72px]">
+                  {course ? (
+                    <span className="font-mono text-[11px] font-bold text-neutral-400">
+                      #{course.number}
+                    </span>
+                  ) : (
+                    <div className="w-[72px] invisible" aria-hidden="true" />
+                  )}
+                </div>
+              </div>
             </div>
 
-            {/* Banner Subtitle */}
-            <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                Banner Subtitle
-              </label>
-              <input
-                type="text"
-                value={formBannerSubtitle}
-                onChange={(e) => setFormBannerSubtitle(e.target.value)}
-                placeholder="e.g. Multi-Agent Systems · RAG · Python"
-                className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-              />
+            {/* Card Body */}
+            <div className="p-5 sm:p-7 flex flex-col gap-6">
+              {/* 4-GRID layout matching Teacher Form */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+                {/* 1. Course Title (spans full 4 cols on lg) */}
+                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-2 lg:col-span-4">
+                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    Course Title <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formTitle}
+                    onChange={(e) => setFormTitle(e.target.value)}
+                    placeholder="e.g. Autonomous AI Agents & LangGraph"
+                    className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 font-medium"
+                  />
+                </div>
+
+                {/* 2. Short Banner Title */}
+                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
+                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    Short Banner Title
+                  </label>
+                  <input
+                    type="text"
+                    value={formBannerTitle}
+                    onChange={(e) => setFormBannerTitle(e.target.value)}
+                    placeholder="e.g. AI Agents & LangGraph"
+                    className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+
+                {/* 3. Banner Subtitle */}
+                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
+                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    Banner Subtitle
+                  </label>
+                  <input
+                    type="text"
+                    value={formBannerSubtitle}
+                    onChange={(e) => setFormBannerSubtitle(e.target.value)}
+                    placeholder="e.g. Multi-Agent Systems · RAG · Python"
+                    className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+
+                {/* 4. Badge Text (Optional) */}
+                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
+                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    Badge Text (Optional)
+                  </label>
+                  <Combobox
+                    label="Badge text"
+                    options={COURSE_BADGES}
+                    value={formBadge}
+                    onValueChange={setFormBadge}
+                    placeholder="e.g. Bestseller"
+                    className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+                  />
+                </div>
+
+                {/* 5. Badge Style */}
+                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
+                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    Badge Style
+                  </label>
+                  <Select
+                    label="Badge Style"
+                    value={formBadgeType ?? ""}
+                    onValueChange={(value) => setFormBadgeType(value as CourseItem["badgeType"] | "")}
+                    options={[
+                      { value: "", label: "None" },
+                      { value: "bestseller", label: "Bestseller (Cyan/Blue)" },
+                      { value: "elite", label: "Elite (Gold/Amber)" },
+                      { value: "popular", label: "Popular (Indigo/Purple)" },
+                      { value: "ai", label: "AI Special (Violet/Magenta)" },
+                    ]}
+                    className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+                  />
+                </div>
+
+                {/* 6. Category */}
+                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
+                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    Category <span className="text-red-500">*</span>
+                  </label>
+                  <Select
+                    label="Category"
+                    value={formCategory}
+                    onValueChange={(value) => {
+                      const cat = value as CourseItem["category"];
+                      setFormCategory(cat);
+                      if (cat === "web") setFormCategoryLabel("Web & Full-Stack");
+                      else if (cat === "ai") setFormCategoryLabel("AI & Data Science");
+                      else if (cat === "devops") setFormCategoryLabel("DevOps & Cloud");
+                      else if (cat === "database") setFormCategoryLabel("Database & Systems");
+                      else if (cat === "elite") setFormCategoryLabel("Super10 Elite");
+                    }}
+                    options={[
+                      { value: "web", label: "Web & Full-Stack" },
+                      { value: "ai", label: "AI & Data Science" },
+                      { value: "devops", label: "DevOps & Cloud" },
+                      { value: "database", label: "Database & Systems" },
+                      { value: "elite", label: "Super10 Elite" },
+                    ]}
+                    className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+                  />
+                </div>
+
+                {/* 7. Duration */}
+                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
+                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    Duration
+                  </label>
+                  <Combobox
+                    label="Duration"
+                    options={COURSE_DURATIONS}
+                    value={formDuration}
+                    onValueChange={setFormDuration}
+                    placeholder="60 Days (2 Months)"
+                    className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+                  />
+                </div>
+
+                {/* 8. Level */}
+                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
+                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    Level
+                  </label>
+                  <Combobox
+                    label="Level"
+                    options={COURSE_LEVELS}
+                    value={formLevel}
+                    onValueChange={setFormLevel}
+                    placeholder="Beginner to Adv"
+                    className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+                  />
+                </div>
+
+                {/* 9. Fee */}
+                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
+                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    Fee
+                  </label>
+                  <input
+                    type="text"
+                    value={formFee}
+                    onChange={(e) => setFormFee(e.target.value)}
+                    placeholder="₹30,000"
+                    className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white font-semibold placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
+                  />
+                  <span className="text-[10px] text-neutral-400">
+                    Shown in catalogue as typed; digits determine the amount.
+                  </span>
+                </div>
+
+                {/* 10. Status */}
+                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
+                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    Course Status
+                  </label>
+                  <Select
+                    label="Course Status"
+                    value={formStatus}
+                    onValueChange={(val) => setFormStatus(val as CourseStatus)}
+                    options={[
+                      { value: "active", label: "Active (Listed Publicly)" },
+                      { value: "inactive", label: "Inactive (Hidden)" },
+                    ]}
+                    className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+                  />
+                  <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                    Active lists it publicly; inactive hides it from catalogue and search.
+                  </span>
+                </div>
+
+                {/* 11. Assigned Teachers (spans 1 col on sm, 1 col on lg) */}
+                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
+                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    Assigned Teachers
+                  </label>
+                  <Select
+                    multiple
+                    label="Assigned teachers"
+                    value={formTeacherIds}
+                    onValueChange={setFormTeacherIds}
+                    options={faculty.map((t) => ({ value: t.id, label: t.name }))}
+                    formatValue={(ids) => {
+                      const list = ids as string[];
+                      if (list.length === 0) return "No teachers";
+                      if (list.length === 1) {
+                        const found = faculty.find((t) => t.id === list[0]);
+                        return found?.name || list[0];
+                      }
+                      return `${list.length} teachers`;
+                    }}
+                    className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+                  />
+                  <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                    {faculty.length === 0
+                      ? "No faculty yet — mark an account as Teacher."
+                      : formTeacherIds.length === 0
+                        ? "No teacher assigned yet."
+                        : formTeacherIds
+                            .map((id) => faculty.find((t) => t.id === id)?.name ?? id)
+                            .join(", ")}
+                  </span>
+                </div>
+
+                {/* 12. Tech Stack (spans 2 cols on lg) */}
+                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-2 lg:col-span-2">
+                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    Tech Stack
+                  </label>
+                  <Select
+                    multiple
+                    label="Tech stack"
+                    value={formTechStack}
+                    onValueChange={setFormTechStack}
+                    options={techStackOptions.map((tech) => ({
+                      value: tech,
+                      label: tech,
+                      icon: <DevIcon name={tech} size={14} />,
+                    }))}
+                    formatValue={(val) => {
+                      const list = val as string[];
+                      if (list.length === 0) return "No tech selected";
+                      if (list.length === 1) return list[0];
+                      return `${list.length} technologies`;
+                    }}
+                    className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+                  />
+                  <span className="text-[10px] text-neutral-400">
+                    Each name automatically assigns its brand icon.
+                  </span>
+                  {formTechStack.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {formTechStack.map((tech) => (
+                        <span
+                          key={tech}
+                          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] bg-neutral-100 dark:bg-white/10 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-white/10"
+                        >
+                          <DevIcon name={tech} size={12} />
+                          <span>{tech}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 13. Course Description (spans all 4 columns) */}
+                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-2 lg:col-span-4">
+                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    Course Description
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={formDescription}
+                    onChange={(e) => setFormDescription(e.target.value)}
+                    placeholder="Summary of what candidates will build and master..."
+                    className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 resize-y"
+                  />
+                </div>
+
+                {/* 14. Curriculum Topics (spans all 4 columns) */}
+                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-2 lg:col-span-4">
+                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    Curriculum Highlights (One topic per line)
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={formTopics}
+                    onChange={(e) => setFormTopics(e.target.value)}
+                    placeholder={"Next.js 15 Server Components & Actions\nFastAPI Async Microservices\nPostgreSQL & Schema Optimization"}
+                    className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 font-mono text-[11px] resize-y"
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Badge Text */}
-            <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                Badge Text (Optional)
-              </label>
-              <Combobox
-                label="Badge text"
-                options={COURSE_BADGES}
-                value={formBadge}
-                onValueChange={setFormBadge}
-                placeholder="e.g. Bestseller"
-                className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-              />
+            {/* Bottom Bar: Cancel on left with cancel icon, Save/Add Course pill button on right */}
+            <div className="px-5 sm:px-7 py-4 border-t border-neutral-200 dark:border-white/10 flex items-center justify-between gap-3 bg-neutral-50/50 dark:bg-white/[0.02]">
+              {/* Bottom Left: Cancel button with cancel icon */}
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={handleCancel}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 border border-neutral-200 dark:border-white/10 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <X className="w-4 h-4" />
+                <span>Cancel</span>
+              </button>
+
+              {/* Bottom Right: Add / Save Course pill button */}
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {isSaving ? (
+                  <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : course ? (
+                  <Pencil className="w-3.5 h-3.5" />
+                ) : (
+                  <Plus className="w-4 h-4" />
+                )}
+                <span>{course ? "Save Changes" : "Add Course"}</span>
+              </button>
             </div>
-
-            {/* Badge Type */}
-            <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                Badge Style
-              </label>
-              <Select
-                label="Badge Style"
-                value={formBadgeType ?? ""}
-                onValueChange={(value) => setFormBadgeType(value as CourseItem["badgeType"] | "")}
-                options={[
-                  { value: "", label: "None" },
-                  { value: "bestseller", label: "Bestseller (Cyan/Blue)" },
-                  { value: "elite", label: "Elite (Gold/Amber)" },
-                  { value: "popular", label: "Popular (Indigo/Purple)" },
-                  { value: "ai", label: "AI Special (Violet/Magenta)" },
-                ]}
-                className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Category */}
-            <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                Category *
-              </label>
-              <Select
-                label="Category"
-                value={formCategory}
-                onValueChange={(value) => {
-                  const cat = value as CourseItem["category"];
-                  setFormCategory(cat);
-                  if (cat === "web") setFormCategoryLabel("Web & Full-Stack");
-                  else if (cat === "ai") setFormCategoryLabel("AI & Data Science");
-                  else if (cat === "devops") setFormCategoryLabel("DevOps & Cloud");
-                  else if (cat === "database") setFormCategoryLabel("Database & Systems");
-                  else if (cat === "elite") setFormCategoryLabel("Super10 Elite");
-                }}
-                options={[
-                  { value: "web", label: "Web & Full-Stack" },
-                  { value: "ai", label: "AI & Data Science" },
-                  { value: "devops", label: "DevOps & Cloud" },
-                  { value: "database", label: "Database & Systems" },
-                  { value: "elite", label: "Super10 Elite" },
-                ]}
-                className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-              />
-            </div>
-
-            {/* Duration */}
-            <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                Duration
-              </label>
-              <Combobox
-                label="Duration"
-                options={COURSE_DURATIONS}
-                value={formDuration}
-                onValueChange={setFormDuration}
-                placeholder="60 Days (2 Months)"
-                className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-              />
-            </div>
-
-            {/* Level */}
-            <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-neutral-700 dark:text-neutral-300">Level</label>
-              <Combobox
-                label="Level"
-                options={COURSE_LEVELS}
-                value={formLevel}
-                onValueChange={setFormLevel}
-                placeholder="Beginner to Adv"
-                className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-              />
-            </div>
-
-            {/* Fee */}
-            <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-neutral-700 dark:text-neutral-300">Fee</label>
-              <input
-                type="text"
-                value={formFee}
-                onChange={(e) => setFormFee(e.target.value)}
-                placeholder="₹30,000"
-                className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white font-semibold"
-              />
-              <span className="text-[10px] text-neutral-400">
-                Shown in the catalogue as typed; the number inside it is the amount.
-              </span>
-            </div>
-          </div>
-
-          {/* Description */}
-          <div className="flex flex-col gap-1.5">
-            <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-              Course Description
-            </label>
-            <textarea
-              rows={3}
-              value={formDescription}
-              onChange={(e) => setFormDescription(e.target.value)}
-              placeholder="Summary of what candidates will build and master..."
-              className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-            />
-          </div>
-
-          {/* Curriculum Topics */}
-          <div className="flex flex-col gap-1.5">
-            <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-              Curriculum Highlights (One topic per line)
-            </label>
-            <textarea
-              rows={4}
-              value={formTopics}
-              onChange={(e) => setFormTopics(e.target.value)}
-              placeholder="Next.js 15 Server Components & Actions&#10;FastAPI Async Microservices&#10;PostgreSQL & Schema Optimization"
-              className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white font-mono text-[11px]"
-            />
-          </div>
-
-          {/* Stack, Visibility & Faculty. The status is how a course leaves the public site:
-              the catalogue, sitemap and /llms.txt all read through getPublicCourses,
-              which drops anything inactive, and /courses/<slug> then 404s. */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                Tech Stack
-              </label>
-              {/* Picked, not typed. A freehand list is where "TailwindCSS", "Tailwind CSS" and
-                  "tailwind" become three technologies with one logo between them, and where a
-                  name the icon map was never taught draws initials instead of a brand. */}
-              <Select
-                multiple
-                label="Tech stack"
-                value={formTechStack}
-                onValueChange={setFormTechStack}
-                options={techStackOptions.map((tech) => ({
-                  value: tech,
-                  label: tech,
-                  icon: <DevIcon name={tech} size={14} />,
-                }))}
-                className="w-full px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-              />
-              <span className="text-[10px] text-neutral-400">
-                Each name also picks its own logo.
-              </span>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-neutral-700 dark:text-neutral-300">Status</label>
-              <StatusSwitch
-                checked={formStatus === "active"}
-                onCheckedChange={(next) => setFormStatus(next ? "active" : "inactive")}
-                label="Course status"
-              />
-              <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
-                Active lists it publicly; inactive hides it from the catalogue, the sitemap and
-                /llms.txt, and its page 404s.
-              </span>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                Assigned Teachers
-              </label>
-              <Select
-                multiple
-                label="Assigned teachers"
-                value={formTeacherIds}
-                onValueChange={setFormTeacherIds}
-                options={faculty.map((t) => ({ value: t.id, label: t.name }))}
-                className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white"
-              />
-              <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
-                {faculty.length === 0
-                  ? "No faculty yet — mark an account as Teacher on the Teachers tab."
-                  : formTeacherIds.length === 0
-                    ? "No teacher assigned to this course."
-                    : formTeacherIds
-                        .map((id) => faculty.find((t) => t.id === id)?.name ?? id)
-                        .join(", ")}
-              </span>
-            </div>
-          </div>
-
-          {/* Form Actions */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-neutral-200 dark:border-white/10">
-            <button
-              type="button"
-              // Back where the admin came from: a course being edited has a page to return to,
-              // a new one does not, so that goes back to the tab list.
-              onClick={() =>
-                course
-                  ? router.push(`/admin/courses/${course.id}`)
-                  : shell.onNavigateTab("courses")
-              }
-              className="px-4 py-2 rounded-xl text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/5 transition-colors cursor-pointer font-medium"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-            >
-              <Check className="w-4 h-4" />
-              <span>{isSaving ? "Saving..." : course ? "Save Changes" : "Create Course"}</span>
-            </button>
           </div>
         </form>
       </div>

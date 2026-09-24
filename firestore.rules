@@ -85,7 +85,9 @@ service cloud.firestore {
     // The roster, and the admin dashboard's candidate pool. A learner owns their row and
     // sees no one else's; only an admin sees the rest.
     match /users/{uid} {
-      allow read: if isSelf(uid) || isAdmin();
+      allow read: if isSelf(uid)
+        || isAdmin()
+        || (request.auth != null && request.auth.token.email != null && resource.data.email == request.auth.token.email);
 
       // The extra clause stops a learner promoting themselves. The client writes `role` from
       // its own email check, so without it a visitor could store role: 'admin' on their own
@@ -101,17 +103,17 @@ service cloud.firestore {
         || (isSelf(uid)
           && request.resource.data.role == 'student'
           && request.resource.data.get('is_super10', false) == false
-          && request.resource.data.get('is_teacher', false) == false
+          && (
+               request.resource.data.get('is_teacher', false) == false
+               || (request.auth.token.email != null && exists(/databases/$(database)/documents/teachers/$(request.auth.token.email)))
+             )
           && referralCreateIsHonest());
 
       // Separate from create, and this is the whole point of separating them: `resource.data`
       // does not exist on a create, so the two clauses cannot share a line.
       //
       // An admin may write anything. A learner may update their own row only while leaving
-      // `status`, `is_super10` and `is_teacher` exactly as stored. Without that, the
-      // self-update path that exists to keep names and avatars fresh would also be a way for
-      // a banned candidate to un-ban themselves — or to award themselves Super10, or mark
-      // themselves faculty — from the browser console.
+      // `status`, `is_super10` and `is_teacher` exactly as stored (unless pre-registered as faculty).
       //
       // `get(field, default)` on both sides makes a merge-write compare the stored value to
       // itself, so a payload that simply omits the field is not read as "changing" it.
@@ -120,7 +122,14 @@ service cloud.firestore {
           && request.resource.data.role == 'student'
           && request.resource.data.get('status', 'active') == resource.data.get('status', 'active')
           && request.resource.data.get('is_super10', false) == resource.data.get('is_super10', false)
-          && request.resource.data.get('is_teacher', false) == resource.data.get('is_teacher', false)
+          && (
+               request.resource.data.get('is_teacher', false) == resource.data.get('is_teacher', false)
+               || (
+                    request.resource.data.get('is_teacher', false) == true
+                    && request.auth.token.email != null
+                    && exists(/databases/$(database)/documents/teachers/$(request.auth.token.email))
+                  )
+             )
           && (
                request.resource.data.get('referralCode', '') == resource.data.get('referralCode', '') ||
                request.resource.data.get('referralCode', '').matches('^JAR-[A-Z0-9]{8}$')
@@ -128,6 +137,12 @@ service cloud.firestore {
           && referralUpdateIsHonest());
 
       allow delete: if isAdmin();
+    }
+
+    // Faculty / Teachers registry: allows pre-registered teachers to be recognized securely
+    match /teachers/{email} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
     }
 
     // The referral code index: one document per code, holding the uid it belongs to.
@@ -177,7 +192,10 @@ service cloud.firestore {
     match /enrollments/{enrollmentId} {
       allow read: if isAdmin() 
         || (request.auth != null && resource.data.studentEmail == request.auth.token.email)
-        || (request.auth != null && request.auth.uid in get(/databases/$(database)/documents/courses/$(resource.data.courseId)).data.teacherIds);
+        || (request.auth != null && (
+             request.auth.uid in get(/databases/$(database)/documents/courses/$(resource.data.courseId)).data.teacherIds
+             || (request.auth.token.email != null && request.auth.token.email in get(/databases/$(database)/documents/courses/$(resource.data.courseId)).data.teacherIds)
+           ));
       allow create: if isAdmin() || (request.auth != null && request.resource.data.studentEmail == request.auth.token.email);
       allow update: if isAdmin() || (request.auth != null && request.resource.data.studentEmail == request.auth.token.email && resource.data.studentEmail == request.auth.token.email);
       allow delete: if isAdmin();
