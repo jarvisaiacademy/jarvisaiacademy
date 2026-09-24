@@ -73,7 +73,7 @@ export function DashboardCourses() {
   };
 
   return (
-    <div className="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 py-6 overflow-x-hidden">
+    <div className="flex-1 w-full px-3 sm:px-6 lg:px-8 py-6 overflow-x-hidden">
       <AnimatePresence mode="wait">
         {!selectedEnrollment ? (
           <motion.div
@@ -86,7 +86,7 @@ export function DashboardCourses() {
           >
             {/* Header */}
             <div className="flex flex-col gap-1">
-              <h2 className="text-xl font-semibold text-foreground">My Learning</h2>
+              <h2 className="text-xl sm:text-2xl font-semibold text-foreground">My Learning</h2>
               <p className="text-sm text-muted-foreground">
                 Manage your enrolments and track your progress across active programmes.
               </p>
@@ -110,27 +110,27 @@ export function DashboardCourses() {
                     <button
                       key={`${record.transactionId}-${record.timestamp}`}
                       onClick={() => setSelectedEnrollment(record)}
-                      className="w-full flex items-start justify-between gap-3 px-4 py-3.5 hover:bg-muted/40 transition-colors text-left group"
+                      className="w-full flex items-start justify-between gap-4 px-5 sm:px-8 py-4 sm:py-5 hover:bg-muted/40 transition-colors text-left group"
                     >
-                      <div className="flex items-start gap-3.5 min-w-0">
-                        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-muted text-foreground/80 shrink-0 group-hover:bg-background group-hover:shadow-sm transition-all border border-transparent group-hover:border-border mt-0.5">
+                      <div className="flex items-start gap-4 min-w-0">
+                        <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-muted text-foreground/80 shrink-0 group-hover:bg-background group-hover:shadow-sm transition-all border border-transparent group-hover:border-border mt-0.5">
                           <GraduationCap className="w-5 h-5" />
                         </div>
                         <div className="flex flex-col min-w-0">
-                          <span className="text-sm font-medium text-foreground leading-snug truncate">
+                          <span className="text-sm sm:text-base font-medium text-foreground leading-snug truncate">
                             {record.courseName}
                           </span>
-                          <span className="text-xs text-muted-foreground leading-relaxed mt-1 line-clamp-2 pr-4">
+                          <span className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-1 line-clamp-2 pr-4">
                             {description}
                           </span>
                           <div className="flex items-center gap-2 mt-2">
                             {courseObj?.duration && (
-                              <span className="text-[10px] font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md">
+                              <span className="text-[10px] font-medium text-muted-foreground bg-muted/50 px-2.5 py-0.5 rounded-md">
                                 {courseObj.duration}
                               </span>
                             )}
                             {courseObj?.level && (
-                              <span className="text-[10px] font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md">
+                              <span className="text-[10px] font-medium text-muted-foreground bg-muted/50 px-2.5 py-0.5 rounded-md">
                                 {courseObj.level}
                               </span>
                             )}
@@ -139,7 +139,7 @@ export function DashboardCourses() {
                       </div>
                       <div className="flex flex-col items-end gap-2 shrink-0 pt-1">
                         <span
-                          className={`text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-full ${status.className}`}
+                          className={`text-[10px] font-semibold tracking-wide uppercase px-2.5 py-1 rounded-full ${status.className}`}
                         >
                           {status.label}
                         </span>
@@ -149,10 +149,10 @@ export function DashboardCourses() {
                   );
                 })
               ) : (
-                <div className="flex flex-col items-center gap-3 px-6 py-12 text-center border border-dashed border-border rounded-xl bg-muted/10 m-4">
+                <div className="flex flex-col items-center gap-3 px-6 py-12 text-center border border-dashed border-border rounded-xl bg-muted/10 m-4 sm:m-6">
                   <GraduationCap className="w-8 h-8 text-muted-foreground/50" />
                   <p className="text-sm font-medium text-foreground">No active enrolments</p>
-                  <p className="text-xs text-muted-foreground max-w-xs">
+                  <p className="text-xs text-muted-foreground max-w-sm">
                     Programmes you enrol in via the Jarvis AI chat will appear here.
                   </p>
                 </div>
@@ -163,14 +163,14 @@ export function DashboardCourses() {
             {courses.length > 0 && (
               <SettingsSection title={enrollments.length === 0 ? "All Programmes" : "Explore Programmes"}>
                 {(enrollments.length === 0 ? courses : courses.slice(0, 3)).map((course) => (
-                  <div key={course.id} className="flex items-start gap-3.5 px-4 py-3.5 hover:bg-muted/20 transition-colors">
-                    <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-muted/50 text-foreground/60 shrink-0 mt-0.5">
+                  <div key={course.id} className="flex items-start gap-4 px-5 sm:px-8 py-4 sm:py-5 hover:bg-muted/20 transition-colors">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-muted/50 text-foreground/60 shrink-0 mt-0.5">
                       <BookOpen className="w-4 h-4" />
                     </div>
                     <div className="flex flex-col min-w-0">
-                      <span className="text-sm font-medium text-foreground leading-snug">{course.title}</span>
+                      <span className="text-sm sm:text-base font-medium text-foreground leading-snug">{course.title}</span>
                       {course.description && (
-                        <span className="text-xs text-muted-foreground leading-normal mt-0.5 line-clamp-2">
+                        <span className="text-xs sm:text-sm text-muted-foreground leading-normal mt-0.5 line-clamp-2">
                           {course.description}
                         </span>
                       )}
@@ -224,13 +224,13 @@ export function DashboardCourses() {
                     <h1 className="text-2xl sm:text-3xl font-semibold text-foreground tracking-tight leading-tight">
                       {details.title}
                     </h1>
-                    <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
+                    <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-4xl">
                       {details.description}
                     </p>
                   </div>
 
                   {/* Progress Section */}
-                  <div className="flex flex-col gap-4 p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-sm">
+                  <div className="flex flex-col gap-4 p-6 sm:p-8 rounded-2xl bg-card border border-border shadow-sm">
                     <div className="flex items-center justify-between">
                       <h3 className="text-sm font-semibold text-foreground">Course Progress</h3>
                       <span className="text-sm font-mono font-medium text-foreground">{details.progress}%</span>

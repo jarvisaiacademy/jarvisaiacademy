@@ -138,6 +138,42 @@ export async function updateCandidateInFirestore(
   }
 }
 
+export interface UpdateStudentSelfProfileInput {
+  name?: string;
+  phone?: string;
+  title?: string;
+  specialization?: string;
+  bio?: string;
+}
+
+/**
+ * Self-service candidate profile update in Firestore.
+ * Strictly limited to candidate-editable fields (name, phone, title, specialization, bio).
+ * Permitted by Firestore rules for authenticated account owner (isSelf(uid)).
+ */
+export async function updateStudentSelfProfile(
+  uid: string,
+  updates: UpdateStudentSelfProfileInput
+): Promise<void> {
+  if (!db) {
+    throw new Error("Firestore is not initialized.");
+  }
+
+  const currentUser = auth?.currentUser;
+  if (!currentUser || currentUser.uid !== uid) {
+    throw new Error("Unauthorized: You can only update your own profile.");
+  }
+
+  const cleaned: Record<string, unknown> = {};
+  if (updates.name !== undefined) cleaned.name = updates.name.trim();
+  if (updates.phone !== undefined) cleaned.phone = updates.phone.trim();
+  if (updates.title !== undefined) cleaned.title = updates.title.trim();
+  if (updates.specialization !== undefined) cleaned.specialization = updates.specialization.trim();
+  if (updates.bio !== undefined) cleaned.bio = updates.bio.trim();
+
+  await updateDoc(doc(db, STUDENTS_COLLECTION, uid), cleaned);
+}
+
 export interface CreateTeacherInput {
   name: string;
   email: string;
