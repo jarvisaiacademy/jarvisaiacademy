@@ -104,25 +104,9 @@ export async function upsertStudentRecord(user: RosterUserInput): Promise<void> 
  */
 export async function updateCandidateInFirestore(
   uid: string,
-  updates: Partial<
-    Pick<
-      StudentRecord,
-      | "name"
-      | "email"
-      | "status"
-      | "is_super10"
-      | "is_teacher"
-      | "role"
-      | "title"
-      | "specialization"
-      | "bio"
-      | "phone"
-      | "picture"
-      | "referralCode"
-      | "enrolledCourseIds"
-    >
-  >,
-  userEmail?: string | null
+  updates: Partial<StudentRecord>,
+  userEmail?: string | null,
+  userName?: string | null
 ): Promise<void> {
   if (!checkIsAdmin(userEmail)) {
     throw new Error("Unauthorized: Only verified admins can update candidates.");
@@ -131,12 +115,28 @@ export async function updateCandidateInFirestore(
     throw new Error("Firestore is not initialized.");
   }
 
+  const now = new Date().toISOString();
+  const author =
+    (userName && userName !== "Learner" ? userName.trim() : null) ||
+    (userEmail
+      ? userEmail
+          .split("@")[0]
+          .replace(/[._-]+/g, " ")
+          .replace(/\b\w/g, (c) => c.toUpperCase())
+      : null) ||
+    "Admin";
+
   const cleaned: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(updates)) {
     if (value !== undefined) {
       cleaned[key] = value;
     }
   }
+
+  cleaned.updatedAt = updates.updatedAt || now;
+  cleaned.updatedBy = updates.updatedBy || author;
+  if (updates.createdAt) cleaned.createdAt = updates.createdAt;
+  if (updates.createdBy) cleaned.createdBy = updates.createdBy;
 
   await updateDoc(doc(db, STUDENTS_COLLECTION, uid), cleaned);
 
@@ -198,7 +198,8 @@ export interface CreateTeacherInput {
  */
 export async function createTeacherInFirestore(
   input: CreateTeacherInput,
-  userEmail?: string | null
+  userEmail?: string | null,
+  userName?: string | null
 ): Promise<string> {
   if (!checkIsAdmin(userEmail)) {
     throw new Error("Unauthorized: Only verified admins can create or promote teachers.");
@@ -215,6 +216,16 @@ export async function createTeacherInFirestore(
   }
 
   const cleanEmail = input.email.trim().toLowerCase();
+  const now = new Date().toISOString();
+  const author =
+    (userName && userName !== "Learner" ? userName.trim() : null) ||
+    (userEmail
+      ? userEmail
+          .split("@")[0]
+          .replace(/[._-]+/g, " ")
+          .replace(/\b\w/g, (c) => c.toUpperCase())
+      : null) ||
+    "Admin";
 
   // 1. Resolve teacherId: existingUserId, or find in users by email, or generate new ID
   let teacherId = input.existingUserId?.trim();
@@ -235,7 +246,6 @@ export async function createTeacherInFirestore(
     teacherId = doc(collection(db, STUDENTS_COLLECTION)).id;
   }
 
-  const now = new Date().toISOString();
   const teacherRecord: Partial<StudentRecord> = {
     id: teacherId,
     name: input.name.trim(),
@@ -244,10 +254,13 @@ export async function createTeacherInFirestore(
     role: "student",
     status: input.status || "active",
     lastLoginAt: now,
+    updatedAt: now,
+    updatedBy: author,
   };
 
   if (!input.existingUserId) {
     teacherRecord.createdAt = now;
+    teacherRecord.createdBy = author;
   }
   if (input.title?.trim()) teacherRecord.title = input.title.trim();
   if (input.specialization?.trim()) teacherRecord.specialization = input.specialization.trim();
@@ -342,7 +355,8 @@ export interface CreateAdminInput {
  */
 export async function createAdminInFirestore(
   input: CreateAdminInput,
-  userEmail?: string | null
+  userEmail?: string | null,
+  userName?: string | null
 ): Promise<string> {
   if (!checkIsAdmin(userEmail)) {
     throw new Error("Unauthorized: Only verified admins can create or promote admins.");
@@ -363,6 +377,16 @@ export async function createAdminInFirestore(
     input.existingUserId?.trim() || doc(collection(firestore, STUDENTS_COLLECTION)).id;
 
   const now = new Date().toISOString();
+  const author =
+    (userName && userName !== "Learner" ? userName.trim() : null) ||
+    (userEmail
+      ? userEmail
+          .split("@")[0]
+          .replace(/[._-]+/g, " ")
+          .replace(/\b\w/g, (c) => c.toUpperCase())
+      : null) ||
+    "Admin";
+
   const adminRecord: Partial<StudentRecord> = {
     id: adminId,
     name: input.name.trim(),
@@ -370,10 +394,13 @@ export async function createAdminInFirestore(
     role: "admin",
     status: input.status || "active",
     lastLoginAt: now,
+    updatedAt: now,
+    updatedBy: author,
   };
 
   if (!input.existingUserId) {
     adminRecord.createdAt = now;
+    adminRecord.createdBy = author;
   }
   if (input.title?.trim()) adminRecord.title = input.title.trim();
   if (input.specialization?.trim()) adminRecord.specialization = input.specialization.trim();
@@ -430,7 +457,8 @@ export interface CreateStudentInput {
  */
 export async function createStudentInFirestore(
   input: CreateStudentInput,
-  userEmail?: string | null
+  userEmail?: string | null,
+  userName?: string | null
 ): Promise<string> {
   if (!checkIsAdmin(userEmail)) {
     throw new Error("Unauthorized: Only verified admins can create students.");
@@ -449,6 +477,15 @@ export async function createStudentInFirestore(
   const firestore = db;
   const studentId = doc(collection(firestore, STUDENTS_COLLECTION)).id;
   const now = new Date().toISOString();
+  const author =
+    (userName && userName !== "Learner" ? userName.trim() : null) ||
+    (userEmail
+      ? userEmail
+          .split("@")[0]
+          .replace(/[._-]+/g, " ")
+          .replace(/\b\w/g, (c) => c.toUpperCase())
+      : null) ||
+    "Admin";
 
   const studentRecord: Partial<StudentRecord> = {
     id: studentId,
@@ -460,6 +497,9 @@ export async function createStudentInFirestore(
     is_super10: !!input.is_super10,
     lastLoginAt: now,
     createdAt: now,
+    createdBy: author,
+    updatedAt: now,
+    updatedBy: author,
   };
 
   if (input.title?.trim()) studentRecord.title = input.title.trim();

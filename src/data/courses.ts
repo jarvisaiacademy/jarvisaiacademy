@@ -26,6 +26,11 @@ export interface CourseItem {
   // Teacher ids only. A teacher's name lives in the `teachers` collection, which is
   // admin-only to read, so a public course page never has it.
   teacherIds?: string[];
+  // Audit trail
+  createdBy?: string;
+  createdAt?: string;
+  updatedBy?: string;
+  updatedAt?: string;
 }
 
 export type CourseStatus = "active" | "inactive";

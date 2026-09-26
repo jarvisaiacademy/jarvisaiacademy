@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import { PanelLeft } from "lucide-react";
 import { MobileMenuIcon } from "@/components/ui/mobile-menu-icon";
 import { ThemeSwitcher } from "@/components/layout/theme-switcher";
@@ -28,6 +29,12 @@ export function AdminHeader({
   title = "Admin Control Center",
 }: AdminHeaderProps) {
   const { user, logout } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace("/");
+  };
 
   return (
     <header className="sticky top-0 z-30 flex shrink-0 items-center justify-between px-3 sm:px-6 h-14 bg-white/90 dark:bg-[#181818]/90 backdrop-blur-md border-b border-neutral-200 dark:border-white/10 select-none">
@@ -60,7 +67,7 @@ export function AdminHeader({
           the sidebar is collapsed. */}
       <div className="flex flex-1 items-center justify-end gap-1.5 sm:gap-2.5 min-w-[40px]">
         <ThemeSwitcher className="shrink-0" />
-        {user && <UserProfile user={user} onLogout={logout} variant="compact" />}
+        {user && <UserProfile user={user} onLogout={handleLogout} variant="compact" />}
       </div>
     </header>
   );

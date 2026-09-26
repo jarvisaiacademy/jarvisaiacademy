@@ -12,12 +12,28 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { AdminPage } from "@/components/admin/admin-page";
 import { isPublic } from "@/lib/courses-server";
 import { stackDisplay } from "@/data/courses";
+import { useAuth } from "@/providers/auth-provider";
 import type { AdminShellState } from "@/components/admin/admin-shell";
 
 interface AdminCourseDetailProps {
   courseId: string;
   /** The shell's chrome, so this page can drive the sidebar and go back to the tab list. */
   shell: AdminShellState;
+}
+
+/** Format ISO timestamp into Indian English locale */
+function formatWhen(iso?: string) {
+  if (!iso) return "—";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
 }
 
 export function AdminCourseDetail({ courseId, shell }: AdminCourseDetailProps) {
@@ -31,8 +47,33 @@ export function AdminCourseDetail({ courseId, shell }: AdminCourseDetailProps) {
 
   const course = firestoreCourses.find((c) => c.id === courseId);
 
+  const { user } = useAuth();
+
   // By id rather than a filter per id: teacher lookup map
   const teacherById = useMemo(() => new Map(students.map((s) => [s.id, s])), [students]);
+
+  const resolveAuthorName = (author?: string) => {
+    if (!author || author === "Admin") {
+      return user?.name && user.name !== "Learner" ? user.name : "Admin";
+    }
+    if (user && (author === user.email || author === user.id)) {
+      return user.name || author;
+    }
+    const match = students.find((s) => s.id === author || s.email === author);
+    if (match?.name) {
+      return match.name;
+    }
+    if (author.includes("@")) {
+      const [localPart] = author.split("@");
+      return localPart
+        .replace(/[._-]+/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+    }
+    return author;
+  };
+
+  const createdAuthorName = resolveAuthorName(course?.createdBy);
+  const updatedAuthorName = resolveAuthorName(course?.updatedBy || course?.createdBy);
 
   const goToCourses = () => {
     shell.onNavigateTab("courses");
@@ -128,11 +169,11 @@ export function AdminCourseDetail({ courseId, shell }: AdminCourseDetailProps) {
 
         {/* Big Card matching View Teacher layout */}
         <div className="w-full rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden flex flex-col">
-          {/* Card Header: Back button on left, centered Heading Course Details */}
+          {/* Card Header: Back button on left, centered Heading Course Details, Edit & Delete on right */}
           <div className="p-4 sm:p-5 border-b border-neutral-200 dark:border-white/10">
-            <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
-              {/* Back button inside the card */}
-              <div className="flex items-center">
+            <div className="relative flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 min-h-[38px]">
+              {/* Left: Back button */}
+              <div className="flex items-center z-10">
                 <button
                   type="button"
                   onClick={goToCourses}
@@ -144,15 +185,54 @@ export function AdminCourseDetail({ courseId, shell }: AdminCourseDetailProps) {
                 </button>
               </div>
 
-              {/* Center: Heading */}
-              <div className="flex items-center justify-center">
-                <h1 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white text-center">
+              {/* Center: Heading Course Details */}
+              <div className="w-full sm:w-auto sm:absolute sm:inset-0 flex items-center justify-center pointer-events-none order-first sm:order-none">
+                <h1 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white text-center pointer-events-auto">
                   Course Details
                 </h1>
               </div>
 
-              {/* Spacer to balance the Back button for mathematical centering */}
-              <div className="w-[72px] invisible" aria-hidden="true" />
+              {/* Top Right: Delete (Red) + Edit Course (Orange) */}
+              <div className="flex items-center gap-2 z-10 ml-auto sm:ml-0">
+                {isConfirmingDelete ? (
+                  <div className="flex items-center gap-1.5 bg-red-50 dark:bg-red-500/10 p-1 rounded-xl border border-red-200 dark:border-red-500/30">
+                    <button
+                      type="button"
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                      className="px-3 py-1 text-xs font-bold bg-red-600 text-white rounded-lg cursor-pointer disabled:opacity-60"
+                    >
+                      {isDeleting ? "Deleting..." : "Confirm Delete"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsConfirmingDelete(false)}
+                      className="px-2 text-xs text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsConfirmingDelete(true)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-red-600 hover:bg-red-500 shadow-xs transition-colors cursor-pointer"
+                    title="Delete Course"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
+                  </button>
+                )}
+
+                <Link
+                  href={`/admin/courses/${course.id}/edit`}
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold bg-orange-500 hover:bg-orange-600 text-white shadow-xs transition-colors cursor-pointer"
+                  title="Edit Course"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  <span>Edit Course</span>
+                </Link>
+              </div>
             </div>
           </div>
 
@@ -165,14 +245,9 @@ export function AdminCourseDetail({ courseId, shell }: AdminCourseDetailProps) {
                   <BookOpen className="w-6 h-6 text-neutral-700 dark:text-neutral-300" />
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-bold text-neutral-400">
-                      #{course.number}
-                    </span>
-                    <span className="text-base font-bold text-neutral-900 dark:text-white truncate">
-                      {course.title}
-                    </span>
-                  </div>
+                  <span className="text-base font-bold text-neutral-900 dark:text-white truncate">
+                    {course.title}
+                  </span>
                   <span className="text-xs text-neutral-500 truncate">
                     {course.categoryLabel || course.category} · {course.fee} · {course.duration}
                   </span>
@@ -180,11 +255,6 @@ export function AdminCourseDetail({ courseId, shell }: AdminCourseDetailProps) {
               </div>
 
               <div className="flex items-center gap-2">
-                {course.badge && (
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-neutral-100 dark:bg-white/10 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-white/10">
-                    {course.badge}
-                  </span>
-                )}
                 <span
                   className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${
                     active
@@ -234,37 +304,7 @@ export function AdminCourseDetail({ courseId, shell }: AdminCourseDetailProps) {
                 </span>
               </div>
 
-              {/* 4. Badge */}
-              <div className="flex flex-col min-w-0">
-                <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
-                  {course.badge || "—"}
-                </span>
-                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                  Badge
-                </span>
-              </div>
-
-              {/* 5. Badge Type */}
-              <div className="flex flex-col min-w-0">
-                <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate capitalize">
-                  {course.badgeType || "—"}
-                </span>
-                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                  Badge Style
-                </span>
-              </div>
-
-              {/* 6. Enrollment ID */}
-              <div className="flex flex-col min-w-0">
-                <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate font-mono">
-                  {course.enrollmentId || "—"}
-                </span>
-                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                  Enrollment ID
-                </span>
-              </div>
-
-              {/* 7. Category */}
+              {/* 4. Category */}
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
                   {course.categoryLabel || course.category}
@@ -274,7 +314,7 @@ export function AdminCourseDetail({ courseId, shell }: AdminCourseDetailProps) {
                 </span>
               </div>
 
-              {/* 8. Fee */}
+              {/* 5. Fee */}
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
                   {course.fee} (₹{course.amount.toLocaleString("en-IN")})
@@ -284,7 +324,7 @@ export function AdminCourseDetail({ courseId, shell }: AdminCourseDetailProps) {
                 </span>
               </div>
 
-              {/* 9. Duration */}
+              {/* 6. Duration */}
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
                   {course.duration}
@@ -294,17 +334,7 @@ export function AdminCourseDetail({ courseId, shell }: AdminCourseDetailProps) {
                 </span>
               </div>
 
-              {/* 10. Level */}
-              <div className="flex flex-col min-w-0">
-                <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
-                  {course.level}
-                </span>
-                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                  Course Level
-                </span>
-              </div>
-
-              {/* 11. Status */}
+              {/* 7. Status */}
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-semibold text-neutral-900 dark:text-white capitalize">
                   {course.status ?? "active"}
@@ -314,7 +344,7 @@ export function AdminCourseDetail({ courseId, shell }: AdminCourseDetailProps) {
                 </span>
               </div>
 
-              {/* 12. Assigned Teachers */}
+              {/* 8. Assigned Teachers */}
               <div className="flex flex-col min-w-0 col-span-1 sm:col-span-2 lg:col-span-2">
                 <span className="text-sm font-semibold text-neutral-900 dark:text-white">
                   {(course.teacherIds ?? []).length} {((course.teacherIds ?? []).length === 1 ? "Teacher" : "Teachers")}
@@ -430,56 +460,30 @@ export function AdminCourseDetail({ courseId, shell }: AdminCourseDetailProps) {
             </div>
           </div>
 
-          {/* Card Footer: Back on left, Delete and Edit Course green pill button on right */}
-          <div className="px-5 sm:px-7 py-4 border-t border-neutral-200 dark:border-white/10 flex items-center justify-between gap-3 bg-neutral-50/50 dark:bg-white/[0.02]">
-            {/* Bottom Left: Back button */}
-            <button
-              type="button"
-              onClick={goToCourses}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 border border-neutral-200 dark:border-white/10 transition-colors cursor-pointer"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Courses</span>
-            </button>
+          {/* Card Footer: Metadata (Created on left, Updated on right in continuous string) */}
+          <div className="px-5 sm:px-7 py-4 border-t border-neutral-200 dark:border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 bg-neutral-50/50 dark:bg-white/[0.02] text-xs">
+            {/* Bottom Left: Created by [Name] on [Date] */}
+            <div className="text-neutral-500 dark:text-neutral-400">
+              <span>Created by </span>
+              <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                {createdAuthorName}
+              </span>
+              <span> on </span>
+              <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                {formatWhen(course.createdAt)}
+              </span>
+            </div>
 
-            {/* Bottom Right: Delete + Edit Course green pill button */}
-            <div className="flex items-center gap-2">
-              {isConfirmingDelete ? (
-                <div className="flex items-center gap-1.5 bg-red-50 dark:bg-red-500/10 p-1 rounded-xl border border-red-200 dark:border-red-500/30">
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    disabled={isDeleting}
-                    className="px-3 py-1 text-xs font-bold bg-red-600 text-white rounded-lg cursor-pointer disabled:opacity-60"
-                  >
-                    {isDeleting ? "Deleting..." : "Confirm Delete"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsConfirmingDelete(false)}
-                    className="px-2 text-xs text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setIsConfirmingDelete(true)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 border border-neutral-200 dark:border-white/10 transition-colors cursor-pointer"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Delete</span>
-                </button>
-              )}
-
-              <Link
-                href={`/admin/courses/${course.id}/edit`}
-                className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-colors cursor-pointer"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-                <span>Edit Course</span>
-              </Link>
+            {/* Bottom Right: Updated by [Name] on [Date] */}
+            <div className="text-neutral-500 dark:text-neutral-400 text-left sm:text-right">
+              <span>Updated by </span>
+              <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                {updatedAuthorName}
+              </span>
+              <span> on </span>
+              <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                {formatWhen(course.updatedAt || course.createdAt)}
+              </span>
             </div>
           </div>
         </div>

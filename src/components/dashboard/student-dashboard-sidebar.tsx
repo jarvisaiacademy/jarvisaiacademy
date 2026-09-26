@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { SidebarHeader } from "@/components/layout/sidebar-header";
 import { UserProfile } from "@/components/layout/user-profile";
@@ -30,6 +31,12 @@ export function StudentDashboardSidebar({
   onBackToChat,
 }: StudentDashboardSidebarProps) {
   const { user, isLoggedIn, logout } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace("/");
+  };
 
   const nav = (
     <StudentSidebarNav
@@ -40,7 +47,7 @@ export function StudentDashboardSidebar({
   );
 
   const footer = isLoggedIn ? (
-    <UserProfile user={user} onProfileClick={() => onSelectTab("profile")} onLogout={logout} />
+    <UserProfile user={user} onProfileClick={() => onSelectTab("profile")} onLogout={handleLogout} />
   ) : null;
 
   if (isMobile) {

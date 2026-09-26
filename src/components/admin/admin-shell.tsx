@@ -83,14 +83,22 @@ export function AdminShell({ defaultTab, restoreTab = true, children }: AdminShe
     setMounted(true);
   }, [restoreTab]);
 
-  const isAuthorized = !!user?.isAdmin;
+  const isAuthorized =
+    !!user?.isAdmin &&
+    (typeof window !== "undefined" && sessionStorage.getItem("jarvis_session_active") === "true");
 
-  // Signed out, or signed in as a student: leave. After mount, because `user` is
-  // only known on the client; navigating during render would fire on every attempt.
-  // `replace`, not `push`, so Back does not bounce straight back here.
+  // Signed out, non-admin, or pasted into a new tab: redirect to home page.
+  // After mount, because `user` and `sessionStorage` are only known on the client.
   useEffect(() => {
-    if (mounted && !isAuthorized) router.replace("/");
+    if (mounted && !isAuthorized) {
+      router.replace("/");
+    }
   }, [mounted, isAuthorized, router]);
+
+  const handleLogout = useCallback(async () => {
+    await logout();
+    router.replace("/");
+  }, [logout, router]);
 
   const handleSelectTab = useCallback(
     (next: DashboardTab) => {
@@ -127,7 +135,7 @@ export function AdminShell({ defaultTab, restoreTab = true, children }: AdminShe
           isMobile={isMobile}
           isLoggedIn={isLoggedIn}
           user={user}
-          onLogout={logout}
+          onLogout={handleLogout}
           // The identity chip already means "open the dashboard", and this is it.
           onOpenProfile={() => {}}
           isDashboardOpen

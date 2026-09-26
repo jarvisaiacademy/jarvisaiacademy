@@ -34,7 +34,10 @@ export function TeacherShell({ children }: TeacherShellProps) {
   const [mounted, setMounted] = useState(false);
   const [isTeacher, setIsTeacher] = useState<boolean | null>(() => {
     if (typeof window === "undefined") return null;
-    return localStorage.getItem("jarvis_is_teacher") === "true";
+    return (
+      localStorage.getItem("jarvis_is_teacher") === "true" ||
+      sessionStorage.getItem("jarvis_is_teacher") === "true"
+    );
   });
 
   useEffect(() => {
@@ -64,8 +67,13 @@ export function TeacherShell({ children }: TeacherShellProps) {
         const currentUid = auth?.currentUser?.uid || user?.id;
         const currentEmail = auth?.currentUser?.email || user?.email;
         if (!currentUid) {
-          if (isLoggedIn === false && !localStorage.getItem("jarvis_auth_user")) {
+          if (
+            isLoggedIn === false &&
+            !sessionStorage.getItem("jarvis_auth_user") &&
+            !localStorage.getItem("jarvis_auth_user")
+          ) {
             setIsTeacher(false);
+            sessionStorage.removeItem("jarvis_is_teacher");
             localStorage.removeItem("jarvis_is_teacher");
             router.replace("/");
           }
@@ -76,9 +84,11 @@ export function TeacherShell({ children }: TeacherShellProps) {
         const isT = await checkTeacherStatus(currentUid, currentEmail);
         setIsTeacher(isT);
         if (isT) {
+          sessionStorage.setItem("jarvis_is_teacher", "true");
           localStorage.setItem("jarvis_is_teacher", "true");
         } else if (!user?.isAdmin) {
           setIsTeacher(false);
+          sessionStorage.removeItem("jarvis_is_teacher");
           localStorage.removeItem("jarvis_is_teacher");
         }
       } catch (err) {
@@ -89,15 +99,28 @@ export function TeacherShell({ children }: TeacherShellProps) {
     checkTeacherRole();
   }, [user, isLoggedIn, mounted, authIsTeacher, router]);
 
+  const hasTabSession =
+    typeof window !== "undefined" && sessionStorage.getItem("jarvis_session_active") === "true";
+
   useEffect(() => {
-    if (mounted && isTeacher === false && !authIsTeacher && !user?.isTeacher) {
-      router.replace(isLoggedIn ? "/dashboard" : "/");
+    if (mounted && !hasTabSession) {
+      router.replace("/");
     }
-  }, [mounted, isTeacher, authIsTeacher, user?.isTeacher, isLoggedIn, router]);
+  }, [mounted, hasTabSession, router]);
+
+  useEffect(() => {
+    if (mounted && hasTabSession && isTeacher === false && !authIsTeacher && !user?.isTeacher) {
+      if (isLoggedIn) {
+        router.replace("/dashboard");
+      } else {
+        router.replace("/");
+      }
+    }
+  }, [mounted, hasTabSession, isTeacher, authIsTeacher, user?.isTeacher, isLoggedIn, router]);
 
   const goHome = useCallback(() => router.push("/"), [router]);
 
-  if (!mounted || isTeacher === null || isTeacher === false) return null;
+  if (!mounted || !hasTabSession || isTeacher === null || isTeacher === false) return null;
 
   return (
     <ToastProvider>
