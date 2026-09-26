@@ -53,10 +53,12 @@ export function AdminUsers({ onHome, records: propRecords }: AdminUsersProps) {
     }
 
     let active = true;
+    let unsubscribe: (() => void) | undefined;
+
     import("firebase/firestore").then(({ collection, onSnapshot, query }) => {
       if (!db || !active) return;
       const q = query(collection(db, "enrollments"));
-      const unsubscribe = onSnapshot(
+      unsubscribe = onSnapshot(
         q,
         (snapshot) => {
           if (!active) return;
@@ -82,12 +84,12 @@ export function AdminUsers({ onHome, records: propRecords }: AdminUsersProps) {
           if (active) setLoading(false);
         }
       );
-
-      return () => {
-        active = false;
-        unsubscribe();
-      };
     });
+
+    return () => {
+      active = false;
+      unsubscribe?.();
+    };
   }, [propRecords]);
 
   // Use prop records if available, otherwise local records
