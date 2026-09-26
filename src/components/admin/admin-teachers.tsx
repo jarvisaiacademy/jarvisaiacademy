@@ -359,48 +359,53 @@ export function AdminTeachers({ onHome }: AdminTeachersProps) {
                         {formatSignIn(teacher.lastLoginAt)}
                       </td>
 
-                      {/* Status */}
+                      {/* Status - Plain text with indicator without rounded card */}
                       <td className="py-3.5 px-4 sm:px-6">
                         <button
                           type="button"
                           onClick={() => handleToggleStatus(teacher)}
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border transition-colors cursor-pointer ${
-                            isInactive
-                              ? "bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-white/10"
-                              : "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30"
-                          }`}
+                          className="inline-flex items-center gap-1.5 font-medium cursor-pointer hover:opacity-80 transition-opacity"
+                          title={`Click to ${isInactive ? "activate" : "deactivate"} teacher`}
                         >
                           <span
-                            className={`w-1.5 h-1.5 rounded-full ${
+                            className={`w-2 h-2 rounded-full ${
                               isInactive ? "bg-neutral-400" : "bg-emerald-500"
                             }`}
                           />
-                          <span>{isInactive ? "Inactive" : "Active"}</span>
+                          <span
+                            className={
+                              isInactive
+                                ? "text-neutral-500 dark:text-neutral-400"
+                                : "text-emerald-600 dark:text-emerald-400 font-semibold"
+                            }
+                          >
+                            {isInactive ? "Inactive" : "Active"}
+                          </span>
                         </button>
                       </td>
 
                       {/* Actions */}
-                      <td className="py-3.5 px-4 sm:px-6 text-right">
+                      <td className="py-3.5 px-4 sm:px-6 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
-                          {/* View Detail Link */}
+                          {/* View Detail Link - Blue */}
                           <Link
                             href={`/admin/teachers/${teacher.id}`}
-                            className="p-1.5 rounded-lg text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors"
+                            className="p-1.5 rounded-lg text-white bg-blue-600 hover:bg-blue-500 shadow-xs transition-colors cursor-pointer inline-flex items-center justify-center"
                             title="View Teacher Profile"
                           >
                             <Eye className="w-4 h-4" />
                           </Link>
 
-                          {/* Edit Link */}
+                          {/* Edit Link - Orange */}
                           <Link
                             href={`/admin/teachers/${teacher.id}/edit`}
-                            className="p-1.5 rounded-lg text-neutral-600 dark:text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"
+                            className="p-1.5 rounded-lg text-white bg-orange-500 hover:bg-orange-600 shadow-xs transition-colors cursor-pointer inline-flex items-center justify-center"
                             title="Edit Teacher"
                           >
                             <Pencil className="w-4 h-4" />
                           </Link>
 
-                          {/* Delete Action with Confirmation */}
+                          {/* Delete Action with Confirmation - Red */}
                           {deleteConfirmId === teacher.id ? (
                             <div className="flex items-center gap-1 bg-red-50 dark:bg-red-500/10 p-1 rounded-lg border border-red-200 dark:border-red-500/30">
                               <button
@@ -434,7 +439,7 @@ export function AdminTeachers({ onHome }: AdminTeachersProps) {
                             <button
                               type="button"
                               onClick={() => setDeleteConfirmId(teacher.id)}
-                              className="p-1.5 rounded-lg text-neutral-600 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-lg text-white bg-red-600 hover:bg-red-500 shadow-xs transition-colors cursor-pointer inline-flex items-center justify-center"
                               title="Delete or Remove Teacher"
                             >
                               <Trash2 className="w-4 h-4" />

@@ -1,14 +1,17 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronRight, ArrowLeft, Pencil, ShieldCheck } from "lucide-react";
+import { ChevronRight, ArrowLeft, Pencil, Trash2, ShieldCheck } from "lucide-react";
 import { useStudents } from "@/providers/students-provider";
+import { useAuth } from "@/providers/auth-provider";
+import { useToast } from "@/components/ui/toast";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { RoleBadge } from "@/components/admin/role-badge";
 import { AdminPage } from "@/components/admin/admin-page";
 import { accountRoleOf, type CandidateStatus } from "@/data/students";
+import { deleteAdminInFirestore } from "@/services/students-service";
 import type { AdminShellState } from "@/components/admin/admin-shell";
 
 interface AdminAdminDetailProps {
@@ -33,8 +36,58 @@ function formatWhen(iso?: string) {
 export function AdminAdminDetail({ adminId, shell }: AdminAdminDetailProps) {
   const router = useRouter();
   const { students, loading } = useStudents();
+  const { user } = useAuth();
+  const { showToast } = useToast();
+
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const admin = students.find((s) => s.id === adminId);
+
+  const handleDelete = async () => {
+    if (user && (user.id === adminId || user.email === admin?.email)) {
+      showToast("You cannot delete your own admin account.", "error");
+      setIsConfirmingDelete(false);
+      return;
+    }
+    setIsDeleting(true);
+    try {
+      await deleteAdminInFirestore(adminId, {
+        permanent: true,
+        userEmail: user?.email,
+      });
+      showToast("Admin removed successfully", "success");
+      goToAdmins();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to delete admin";
+      showToast(msg, "error");
+      setIsDeleting(false);
+      setIsConfirmingDelete(false);
+    }
+  };
+
+  const resolveAuthorName = (author?: string) => {
+    if (!author || author === "Admin") {
+      return user?.name && user.name !== "Learner" ? user.name : "Admin";
+    }
+    if (user && (author === user.email || author === user.id)) {
+      return user.name || author;
+    }
+    const match = students.find((s) => s.id === author || s.email === author);
+    if (match?.name) {
+      return match.name;
+    }
+    if (author.includes("@")) {
+      const [localPart] = author.split("@");
+      return localPart
+        .replace(/[._-]+/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+    }
+    return author;
+  };
+
+  const createdAuthorName = resolveAuthorName(admin?.createdBy);
+  const updatedAuthorName = resolveAuthorName(admin?.updatedBy || admin?.createdBy);
 
   const goToAdmins = () => {
     shell.onNavigateTab("admins");
@@ -116,11 +169,11 @@ export function AdminAdminDetail({ adminId, shell }: AdminAdminDetailProps) {
 
         {/* Big Card matching Teacher and Student Details */}
         <div className="w-full rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden flex flex-col">
-          {/* Card Header: Back button on left, centered Heading Admin Details */}
+          {/* Card Header: Back button on left, centered Heading Admin Details, Edit & Delete on right */}
           <div className="p-4 sm:p-5 border-b border-neutral-200 dark:border-white/10">
-            <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
-              {/* Back button inside the card */}
-              <div className="flex items-center">
+            <div className="relative flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 min-h-[38px]">
+              {/* Left: Back button */}
+              <div className="flex items-center z-10">
                 <button
                   type="button"
                   onClick={goToAdmins}
@@ -132,15 +185,54 @@ export function AdminAdminDetail({ adminId, shell }: AdminAdminDetailProps) {
                 </button>
               </div>
 
-              {/* Center: Heading */}
-              <div className="flex items-center justify-center">
-                <h1 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white text-center">
+              {/* Center: Heading Admin Details */}
+              <div className="w-full sm:w-auto sm:absolute sm:inset-0 flex items-center justify-center pointer-events-none order-first sm:order-none">
+                <h1 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white text-center pointer-events-auto">
                   Admin Details
                 </h1>
               </div>
 
-              {/* Spacer to balance the Back button for mathematical centering */}
-              <div className="w-[72px] invisible" aria-hidden="true" />
+              {/* Top Right: Delete (Red) + Edit Admin (Orange) */}
+              <div className="flex items-center gap-2 z-10 ml-auto sm:ml-0">
+                {isConfirmingDelete ? (
+                  <div className="flex items-center gap-1.5 bg-red-50 dark:bg-red-500/10 p-1 rounded-xl border border-red-200 dark:border-red-500/30">
+                    <button
+                      type="button"
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                      className="px-3 py-1 text-xs font-bold bg-red-600 text-white rounded-lg cursor-pointer disabled:opacity-60"
+                    >
+                      {isDeleting ? "Deleting..." : "Confirm Delete"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsConfirmingDelete(false)}
+                      className="px-2 text-xs text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsConfirmingDelete(true)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-red-600 hover:bg-red-500 shadow-xs transition-colors cursor-pointer"
+                    title="Delete Admin"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
+                  </button>
+                )}
+
+                <Link
+                  href={`/admin/admins/${admin.id}/edit`}
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold bg-orange-500 hover:bg-orange-600 text-white shadow-xs transition-colors cursor-pointer"
+                  title="Edit Admin"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  <span>Edit Admin</span>
+                </Link>
+              </div>
             </div>
           </div>
 
@@ -308,26 +400,31 @@ export function AdminAdminDetail({ adminId, shell }: AdminAdminDetailProps) {
             </div>
           </div>
 
-          {/* Card Footer: Back on left, Edit Admin green pill button on right */}
-          <div className="px-5 sm:px-7 py-4 border-t border-neutral-200 dark:border-white/10 flex items-center justify-between gap-3 bg-neutral-50/50 dark:bg-white/[0.02]">
-            {/* Bottom Left: Back button */}
-            <button
-              type="button"
-              onClick={goToAdmins}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 border border-neutral-200 dark:border-white/10 transition-colors cursor-pointer"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Admins</span>
-            </button>
+          {/* Card Footer: Metadata (Created on left, Updated on right in continuous string) */}
+          <div className="px-5 sm:px-7 py-4 border-t border-neutral-200 dark:border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 bg-neutral-50/50 dark:bg-white/[0.02] text-xs">
+            {/* Bottom Left: Created by [Name] on [Date] */}
+            <div className="text-neutral-500 dark:text-neutral-400">
+              <span>Created by </span>
+              <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                {createdAuthorName}
+              </span>
+              <span> on </span>
+              <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                {formatWhen(admin.createdAt)}
+              </span>
+            </div>
 
-            {/* Bottom Right: Edit Admin green pill button */}
-            <Link
-              href={`/admin/admins/${admin.id}/edit`}
-              className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-colors cursor-pointer"
-            >
-              <Pencil className="w-3.5 h-3.5" />
-              <span>Edit Admin</span>
-            </Link>
+            {/* Bottom Right: Updated by [Name] on [Date] */}
+            <div className="text-neutral-500 dark:text-neutral-400 text-left sm:text-right">
+              <span>Updated by </span>
+              <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                {updatedAuthorName}
+              </span>
+              <span> on </span>
+              <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                {formatWhen(admin.updatedAt || admin.createdAt)}
+              </span>
+            </div>
           </div>
         </div>
       </div>

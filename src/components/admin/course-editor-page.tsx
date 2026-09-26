@@ -268,7 +268,7 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
           topics: topicsArr,
           actionPrompt:
             actionPrompt.trim() || `Tell me about the ${formTitle.trim()} course`,
-          status: formStatus,
+          status: "active",
           teacherIds: formTeacherIds,
         });
         showToast(`New course "${formTitle}" created successfully!`, "success");
@@ -510,28 +510,34 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
                   </span>
                 </div>
 
-                {/* 10. Status */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
-                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Course Status
-                  </label>
-                  <Select
-                    label="Course Status"
-                    value={formStatus}
-                    onValueChange={(val) => setFormStatus(val as CourseStatus)}
-                    options={[
-                      { value: "active", label: "Active (Listed Publicly)" },
-                      { value: "inactive", label: "Inactive (Hidden)" },
-                    ]}
-                    className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
-                  />
-                  <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
-                    Active lists it publicly; inactive hides it from catalogue and search.
-                  </span>
-                </div>
+                {/* 10. Status (Only shown when editing existing course) */}
+                {course && (
+                  <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
+                    <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                      Course Status
+                    </label>
+                    <Select
+                      label="Course Status"
+                      value={formStatus}
+                      onValueChange={(val) => setFormStatus(val as CourseStatus)}
+                      options={[
+                        { value: "active", label: "Active (Listed Publicly)" },
+                        { value: "inactive", label: "Inactive (Hidden)" },
+                      ]}
+                      className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+                    />
+                    <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                      Active lists it publicly; inactive hides it from catalogue and search.
+                    </span>
+                  </div>
+                )}
 
-                {/* 11. Assigned Teachers (spans 1 col on sm, 1 col on lg) */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
+                {/* 11. Assigned Teachers */}
+                <div
+                  className={`flex flex-col gap-1.5 col-span-1 sm:col-span-1 ${
+                    course ? "lg:col-span-1" : "lg:col-span-1"
+                  }`}
+                >
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Assigned Teachers
                   </label>
@@ -651,7 +657,9 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
               <button
                 type="submit"
                 disabled={isSaving}
-                className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                className={`inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer disabled:opacity-50 ${
+                  course ? "bg-orange-500 hover:bg-orange-600" : "bg-emerald-600 hover:bg-emerald-500"
+                }`}
               >
                 {isSaving ? (
                   <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />

@@ -23,7 +23,7 @@ interface AdminPageProps {
 export function AdminPage({
   shell,
   children,
-  maxWidth = "max-w-7xl px-4 sm:px-8",
+  maxWidth = "max-w-none px-3 sm:px-6",
   className = "",
 }: AdminPageProps) {
   return (

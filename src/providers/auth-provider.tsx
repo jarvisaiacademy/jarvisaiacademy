@@ -102,24 +102,30 @@ export function checkIsAdmin(email?: string | null): boolean {
   return ADMIN_EMAILS.includes(email.toLowerCase());
 }
 
-// The session lives in localStorage only. It was mirrored into a `jarvis_auth_user` cookie
-// that nothing read — no middleware, no server component, no route handler — so it put a
-// name and email address in every visitor's cookie jar for no reason. Do not add it back
-// without a server-side reader.
+// Cache auth session in localStorage and sessionStorage so that page reloads
+// and multi-tab workflows maintain session state seamlessly per GEMINI.md.
 function saveUserSession(mappedUser: User | null) {
   try {
     if (mappedUser) {
-      localStorage.setItem("jarvis_auth_user", JSON.stringify(mappedUser));
+      const serialized = JSON.stringify(mappedUser);
+      sessionStorage.setItem("jarvis_auth_user", serialized);
+      localStorage.setItem("jarvis_auth_user", serialized);
       if (mappedUser.isTeacher) {
+        sessionStorage.setItem("jarvis_is_teacher", "true");
         localStorage.setItem("jarvis_is_teacher", "true");
       } else {
+        sessionStorage.removeItem("jarvis_is_teacher");
         localStorage.removeItem("jarvis_is_teacher");
       }
       if (typeof document !== "undefined") {
         document.documentElement.classList.add("is-auth");
       }
     } else {
+      sessionStorage.removeItem("jarvis_auth_user");
+      sessionStorage.removeItem("jarvis_session_active");
+      sessionStorage.removeItem("jarvis_is_teacher");
       localStorage.removeItem("jarvis_auth_user");
+      localStorage.removeItem("jarvis_session_active");
       localStorage.removeItem("jarvis_is_teacher");
       if (typeof document !== "undefined") {
         document.documentElement.classList.remove("is-auth");
@@ -133,11 +139,15 @@ function saveUserSession(mappedUser: User | null) {
 function getInitialUser(): User | null {
   if (typeof window === "undefined") return null;
   try {
-    const stored = localStorage.getItem("jarvis_auth_user");
+    const stored =
+      localStorage.getItem("jarvis_auth_user") ||
+      sessionStorage.getItem("jarvis_auth_user");
     if (stored && stored !== "null") {
       const parsed = JSON.parse(stored);
       parsed.isAdmin = checkIsAdmin(parsed.email);
-      parsed.isTeacher = localStorage.getItem("jarvis_is_teacher") === "true";
+      parsed.isTeacher =
+        localStorage.getItem("jarvis_is_teacher") === "true" ||
+        sessionStorage.getItem("jarvis_is_teacher") === "true";
       parsed.role = parsed.isAdmin ? "admin" : parsed.isTeacher ? "teacher" : "student";
       return parsed;
     }
@@ -155,6 +165,7 @@ export async function checkTeacherStatus(uid: string, email?: string | null): Pr
     // 1. Direct user document check
     const userDoc = await getDoc(doc(db, "users", uid));
     if (userDoc.exists() && userDoc.data().is_teacher === true) {
+      sessionStorage.setItem("jarvis_is_teacher", "true");
       localStorage.setItem("jarvis_is_teacher", "true");
       return true;
     }
@@ -162,6 +173,7 @@ export async function checkTeacherStatus(uid: string, email?: string | null): Pr
     // 2. Check teachers collection registry by email
     const teacherDoc = await getDoc(doc(db, "teachers", cleanEmail));
     if (teacherDoc.exists() && teacherDoc.data().is_teacher !== false) {
+      sessionStorage.setItem("jarvis_is_teacher", "true");
       localStorage.setItem("jarvis_is_teacher", "true");
       try {
         await setDoc(doc(db, "users", uid), { is_teacher: true }, { merge: true });
@@ -176,6 +188,7 @@ export async function checkTeacherStatus(uid: string, email?: string | null): Pr
     const snap = await getDocs(q);
     const foundDoc = snap.docs.find((d) => d.data().is_teacher === true);
     if (foundDoc) {
+      sessionStorage.setItem("jarvis_is_teacher", "true");
       localStorage.setItem("jarvis_is_teacher", "true");
       try {
         const foundData = foundDoc.data();
@@ -200,8 +213,12 @@ export async function checkTeacherStatus(uid: string, email?: string | null): Pr
     console.warn("[Auth] Failed to check teacher status:", err);
   }
 
-  // If already verified in local cache, keep it as fallback
-  if (typeof window !== "undefined" && localStorage.getItem("jarvis_is_teacher") === "true") {
+  // If already verified in session cache, keep it as fallback
+  if (
+    typeof window !== "undefined" &&
+    (localStorage.getItem("jarvis_is_teacher") === "true" ||
+      sessionStorage.getItem("jarvis_is_teacher") === "true")
+  ) {
     return true;
   }
 
@@ -314,6 +331,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
       setUser(mappedUser);
       saveUserSession(mappedUser);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("jarvis_session_active", "true");
+      }
       // Null when the provider gives no such detail; treated as a returning account, since
       // asking a long-standing learner to re-enter a code is the worse of the two mistakes.
       const isNewUser = getAdditionalUserInfo(result)?.isNewUser ?? false;

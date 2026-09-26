@@ -155,6 +155,17 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "");
 
+    const now = new Date().toISOString();
+    const author =
+      (user.name && user.name !== "Learner" ? user.name.trim() : null) ||
+      (user.email
+        ? user.email
+            .split("@")[0]
+            .replace(/[._-]+/g, " ")
+            .replace(/\b\w/g, (c) => c.toUpperCase())
+        : null) ||
+      "Admin";
+
     const newCourse: CourseItem = {
       id: courseId,
       number: course.number || String(courses.length + 1).padStart(2, "0"),
@@ -181,6 +192,10 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
       actionPrompt: course.actionPrompt || `Tell me about the ${course.title} course`,
       status: course.status ?? "active",
       teacherIds: course.teacherIds ?? [],
+      createdBy: course.createdBy || author,
+      createdAt: course.createdAt || now,
+      updatedBy: course.updatedBy || author,
+      updatedAt: course.updatedAt || now,
     };
 
     // Optimistic update; the Firestore write below is what actually persists it.
@@ -191,7 +206,7 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
 
     // Sync to Firestore
     try {
-      await createCourseInFirestore(newCourse, user.email);
+      await createCourseInFirestore(newCourse, user.email, user.name);
       setIsLiveFromFirebase(true);
     } catch (err) {
       console.warn("[CoursesProvider] Could not sync new course to Firestore immediately:", err);
@@ -205,11 +220,31 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
       throw new Error("Unauthorized: Only verified admins can update courses.");
     }
 
-    const updated = courses.map((c) => (c.id === courseId ? { ...c, ...updates } : c));
+    const now = new Date().toISOString();
+    const author =
+      (user.name && user.name !== "Learner" ? user.name.trim() : null) ||
+      (user.email
+        ? user.email
+            .split("@")[0]
+            .replace(/[._-]+/g, " ")
+            .replace(/\b\w/g, (c) => c.toUpperCase())
+        : null) ||
+      "Admin";
+    const existing = courses.find((c) => c.id === courseId);
+
+    const courseUpdates: Partial<CourseItem> = {
+      ...updates,
+      ...(existing && !existing.createdAt ? { createdAt: now } : {}),
+      ...(existing && !existing.createdBy ? { createdBy: author } : {}),
+      updatedBy: updates.updatedBy || author,
+      updatedAt: updates.updatedAt || now,
+    };
+
+    const updated = courses.map((c) => (c.id === courseId ? { ...c, ...courseUpdates } : c));
     setCourses(updated);
 
     try {
-      await updateCourseInFirestore(courseId, updates, user.email);
+      await updateCourseInFirestore(courseId, courseUpdates, user.email, user.name);
       setIsLiveFromFirebase(true);
     } catch (err) {
       console.warn("[CoursesProvider] Could not sync update to Firestore immediately:", err);
