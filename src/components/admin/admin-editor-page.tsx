@@ -217,7 +217,8 @@ function AdminForm({ admin, shell }: AdminFormProps) {
             phone: phone.trim() || undefined,
             status,
           },
-          user?.email
+          user?.email,
+          user?.name
         );
       } else {
         // CREATE new admin or PROMOTE existing account
@@ -229,11 +230,12 @@ function AdminForm({ admin, shell }: AdminFormProps) {
             specialization: specialization.trim() || undefined,
             bio: bio.trim() || undefined,
             phone: phone.trim() || undefined,
-            status,
+            status: "active",
             existingUserId:
               createMode === "promote" && selectedUserId ? selectedUserId : undefined,
           },
-          user?.email
+          user?.email,
+          user?.name
         );
       }
 
@@ -463,8 +465,12 @@ function AdminForm({ admin, shell }: AdminFormProps) {
                   />
                 </div>
 
-                {/* 5. Specialization & Responsibilities (spans 2 columns on lg) */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-2 lg:col-span-2">
+                {/* 5. Specialization & Responsibilities */}
+                <div
+                  className={`flex flex-col gap-1.5 col-span-1 sm:col-span-2 ${
+                    admin ? "lg:col-span-2" : "lg:col-span-3"
+                  }`}
+                >
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Specialization & Department
                   </label>
@@ -477,22 +483,24 @@ function AdminForm({ admin, shell }: AdminFormProps) {
                   />
                 </div>
 
-                {/* 6. Account Status (spans 1 column on lg) */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
-                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Account Status
-                  </label>
-                  <Select
-                    label="Account Status"
-                    value={status}
-                    onValueChange={(val) => setStatus(val as CandidateStatus)}
-                    options={[
-                      { value: "active", label: "Active Administrator" },
-                      { value: "inactive", label: "Inactive / Suspended" },
-                    ]}
-                    className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
-                  />
-                </div>
+                {/* 6. Account Status (Only shown when editing existing admin) */}
+                {admin && (
+                  <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
+                    <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                      Account Status
+                    </label>
+                    <Select
+                      label="Account Status"
+                      value={status}
+                      onValueChange={(val) => setStatus(val as CandidateStatus)}
+                      options={[
+                        { value: "active", label: "Active Administrator" },
+                        { value: "inactive", label: "Inactive / Suspended" },
+                      ]}
+                      className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+                    />
+                  </div>
+                )}
 
                 {/* 7. Authority Level (spans 1 column on lg) */}
                 <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
@@ -543,7 +551,9 @@ function AdminForm({ admin, shell }: AdminFormProps) {
               <button
                 type="submit"
                 disabled={isSaving}
-                className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                className={`inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer disabled:opacity-50 ${
+                  admin ? "bg-orange-500 hover:bg-orange-600" : "bg-emerald-600 hover:bg-emerald-500"
+                }`}
               >
                 {isSaving ? (
                   <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />

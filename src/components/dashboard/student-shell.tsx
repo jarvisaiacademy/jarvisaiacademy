@@ -54,7 +54,10 @@ export function StudentShell({ defaultTab, restoreTab = true, children }: Studen
 
   const [isTeacher, setIsTeacher] = useState<boolean | null>(() => {
     if (typeof window === "undefined") return null;
-    return localStorage.getItem("jarvis_is_teacher") === "true";
+    return (
+      localStorage.getItem("jarvis_is_teacher") === "true" ||
+      sessionStorage.getItem("jarvis_is_teacher") === "true"
+    );
   });
 
   useEffect(() => {
@@ -84,15 +87,29 @@ export function StudentShell({ defaultTab, restoreTab = true, children }: Studen
   }, [user?.id, user?.email, authIsTeacher, user?.isTeacher]);
 
   const teacherResolved = isTeacher === true || authIsTeacher === true || user?.isTeacher === true;
+  const hasTabSession =
+    typeof window !== "undefined" && sessionStorage.getItem("jarvis_session_active") === "true";
+
   // Admins have their own dashboard; teachers go to faculty dashboard; guests need to log in first.
-  const isAuthorized = mounted && isLoggedIn && !user?.isAdmin && !teacherResolved && isTeacher === false;
+  // Direct pasting in a new tab without an active tab session redirects to home page.
+  const isAuthorized =
+    mounted &&
+    hasTabSession &&
+    isLoggedIn &&
+    !user?.isAdmin &&
+    !teacherResolved &&
+    isTeacher === false;
 
   useEffect(() => {
     if (!mounted || isTeacher === null) return;
-    if (!isLoggedIn) router.replace("/");
-    else if (user?.isAdmin) router.replace("/admin");
-    else if (teacherResolved) router.replace("/teacher");
-  }, [mounted, isLoggedIn, user?.isAdmin, isTeacher, teacherResolved, router]);
+    if (!hasTabSession || !isLoggedIn) {
+      router.replace("/");
+    } else if (user?.isAdmin) {
+      router.replace("/admin");
+    } else if (teacherResolved) {
+      router.replace("/teacher");
+    }
+  }, [mounted, hasTabSession, isLoggedIn, user?.isAdmin, isTeacher, teacherResolved, router]);
 
   const handleSelectTab = useCallback((next: StudentTab) => {
     setTab(next);

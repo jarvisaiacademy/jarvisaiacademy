@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, ArrowLeft, Home, UserRound, BookOpen, Users } from "lucide-react";
 import { SidebarHeader } from "@/components/layout/sidebar-header";
 import { UserProfile } from "@/components/layout/user-profile";
@@ -49,6 +49,12 @@ export function TeacherSidebar({
   onBackToChat,
 }: TeacherSidebarProps) {
   const { user, isLoggedIn, logout } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace("/");
+  };
 
   const nav = (
     <div className="flex flex-col gap-5 px-3 py-2 text-neutral-800 dark:text-neutral-200">
@@ -99,7 +105,7 @@ export function TeacherSidebar({
   );
 
   const footer = isLoggedIn ? (
-    <UserProfile user={user} onLogout={logout} />
+    <UserProfile user={user} onLogout={handleLogout} />
   ) : null;
 
   if (isMobile) {

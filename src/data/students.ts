@@ -30,6 +30,9 @@ export interface StudentRecord {
   emailVerified?: boolean;
   signInProvider?: string;
   createdAt?: string;
+  createdBy?: string;
+  updatedBy?: string;
+  updatedAt?: string;
   /**
    * The account's own code to share, derived from the uid. Stored rather than only derived so the
    * row records the code the learner was actually told, which is what a hand-paid reward has to be

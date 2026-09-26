@@ -110,7 +110,7 @@ export function TeacherDashboard({ sidebarOpen, onToggleSidebar }: TeacherDashbo
         title="Teacher Dashboard" 
       />
       
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
+      <main className="flex-1 w-full max-w-none px-3 sm:px-6 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
             <div className="flex flex-col items-center gap-4 pt-4 pb-2 text-center max-w-2xl mx-auto w-full">
               {/* Avatar */}
               <div className="relative">

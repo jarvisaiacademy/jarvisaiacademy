@@ -328,7 +328,12 @@ export function SidebarNav({
       {mounted && showStudentItems && (
         <button
           type="button"
-          onClick={() => router.push("/dashboard")}
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              sessionStorage.setItem("jarvis_session_active", "true");
+            }
+            router.push("/dashboard");
+          }}
           aria-current={activeItem?.startsWith("my_") ? "page" : undefined}
           className={`group flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg transition-colors text-left cursor-pointer ${navStateClass(!!activeItem?.startsWith("my_"))}`}
         >
@@ -348,7 +353,12 @@ export function SidebarNav({
       {mounted && isTeacher && (
         <button
           type="button"
-          onClick={() => router.push("/teacher")}
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              sessionStorage.setItem("jarvis_session_active", "true");
+            }
+            router.push("/teacher");
+          }}
           aria-current={activeItem?.startsWith("teacher_") ? "page" : undefined}
           className={`group flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg transition-colors text-left cursor-pointer ${navStateClass(!!activeItem?.startsWith("teacher_"))}`}
         >

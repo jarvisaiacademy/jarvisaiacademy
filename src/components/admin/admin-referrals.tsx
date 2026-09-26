@@ -1,27 +1,24 @@
 "use client";
 
-import React from "react";
-import { Gift, IndianRupee, Users } from "lucide-react";
-import { PageHeader } from "@/components/ui/page-header";
+import React, { useMemo, useState } from "react";
+import {
+  ArrowLeft,
+  ChevronRight,
+  RotateCcw,
+  Search,
+} from "lucide-react";
 import { useStudents } from "@/providers/students-provider";
+import { useToast } from "@/components/ui/toast";
 import { referredUsers, type StudentRecord } from "@/data/students";
-import { APP_SETTINGS } from "@/data/app-settings";
+import { TablePagination } from "@/components/ui/table-pagination";
+import { DEFAULT_PAGE_SIZE, type PageSize } from "@/services/pagination";
 
-/**
- * Who brought whom in.
- *
- * Reads the roster the provider already holds in full rather than querying: `referredBy` lives on
- * the `users` row, so a claim is one field on a document that is already subscribed to — a second
- * query would be a second thing to keep in step, for data that is already here.
- *
- * The reward is not paid from here. This tab is the record the payout is checked against, which is
- * why it shows the code that was used and not only the two names.
- */
 interface AdminReferralsProps {
   onHome: () => void;
 }
 
-function formatWhen(iso: string): string {
+function formatWhen(iso?: string): string {
+  if (!iso) return "—";
   const when = new Date(iso);
   if (Number.isNaN(when.getTime())) return "—";
   return when.toLocaleString("en-IN", {
@@ -34,83 +31,155 @@ function formatWhen(iso: string): string {
 }
 
 export function AdminReferrals({ onHome }: AdminReferralsProps) {
-  const { students, loading } = useStudents();
-  const events = referredUsers(students);
+  const { students, loading, refreshStudents } = useStudents();
+  const { showToast } = useToast();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Resolved from the roster rather than stored on the claim, so a renamed account shows its
-  // current name. A referrer whose own row is gone leaves the uid, which is still an answer.
-  const byId = new Map<string, StudentRecord>(students.map((student) => [student.id, student]));
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const sorted = [...events].sort((a, b) => (b.referredAt ?? "").localeCompare(a.referredAt ?? ""));
-  const exposure = events.length * APP_SETTINGS.referralReward;
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState<PageSize>(DEFAULT_PAGE_SIZE);
+
+  // Resolved from roster
+  const byId = useMemo(
+    () => new Map<string, StudentRecord>(students.map((student) => [student.id, student])),
+    [students]
+  );
+
+  const rawEvents = useMemo(() => referredUsers(students), [students]);
+
+  // Filtered referrals
+  const filteredEvents = useMemo(() => {
+    let result = rawEvents;
+
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      result = result.filter((learner) => {
+        const referrer = learner.referredBy ? byId.get(learner.referredBy) : undefined;
+        const nameMatch = (learner.name || "").toLowerCase().includes(q);
+        const emailMatch = (learner.email || "").toLowerCase().includes(q);
+        const codeMatch = (learner.referredByCode || "").toLowerCase().includes(q);
+        const referrerNameMatch = (referrer?.name || "").toLowerCase().includes(q);
+        const referrerEmailMatch = (referrer?.email || "").toLowerCase().includes(q);
+        return nameMatch || emailMatch || codeMatch || referrerNameMatch || referrerEmailMatch;
+      });
+    }
+
+    return [...result].sort((a, b) => (b.referredAt ?? "").localeCompare(a.referredAt ?? ""));
+  }, [rawEvents, searchQuery, byId]);
+
+  // Paged slice
+  const pagedEvents = useMemo(() => {
+    const start = currentPage * pageSize;
+    return filteredEvents.slice(start, start + pageSize);
+  }, [filteredEvents, currentPage, pageSize]);
+
+  // Reset page when search changes
+  const handleSearchChange = (val: string) => {
+    setSearchQuery(val);
+    setCurrentPage(0);
+  };
+
+  // Refresh handler
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshStudents();
+      showToast("Referrals directory refreshed", "success");
+    } catch {
+      showToast("Failed to refresh referrals directory", "error");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-4">
-      <PageHeader crumbs={[{ label: "Home", onSelect: onHome }, { label: "Referrals" }]} />
+      {/* Breadcrumb at the top left side outside the list card */}
+      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs">
+        <button
+          type="button"
+          onClick={onHome}
+          className="text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors cursor-pointer"
+        >
+          Home
+        </button>
+        <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
+        <span className="font-semibold text-neutral-900 dark:text-white">
+          Referrals
+        </span>
+      </nav>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
-              Referrals Recorded
-            </span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-              <Users className="w-4 h-4" />
+      {/* Big Referral List Card */}
+      <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden flex flex-col">
+        {/* Inside Card Header Bar */}
+        <div className="p-4 sm:p-5 flex flex-col gap-5 border-b border-neutral-200 dark:border-white/10">
+          <div className="flex items-center justify-between gap-3">
+            {/* Back button inside the card */}
+            <div className="flex items-center">
+              <button
+                type="button"
+                onClick={onHome}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 border border-neutral-200 dark:border-white/10 transition-colors cursor-pointer"
+                title="Back to Home"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Back</span>
+              </button>
+            </div>
+
+            {/* In the Center: Heading with Refresh icon at its side */}
+            <div className="flex items-center justify-center gap-2">
+              <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
+                Referrals
+              </h2>
+              <button
+                type="button"
+                disabled={isRefreshing || loading}
+                onClick={handleRefresh}
+                className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors cursor-pointer disabled:opacity-50"
+                title="Refresh Referrals Directory"
+              >
+                <RotateCcw
+                  className={`w-4 h-4 ${isRefreshing || loading ? "animate-spin" : ""}`}
+                />
+              </button>
+            </div>
+
+            {/* Right: empty spacer balancing Back button (read-only, no CRUD) */}
+            <div className="flex items-center justify-end w-[72px]" />
+          </div>
+
+          {/* Search bar at right side & data above label at left side */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-1">
+            {/* Left side: count data above label in normal text size */}
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-neutral-900 dark:text-white leading-tight">
+                {filteredEvents.length}
+              </span>
+              <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                Referrals
+              </span>
+            </div>
+
+            {/* Right side: Search bar */}
+            <div className="flex items-center gap-2.5 flex-1 sm:flex-none justify-end">
+              <div className="relative w-full sm:w-64">
+                <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  placeholder="Search learner, code or referrer..."
+                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
             </div>
           </div>
-          <span className="text-2xl font-bold text-neutral-900 dark:text-white">
-            {events.length}
-          </span>
-          <span className="text-[11px] text-neutral-500">
-            Learners who signed up with someone&apos;s code
-          </span>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
-              Reward Exposure
-            </span>
-            <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
-              <IndianRupee className="w-4 h-4" />
-            </div>
-          </div>
-          <span className="text-2xl font-bold text-neutral-900 dark:text-white">
-            ₹{exposure.toLocaleString("en-IN")}
-          </span>
-          <span className="text-[11px] text-neutral-500">
-            ₹{APP_SETTINGS.referralReward.toLocaleString("en-IN")} each. Paid by hand, not from here.
-          </span>
-        </div>
-
-        <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
-              Codes To Share
-            </span>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-              <Gift className="w-4 h-4" />
-            </div>
-          </div>
-          <span className="text-2xl font-bold text-neutral-900 dark:text-white">
-            {students.length}
-          </span>
-          <span className="text-[11px] text-neutral-500">
-            Every account has one, derived from its id
-          </span>
-        </div>
-      </div>
-
-      <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden">
-        <div className="p-5 sm:p-6 border-b border-neutral-200 dark:border-white/10">
-          <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">
-            Referral Ledger
-          </h3>
-          <p className="text-[11px] text-neutral-500 mt-1">
-            Who came in on whose code, newest first.
-          </p>
-        </div>
-
+        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
@@ -118,12 +187,18 @@ export function AdminReferrals({ onHome }: AdminReferralsProps) {
                 <th className="py-3 px-4 sm:px-6">New Learner</th>
                 <th className="py-3 px-4 sm:px-6">Code Used</th>
                 <th className="py-3 px-4 sm:px-6">Referred By</th>
-                <th className="py-3 px-4 sm:px-6">When</th>
+                <th className="py-3 px-4 sm:px-6">Registered On</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-200 dark:divide-white/5">
-              {sorted.length > 0 ? (
-                sorted.map((learner) => {
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="text-center py-10 text-neutral-400 animate-pulse">
+                    Loading referrals roster...
+                  </td>
+                </tr>
+              ) : pagedEvents.length > 0 ? (
+                pagedEvents.map((learner) => {
                   const referrer = learner.referredBy ? byId.get(learner.referredBy) : undefined;
                   return (
                     <tr
@@ -133,9 +208,11 @@ export function AdminReferrals({ onHome }: AdminReferralsProps) {
                       <td className="py-3.5 px-4 sm:px-6">
                         <div className="flex flex-col">
                           <span className="font-semibold text-neutral-900 dark:text-white">
-                            {learner.name}
+                            {learner.name || "Unnamed Student"}
                           </span>
-                          <span className="text-[11px] text-neutral-500">{learner.email}</span>
+                          <span className="text-[11px] text-neutral-500">
+                            {learner.email || "—"}
+                          </span>
                         </div>
                       </td>
 
@@ -146,7 +223,7 @@ export function AdminReferrals({ onHome }: AdminReferralsProps) {
                       <td className="py-3.5 px-4 sm:px-6">
                         <div className="flex flex-col">
                           <span className="font-medium text-neutral-800 dark:text-neutral-200">
-                            {referrer?.name ?? "Account no longer on the roster"}
+                            {referrer?.name ?? "Account no longer on roster"}
                           </span>
                           {referrer?.email && (
                             <span className="text-[11px] text-neutral-500">{referrer.email}</span>
@@ -155,23 +232,34 @@ export function AdminReferrals({ onHome }: AdminReferralsProps) {
                       </td>
 
                       <td className="py-3.5 px-4 sm:px-6 text-neutral-500 text-[11px]">
-                        {learner.referredAt ? formatWhen(learner.referredAt) : "—"}
+                        {formatWhen(learner.referredAt)}
                       </td>
                     </tr>
                   );
                 })
               ) : (
                 <tr>
-                  <td colSpan={4} className="text-center py-8 text-neutral-400">
-                    {loading
-                      ? "Loading the roster…"
-                      : "No referrals yet. A code is captured when a new learner signs up with one."}
+                  <td colSpan={4} className="text-center py-10 text-neutral-400">
+                    No referrals found matching your query.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+
+        {/* Table Pagination */}
+        <TablePagination
+          page={currentPage}
+          pageSize={pageSize}
+          total={filteredEvents.length}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setCurrentPage(0);
+          }}
+          noun="referrals"
+        />
       </div>
     </div>
   );

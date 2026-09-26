@@ -3,7 +3,7 @@ import {
   getAuth,
   GoogleAuthProvider,
   Auth,
-  browserLocalPersistence,
+  browserSessionPersistence,
   setPersistence,
   connectAuthEmulator,
 } from "firebase/auth";
@@ -64,8 +64,8 @@ if (isFirebaseConfigured) {
 
     if (isBrowser) {
       auth = getAuth(app);
-      // Use browserLocalPersistence for instant synchronous token restoration
-      setPersistence(auth, browserLocalPersistence).catch(() => {});
+      // Use browserSessionPersistence so auth does not leak to other tabs or windows
+      setPersistence(auth, browserSessionPersistence).catch(() => {});
       googleProvider = new GoogleAuthProvider();
       googleProvider.setCustomParameters({ prompt: "select_account" });
     }

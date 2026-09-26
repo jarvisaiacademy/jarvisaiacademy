@@ -1,16 +1,19 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronRight, ArrowLeft, Pencil, Sparkles } from "lucide-react";
+import { ChevronRight, ArrowLeft, Pencil, Trash2, Sparkles } from "lucide-react";
 import { useStudents } from "@/providers/students-provider";
 import { useCourses } from "@/providers/courses-provider";
+import { useAuth } from "@/providers/auth-provider";
+import { useToast } from "@/components/ui/toast";
 import { useAllEnrollments } from "@/hooks/use-student-enrollments";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { RoleBadge } from "@/components/admin/role-badge";
 import { AdminPage } from "@/components/admin/admin-page";
 import { accountRoleOf, type CandidateStatus } from "@/data/students";
+import { deleteStudentInFirestore } from "@/services/students-service";
 import type { AdminShellState } from "@/components/admin/admin-shell";
 
 interface AdminStudentDetailProps {
@@ -37,25 +40,68 @@ export function AdminStudentDetail({ studentId, shell }: AdminStudentDetailProps
   const { students, loading } = useStudents();
   const { firestoreCourses, loading: coursesLoading } = useCourses();
   const { enrollments, loading: enrollmentsLoading } = useAllEnrollments();
+  const { user } = useAuth();
+  const { showToast } = useToast();
+
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const student = students.find((s) => s.id === studentId);
 
-  // The courses this student is enrolled in (combines direct IDs and enrollments collection)
-  const enrolledCourses = useMemo(() => {
-    if (!student) return [];
-    const directIds = new Set<string>(student.enrolledCourseIds || []);
-    const email = (student.email || "").toLowerCase();
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteStudentInFirestore(studentId, {
+        permanent: true,
+        userEmail: user?.email,
+        studentEmail: student?.email,
+      });
+      showToast("Student deleted successfully", "success");
+      goToStudents();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to delete student";
+      showToast(msg, "error");
+      setIsDeleting(false);
+      setIsConfirmingDelete(false);
+    }
+  };
 
-    if (email) {
-      for (const e of enrollments) {
-        if ((e.studentEmail || "").toLowerCase() === email && e.action === "paid") {
-          directIds.add(e.courseId);
-        }
+  const resolveAuthorName = (author?: string) => {
+    if (!author || author === "Admin") {
+      return user?.name && user.name !== "Learner" ? user.name : "Admin";
+    }
+    if (user && (author === user.email || author === user.id)) {
+      return user.name || author;
+    }
+    const match = students.find((s) => s.id === author || s.email === author);
+    if (match?.name) {
+      return match.name;
+    }
+    if (author.includes("@")) {
+      const [localPart] = author.split("@");
+      return localPart
+        .replace(/[._-]+/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+    }
+    return author;
+  };
+
+  const createdAuthorName = resolveAuthorName(student?.createdBy);
+  const updatedAuthorName = resolveAuthorName(student?.updatedBy || student?.createdBy);
+
+  // The courses this student is enrolled in (combines direct IDs and enrollments collection)
+  const directCourseIds = new Set<string>(student?.enrolledCourseIds || []);
+  const studentEmail = (student?.email || "").toLowerCase();
+
+  if (studentEmail) {
+    for (const e of enrollments) {
+      if ((e.studentEmail || "").toLowerCase() === studentEmail && e.action === "paid") {
+        directCourseIds.add(e.courseId);
       }
     }
+  }
 
-    return firestoreCourses.filter((course) => directIds.has(course.id));
-  }, [student, enrollments, firestoreCourses]);
+  const enrolledCourses = firestoreCourses.filter((course) => directCourseIds.has(course.id));
 
   const goToStudents = () => {
     shell.onNavigateTab("students");
@@ -137,11 +183,11 @@ export function AdminStudentDetail({ studentId, shell }: AdminStudentDetailProps
 
         {/* Big Card matching Teacher Details */}
         <div className="w-full rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden flex flex-col">
-          {/* Card Header: Back button on left, centered Heading Student Details */}
+          {/* Card Header: Back button on left, centered Heading Student Details, Edit & Delete on right */}
           <div className="p-4 sm:p-5 border-b border-neutral-200 dark:border-white/10">
-            <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
-              {/* Back button inside the card */}
-              <div className="flex items-center">
+            <div className="relative flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 min-h-[38px]">
+              {/* Left: Back button */}
+              <div className="flex items-center z-10">
                 <button
                   type="button"
                   onClick={goToStudents}
@@ -153,15 +199,54 @@ export function AdminStudentDetail({ studentId, shell }: AdminStudentDetailProps
                 </button>
               </div>
 
-              {/* Center: Heading */}
-              <div className="flex items-center justify-center">
-                <h1 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white text-center">
+              {/* Center: Heading Student Details */}
+              <div className="w-full sm:w-auto sm:absolute sm:inset-0 flex items-center justify-center pointer-events-none order-first sm:order-none">
+                <h1 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white text-center pointer-events-auto">
                   Student Details
                 </h1>
               </div>
 
-              {/* Spacer to balance the Back button for mathematical centering */}
-              <div className="w-[72px] invisible" aria-hidden="true" />
+              {/* Top Right: Delete (Red) + Edit Student (Orange) */}
+              <div className="flex items-center gap-2 z-10 ml-auto sm:ml-0">
+                {isConfirmingDelete ? (
+                  <div className="flex items-center gap-1.5 bg-red-50 dark:bg-red-500/10 p-1 rounded-xl border border-red-200 dark:border-red-500/30">
+                    <button
+                      type="button"
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                      className="px-3 py-1 text-xs font-bold bg-red-600 text-white rounded-lg cursor-pointer disabled:opacity-60"
+                    >
+                      {isDeleting ? "Deleting..." : "Confirm Delete"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsConfirmingDelete(false)}
+                      className="px-2 text-xs text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsConfirmingDelete(true)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-red-600 hover:bg-red-500 shadow-xs transition-colors cursor-pointer"
+                    title="Delete Student"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
+                  </button>
+                )}
+
+                <Link
+                  href={`/admin/students/${student.id}/edit`}
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold bg-orange-500 hover:bg-orange-600 text-white shadow-xs transition-colors cursor-pointer"
+                  title="Edit Student"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  <span>Edit Student</span>
+                </Link>
+              </div>
             </div>
           </div>
 
@@ -368,26 +453,31 @@ export function AdminStudentDetail({ studentId, shell }: AdminStudentDetailProps
             </div>
           </div>
 
-          {/* Card Footer: Back on left, Edit Student green pill button on right */}
-          <div className="px-5 sm:px-7 py-4 border-t border-neutral-200 dark:border-white/10 flex items-center justify-between gap-3 bg-neutral-50/50 dark:bg-white/[0.02]">
-            {/* Bottom Left: Back button */}
-            <button
-              type="button"
-              onClick={goToStudents}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 border border-neutral-200 dark:border-white/10 transition-colors cursor-pointer"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Students</span>
-            </button>
+          {/* Card Footer: Metadata (Created on left, Updated on right in continuous string) */}
+          <div className="px-5 sm:px-7 py-4 border-t border-neutral-200 dark:border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 bg-neutral-50/50 dark:bg-white/[0.02] text-xs">
+            {/* Bottom Left: Created by [Name] on [Date] */}
+            <div className="text-neutral-500 dark:text-neutral-400">
+              <span>Created by </span>
+              <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                {createdAuthorName}
+              </span>
+              <span> on </span>
+              <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                {formatWhen(student.createdAt)}
+              </span>
+            </div>
 
-            {/* Bottom Right: Edit Student green pill button */}
-            <Link
-              href={`/admin/students/${student.id}/edit`}
-              className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-colors cursor-pointer"
-            >
-              <Pencil className="w-3.5 h-3.5" />
-              <span>Edit Student</span>
-            </Link>
+            {/* Bottom Right: Updated by [Name] on [Date] */}
+            <div className="text-neutral-500 dark:text-neutral-400 text-left sm:text-right">
+              <span>Updated by </span>
+              <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                {updatedAuthorName}
+              </span>
+              <span> on </span>
+              <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                {formatWhen(student.updatedAt || student.createdAt)}
+              </span>
+            </div>
           </div>
         </div>
       </div>

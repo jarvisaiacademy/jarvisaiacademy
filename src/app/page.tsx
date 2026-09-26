@@ -39,11 +39,13 @@ export default function Home() {
     const params = new URLSearchParams(window.location.search);
     const topic = params.get("topic");
     const q = params.get("q");
+    const login = params.get("login");
     if (topic) {
       setActiveTopic(topic);
       setActiveSection(topic);
     }
     if (q) setInitialPrompt(q);
+    if (login === "true") setIsLoginOpen(true);
   }, []);
 
   // The gate behind every guest-facing action: signed-in visitors run the action
@@ -96,6 +98,9 @@ export default function Home() {
   // academy admin lands on the admin route, a teacher on the faculty route, a student on the courses an admin
   // granted them. Only reachable while signed in — both chips render only for a user.
   const handleOpenProfile = () => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("jarvis_session_active", "true");
+    }
     if (user?.isAdmin) {
       router.push("/admin");
     } else if (
@@ -145,7 +150,12 @@ export default function Home() {
           onOpenProfile={handleOpenProfile}
           // The admin Dashboard item renders only for an admin, so it goes
           // straight there rather than through the login gate.
-          onOpenDashboard={() => router.push("/admin")}
+          onOpenDashboard={() => {
+            if (typeof window !== "undefined") {
+              sessionStorage.setItem("jarvis_session_active", "true");
+            }
+            router.push("/admin");
+          }}
           onOpenStudentView={(view) => requireLogin(() => setStudentView(view))}
           onOpenLearning={() => requireLogin(handleOpenLearning)}
           activeItem={
@@ -210,6 +220,9 @@ export default function Home() {
               pending();
             } else {
               // Direct sign-in: route directly to role-specific dashboard
+              if (typeof window !== "undefined") {
+                sessionStorage.setItem("jarvis_session_active", "true");
+              }
               const isAdminUser = loginResult?.isAdmin ?? user?.isAdmin;
               const isTeacherUser =
                 loginResult?.isTeacher ??

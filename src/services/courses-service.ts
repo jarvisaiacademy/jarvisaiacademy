@@ -91,7 +91,8 @@ export function subscribeCoursesFromFirestore(
  */
 export async function createCourseInFirestore(
   course: Partial<CourseItem> & { title: string; category: CourseItem["category"] },
-  userEmail?: string | null
+  userEmail?: string | null,
+  userName?: string | null
 ): Promise<CourseItem> {
   if (!checkIsAdmin(userEmail)) {
     throw new Error("Unauthorized: Only verified admins can create courses.");
@@ -108,6 +109,9 @@ export async function createCourseInFirestore(
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
+
+  const now = new Date().toISOString();
+  const author = userName?.trim() || userEmail?.trim() || "Admin";
 
   const fullCourse: CourseItem = {
     id: courseId,
@@ -135,6 +139,10 @@ export async function createCourseInFirestore(
     actionPrompt: course.actionPrompt || `Tell me about the ${course.title} course`,
     status: course.status ?? "active",
     teacherIds: course.teacherIds ?? [],
+    createdBy: course.createdBy || author,
+    createdAt: course.createdAt || now,
+    updatedBy: course.updatedBy || author,
+    updatedAt: course.updatedAt || now,
   };
 
   await setDoc(doc(db, COURSES_COLLECTION, courseId), fullCourse);
@@ -151,7 +159,8 @@ export async function createCourseInFirestore(
 export async function updateCourseInFirestore(
   courseId: string,
   updates: Partial<CourseItem>,
-  userEmail?: string | null
+  userEmail?: string | null,
+  userName?: string | null
 ): Promise<void> {
   if (!checkIsAdmin(userEmail)) {
     throw new Error("Unauthorized: Only verified admins can update courses.");
@@ -161,7 +170,16 @@ export async function updateCourseInFirestore(
     throw new Error("Firestore is not initialized.");
   }
 
-  await updateDoc(doc(db, COURSES_COLLECTION, courseId), updates);
+  const now = new Date().toISOString();
+  const author = userName?.trim() || userEmail?.trim() || "Admin";
+
+  const payload: Partial<CourseItem> = {
+    ...updates,
+    updatedBy: updates.updatedBy || author,
+    updatedAt: updates.updatedAt || now,
+  };
+
+  await updateDoc(doc(db, COURSES_COLLECTION, courseId), payload);
 }
 
 /**

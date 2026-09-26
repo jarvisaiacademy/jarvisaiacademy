@@ -67,7 +67,7 @@ export function DashboardCertificates() {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.18 }}
-      className="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6 relative overflow-hidden"
+      className="flex-1 w-full px-3 sm:px-6 lg:px-8 py-6 flex flex-col gap-6 relative overflow-hidden"
     >
       {/* Hidden container for rendering certificates before PDF generation */}
       <div className="absolute top-[-9999px] left-[-9999px] opacity-0 pointer-events-none">

@@ -231,7 +231,8 @@ function StudentForm({ student, shell, coursesLoading }: StudentFormProps) {
             enrolledCourseIds: assignedCourseIds,
             is_teacher: newIsTeacher,
           },
-          user?.email
+          user?.email,
+          user?.name
         );
       } else {
         // CREATE new student or teacher
@@ -244,9 +245,10 @@ function StudentForm({ student, shell, coursesLoading }: StudentFormProps) {
               specialization: specialization.trim() || undefined,
               bio: bio.trim() || undefined,
               phone: phone.trim() || undefined,
-              status,
+              status: "active",
             },
-            user?.email
+            user?.email,
+            user?.name
           );
         } else {
           savedStudentId = await createStudentInFirestore(
@@ -257,12 +259,13 @@ function StudentForm({ student, shell, coursesLoading }: StudentFormProps) {
               specialization: specialization.trim() || undefined,
               bio: bio.trim() || undefined,
               phone: phone.trim() || undefined,
-              status,
+              status: "active",
               is_super10: isSuper10,
               referralCode: referralCode.trim() || undefined,
               enrolledCourseIds: assignedCourseIds,
             },
-            user?.email
+            user?.email,
+            user?.name
           );
         }
       }
@@ -483,22 +486,24 @@ function StudentForm({ student, shell, coursesLoading }: StudentFormProps) {
                   />
                 </div>
 
-                {/* 7. Account Status (spans 1 column on lg) */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
-                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Account Status
-                  </label>
-                  <Select
-                    label="Account Status"
-                    value={status}
-                    onValueChange={(val) => setStatus(val as CandidateStatus)}
-                    options={[
-                      { value: "active", label: role === "teacher" ? "Active Faculty" : "Active Student" },
-                      { value: "inactive", label: role === "teacher" ? "Inactive / On Leave" : "Inactive / Paused" },
-                    ]}
-                    className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
-                  />
-                </div>
+                {/* 7. Account Status (Only shown when editing existing student) */}
+                {student && (
+                  <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
+                    <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                      Account Status
+                    </label>
+                    <Select
+                      label="Account Status"
+                      value={status}
+                      onValueChange={(val) => setStatus(val as CandidateStatus)}
+                      options={[
+                        { value: "active", label: role === "teacher" ? "Active Faculty" : "Active Student" },
+                        { value: "inactive", label: role === "teacher" ? "Inactive / On Leave" : "Inactive / Paused" },
+                      ]}
+                      className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+                    />
+                  </div>
+                )}
 
                 {/* 8. Enrolled Courses (spans 1 column on lg) */}
                 <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
@@ -616,7 +621,9 @@ function StudentForm({ student, shell, coursesLoading }: StudentFormProps) {
               <button
                 type="submit"
                 disabled={isSaving}
-                className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                className={`inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer disabled:opacity-50 ${
+                  student ? "bg-orange-500 hover:bg-orange-600" : "bg-emerald-600 hover:bg-emerald-500"
+                }`}
               >
                 {isSaving ? (
                   <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />

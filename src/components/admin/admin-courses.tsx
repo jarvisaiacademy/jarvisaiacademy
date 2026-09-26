@@ -16,7 +16,6 @@ import {
 import { useCourses } from "@/providers/courses-provider";
 import { useStudents } from "@/providers/students-provider";
 import { useToast } from "@/components/ui/toast";
-import { UserAvatar } from "@/components/ui/user-avatar";
 import { Select } from "@/components/ui/select";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { DevIcon } from "@/components/ui/dev-icon";
@@ -137,7 +136,7 @@ export function AdminCourses({ onHome }: AdminCoursesProps) {
     }
   };
 
-  // Render teacher avatars and names in teacher cell
+  // Render teacher names in teacher cell without images
   const renderTeacherCell = (course: CourseItem) => {
     const assigned = (course.teacherIds ?? [])
       .map((id) => {
@@ -147,7 +146,6 @@ export function AdminCourses({ onHome }: AdminCoursesProps) {
           id,
           name: u.name || "Unnamed",
           email: u.email,
-          picture: u.picture,
         };
       })
       .filter((t): t is NonNullable<typeof t> => t !== null);
@@ -159,22 +157,16 @@ export function AdminCourses({ onHome }: AdminCoursesProps) {
     const [first, ...rest] = assigned;
 
     return (
-      <div className="flex items-center gap-2.5">
-        <div className="flex -space-x-2 shrink-0">
-          {assigned.slice(0, 3).map((teacher) => (
-            <span key={teacher.id} title={teacher.name} className="rounded-full">
-              <UserAvatar user={teacher} size="sm" />
-            </span>
-          ))}
-        </div>
-        <div className="flex flex-col min-w-0">
-          <span className="font-semibold text-neutral-900 dark:text-white truncate">
-            {first.name}
-          </span>
-          {rest.length > 0 && (
-            <span className="text-[10px] text-neutral-500">+{rest.length} more</span>
-          )}
-        </div>
+      <div className="flex flex-col min-w-0">
+        <span
+          className="font-medium text-neutral-900 dark:text-white truncate"
+          title={assigned.map((t) => t.name).join(", ")}
+        >
+          {first.name}
+        </span>
+        {rest.length > 0 && (
+          <span className="text-[10px] text-neutral-500">+{rest.length} more</span>
+        )}
       </div>
     );
   };
@@ -313,20 +305,19 @@ export function AdminCourses({ onHome }: AdminCoursesProps) {
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-neutral-50 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 border-b border-neutral-200 dark:border-white/10 font-medium">
-                <th className="py-3 px-4 sm:px-6 w-16">#</th>
                 <th className="py-3 px-4 sm:px-6">Courses</th>
-                <th className="py-3 px-4 sm:px-6">Status</th>
                 <th className="py-3 px-4 sm:px-6">Category</th>
                 <th className="py-3 px-4 sm:px-6">Teacher</th>
                 <th className="py-3 px-4 sm:px-6">Tech Stack</th>
                 <th className="py-3 px-4 sm:px-6">Duration & Fee</th>
+                <th className="py-3 px-4 sm:px-6">Status</th>
                 <th className="py-3 px-4 sm:px-6 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-200 dark:divide-white/5">
               {coursesLoading || studentsLoading ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-10 text-neutral-400 animate-pulse">
+                  <td colSpan={7} className="text-center py-10 text-neutral-400 animate-pulse">
                     Loading course catalogue...
                   </td>
                 </tr>
@@ -339,52 +330,24 @@ export function AdminCourses({ onHome }: AdminCoursesProps) {
                       key={course.id}
                       className="hover:bg-neutral-50/80 dark:hover:bg-white/5 transition-colors"
                     >
-                      {/* 1. Order / Number */}
-                      <td className="py-3.5 px-4 sm:px-6 font-mono font-bold text-neutral-400">
-                        {course.number || "—"}
-                      </td>
-
-                      {/* 2. Course Title */}
+                      {/* Course Title */}
                       <td className="py-3.5 px-4 sm:px-6">
                         <span className="font-semibold text-neutral-900 dark:text-white">
                           {course.title}
                         </span>
                       </td>
 
-                      {/* 3. Status - Pill Switch button matching Teachers table */}
-                      <td className="py-3.5 px-4 sm:px-6">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleStatus(course)}
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border transition-colors cursor-pointer ${
-                            isInactive
-                              ? "bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-white/10"
-                              : "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30"
-                          }`}
-                          title={`Click to ${isInactive ? "activate" : "deactivate"} course`}
-                        >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              isInactive ? "bg-neutral-400" : "bg-emerald-500"
-                            }`}
-                          />
-                          <span>{isInactive ? "Inactive" : "Active"}</span>
-                        </button>
+                      {/* Category - Plain text without rounded card */}
+                      <td className="py-3.5 px-4 sm:px-6 text-neutral-700 dark:text-neutral-300 font-medium">
+                        {course.categoryLabel || course.category}
                       </td>
 
-                      {/* 4. Category */}
-                      <td className="py-3.5 px-4 sm:px-6">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-neutral-100 dark:bg-white/5 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-white/10">
-                          {course.categoryLabel || course.category}
-                        </span>
-                      </td>
-
-                      {/* 5. Teacher */}
+                      {/* Teacher */}
                       <td className="py-3.5 px-4 sm:px-6">
                         {renderTeacherCell(course)}
                       </td>
 
-                      {/* 6. Tech Stack */}
+                      {/* Tech Stack */}
                       <td className="py-3.5 px-4 sm:px-6">
                         <div className="flex items-center gap-1.5 flex-wrap max-w-xs">
                           {stackDisplay(course) === "icons"
@@ -413,7 +376,7 @@ export function AdminCourses({ onHome }: AdminCoursesProps) {
                         </div>
                       </td>
 
-                      {/* 7. Duration & Fee */}
+                      {/* Duration & Fee */}
                       <td className="py-3.5 px-4 sm:px-6">
                         <div className="flex flex-col">
                           <span className="font-semibold text-neutral-900 dark:text-white">
@@ -425,28 +388,53 @@ export function AdminCourses({ onHome }: AdminCoursesProps) {
                         </div>
                       </td>
 
+                      {/* Status - Plain text with indicator without rounded card */}
+                      <td className="py-3.5 px-4 sm:px-6">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleStatus(course)}
+                          className="inline-flex items-center gap-1.5 font-medium cursor-pointer hover:opacity-80 transition-opacity"
+                          title={`Click to ${isInactive ? "activate" : "deactivate"} course`}
+                        >
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              isInactive ? "bg-neutral-400" : "bg-emerald-500"
+                            }`}
+                          />
+                          <span
+                            className={
+                              isInactive
+                                ? "text-neutral-500 dark:text-neutral-400"
+                                : "text-emerald-600 dark:text-emerald-400 font-semibold"
+                            }
+                          >
+                            {isInactive ? "Inactive" : "Active"}
+                          </span>
+                        </button>
+                      </td>
+
                       {/* 8. Actions */}
-                      <td className="py-3.5 px-4 sm:px-6 text-right">
+                      <td className="py-3.5 px-4 sm:px-6 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
-                          {/* View Course Link */}
+                          {/* View Course Link - Blue */}
                           <Link
                             href={`/admin/courses/${course.id}`}
-                            className="p-1.5 rounded-lg text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg text-white bg-blue-600 hover:bg-blue-500 shadow-xs transition-colors cursor-pointer inline-flex items-center justify-center"
                             title="View Course"
                           >
                             <Eye className="w-4 h-4" />
                           </Link>
 
-                          {/* Edit Course Link */}
+                          {/* Edit Course Link - Orange */}
                           <Link
                             href={`/admin/courses/${course.id}/edit`}
-                            className="p-1.5 rounded-lg text-neutral-600 dark:text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg text-white bg-orange-500 hover:bg-orange-600 shadow-xs transition-colors cursor-pointer inline-flex items-center justify-center"
                             title="Edit Course"
                           >
                             <Pencil className="w-4 h-4" />
                           </Link>
 
-                          {/* Delete Course with Confirmation */}
+                          {/* Delete Course with Confirmation - Red */}
                           {deleteConfirmId === course.id ? (
                             <div className="flex items-center gap-1 bg-red-50 dark:bg-red-500/10 p-1 rounded-lg border border-red-200 dark:border-red-500/30">
                               <button
@@ -471,7 +459,7 @@ export function AdminCourses({ onHome }: AdminCoursesProps) {
                             <button
                               type="button"
                               onClick={() => setDeleteConfirmId(course.id)}
-                              className="p-1.5 rounded-lg text-neutral-600 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-lg text-white bg-red-600 hover:bg-red-500 shadow-xs transition-colors cursor-pointer inline-flex items-center justify-center"
                               title="Delete Course"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -484,7 +472,7 @@ export function AdminCourses({ onHome }: AdminCoursesProps) {
                 })
               ) : (
                 <tr>
-                  <td colSpan={8} className="text-center py-10 text-neutral-400">
+                  <td colSpan={7} className="text-center py-10 text-neutral-400">
                     {firestoreCourses.length === 0 ? (
                       <div className="flex flex-col items-center gap-3">
                         <BookOpen className="w-8 h-8 text-neutral-300 dark:text-neutral-600" />

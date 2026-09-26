@@ -7,16 +7,12 @@ import {
   IndianRupee,
   GraduationCap,
   ArrowLeft,
-  Download,
   Search,
   CheckCircle2,
   Clock,
   ExternalLink,
   Award,
   Plus,
-  Eye,
-  Pencil,
-  Trash2,
   Sparkles,
   BookOpen,
   Layers,
@@ -51,6 +47,7 @@ import { AdminAdmins } from "@/components/admin/admin-admins";
 import { AdminStudents } from "@/components/admin/admin-students";
 import { AdminTeachers } from "@/components/admin/admin-teachers";
 import { AdminCourses } from "@/components/admin/admin-courses";
+import { AdminUsers } from "@/components/admin/admin-users";
 import { ROLE_BADGE } from "@/components/admin/role-badge";
 import { Select } from "@/components/ui/select";
 import { PageHeader } from "@/components/ui/page-header";
@@ -157,10 +154,6 @@ export function AdminDashboard({
 
   // Admissions state
   const [records, setRecords] = useState<EnrollmentRecord[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [filterOpen, setFilterOpen] = useState(false);
-  const searchRef = useRef<HTMLInputElement>(null);
 
 
   // Candidate rows are edited on the spot — the two admin-owned fields are the whole
@@ -200,19 +193,6 @@ export function AdminDashboard({
     count: () => (rosterRole ? countRoster(rosterRole, rosterStatus) : Promise.resolve(0)),
   });
 
-
-  // The ledger is the browser's own localStorage list, so there is no query to page and nothing
-  // to ask Firestore for: it is sliced where it already sits, with the same footer.
-  const [ledgerPage, setLedgerPage] = useState(0);
-  const [ledgerPageSize, setLedgerPageSize] = useState<PageSize>(DEFAULT_PAGE_SIZE);
-  const [ledgerFilters, setLedgerFilters] = useState({
-    search: searchQuery,
-    status: statusFilter,
-  });
-  if (ledgerFilters.search !== searchQuery || ledgerFilters.status !== statusFilter) {
-    setLedgerFilters({ search: searchQuery, status: statusFilter });
-    setLedgerPage(0);
-  }
 
   const handleCandidateStatus = async (uid: string, status: CandidateStatus) => {
     setBusyCandidateId(uid);
@@ -317,51 +297,6 @@ export function AdminDashboard({
 
   // Only live while the dashboard is mounted, so these never fight the shortcuts
   // on the chat view.
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (isTypingTarget(event.target)) return;
-
-      if (matchesShortcut(event, shortcutById("search"))) {
-        event.preventDefault();
-        searchRef.current?.focus();
-        return;
-      }
-      if (matchesShortcut(event, shortcutById("filter"))) {
-        event.preventDefault();
-        setFilterOpen(true);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  // Filter admissions
-  const filteredRecords = records.filter((r) => {
-    const matchesSearch =
-      r.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.studentEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.courseName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.transactionId.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" ||
-      (statusFilter === "paid" && r.action === "paid") ||
-      (statusFilter === "pending" && r.action !== "paid");
-    return matchesSearch && matchesStatus;
-  });
-
-  // Sliced after the filters, so the footer counts the filtered set rather than the whole
-  // ledger. `ledgerCurrentPage` is clamped for the case where a filter change shrinks the set
-  // out from under the page you were on — the footer computes its own page count from `total`,
-  // and the two have to agree about which page is on screen. Export CSV still reads
-  // `filteredRecords`: the page is what you are looking at, not what you are allowed to take.
-  const ledgerPageCount = Math.max(1, Math.ceil(filteredRecords.length / ledgerPageSize));
-  const ledgerCurrentPage = Math.min(ledgerPage, ledgerPageCount - 1);
-  const pagedRecords = filteredRecords.slice(
-    ledgerCurrentPage * ledgerPageSize,
-    (ledgerCurrentPage + 1) * ledgerPageSize
-  );
-
   const totalPaidRevenue = records
     .filter((r) => r.action === "paid")
     .reduce((acc, curr) => acc + (curr.amount || 0), 0);
@@ -379,23 +314,6 @@ export function AdminDashboard({
   // adding it on. `gstRatePercent` is a percentage — 18, not 0.18 — so the fraction is derived
   // here, in the one place that needs it.
   const gstDivisor = 1 + APP_SETTINGS.gstRatePercent / 100;
-
-  const exportCSV = () => {
-    const headers = "TransactionID,StudentName,StudentEmail,Course,Amount,Status,Timestamp\n";
-    const rows = filteredRecords
-      .map(
-        (r) =>
-          `"${r.transactionId}","${r.studentName}","${r.studentEmail}","${r.courseName}","₹${r.amount}","${r.action}","${r.timestamp}"`
-      )
-      .join("\n");
-    const blob = new Blob([headers + rows], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Jarvis_Academy_Enrollments_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
 
 
   // A candidate's status cell. Three states in two controls, and only an admin can move them:
@@ -721,13 +639,7 @@ export function AdminDashboard({
       <AdminHeader sidebarOpen={sidebarOpen} onToggleSidebar={onToggleSidebar} />
 
       {/* Main Container */}
-      <main
-        className={`flex-1 w-full mx-auto py-6 sm:py-8 flex flex-col gap-6 sm:gap-8 ${
-          activeTab === "teachers" || activeTab === "students" || activeTab === "admins" || activeTab === "courses"
-            ? "max-w-none px-3 sm:px-6"
-            : "max-w-7xl px-4 sm:px-8"
-        }`}
-      >
+      <main className="flex-1 w-full mx-auto py-6 sm:py-8 px-3 sm:px-6 flex flex-col gap-6 sm:gap-8 max-w-none">
         {/* HOME: the counts */}
         {activeTab === "home" && renderHome()}
 
@@ -738,183 +650,10 @@ export function AdminDashboard({
 
         {/* TAB 2: USERS & ADMISSIONS */}
         {activeTab === "users" && (
-          <div className="flex flex-col gap-4">
-            <PageHeader
-              crumbs={[
-                { label: "Home", onSelect: () => setActiveTab("home") },
-                // Named for the tab that opens it, not for the heading the banner used to carry.
-                { label: "Users & Admissions" },
-              ]}
-                />
-
-            {/* Quick Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="p-4 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-1.5">
-                <span className="text-xs text-neutral-500">Confirmed Admissions</span>
-                <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                  {totalPaidStudents}
-                </span>
-                <span className="text-[11px] text-neutral-400">Paid and active in batches</span>
-              </div>
-              <div className="p-4 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-1.5">
-                <span className="text-xs text-neutral-500">Pending Checkout</span>
-                <span className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-                  {records.filter((r) => r.action !== "paid").length}
-                </span>
-                <span className="text-[11px] text-neutral-400">Awaiting UPI / card confirmation</span>
-              </div>
-              <div className="p-4 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-1.5">
-                <span className="text-xs text-neutral-500">Super10 Placement Candidates</span>
-                <span className="text-2xl font-bold text-neutral-900 dark:text-white">
-                  {super10Count} / 10
-                </span>
-                <span className="text-[11px] text-neutral-400">{10 - super10Count} seats remaining</span>
-              </div>
-            </div>
-
-            {/* Admissions Table Section */}
-            <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden flex flex-col">
-              <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-200 dark:border-white/10">
-                <div>
-                  <h3 className="text-base font-semibold text-neutral-900 dark:text-white">
-                    Admissions Ledger
-                  </h3>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                    All student registrations, transaction codes, and payment verification.
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2.5">
-                  <div className="relative">
-                    <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      ref={searchRef}
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search student or txn..."
-                      className="w-48 sm:w-64 pl-9 pr-3 py-1.5 text-xs rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white focus:outline-hidden focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <Select
-                    label="Filter by status"
-                    value={statusFilter}
-                    onValueChange={setStatusFilter}
-                    open={filterOpen}
-                    onOpenChange={setFilterOpen}
-                    options={[
-                      { value: "all", label: "All Status" },
-                      { value: "paid", label: "Paid (Enrolled)" },
-                      { value: "pending", label: "Pending" },
-                    ]}
-                    className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
-                  />
-
-                  <button
-                    type="button"
-                    onClick={exportCSV}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-100 text-xs font-semibold shadow-xs transition-colors cursor-pointer whitespace-nowrap"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Export CSV</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-neutral-50 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 border-b border-neutral-200 dark:border-white/10 font-medium">
-                      <th className="py-3 px-4 sm:px-6">Student Learner</th>
-                      <th className="py-3 px-4 sm:px-6">Enrolled Program</th>
-                      <th className="py-3 px-4 sm:px-6">Transaction ID</th>
-                      <th className="py-3 px-4 sm:px-6">Amount</th>
-                      <th className="py-3 px-4 sm:px-6">Status</th>
-                      <th className="py-3 px-4 sm:px-6">Timestamp</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-200 dark:divide-white/5">
-                    {pagedRecords.length > 0 ? (
-                      pagedRecords.map((rec, idx) => (
-                        <tr
-                          key={idx}
-                          className="hover:bg-neutral-50/80 dark:hover:bg-white/5 transition-colors"
-                        >
-                          <td className="py-3.5 px-4 sm:px-6">
-                            <div className="flex flex-col">
-                              <span className="font-semibold text-neutral-900 dark:text-white">
-                                {rec.studentName}
-                              </span>
-                              <span className="text-[11px] text-neutral-500">
-                                {rec.studentEmail}
-                              </span>
-                            </div>
-                          </td>
-
-                          <td className="py-3.5 px-4 sm:px-6">
-                            <span className="font-medium text-neutral-800 dark:text-neutral-200">
-                              {rec.courseName}
-                            </span>
-                          </td>
-
-                          <td className="py-3.5 px-4 sm:px-6 font-mono text-[11px] text-neutral-600 dark:text-neutral-400">
-                            {rec.transactionId}
-                          </td>
-
-                          <td className="py-3.5 px-4 sm:px-6 font-semibold text-neutral-900 dark:text-white">
-                            ₹{(rec.amount || 0).toLocaleString("en-IN")}
-                          </td>
-
-                          <td className="py-3.5 px-4 sm:px-6">
-                            {rec.action === "paid" ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
-                                <CheckCircle2 className="w-3 h-3" />
-                                Confirmed
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">
-                                <Clock className="w-3 h-3" />
-                                Pending
-                              </span>
-                            )}
-                          </td>
-
-                          <td className="py-3.5 px-4 sm:px-6 text-neutral-500 text-[11px]">
-                            {rec.timestamp}
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={6} className="text-center py-8 text-neutral-400">
-                          No enrollment records found matching your filters.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              <TablePagination
-                page={ledgerCurrentPage}
-                pageSize={ledgerPageSize}
-                total={filteredRecords.length}
-                onPageChange={setLedgerPage}
-                onPageSizeChange={(size) => {
-                  setLedgerPageSize(size);
-                  setLedgerPage(0);
-                }}
-                noun="records"
-              />
-            </div>
-
-            {/* Who has an account, as distinct from who has paid for something, is its own
-                page per role — see the Students, Admins and Teachers tabs. Every row here
-                is a Google sign-in (`upsertStudentRecord` writes one doc per account on
-                auth state change), so a learner can appear there having never enrolled,
-                and that is the point of those lists. */}
-          </div>
+          <AdminUsers
+            records={records}
+            onHome={() => setActiveTab("home")}
+          />
         )}
 
         {/* ONE PAGE PER ROLE. The three together list every account exactly once, because
