@@ -17,6 +17,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useToast } from "@/components/ui/toast";
 import { Select } from "@/components/ui/select";
 import { AdminPage } from "@/components/admin/admin-page";
+import { deleteField } from "firebase/firestore";
 import {
   createAdminInFirestore,
   updateCandidateInFirestore,
@@ -155,10 +156,7 @@ function AdminForm({ admin, shell }: AdminFormProps) {
 
   const [name, setName] = useState(() => admin?.name ?? "");
   const [email, setEmail] = useState(() => admin?.email ?? "");
-  const [title, setTitle] = useState(() => admin?.title ?? "");
-  const [specialization, setSpecialization] = useState(() => admin?.specialization ?? "");
   const [phone, setPhone] = useState(() => admin?.phone ?? "");
-  const [bio, setBio] = useState(() => admin?.bio ?? "");
   const [status, setStatus] = useState<CandidateStatus>(() =>
     admin?.status === "inactive" || admin?.status === "banned" ? "inactive" : "active"
   );
@@ -172,8 +170,6 @@ function AdminForm({ admin, shell }: AdminFormProps) {
       setName(found.name || "");
       setEmail(found.email || "");
       if (found.phone) setPhone(found.phone);
-      if (found.title) setTitle(found.title);
-      if (found.specialization) setSpecialization(found.specialization);
     }
   };
 
@@ -211,11 +207,11 @@ function AdminForm({ admin, shell }: AdminFormProps) {
             name: cleanName,
             email: cleanEmail,
             role: "admin",
-            title: title.trim() || undefined,
-            specialization: specialization.trim() || undefined,
-            bio: bio.trim() || undefined,
             phone: phone.trim() || undefined,
             status,
+            title: deleteField() as unknown as string,
+            specialization: deleteField() as unknown as string,
+            bio: deleteField() as unknown as string,
           },
           user?.email,
           user?.name
@@ -226,9 +222,6 @@ function AdminForm({ admin, shell }: AdminFormProps) {
           {
             name: cleanName,
             email: cleanEmail,
-            title: title.trim() || undefined,
-            specialization: specialization.trim() || undefined,
-            bio: bio.trim() || undefined,
             phone: phone.trim() || undefined,
             status: "active",
             existingUserId:
@@ -405,8 +398,12 @@ function AdminForm({ admin, shell }: AdminFormProps) {
                 </div>
               )}
 
-              {/* 4-GRID */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+              {/* Form Grid */}
+              <div
+                className={`grid grid-cols-1 sm:grid-cols-2 ${
+                  admin ? "lg:grid-cols-4" : "lg:grid-cols-3"
+                } gap-4 sm:gap-5`}
+              >
                 {/* 1. Full Name */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
@@ -437,21 +434,7 @@ function AdminForm({ admin, shell }: AdminFormProps) {
                   />
                 </div>
 
-                {/* 3. Title / Designation */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Title / Designation
-                  </label>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. Platform Administrator"
-                    className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
-                  />
-                </div>
-
-                {/* 4. Phone Number */}
+                {/* 3. Phone Number */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Phone Number
@@ -465,27 +448,9 @@ function AdminForm({ admin, shell }: AdminFormProps) {
                   />
                 </div>
 
-                {/* 5. Specialization & Responsibilities */}
-                <div
-                  className={`flex flex-col gap-1.5 col-span-1 sm:col-span-2 ${
-                    admin ? "lg:col-span-2" : "lg:col-span-3"
-                  }`}
-                >
-                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Specialization & Department
-                  </label>
-                  <input
-                    type="text"
-                    value={specialization}
-                    onChange={(e) => setSpecialization(e.target.value)}
-                    placeholder="e.g. Security, Curriculum Operations, Infrastructure & Billing"
-                    className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
-                  />
-                </div>
-
-                {/* 6. Account Status (Only shown when editing existing admin) */}
+                {/* 4. Account Status (Only shown when editing existing admin) */}
                 {admin && (
-                  <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
+                  <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                       Account Status
                     </label>
@@ -501,36 +466,6 @@ function AdminForm({ admin, shell }: AdminFormProps) {
                     />
                   </div>
                 )}
-
-                {/* 7. Authority Level (spans 1 column on lg) */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
-                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Authority Level
-                  </label>
-                  <Select
-                    label="Authority Level"
-                    value="full"
-                    onValueChange={() => {}}
-                    options={[
-                      { value: "full", label: "Full Administrative Access" },
-                    ]}
-                    className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
-                  />
-                </div>
-
-                {/* 8. Biography & Internal Notes (spans all 4 columns) */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-2 lg:col-span-4">
-                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Biography & Internal Administrative Notes
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    placeholder="Enter internal notes, organizational role, primary contact responsibilities..."
-                    className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 resize-y"
-                  />
-                </div>
               </div>
             </div>
 
