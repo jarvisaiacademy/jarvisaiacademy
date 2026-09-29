@@ -19,7 +19,6 @@ import { AdminPage } from "@/components/admin/admin-page";
 import {
   CourseItem,
   CourseStatus,
-  COURSE_BADGES,
   COURSE_DURATIONS,
   COURSE_LEVELS,
   TECH_STACK_OPTIONS,
@@ -154,9 +153,6 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
   }, [course]);
 
   const [formTitle, setFormTitle] = useState(() => course?.title ?? "");
-  const [formBannerTitle, setFormBannerTitle] = useState(
-    () => course?.bannerTitle || course?.title || ""
-  );
   const [formBannerSubtitle, setFormBannerSubtitle] = useState(
     () => course?.bannerSubtitle || ""
   );
@@ -166,10 +162,6 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
   );
   const [formCategoryLabel, setFormCategoryLabel] = useState(
     () => course?.categoryLabel || (course ? "Specialized Program" : "Web & Full-Stack")
-  );
-  const [formBadge, setFormBadge] = useState(() => course?.badge || "");
-  const [formBadgeType, setFormBadgeType] = useState<CourseItem["badgeType"] | "">(
-    () => course?.badgeType || ""
   );
   const [formDuration, setFormDuration] = useState(
     () => course?.duration || (course ? "60 Days" : "60 Days (2 Months)")
@@ -191,6 +183,7 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
     course?.actionPrompt || (course ? `Tell me about the ${course.title} course` : "");
   const [formStatus, setFormStatus] = useState<CourseStatus>(() => course?.status ?? "active");
   const [formTeacherIds, setFormTeacherIds] = useState<string[]>(() => course?.teacherIds ?? []);
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleCancel = () => {
@@ -205,8 +198,15 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
   // Save course (Add or Edit)
   const handleSaveCourse = async (e: React.FormEvent) => {
     e.preventDefault();
+    setHasAttemptedSubmit(true);
+
     if (!formTitle.trim()) {
       showToast("Course title is required", "error");
+      return;
+    }
+
+    if (formTeacherIds.length === 0) {
+      showToast("Please assign at least one teacher", "error");
       return;
     }
 
@@ -228,13 +228,16 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
       if (course) {
         await editCourse(course.id, {
           title: formTitle.trim(),
-          bannerTitle: formBannerTitle.trim() || formTitle.trim(),
+          bannerTitle:
+            course.bannerTitle && course.bannerTitle !== course.title
+              ? course.bannerTitle
+              : formTitle.trim(),
           bannerSubtitle: formBannerSubtitle.trim(),
           description: formDescription.trim(),
           category: formCategory,
           categoryLabel: formCategoryLabel.trim(),
-          badge: formBadge.trim() || undefined,
-          badgeType: (formBadgeType as CourseItem["badgeType"]) || undefined,
+          badge: course.badge || undefined,
+          badgeType: course.badgeType || undefined,
           duration: formDuration.trim(),
           level: formLevel.trim(),
           fee: formFee.trim(),
@@ -252,13 +255,11 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
       } else {
         const created = await addCourse({
           title: formTitle.trim(),
-          bannerTitle: formBannerTitle.trim() || formTitle.trim(),
+          bannerTitle: formTitle.trim(),
           bannerSubtitle: formBannerSubtitle.trim(),
           description: formDescription.trim(),
           category: formCategory,
           categoryLabel: formCategoryLabel.trim(),
-          badge: formBadge.trim() || undefined,
-          badgeType: (formBadgeType as CourseItem["badgeType"]) || undefined,
           duration: formDuration.trim(),
           level: formLevel.trim(),
           fee: formFee.trim(),
@@ -372,22 +373,8 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
                   />
                 </div>
 
-                {/* 2. Short Banner Title */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
-                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Short Banner Title
-                  </label>
-                  <input
-                    type="text"
-                    value={formBannerTitle}
-                    onChange={(e) => setFormBannerTitle(e.target.value)}
-                    placeholder="e.g. AI Agents & LangGraph"
-                    className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
-                  />
-                </div>
-
-                {/* 3. Banner Subtitle */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
+                {/* 2. Banner Subtitle (spans 2 cols on lg) */}
+                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-2 lg:col-span-2">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Banner Subtitle
                   </label>
@@ -400,42 +387,7 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
                   />
                 </div>
 
-                {/* 4. Badge Text (Optional) */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
-                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Badge Text (Optional)
-                  </label>
-                  <Combobox
-                    label="Badge text"
-                    options={COURSE_BADGES}
-                    value={formBadge}
-                    onValueChange={setFormBadge}
-                    placeholder="e.g. Bestseller"
-                    className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
-                  />
-                </div>
-
-                {/* 5. Badge Style */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
-                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Badge Style
-                  </label>
-                  <Select
-                    label="Badge Style"
-                    value={formBadgeType ?? ""}
-                    onValueChange={(value) => setFormBadgeType(value as CourseItem["badgeType"] | "")}
-                    options={[
-                      { value: "", label: "None" },
-                      { value: "bestseller", label: "Bestseller (Cyan/Blue)" },
-                      { value: "elite", label: "Elite (Gold/Amber)" },
-                      { value: "popular", label: "Popular (Indigo/Purple)" },
-                      { value: "ai", label: "AI Special (Violet/Magenta)" },
-                    ]}
-                    className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
-                  />
-                </div>
-
-                {/* 6. Category */}
+                {/* 3. Category */}
                 <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Category <span className="text-red-500">*</span>
@@ -463,7 +415,7 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
                   />
                 </div>
 
-                {/* 7. Duration */}
+                {/* 4. Duration */}
                 <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Duration
@@ -478,7 +430,7 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
                   />
                 </div>
 
-                {/* 8. Level */}
+                {/* 5. Level */}
                 <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Level
@@ -493,7 +445,7 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
                   />
                 </div>
 
-                {/* 9. Fee */}
+                {/* 6. Fee */}
                 <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Fee
@@ -510,7 +462,7 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
                   </span>
                 </div>
 
-                {/* 10. Status (Only shown when editing existing course) */}
+                {/* 7. Status (Only shown when editing existing course) */}
                 {course && (
                   <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
                     <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
@@ -532,45 +484,55 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
                   </div>
                 )}
 
-                {/* 11. Assigned Teachers */}
+                {/* 8. Assign Teacher (Mandatory) */}
                 <div
-                  className={`flex flex-col gap-1.5 col-span-1 sm:col-span-1 ${
-                    course ? "lg:col-span-1" : "lg:col-span-1"
+                  className={`flex flex-col gap-1.5 col-span-1 ${
+                    course ? "sm:col-span-1 lg:col-span-1" : "sm:col-span-2 lg:col-span-2"
                   }`}
                 >
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Assigned Teachers
+                    Assign Teacher <span className="text-red-500">*</span>
                   </label>
                   <Select
                     multiple
-                    label="Assigned teachers"
+                    label="Assign teacher"
                     value={formTeacherIds}
                     onValueChange={setFormTeacherIds}
                     options={faculty.map((t) => ({ value: t.id, label: t.name }))}
                     formatValue={(ids) => {
                       const list = ids as string[];
-                      if (list.length === 0) return "No teachers";
+                      if (list.length === 0) return "Select teacher(s)...";
                       if (list.length === 1) {
                         const found = faculty.find((t) => t.id === list[0]);
                         return found?.name || list[0];
                       }
                       return `${list.length} teachers`;
                     }}
-                    className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+                    className={`py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border text-neutral-900 dark:text-white text-xs ${
+                      hasAttemptedSubmit && formTeacherIds.length === 0
+                        ? "border-red-500 dark:border-red-500 ring-1 ring-red-500/30"
+                        : "border-neutral-200 dark:border-white/10"
+                    }`}
                   />
-                  <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
-                    {faculty.length === 0
-                      ? "No faculty yet — mark an account as Teacher."
-                      : formTeacherIds.length === 0
-                        ? "No teacher assigned yet."
-                        : formTeacherIds
-                            .map((id) => faculty.find((t) => t.id === id)?.name ?? id)
-                            .join(", ")}
-                  </span>
+                  {hasAttemptedSubmit && formTeacherIds.length === 0 ? (
+                    <span className="text-[10px] text-red-500 font-medium">
+                      At least one teacher must be assigned.
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                      {faculty.length === 0
+                        ? "No faculty yet — mark an account as Teacher."
+                        : formTeacherIds.length === 0
+                          ? "Select at least one faculty member."
+                          : formTeacherIds
+                              .map((id) => faculty.find((t) => t.id === id)?.name ?? id)
+                              .join(", ")}
+                    </span>
+                  )}
                 </div>
 
-                {/* 12. Tech Stack (spans 2 cols on lg) */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-2 lg:col-span-2">
+                {/* 9. Tech Stack (spans full 4 cols on lg) */}
+                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-2 lg:col-span-4">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Tech Stack
                   </label>
