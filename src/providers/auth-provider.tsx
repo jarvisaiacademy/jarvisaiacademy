@@ -90,16 +90,15 @@ function describeAuthError(error: { code?: string; message?: string }): string {
   }
 }
 
-const ADMIN_EMAILS = (
-  process.env.NEXT_PUBLIC_ADMIN_EMAILS ||
-  "sugatraj.2106@gmail.com,hivirajkadam@gmail.com,lalitspatil03@gmail.com"
-)
-  .split(",")
-  .map((e) => e.trim().toLowerCase());
+async function resolveAdminStatus(uid: string): Promise<boolean> {
+  if (!db) return false;
 
-export function checkIsAdmin(email?: string | null): boolean {
-  if (!email) return false;
-  return ADMIN_EMAILS.includes(email.toLowerCase());
+  try {
+    const userDoc = await getDoc(doc(db, "users", uid));
+    return userDoc.exists() && userDoc.data().role === "admin";
+  } catch {
+    return false;
+  }
 }
 
 // Cache auth session in localStorage and sessionStorage so that page reloads
@@ -144,10 +143,11 @@ function getInitialUser(): User | null {
       sessionStorage.getItem("jarvis_auth_user");
     if (stored && stored !== "null") {
       const parsed = JSON.parse(stored);
-      parsed.isAdmin = checkIsAdmin(parsed.email);
+      parsed.isAdmin = parsed.role === "admin";
       parsed.isTeacher =
-        localStorage.getItem("jarvis_is_teacher") === "true" ||
-        sessionStorage.getItem("jarvis_is_teacher") === "true";
+        !parsed.isAdmin &&
+        (localStorage.getItem("jarvis_is_teacher") === "true" ||
+          sessionStorage.getItem("jarvis_is_teacher") === "true");
       parsed.role = parsed.isAdmin ? "admin" : parsed.isTeacher ? "teacher" : "student";
       return parsed;
     }
@@ -242,7 +242,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Listen for authenticated user updates without wiping local session on initial tick
       const unsubscribe = onAuthStateChanged(auth, async (fbUser: FirebaseUser | null) => {
         if (fbUser) {
-          const isAdmin = checkIsAdmin(fbUser.email);
+          const isAdmin = await resolveAdminStatus(fbUser.uid);
           let isTeacher = false;
           if (!isAdmin && fbUser.email) {
             isTeacher = await checkTeacherStatus(fbUser.uid, fbUser.email);
@@ -309,7 +309,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const fbUser = result.user;
-      const isAdmin = checkIsAdmin(fbUser.email);
+      const isAdmin = await resolveAdminStatus(fbUser.uid);
       let isTeacher = false;
       if (!isAdmin && fbUser.email) {
         isTeacher = await checkTeacherStatus(fbUser.uid, fbUser.email);

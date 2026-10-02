@@ -19,10 +19,8 @@ export interface StudentRecord {
   /**
    * Faculty, as an admin-set flag. Absent means false.
    *
-   * A flag rather than a value in `role`, because `role` is recomputed from the admin
-   * allowlist on every sign-in — a "teacher" stored there reverts on that person's next
-   * visit. This field sits with `status` and `is_super10` instead: admin-owned, and the
-   * `users` rule refuses a self-write that changes it.
+   * A flag rather than a value in `role`, because faculty status is independent of the
+   * account's student or admin role. The `users` rule refuses a self-write that changes it.
    */
   is_teacher?: boolean;
   // Carried straight off the Firebase Auth user at sign-in. `createdAt` is the account's
