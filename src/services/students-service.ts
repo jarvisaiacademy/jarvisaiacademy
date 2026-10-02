@@ -6,6 +6,7 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
+  deleteField,
   onSnapshot,
   query,
   where,
@@ -340,9 +341,6 @@ export async function deleteTeacherInFirestore(
 export interface CreateAdminInput {
   name: string;
   email: string;
-  title?: string;
-  specialization?: string;
-  bio?: string;
   phone?: string;
   status?: StudentRecord["status"];
   existingUserId?: string;
@@ -403,9 +401,15 @@ export async function createAdminInFirestore(
     updatedBy: author,
   };
 
-  if (input.title?.trim()) adminRecord.title = input.title.trim();
-  if (input.specialization?.trim()) adminRecord.specialization = input.specialization.trim();
-  if (input.bio?.trim()) adminRecord.bio = input.bio.trim();
+  if (!input.existingUserId) {
+    adminRecord.createdAt = now;
+    adminRecord.createdBy = author;
+  } else {
+    // If promoting an existing user, strip non-admin profile fields
+    (adminRecord as Record<string, unknown>).title = deleteField();
+    (adminRecord as Record<string, unknown>).specialization = deleteField();
+    (adminRecord as Record<string, unknown>).bio = deleteField();
+  }
   if (input.phone?.trim()) adminRecord.phone = input.phone.trim();
 
   await updateDoc(adminRef, adminRecord);

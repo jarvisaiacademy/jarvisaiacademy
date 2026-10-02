@@ -479,29 +479,21 @@ export function AdminStudentDetail({ studentId, shell }: AdminStudentDetailProps
           </div>
 
           {/* Card Footer: Metadata (Created on left, Updated on right in continuous string) */}
-          <div className="px-5 sm:px-7 py-4 border-t border-neutral-200 dark:border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 bg-neutral-50/50 dark:bg-white/[0.02] text-xs">
+          <div className="px-5 sm:px-7 py-3.5 border-t border-neutral-200 dark:border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-4 bg-neutral-50/50 dark:bg-white/[0.02] text-[11px] font-normal text-neutral-500 dark:text-neutral-400">
             {/* Bottom Left: Created by [Name] on [Date] */}
-            <div className="text-neutral-500 dark:text-neutral-400">
+            <div>
               <span>Created by </span>
-              <span className="font-semibold text-neutral-800 dark:text-neutral-200">
-                {createdAuthorName}
-              </span>
+              <span>{createdAuthorName}</span>
               <span> on </span>
-              <span className="font-semibold text-neutral-800 dark:text-neutral-200">
-                {formatWhen(student.createdAt)}
-              </span>
+              <span>{formatWhen(student.createdAt)}</span>
             </div>
 
             {/* Bottom Right: Updated by [Name] on [Date] */}
-            <div className="text-neutral-500 dark:text-neutral-400 text-left sm:text-right">
+            <div className="text-left sm:text-right">
               <span>Updated by </span>
-              <span className="font-semibold text-neutral-800 dark:text-neutral-200">
-                {updatedAuthorName}
-              </span>
+              <span>{updatedAuthorName}</span>
               <span> on </span>
-              <span className="font-semibold text-neutral-800 dark:text-neutral-200">
-                {formatWhen(student.updatedAt || student.createdAt)}
-              </span>
+              <span>{formatWhen(student.updatedAt || student.createdAt)}</span>
             </div>
           </div>
         </div>
