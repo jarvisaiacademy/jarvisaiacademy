@@ -42,7 +42,6 @@ import { useToast } from "@/components/ui/toast";
 import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { AdminKnowledge } from "@/components/admin/admin-knowledge";
-import { AdminReferrals } from "@/components/admin/admin-referrals";
 import { AdminAdmins } from "@/components/admin/admin-admins";
 import { AdminStudents } from "@/components/admin/admin-students";
 import { AdminTeachers } from "@/components/admin/admin-teachers";
@@ -389,7 +388,7 @@ export function AdminDashboard({
               { value: "active", label: "Active" },
               { value: "inactive", label: "Inactive" },
             ]}
-            className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+            className="w-36 py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
           />
         </div>
 
@@ -494,8 +493,9 @@ export function AdminDashboard({
     return (
       <div className="flex flex-col gap-4">
         {/* Search, not create: an account is created by signing in with Google and admin
-            access is an email allowlist, so there is nothing this page could create. What an
-            admin does here is find one, on a roster that is otherwise a long scroll. */}
+            access is granted by setting users/{UID}.role to "admin" in Firestore, so there
+            is nothing this page can create. What an admin does here is find an existing
+            account and promote it. */}
         <PageHeader
           crumbs={[{ label: "Home", onSelect: () => setActiveTab("home") }, { label: page.title }]}
           action={
@@ -507,7 +507,7 @@ export function AdminDashboard({
                 onChange={(e) => setRosterQuery(e.target.value)}
                 placeholder="Search accounts..."
                 aria-label={`Search ${page.title.toLowerCase()}`}
-                className="w-36 sm:w-52 pl-8 pr-3 py-1.5 text-xs rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white focus:outline-hidden focus:ring-1 focus:ring-blue-500"
+                className="w-36 sm:w-48 pl-8 pr-3 py-1.5 text-xs rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white focus:outline-hidden focus:ring-1 focus:ring-blue-500"
               />
             </div>
           }
@@ -671,11 +671,6 @@ export function AdminDashboard({
         {/* ANSWER BOOK — what the assistant replies with, read-only */}
         {activeTab === "knowledge" && (
           <AdminKnowledge onHome={() => setActiveTab("home")} />
-        )}
-
-        {/* REFERRALS — who came in on whose code, read-only */}
-        {activeTab === "referrals" && (
-          <AdminReferrals onHome={() => setActiveTab("home")} />
         )}
 
         {/* REVENUE & ANALYTICS */}

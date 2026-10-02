@@ -22,6 +22,12 @@ This is a real application, not a static UI mockup.
 
 These rules take priority over convenience.
 
+### Response style
+
+- Keep Ponytail full mode active for this workspace: YAGNI, reuse existing solutions, prefer stdlib/native features, and make the smallest correct change.
+- Keep the `i-have-adhd` response rules active: lead with the answer or next action, number multi-step work, state progress clearly, avoid tangents and preambles, and end without a recap or pleasantry.
+- These preferences remain active unless the user explicitly turns them off.
+
 > **CRITICAL PRODUCTION SAFEGUARD**: The `production` branch is connected to live production at **`https://jarvisaiacademy.com`** via Netlify. **NEVER** push directly to `production`. Every change must be in a separate branch and merged via a Pull Request (PR) after verification.
 
 > **TWO-BRANCH MODEL — `development` integrates, `production` deploys.**

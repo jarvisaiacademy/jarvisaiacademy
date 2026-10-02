@@ -2,41 +2,17 @@ rules_version = '2';
 
 // Access control for the collections the app touches.
 //
-// This file, not the browser, is what protects the data. Anything that ships in the bundle
-// can be edited by whoever is holding the browser: the client's `isAdmin` comes from a
-// `NEXT_PUBLIC_` email list and is cached in localStorage, so a visitor can set it to true
-// and render the admin dashboard. That gets them a dashboard and permission-denied on every
-// read below, which is the intended outcome.
+// This file, not the browser, is what protects the data. The client's cached `isAdmin`
+// controls dashboard visibility only; Firestore checks the signed-in user's stored role.
 //
 // Deploy with: firebase deploy --only firestore:rules
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // The same two addresses as NEXT_PUBLIC_ADMIN_EMAILS — keep the two in step.
-    //
-    // An address in NEXT_PUBLIC_ADMIN_EMAILS but not here gets a dashboard and then
-    // permission-denied on every read, so the client list must always be a subset of this one.
-    //
-    // `token.email` is read from the signed ID token, so it cannot be forged. That is why
-    // the identical check is safe here and unsafe in the client. Revisit this if a sign-in
-    // method that can carry an unverified email address is ever added: `token.email_verified`
-    // would need to be part of the test.
-    //
-    // Moving to a document per admin (/admins/{uid}) would drop the redeploy needed to add
-    // one, at the cost of a bootstrapping step. Not worth it at this size.
     function isAdmin() {
-      return request.auth != null && (
-        request.auth.token.email.lower() in [
-          'sugatraj.2106@gmail.com',
-          'hivirajkadam@gmail.com',
-          'lalitspatil03@gmail.com'
-        ]
-        || request.auth.token.email in [
-          'sugatraj.2106@gmail.com',
-          'hivirajkadam@gmail.com',
-          'lalitspatil03@gmail.com'
-        ]
-      );
+      return request.auth != null
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'admin';
     }
 
     function isSelf(uid) {
@@ -89,10 +65,8 @@ service cloud.firestore {
         || isAdmin()
         || (request.auth != null && request.auth.token.email != null && resource.data.email == request.auth.token.email);
 
-      // The extra clause stops a learner promoting themselves. The client writes `role` from
-      // its own email check, so without it a visitor could store role: 'admin' on their own
-      // record and misreport themselves to the dashboard. No access is derived from that
-      // field — the rules here are what grant access — but it should not be writable either.
+      // The role is shown in the roster, but only this rule's signed identity and stored role
+      // checks grant access. A learner may create only a student row, never promote themselves.
       //
       // `is_super10` and `is_teacher` are fenced here for the same reason as on the update
       // path below, because a create is the other door onto them: a client that writes its own
@@ -113,13 +87,13 @@ service cloud.firestore {
       // does not exist on a create, so the two clauses cannot share a line.
       //
       // An admin may write anything. A learner may update their own row only while leaving
-      // `status`, `is_super10` and `is_teacher` exactly as stored (unless pre-registered as faculty).
+      // `role`, `status`, `is_super10` and `is_teacher` exactly as stored (unless pre-registered as faculty).
       //
       // `get(field, default)` on both sides makes a merge-write compare the stored value to
       // itself, so a payload that simply omits the field is not read as "changing" it.
       allow update: if isAdmin()
         || (isSelf(uid)
-          && request.resource.data.role == 'student'
+          && request.resource.data.get('role', 'student') == resource.data.get('role', 'student')
           && request.resource.data.get('status', 'active') == resource.data.get('status', 'active')
           && request.resource.data.get('is_super10', false) == resource.data.get('is_super10', false)
           && (

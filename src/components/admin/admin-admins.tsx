@@ -60,7 +60,7 @@ export function AdminAdmins({ onHome }: AdminAdminsProps) {
 
   // Filter admins
   const adminList = useMemo(
-    () => students.filter((s) => s.role === "admin" || accountRoleOf(s) === "admin"),
+    () => students.filter((s) => accountRoleOf(s) === "admin"),
     [students]
   );
 
@@ -249,7 +249,7 @@ export function AdminAdmins({ onHome }: AdminAdminsProps) {
 
             {/* Right side: Search bar and Status filter */}
             <div className="flex items-center gap-2.5 flex-1 sm:flex-none justify-end flex-wrap sm:flex-nowrap">
-              <div className="relative w-full sm:w-64">
+              <div className="relative w-full sm:w-48">
                 <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
@@ -269,7 +269,7 @@ export function AdminAdmins({ onHome }: AdminAdminsProps) {
                   { value: "active", label: "Active Only" },
                   { value: "inactive", label: "Inactive" },
                 ]}
-                className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs whitespace-nowrap"
+                className="w-36 py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs whitespace-nowrap"
               />
             </div>
           </div>
