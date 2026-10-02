@@ -494,8 +494,9 @@ export function AdminDashboard({
     return (
       <div className="flex flex-col gap-4">
         {/* Search, not create: an account is created by signing in with Google and admin
-            access is an email allowlist, so there is nothing this page could create. What an
-            admin does here is find one, on a roster that is otherwise a long scroll. */}
+            access is granted by setting users/{UID}.role to "admin" in Firestore, so there
+            is nothing this page can create. What an admin does here is find an existing
+            account and promote it. */}
         <PageHeader
           crumbs={[{ label: "Home", onSelect: () => setActiveTab("home") }, { label: page.title }]}
           action={

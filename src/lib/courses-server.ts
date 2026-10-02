@@ -6,8 +6,8 @@ import { CourseItem, COURSES_DATA } from "@/data/courses";
 /**
  * The catalogue as the public pages should render it.
  *
- * Deliberately not `courses-service.ts`: that file imports `checkIsAdmin` from
- * `auth-provider.tsx`, which is a Client Component, so pulling it in here would drag
+ * Deliberately not `courses-service.ts`: that file imports `requireAdmin` from
+ * `admin-access.ts`, which uses browser Firebase Auth, so pulling it in here would drag
  * the browser auth graph into the server render.
  *
  * `cache()` dedupes the read across `generateStaticParams`, `generateMetadata` and the

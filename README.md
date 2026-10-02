@@ -27,8 +27,18 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-`.env.example` lists every variable the app reads, including
-`NEXT_PUBLIC_ADMIN_EMAILS` — the comma-separated accounts allowed into the admin dashboard.
+Admin access is stored on `users/{Firebase Auth UID}` as `role: "admin"`. Before deploying
+`firestore.rules`, a Firebase project owner must find each intended administrator in Firebase
+Authentication, verify their UID directly, and set that UID's Firestore user document's `role`
+field to `admin`. Do not infer identities from email or create an email-based bypass. Audit all
+intended administrators before deployment; set incorrect Admin roles to `student`, and keep at
+least one verified Admin active. The Admin Control Center can promote or demote registered users
+once the role-based rules are deployed.
+
+If Admin access is lost, a Firebase project owner can recover it through privileged Firebase
+Console access or the Admin SDK by setting `role: "admin"` on the confirmed Auth UID's
+`users/{UID}` document. Then have that person sign in again. There is no client-side recovery
+bypass.
 
 ## Scripts
 

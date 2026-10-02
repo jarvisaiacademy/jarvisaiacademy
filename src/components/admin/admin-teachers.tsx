@@ -26,7 +26,7 @@ import {
   updateCandidateInFirestore,
 } from "@/services/students-service";
 import { removeTeacherFromAllCourses } from "@/services/courses-service";
-import type { CandidateStatus, StudentRecord } from "@/data/students";
+import { accountRoleOf, type CandidateStatus, type StudentRecord } from "@/data/students";
 
 interface AdminTeachersProps {
   onHome: () => void;
@@ -63,7 +63,7 @@ export function AdminTeachers({ onHome }: AdminTeachersProps) {
 
   // All faculty members
   const teachers = useMemo(
-    () => students.filter((s) => s.is_teacher === true),
+    () => students.filter((s) => accountRoleOf(s) === "teacher"),
     [students]
   );
 

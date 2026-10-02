@@ -12,7 +12,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { CourseItem, COURSES_DATA } from "@/data/courses";
-import { checkIsAdmin } from "@/providers/auth-provider";
+import { requireAdmin } from "@/lib/admin-access";
 
 export const COURSES_COLLECTION = "courses";
 
@@ -94,9 +94,7 @@ export async function createCourseInFirestore(
   userEmail?: string | null,
   userName?: string | null
 ): Promise<CourseItem> {
-  if (!checkIsAdmin(userEmail)) {
-    throw new Error("Unauthorized: Only verified admins can create courses.");
-  }
+  await requireAdmin();
 
   if (!db) {
     throw new Error("Firestore is not initialized.");
@@ -162,9 +160,7 @@ export async function updateCourseInFirestore(
   userEmail?: string | null,
   userName?: string | null
 ): Promise<void> {
-  if (!checkIsAdmin(userEmail)) {
-    throw new Error("Unauthorized: Only verified admins can update courses.");
-  }
+  await requireAdmin();
 
   if (!db) {
     throw new Error("Firestore is not initialized.");
@@ -190,9 +186,7 @@ export async function deleteCourseInFirestore(
   courseId: string,
   userEmail?: string | null
 ): Promise<void> {
-  if (!checkIsAdmin(userEmail)) {
-    throw new Error("Unauthorized: Only verified admins can delete courses.");
-  }
+  await requireAdmin();
 
   if (!db) {
     throw new Error("Firestore is not initialized.");
@@ -209,9 +203,7 @@ export async function deleteCourseInFirestore(
 export async function seedDefaultCoursesToFirestore(
   userEmail?: string | null
 ): Promise<{ count: number; courses: CourseItem[] }> {
-  if (!checkIsAdmin(userEmail)) {
-    throw new Error("Unauthorized: Only verified admins can seed courses to Firestore.");
-  }
+  await requireAdmin();
 
   if (!db) {
     throw new Error("Firestore is not initialized.");
@@ -239,9 +231,7 @@ export async function syncTeacherCourseAssignments(
   userEmail?: string | null,
   teacherEmail?: string | null
 ): Promise<void> {
-  if (!checkIsAdmin(userEmail)) {
-    throw new Error("Unauthorized: Only verified admins can update course assignments.");
-  }
+  await requireAdmin();
   if (!db) {
     throw new Error("Firestore is not initialized.");
   }

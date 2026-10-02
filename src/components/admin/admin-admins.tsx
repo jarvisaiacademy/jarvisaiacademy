@@ -60,7 +60,7 @@ export function AdminAdmins({ onHome }: AdminAdminsProps) {
 
   // Filter admins
   const adminList = useMemo(
-    () => students.filter((s) => s.role === "admin" || accountRoleOf(s) === "admin"),
+    () => students.filter((s) => accountRoleOf(s) === "admin"),
     [students]
   );
 

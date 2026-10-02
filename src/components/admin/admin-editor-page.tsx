@@ -9,8 +9,6 @@ import {
   Plus,
   Pencil,
   ShieldCheck,
-  UserCheck,
-  UserPlus,
 } from "lucide-react";
 import { useStudents } from "@/providers/students-provider";
 import { useAuth } from "@/providers/auth-provider";
@@ -22,6 +20,7 @@ import {
   updateCandidateInFirestore,
 } from "@/services/students-service";
 import type { AdminShellState } from "@/components/admin/admin-shell";
+import { accountRoleOf } from "@/data/students";
 import type { CandidateStatus, StudentRecord } from "@/data/students";
 
 interface AdminEditorPageProps {
@@ -143,13 +142,11 @@ function AdminForm({ admin, shell }: AdminFormProps) {
   const { showToast } = useToast();
   const { students } = useStudents();
 
-  // Mode: "manual" (enter new details) or "promote" (select an existing user)
-  const [createMode, setCreateMode] = useState<"manual" | "promote">("manual");
   const [selectedUserId, setSelectedUserId] = useState<string>("");
 
   // Filter non-admin users for promote option
   const nonAdminUsers = useMemo(
-    () => students.filter((s) => s.role !== "admin"),
+    () => students.filter((s) => accountRoleOf(s) !== "admin"),
     [students]
   );
 
@@ -197,6 +194,10 @@ function AdminForm({ admin, shell }: AdminFormProps) {
       showToast("A valid email address is required", "error");
       return;
     }
+    if (!admin && !selectedUserId) {
+      showToast("Select a registered account before granting Admin access", "error");
+      return;
+    }
 
     setIsSaving(true);
     try {
@@ -231,8 +232,7 @@ function AdminForm({ admin, shell }: AdminFormProps) {
             bio: bio.trim() || undefined,
             phone: phone.trim() || undefined,
             status: "active",
-            existingUserId:
-              createMode === "promote" && selectedUserId ? selectedUserId : undefined,
+            existingUserId: selectedUserId,
           },
           user?.email,
           user?.name
@@ -336,59 +336,16 @@ function AdminForm({ admin, shell }: AdminFormProps) {
 
             {/* Card Body */}
             <div className="p-5 sm:p-7 flex flex-col gap-6">
-              {/* Creator Mode Selector (Only on New Admin) */}
               {!admin && (
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-semibold text-neutral-900 dark:text-white">
-                      Admin Source
-                    </span>
-                    <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                      Create a new administrator account directly or promote an existing user.
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 p-1 rounded-xl bg-neutral-200/60 dark:bg-white/5 border border-neutral-200 dark:border-white/10 self-stretch sm:self-auto">
-                    <button
-                      type="button"
-                      onClick={() => setCreateMode("manual")}
-                      className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                        createMode === "manual"
-                          ? "bg-white dark:bg-white/15 text-neutral-900 dark:text-white shadow-xs"
-                          : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
-                      }`}
-                    >
-                      <UserPlus className="w-3.5 h-3.5" />
-                      <span>New Profile</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setCreateMode("promote")}
-                      className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                        createMode === "promote"
-                          ? "bg-white dark:bg-white/15 text-neutral-900 dark:text-white shadow-xs"
-                          : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
-                      }`}
-                    >
-                      <UserCheck className="w-3.5 h-3.5" />
-                      <span>Promote Registered User</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Existing User Picker (in Promote mode) */}
-              {!admin && createMode === "promote" && (
                 <div className="p-4 rounded-xl bg-indigo-50/50 dark:bg-indigo-500/5 border border-indigo-200 dark:border-indigo-500/20 flex flex-col gap-2.5">
                   <div className="flex items-center gap-2 text-indigo-800 dark:text-indigo-300 text-xs font-semibold">
                     <ShieldCheck className="w-4 h-4" />
-                    <span>Select User Account to Promote to Administrator</span>
+                    <span>Select a registered account to grant Admin access</span>
                   </div>
 
                   {nonAdminUsers.length === 0 ? (
                     <p className="text-xs text-neutral-500">
-                      No registered user accounts available to promote. Use &quot;New Profile&quot; instead.
+                      The person must sign in once before Admin access can be granted.
                     </p>
                   ) : (
                     <Select
