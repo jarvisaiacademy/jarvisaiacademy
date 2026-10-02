@@ -57,16 +57,6 @@ export interface StudentRecord {
   enrolledCourseIds?: string[];
 }
 
-/**
- * The rows that carry a referral claim — one per person who signed up with someone's code.
- *
- * Shared by the dashboard tab that lists them and the count beside its name in the sidebar, so
- * the badge cannot disagree with the table it labels.
- */
-export function referredUsers(users: StudentRecord[]): StudentRecord[] {
-  return users.filter((user) => !!user.referredBy);
-}
-
 export type CandidateStatus = "active" | "inactive" | "banned";
 
 /** The three roles a person can hold on this site. */
