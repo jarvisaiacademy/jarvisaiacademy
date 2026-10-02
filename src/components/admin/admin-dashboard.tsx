@@ -389,7 +389,7 @@ export function AdminDashboard({
               { value: "active", label: "Active" },
               { value: "inactive", label: "Inactive" },
             ]}
-            className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+            className="w-36 py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
           />
         </div>
 
@@ -507,7 +507,7 @@ export function AdminDashboard({
                 onChange={(e) => setRosterQuery(e.target.value)}
                 placeholder="Search accounts..."
                 aria-label={`Search ${page.title.toLowerCase()}`}
-                className="w-36 sm:w-52 pl-8 pr-3 py-1.5 text-xs rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white focus:outline-hidden focus:ring-1 focus:ring-blue-500"
+                className="w-36 sm:w-48 pl-8 pr-3 py-1.5 text-xs rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white focus:outline-hidden focus:ring-1 focus:ring-blue-500"
               />
             </div>
           }
