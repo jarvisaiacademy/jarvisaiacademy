@@ -42,7 +42,6 @@ import { useToast } from "@/components/ui/toast";
 import { DashboardTab } from "@/components/layout/dashboard-sidebar-nav";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { AdminKnowledge } from "@/components/admin/admin-knowledge";
-import { AdminReferrals } from "@/components/admin/admin-referrals";
 import { AdminAdmins } from "@/components/admin/admin-admins";
 import { AdminStudents } from "@/components/admin/admin-students";
 import { AdminTeachers } from "@/components/admin/admin-teachers";
@@ -671,11 +670,6 @@ export function AdminDashboard({
         {/* ANSWER BOOK — what the assistant replies with, read-only */}
         {activeTab === "knowledge" && (
           <AdminKnowledge onHome={() => setActiveTab("home")} />
-        )}
-
-        {/* REFERRALS — who came in on whose code, read-only */}
-        {activeTab === "referrals" && (
-          <AdminReferrals onHome={() => setActiveTab("home")} />
         )}
 
         {/* REVENUE & ANALYTICS */}

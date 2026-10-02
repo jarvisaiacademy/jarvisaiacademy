@@ -20,7 +20,6 @@ const VALID_TABS: Record<DashboardTab, true> = {
   courses: true,
   knowledge: true,
   users: true,
-  referrals: true,
   analytics: true,
 };
 

@@ -47,6 +47,12 @@ export function AdminStudentDetail({ studentId, shell }: AdminStudentDetailProps
   const [isDeleting, setIsDeleting] = useState(false);
 
   const student = students.find((s) => s.id === studentId);
+  const referredByStudent = student?.referredBy
+    ? students.find((s) => s.id === student.referredBy)
+    : undefined;
+  const referredStudents = student
+    ? students.filter((s) => s.referredBy === student.id).sort((a, b) => a.name.localeCompare(b.name))
+    : [];
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -444,11 +450,30 @@ export function AdminStudentDetail({ studentId, shell }: AdminStudentDetailProps
               {/* Referred By */}
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
-                  {student.referredBy || (student.referredByCode ? `Code: ${student.referredByCode}` : "Direct Sign-up")}
+                  {referredByStudent?.name || referredByStudent?.email || student.referredBy || (student.referredByCode ? `Code: ${student.referredByCode}` : "Direct Sign-up")}
                 </span>
                 <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                   Referred By
                 </span>
+              </div>
+
+              <div className="flex flex-col min-w-0 col-span-1 sm:col-span-2 lg:col-span-4">
+                <span className="text-sm font-semibold text-neutral-900 dark:text-white">
+                  {referredStudents.length ? `${referredStudents.length} student${referredStudents.length === 1 ? "" : "s"}` : "No students referred"}
+                </span>
+                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  Students Referred
+                </span>
+                {referredStudents.length > 0 && (
+                  <ul className="mt-2 flex flex-col gap-1">
+                    {referredStudents.map((referredStudent) => (
+                      <li key={referredStudent.id} className="text-xs text-neutral-600 dark:text-neutral-300">
+                        {referredStudent.name || "Unnamed Student"}
+                        {referredStudent.email && <span className="ml-2 text-neutral-500">{referredStudent.email}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
           </div>
