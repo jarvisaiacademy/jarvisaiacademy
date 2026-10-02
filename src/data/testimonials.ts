@@ -1,22 +1,13 @@
 /**
- * The alumni the testimonials reply quotes.
- *
- * The pool is hard-coded here rather than read from Firestore, for the same reason
- * `src/data/academy-knowledge.ts` carries its prose: the reply has to answer with the
- * database unreachable, and a `testimonials` collection that nothing writes to could only
- * ever make that answer emptier.
- *
- * **These twelve people do not exist.** Their names, employers and quotes were written to
- * demonstrate the reply, and their portraits under `public/testimonials/` are AI-generated,
- * not photographs of anyone. Replacing them with the academy's real alumni — their own
- * names, roles, employers and photographs, once they have agreed to be quoted — is a change
- * to this array alone.
+ * Fictional profiles and AI-generated portraits used to demonstrate the testimonial reply.
+ * Replacing these with real alumni details requires their consent.
  */
 export interface TestimonialPerson {
   name: string;
   role: string;
   company: string;
   location: string;
+  course: string;
   quote: string;
   /** Public path to the portrait. */
   photo: string;
@@ -24,111 +15,123 @@ export interface TestimonialPerson {
 
 export const TESTIMONIAL_POOL: TestimonialPerson[] = [
   {
-    name: "Gurpreet Kaur",
+    name: "Ananya Nair",
     role: "Software Engineer",
-    company: "Monzo",
-    location: "London, UK",
+    company: "Product startup",
+    location: "Kochi, Kerala",
+    course: "Full-Stack AI & Web Engineering",
     quote:
-      "I came from a non-IT background, so I had a lot of doubt in the beginning. The daily project reviews kept me on track, and in 60 days I was writing full-stack code properly.",
+      "After completing Full-Stack AI & Web Engineering, I could explain how the frontend, API, and data layer fit together in the projects I built.",
     photo: "/testimonials/person-01.jpg",
   },
   {
-    name: "Karthik Iyer",
+    name: "Arjun Reddy",
     role: "Backend Engineer",
-    company: "Stripe",
-    location: "Austin, US",
+    company: "FinTech company",
+    location: "Hyderabad, Telangana",
+    course: "Backend Engineering (Python + FastAPI + Django)",
     quote:
-      "The system design mock interviews were the main reason I cleared my loop. We did them again and again until I could explain my choices without hesitating.",
+      "Completing Backend Engineering gave me hands-on practice building REST APIs with FastAPI and working through database-backed features.",
     photo: "/testimonials/person-02.jpg",
   },
   {
-    name: "Ananya Deshmukh",
-    role: "Full Stack Developer",
-    company: "Deliveroo",
-    location: "Manchester, UK",
+    name: "Kavya Iyer",
+    role: "Frontend Developer",
+    company: "Software studio",
+    location: "Chennai, Tamil Nadu",
+    course: "Frontend Engineering (ReactJS + Tailwind)",
     quote:
-      "In most courses you watch videos for a month before you touch anything real. Here we were writing production code from the first week itself.",
+      "After completing Frontend Engineering, I could build responsive React screens and explain the choices I made in each project.",
     photo: "/testimonials/person-03.jpg",
   },
   {
-    name: "Farhan Qureshi",
-    role: "Data Engineer",
-    company: "Datadog",
-    location: "Boston, US",
+    name: "Aarav Das",
+    role: "Data Analyst",
+    company: "Data platform team",
+    location: "Guwahati, Assam",
+    course: "Data Analyst (PowerBI + SQL + SAP + Python)",
     quote:
-      "The capstone felt like an actual sprint. By the time I joined my team, the way we worked was already familiar to me.",
+      "Completing the Data Analyst course helped me turn SQL and PowerBI exercises into a dashboard project I can walk through.",
     photo: "/testimonials/person-04.jpg",
   },
   {
-    name: "Meghna Barman",
+    name: "Meera Sharma",
     role: "Application Support Engineer",
-    company: "Ocado Technology",
-    location: "Bristol, UK",
+    company: "Cloud services firm",
+    location: "Jaipur, Rajasthan",
+    course: "Application Support & Cloud Ops (Linux + MySQL)",
     quote:
-      "Sitting with the mentors and debugging on live systems taught me more than any tutorial did. You pick up the shortcuts only when something is actually broken.",
+      "After completing Application Support & Cloud Ops, I became more systematic about reading Linux logs and investigating MySQL issues.",
     photo: "/testimonials/person-05.jpg",
   },
   {
-    name: "Nithin Reddy",
+    name: "Rohan Verma",
     role: "GenAI Engineer",
-    company: "Notion",
-    location: "San Francisco, US",
+    company: "AI startup",
+    location: "Lucknow, Uttar Pradesh",
+    course: "Generative AI, RAG & Agentic Systems",
     quote:
-      "We built a retrieval pipeline end to end, not a toy one. That project is still the first thing I show in interviews.",
+      "Completing Generative AI, RAG & Agentic Systems gave me a project where I can explain the retrieval steps and trade-offs.",
     photo: "/testimonials/person-06.jpg",
   },
   {
-    name: "Sneha Nair",
+    name: "Ishita Singh",
     role: "DevOps Engineer",
-    company: "Checkout.com",
-    location: "London, UK",
+    company: "SaaS company",
+    location: "New Delhi, Delhi",
+    course: "DevOps & Cloud Engineer (AWS + Docker + CI/CD)",
     quote:
-      "Getting my code reviewed every single day for 60 days changed the way I work. Those habits are what I use on every pull request now.",
+      "After completing DevOps & Cloud Engineer, I could describe how Docker, AWS, and CI/CD fit together in a deployment pipeline.",
     photo: "/testimonials/person-07.jpg",
   },
   {
-    name: "Hardik Patel",
-    role: "Backend AI Engineer",
-    company: "Cloudflare",
-    location: "Austin, US",
+    name: "Sarthak Bose",
+    role: "Software Engineer",
+    company: "Software company",
+    location: "Kolkata, West Bengal",
+    course: "Super10 Elite Batch (100% Placement)",
     quote:
-      "The mentors did not let anything slide. No ticket was ever left half finished, and that standard stayed with me after the course.",
+      "Completing the Super10 Elite Batch gave me practice reviewing code, working through capstones, and discussing system design.",
     photo: "/testimonials/person-08.jpg",
   },
   {
-    name: "Ritika Rathore",
-    role: "Frontend Engineer",
-    company: "Wise",
-    location: "Birmingham, UK",
+    name: "Priya Rao",
+    role: "Business Analyst",
+    company: "Product company",
+    location: "Bengaluru, Karnataka",
+    course: "Business Analyst (PowerBI + MySQL + BRD + Jira)",
     quote:
-      "I came from a design background and was worried the coding part would go over my head. The frontend track started exactly where I was and built up from there.",
+      "After completing the Business Analyst course, I could connect requirements, SQL queries, and dashboard findings in a project.",
     photo: "/testimonials/person-09.jpg",
   },
   {
-    name: "Debashish Mohanty",
+    name: "Aman Kumar",
     role: "Database Administrator",
-    company: "Ramp",
-    location: "New York, US",
+    company: "IT services firm",
+    location: "Patna, Bihar",
+    course: "Database Admin (Oracle + PL/SQL + MongoDB)",
     quote:
-      "I joined knowing only basic SQL. By the end I could look at a slow query, understand the plan behind it and fix it.",
+      "Completing Database Admin helped me read query plans and understand practical ways to improve a slow query.",
     photo: "/testimonials/person-10.jpg",
   },
   {
-    name: "Tenzin Dolma",
-    role: "Full Stack Engineer",
-    company: "Figma",
-    location: "Seattle, US",
+    name: "Ayesha Khan",
+    role: "Laravel Developer",
+    company: "SaaS startup",
+    location: "Bhopal, Madhya Pradesh",
+    course: "Full-Stack Web (Laravel + PHP + MySQL)",
     quote:
-      "The 60-day structure made me finish what I started. That was the one skill I was missing, and it changed how I work.",
+      "After completing Full-Stack Web, I could build a Laravel feature from its database model through to the user-facing page.",
     photo: "/testimonials/person-11.jpg",
   },
   {
-    name: "Suhas Gowda",
-    role: "Software Engineer",
-    company: "Sky",
-    location: "Leeds, UK",
+    name: "Naveen Reddy",
+    role: "Full Stack Engineer",
+    company: "Technology company",
+    location: "Visakhapatnam, Andhra Pradesh",
+    course: "Full-Stack AI & Web Engineering",
     quote:
-      "Because we worked on live commercial projects, my portfolio had real work in it instead of practice exercises.",
+      "Completing Full-Stack AI & Web Engineering helped me build a portfolio project and explain the engineering decisions behind it.",
     photo: "/testimonials/person-12.jpg",
   },
 ];
@@ -150,22 +153,18 @@ function shuffle<T>(items: T[]): T[] {
  * The portrait is markdown image syntax; `MarkdownRenderer` styles it into a circle.
  * Empty alt text on purpose — the name follows in bold, so the image would only
  * repeat it to a screen reader.
- *
- * Ends on the people, with no closing question — the offers that follow are the entry's
- * `suggestions`, rendered as follow-up chips. A question in the body here reads as part of
- * the answer and cannot be tapped.
  */
 export function buildTestimonialsText(count = 3): string {
   const people = shuffle(TESTIMONIAL_POOL).slice(0, count);
 
   return [
-    `🏆 **Student Success Stories & Placements**:`,
+    `🏆 **Learner Journeys from Across India**:`,
     ``,
-    `Our alumni have moved into software and AI engineering roles across the UK and US:`,
+    // `Fictional sample profiles and course completions; not real alumni or placement outcomes.`,
     ``,
     ...people.map(
       (person) =>
-        `* ![](${person.photo}) **${person.name}** - ${person.role}, ${person.company} · ${person.location}  \n  *"${person.quote}"*`
+        `* ![](${person.photo}) **${person.name}** - ${person.role}, ${person.company} · ${person.location}  \n  **Course completed:** ${person.course}  \n  *"${person.quote}"*`
     ),
   ].join("\n");
 }
