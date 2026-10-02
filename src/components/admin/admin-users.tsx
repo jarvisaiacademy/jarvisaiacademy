@@ -257,17 +257,6 @@ export function AdminUsers({ onHome, records: propRecords }: AdminUsersProps) {
 
             {/* Right side: Search bar, Status filter and Export CSV */}
             <div className="flex items-center gap-2.5 flex-1 sm:flex-none justify-end flex-wrap sm:flex-nowrap">
-              <div className="relative w-full sm:w-48">
-                <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  placeholder="Search student, course, txn..."
-                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
-                />
-              </div>
-
               <Select
                 label="Filter by status"
                 value={statusFilter}
@@ -289,6 +278,17 @@ export function AdminUsers({ onHome, records: propRecords }: AdminUsersProps) {
                 <Download className="w-3.5 h-3.5" />
                 <span>Export CSV</span>
               </button>
+            
+              <div className="relative w-full sm:w-36">
+                <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  placeholder="Search student, course, txn..."
+                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
             </div>
           </div>
         </div>
