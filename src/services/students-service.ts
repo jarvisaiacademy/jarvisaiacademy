@@ -6,6 +6,7 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
+  deleteField,
   onSnapshot,
   query,
   where,
@@ -14,7 +15,7 @@ import {
 import { db, auth } from "@/lib/firebase";
 import { StudentRecord } from "@/data/students";
 import type { CourseItem } from "@/data/courses";
-import { checkIsAdmin } from "@/providers/auth-provider";
+import { requireAdmin } from "@/lib/admin-access";
 
 export const STUDENTS_COLLECTION = "users";
 
@@ -62,24 +63,27 @@ export async function upsertStudentRecord(user: RosterUserInput): Promise<void> 
   if (!db) return;
 
   const isTeacher = user.isTeacher === true || user.role === "teacher";
-  const payload: Record<string, unknown> = {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: "student",
-    lastLoginAt: new Date().toISOString(),
-    ...(user.picture ? { picture: user.picture } : {}),
-    ...(user.emailVerified === undefined ? {} : { emailVerified: user.emailVerified }),
-    ...(user.signInProvider ? { signInProvider: user.signInProvider } : {}),
-    ...(user.createdAt ? { createdAt: user.createdAt } : {}),
-  };
-
-  if (isTeacher) {
-    payload.is_teacher = true;
-  }
+  const userRef = doc(db, STUDENTS_COLLECTION, user.id);
 
   try {
-    await setDoc(doc(db, STUDENTS_COLLECTION, user.id), payload, { merge: true });
+    const existingUser = await getDoc(userRef);
+    const payload: Record<string, unknown> = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      ...(!existingUser.exists() ? { role: "student" } : {}),
+      lastLoginAt: new Date().toISOString(),
+      ...(user.picture ? { picture: user.picture } : {}),
+      ...(user.emailVerified === undefined ? {} : { emailVerified: user.emailVerified }),
+      ...(user.signInProvider ? { signInProvider: user.signInProvider } : {}),
+      ...(user.createdAt ? { createdAt: user.createdAt } : {}),
+    };
+
+    if (isTeacher) {
+      payload.is_teacher = true;
+    }
+
+    await setDoc(userRef, payload, { merge: true });
   } catch (err) {
     console.warn("[StudentsService] Could not upsert student record:", err);
   }
@@ -108,9 +112,7 @@ export async function updateCandidateInFirestore(
   userEmail?: string | null,
   userName?: string | null
 ): Promise<void> {
-  if (!checkIsAdmin(userEmail)) {
-    throw new Error("Unauthorized: Only verified admins can update candidates.");
-  }
+  await requireAdmin();
   if (!db) {
     throw new Error("Firestore is not initialized.");
   }
@@ -201,9 +203,7 @@ export async function createTeacherInFirestore(
   userEmail?: string | null,
   userName?: string | null
 ): Promise<string> {
-  if (!checkIsAdmin(userEmail)) {
-    throw new Error("Unauthorized: Only verified admins can create or promote teachers.");
-  }
+  await requireAdmin();
   if (!db) {
     throw new Error("Firestore is not initialized.");
   }
@@ -246,12 +246,14 @@ export async function createTeacherInFirestore(
     teacherId = doc(collection(db, STUDENTS_COLLECTION)).id;
   }
 
+  const teacherRef = doc(db, STUDENTS_COLLECTION, teacherId);
+  const existingTeacher = await getDoc(teacherRef);
   const teacherRecord: Partial<StudentRecord> = {
     id: teacherId,
     name: input.name.trim(),
     email: cleanEmail,
+    ...(!existingTeacher.exists() ? { role: "student" } : {}),
     is_teacher: true,
-    role: "student",
     status: input.status || "active",
     lastLoginAt: now,
     updatedAt: now,
@@ -268,7 +270,7 @@ export async function createTeacherInFirestore(
   if (input.phone?.trim()) teacherRecord.phone = input.phone.trim();
 
   // Save into users collection
-  await setDoc(doc(db, STUDENTS_COLLECTION, teacherId), teacherRecord, { merge: true });
+  await setDoc(teacherRef, teacherRecord, { merge: true });
 
   // Record in teachers collection for fast role verification during login
   try {
@@ -302,9 +304,7 @@ export async function deleteTeacherInFirestore(
   teacherId: string,
   options: { permanent?: boolean; userEmail?: string | null; teacherEmail?: string | null } = {}
 ): Promise<void> {
-  if (!checkIsAdmin(options.userEmail)) {
-    throw new Error("Unauthorized: Only verified admins can delete teachers.");
-  }
+  await requireAdmin();
   if (!db) {
     throw new Error("Firestore is not initialized.");
   }
@@ -341,9 +341,6 @@ export async function deleteTeacherInFirestore(
 export interface CreateAdminInput {
   name: string;
   email: string;
-  title?: string;
-  specialization?: string;
-  bio?: string;
   phone?: string;
   status?: StudentRecord["status"];
   existingUserId?: string;
@@ -358,9 +355,7 @@ export async function createAdminInFirestore(
   userEmail?: string | null,
   userName?: string | null
 ): Promise<string> {
-  if (!checkIsAdmin(userEmail)) {
-    throw new Error("Unauthorized: Only verified admins can create or promote admins.");
-  }
+  await requireAdmin();
   if (!db) {
     throw new Error("Firestore is not initialized.");
   }
@@ -373,8 +368,16 @@ export async function createAdminInFirestore(
   }
 
   const firestore = db;
-  const adminId =
-    input.existingUserId?.trim() || doc(collection(firestore, STUDENTS_COLLECTION)).id;
+  const adminId = input.existingUserId?.trim();
+  if (!adminId) {
+    throw new Error("Select an existing Firebase account before granting Admin access.");
+  }
+
+  const adminRef = doc(firestore, STUDENTS_COLLECTION, adminId);
+  const adminSnap = await getDoc(adminRef);
+  if (!adminSnap.exists()) {
+    throw new Error("The selected Firebase account does not have a user record.");
+  }
 
   const now = new Date().toISOString();
   const author =
@@ -401,13 +404,15 @@ export async function createAdminInFirestore(
   if (!input.existingUserId) {
     adminRecord.createdAt = now;
     adminRecord.createdBy = author;
+  } else {
+    // If promoting an existing user, strip non-admin profile fields
+    (adminRecord as Record<string, unknown>).title = deleteField();
+    (adminRecord as Record<string, unknown>).specialization = deleteField();
+    (adminRecord as Record<string, unknown>).bio = deleteField();
   }
-  if (input.title?.trim()) adminRecord.title = input.title.trim();
-  if (input.specialization?.trim()) adminRecord.specialization = input.specialization.trim();
-  if (input.bio?.trim()) adminRecord.bio = input.bio.trim();
   if (input.phone?.trim()) adminRecord.phone = input.phone.trim();
 
-  await setDoc(doc(firestore, STUDENTS_COLLECTION, adminId), adminRecord, { merge: true });
+  await updateDoc(adminRef, adminRecord);
   return adminId;
 }
 
@@ -419,21 +424,18 @@ export async function deleteAdminInFirestore(
   adminId: string,
   options: { permanent?: boolean; userEmail?: string | null } = {}
 ): Promise<void> {
-  if (!checkIsAdmin(options.userEmail)) {
-    throw new Error("Unauthorized: Only verified admins can remove admins.");
-  }
+  await requireAdmin();
   if (!db) {
     throw new Error("Firestore is not initialized.");
   }
 
   const firestore = db;
+  const adminRef = doc(firestore, STUDENTS_COLLECTION, adminId);
+
   if (options.permanent) {
-    await deleteDoc(doc(firestore, STUDENTS_COLLECTION, adminId));
+    await deleteDoc(adminRef);
   } else {
-    await updateDoc(doc(firestore, STUDENTS_COLLECTION, adminId), {
-      role: "student",
-      status: "inactive",
-    });
+    await updateDoc(adminRef, { role: "student", status: "inactive" });
   }
 }
 
@@ -460,9 +462,7 @@ export async function createStudentInFirestore(
   userEmail?: string | null,
   userName?: string | null
 ): Promise<string> {
-  if (!checkIsAdmin(userEmail)) {
-    throw new Error("Unauthorized: Only verified admins can create students.");
-  }
+  await requireAdmin();
   if (!db) {
     throw new Error("Firestore is not initialized.");
   }
@@ -530,9 +530,7 @@ export async function deleteStudentInFirestore(
   studentId: string,
   options: { permanent?: boolean; userEmail?: string | null; studentEmail?: string } = {}
 ): Promise<void> {
-  if (!checkIsAdmin(options.userEmail)) {
-    throw new Error("Unauthorized: Only verified admins can delete students.");
-  }
+  await requireAdmin();
   if (!db) {
     throw new Error("Firestore is not initialized.");
   }
@@ -569,9 +567,7 @@ export async function syncStudentEnrollments(
   courses: CourseItem[],
   userEmail?: string | null
 ): Promise<void> {
-  if (!checkIsAdmin(userEmail)) {
-    throw new Error("Unauthorized: Only verified admins can sync enrollments.");
-  }
+  await requireAdmin();
   if (!db) {
     throw new Error("Firestore is not initialized.");
   }

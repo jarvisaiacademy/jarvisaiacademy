@@ -19,10 +19,8 @@ export interface StudentRecord {
   /**
    * Faculty, as an admin-set flag. Absent means false.
    *
-   * A flag rather than a value in `role`, because `role` is recomputed from the admin
-   * allowlist on every sign-in — a "teacher" stored there reverts on that person's next
-   * visit. This field sits with `status` and `is_super10` instead: admin-owned, and the
-   * `users` rule refuses a self-write that changes it.
+   * A flag rather than a value in `role`, because faculty status is independent of the
+   * account's student or admin role. The `users` rule refuses a self-write that changes it.
    */
   is_teacher?: boolean;
   // Carried straight off the Firebase Auth user at sign-in. `createdAt` is the account's
@@ -55,16 +53,6 @@ export interface StudentRecord {
   phone?: string;
   /** Enrolled course IDs */
   enrolledCourseIds?: string[];
-}
-
-/**
- * The rows that carry a referral claim — one per person who signed up with someone's code.
- *
- * Shared by the dashboard tab that lists them and the count beside its name in the sidebar, so
- * the badge cannot disagree with the table it labels.
- */
-export function referredUsers(users: StudentRecord[]): StudentRecord[] {
-  return users.filter((user) => !!user.referredBy);
 }
 
 export type CandidateStatus = "active" | "inactive" | "banned";

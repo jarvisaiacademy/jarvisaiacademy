@@ -60,7 +60,7 @@ export function AdminAdmins({ onHome }: AdminAdminsProps) {
 
   // Filter admins
   const adminList = useMemo(
-    () => students.filter((s) => s.role === "admin" || accountRoleOf(s) === "admin"),
+    () => students.filter((s) => accountRoleOf(s) === "admin"),
     [students]
   );
 
@@ -249,7 +249,7 @@ export function AdminAdmins({ onHome }: AdminAdminsProps) {
 
             {/* Right side: Search bar and Status filter */}
             <div className="flex items-center gap-2.5 flex-1 sm:flex-none justify-end flex-wrap sm:flex-nowrap">
-              <div className="relative w-full sm:w-64">
+              <div className="relative w-full sm:w-48">
                 <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
@@ -269,7 +269,7 @@ export function AdminAdmins({ onHome }: AdminAdminsProps) {
                   { value: "active", label: "Active Only" },
                   { value: "inactive", label: "Inactive" },
                 ]}
-                className="py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs whitespace-nowrap"
+                className="w-36 py-1.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs whitespace-nowrap"
               />
             </div>
           </div>
@@ -281,7 +281,7 @@ export function AdminAdmins({ onHome }: AdminAdminsProps) {
             <thead>
               <tr className="bg-neutral-50 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 border-b border-neutral-200 dark:border-white/10 font-medium">
                 <th className="py-3 px-4 sm:px-6">Admin</th>
-                <th className="py-3 px-4 sm:px-6">Designation & Department</th>
+                <th className="py-3 px-4 sm:px-6">Role & Access</th>
                 <th className="py-3 px-4 sm:px-6">Last Sign-in</th>
                 <th className="py-3 px-4 sm:px-6">Status</th>
                 <th className="py-3 px-4 sm:px-6 text-right">Actions</th>
@@ -331,21 +331,15 @@ export function AdminAdmins({ onHome }: AdminAdminsProps) {
                         </div>
                       </td>
 
-                      {/* Designation & Department */}
+                      {/* Role & Access */}
                       <td className="py-3.5 px-4 sm:px-6">
                         <div className="flex flex-col gap-1 max-w-xs">
                           <span className="font-medium text-neutral-900 dark:text-neutral-200">
-                            {admin.title || "Platform Administrator"}
+                            Administrator
                           </span>
-                          {admin.specialization ? (
-                            <span className="text-[11px] text-neutral-500 dark:text-neutral-400 line-clamp-1">
-                              {admin.specialization}
-                            </span>
-                          ) : (
-                            <span className="text-[11px] text-neutral-400 italic">
-                              Full platform authority
-                            </span>
-                          )}
+                          <span className="text-[11px] text-neutral-400 italic">
+                            Full platform access
+                          </span>
                         </div>
                       </td>
 

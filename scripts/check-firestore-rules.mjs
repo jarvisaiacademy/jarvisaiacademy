@@ -23,7 +23,6 @@ const PROJECT = process.env.GCLOUD_PROJECT || "demo-jarvis-local";
 const HOST = process.env.FIRESTORE_EMULATOR_HOST || "127.0.0.1:8080";
 const BASE = `http://${HOST}/v1/projects/${PROJECT}/databases/(default)/documents`;
 
-const ADMIN_EMAIL = "sugatraj.2106@gmail.com";
 
 // The code derivation comes from the app rather than being restated here, so a change to its
 // shape cannot leave this harness asserting against a format nothing produces any more.
@@ -43,7 +42,8 @@ const studentOne = tokenFor("student-one", "student-one@example.com");
 const bannedStudent = tokenFor("student-banned", "student-banned@example.com");
 const super10Student = tokenFor("student-super", "student-super@example.com");
 const facultyStudent = tokenFor("student-faculty", "student-faculty@example.com");
-const admin = tokenFor("admin-uid", ADMIN_EMAIL);
+const admin = tokenFor("admin-uid", "admin@example.com");
+const promotionTarget = tokenFor("promotion-target", "promotion-target@example.com");
 const guest = null;
 
 /** Path to a document, from its segments. */
@@ -149,6 +149,12 @@ await patch(
 await patch(
   docPath("users", "student-faculty"),
   { role: { stringValue: "student" }, is_teacher: { booleanValue: true } },
+  "owner"
+);
+await patch(docPath("users", "admin-uid"), { role: { stringValue: "admin" } }, "owner");
+await patch(
+  docPath("users", "promotion-target"),
+  { role: { stringValue: "student" } },
   "owner"
 );
 
@@ -278,7 +284,32 @@ await check("learner writes the roster defaults onto their own row", true, () =>
   )
 );
 
-// --- an admin ---
+// --- an Admin whose UID document has the stored role ---
+await check("stored-role admin reads any row", true, () =>
+  get(docPath("users", "student-two"), admin)
+);
+await check("stored-role admin lists the roster", true, () =>
+  list("users", null, null, admin)
+);
+await check("student cannot read the roster", false, () =>
+  get(docPath("users", "student-two"), studentOne)
+);
+await check("student cannot grant themselves Admin", false, () =>
+  patch(docPath("users", "student-one"), { role: { stringValue: "admin" } }, studentOne)
+);
+await check("Admin promotes an existing UID record", true, () =>
+  patch(docPath("users", "promotion-target"), { role: { stringValue: "admin" } }, admin)
+);
+await check("promoted account gains Admin access", true, () =>
+  get(docPath("users", "student-two"), promotionTarget)
+);
+await check("Admin demotes an existing UID record", true, () =>
+  patch(docPath("users", "promotion-target"), { role: { stringValue: "student" } }, admin)
+);
+await check("demoted account loses Admin access", false, () =>
+  get(docPath("users", "student-two"), promotionTarget)
+);
+
 await check("admin reads any row", true, () => get(docPath("users", "student-two"), admin));
 await check("admin lists the roster", true, () => list("users", null, null, admin));
 await check("admin writes the catalogue", true, () =>
@@ -329,13 +360,6 @@ await check("admin creates a new admin row", true, () =>
     admin
   )
 );
-// The roster is gated by an email list, so the harness says which addresses are on it rather
-// than assuming. A new admin added to the list but not to these rules is a silent regression:
-// the dashboard renders, then every read below comes back permission-denied.
-const newAdmin = tokenFor("new-admin-uid", "lalitspatil03@gmail.com");
-await check("new admin reads any row", true, () => get(docPath("users", "student-two"), newAdmin));
-await check("new admin lists the roster", true, () => list("users", null, null, newAdmin));
-
 // --- referral codes: the index -------------------------------------------------
 // The uids below are alphanumeric on purpose. A real Firebase uid is 28 such characters and the
 // derivation takes the first eight, so `student-one` above would produce a code with a hyphen in
@@ -551,12 +575,30 @@ await check("a claim lands carrying its timestamp", true, () =>
   )
 );
 
+// --- teachers registry ---
+// The /teachers/{email} stanza is still live: auth-provider reads it during sign-in
+// to resolve teacher status, and createTeacherInFirestore writes it. Rules: authenticated
+// users may read; only admins may write.
+await patch(docPath("teachers", "teacher@example.com"), { is_teacher: { booleanValue: true } }, "owner");
+await check("authenticated learner reads the teachers registry", true, () =>
+  get(docPath("teachers", "teacher@example.com"), studentOne)
+);
+await check("guest reads the teachers registry", false, () =>
+  get(docPath("teachers", "teacher@example.com"), guest)
+);
+await check("admin writes the teachers registry", true, () =>
+  patch(docPath("teachers", "teacher@example.com"), { is_teacher: { booleanValue: true } }, admin)
+);
+await check("learner writes the teachers registry", false, () =>
+  patch(docPath("teachers", "teacher@example.com"), { is_teacher: { booleanValue: false } }, studentOne)
+);
+
 // --- the collections the app no longer touches ---
-// `teachers`, `changeRequests` and `assignments` were removed along with their features. No
-// stanza covers them, so they fall to the catch-all and are closed to everyone — deliberately
-// including an admin, since nothing writes them any more and a stanza reappearing here would
-// be the sign that the feature had been put back without its rule.
-for (const collectionId of ["teachers", "changeRequests", "assignments"]) {
+// `changeRequests` and `assignments` were removed along with their features. No stanza covers
+// them, so they fall to the catch-all and are closed to everyone — deliberately including an
+// admin, since nothing writes them any more and a stanza reappearing here would be the sign
+// that the feature had been put back without its rule.
+for (const collectionId of ["changeRequests", "assignments"]) {
   await check(`admin reads ${collectionId}`, false, () =>
     get(docPath(collectionId, "x1"), admin)
   );

@@ -297,17 +297,7 @@ export function AdminAdminDetail({ adminId, shell }: AdminAdminDetailProps) {
                 </span>
               </div>
 
-              {/* 3. Title / Designation */}
-              <div className="flex flex-col min-w-0">
-                <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
-                  {admin.title || "Platform Administrator"}
-                </span>
-                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                  Title / Designation
-                </span>
-              </div>
-
-              {/* 4. Phone Number */}
+              {/* 3. Phone Number */}
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
                   {admin.phone || "—"}
@@ -317,43 +307,13 @@ export function AdminAdminDetail({ adminId, shell }: AdminAdminDetailProps) {
                 </span>
               </div>
 
-              {/* 5. Specialization & Responsibilities (spans 2 columns on lg) */}
-              <div className="flex flex-col min-w-0 col-span-1 sm:col-span-2 lg:col-span-2">
-                <span className="text-sm font-semibold text-neutral-900 dark:text-white">
-                  {admin.specialization || "Platform Management & Operations"}
-                </span>
-                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                  Specialization & Department
-                </span>
-              </div>
-
-              {/* 6. Account Status (spans 1 column on lg) */}
-              <div className="flex flex-col min-w-0 col-span-1 sm:col-span-1 lg:col-span-1">
+              {/* 4. Account Status */}
+              <div className="flex flex-col min-w-0">
                 <span className="text-sm font-semibold text-neutral-900 dark:text-white capitalize">
-                  {admin.status || "active"}
+                  {status}
                 </span>
                 <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                   Account Status
-                </span>
-              </div>
-
-              {/* 7. Authority Level (spans 1 column on lg) */}
-              <div className="flex flex-col min-w-0 col-span-1 sm:col-span-1 lg:col-span-1">
-                <span className="text-sm font-semibold text-neutral-900 dark:text-white">
-                  Full Authority
-                </span>
-                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                  Access Level
-                </span>
-              </div>
-
-              {/* 8. Biography & Internal Notes (spans all 4 columns) */}
-              <div className="flex flex-col min-w-0 col-span-1 sm:col-span-2 lg:col-span-4">
-                <p className="text-sm font-normal text-neutral-800 dark:text-neutral-200 whitespace-pre-wrap leading-relaxed">
-                  {admin.bio || "Platform administrator with verified administrative rights across students, faculty, and course registries."}
-                </p>
-                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                  Biography & Internal Notes
                 </span>
               </div>
 
@@ -401,29 +361,21 @@ export function AdminAdminDetail({ adminId, shell }: AdminAdminDetailProps) {
           </div>
 
           {/* Card Footer: Metadata (Created on left, Updated on right in continuous string) */}
-          <div className="px-5 sm:px-7 py-4 border-t border-neutral-200 dark:border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 bg-neutral-50/50 dark:bg-white/[0.02] text-xs">
+          <div className="px-5 sm:px-7 py-3.5 border-t border-neutral-200 dark:border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-4 bg-neutral-50/50 dark:bg-white/[0.02] text-[11px] font-normal text-neutral-500 dark:text-neutral-400">
             {/* Bottom Left: Created by [Name] on [Date] */}
-            <div className="text-neutral-500 dark:text-neutral-400">
+            <div>
               <span>Created by </span>
-              <span className="font-semibold text-neutral-800 dark:text-neutral-200">
-                {createdAuthorName}
-              </span>
+              <span>{createdAuthorName}</span>
               <span> on </span>
-              <span className="font-semibold text-neutral-800 dark:text-neutral-200">
-                {formatWhen(admin.createdAt)}
-              </span>
+              <span>{formatWhen(admin.createdAt)}</span>
             </div>
 
             {/* Bottom Right: Updated by [Name] on [Date] */}
-            <div className="text-neutral-500 dark:text-neutral-400 text-left sm:text-right">
+            <div className="text-left sm:text-right">
               <span>Updated by </span>
-              <span className="font-semibold text-neutral-800 dark:text-neutral-200">
-                {updatedAuthorName}
-              </span>
+              <span>{updatedAuthorName}</span>
               <span> on </span>
-              <span className="font-semibold text-neutral-800 dark:text-neutral-200">
-                {formatWhen(admin.updatedAt || admin.createdAt)}
-              </span>
+              <span>{formatWhen(admin.updatedAt || admin.createdAt)}</span>
             </div>
           </div>
         </div>
