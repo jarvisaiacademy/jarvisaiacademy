@@ -15,7 +15,7 @@ import {
 import { db, auth } from "@/lib/firebase";
 import { StudentRecord } from "@/data/students";
 import type { CourseItem } from "@/data/courses";
-import { requireAdmin, checkIsAdmin } from "@/lib/admin-access";
+import { checkIsAdmin, requireAdmin } from "@/lib/admin-access";
 
 export const STUDENTS_COLLECTION = "users";
 
@@ -64,23 +64,21 @@ export async function upsertStudentRecord(user: RosterUserInput): Promise<void> 
 
   const isTeacher = user.isTeacher === true || user.role === "teacher";
   const userRef = doc(db, STUDENTS_COLLECTION, user.id);
+  let isAdminAccount =
+    user.role === "admin" || (user.email ? checkIsAdmin(user.email) : false);
 
-  let isAdmin = false;
   try {
     const existingUser = await getDoc(userRef);
-    const existingData = existingUser.exists() ? existingUser.data() : null;
-    const existingRole = (existingData?.role || "").toLowerCase().trim();
-    isAdmin =
-      user.role === "admin" ||
-      existingRole === "admin" ||
-      (user.email ? checkIsAdmin(user.email) : false);
+    const existingRole = (existingUser.data()?.role || "").toLowerCase().trim();
+    isAdminAccount =
+      isAdminAccount || existingRole === "admin";
 
     const payload: Record<string, unknown> = {
       id: user.id,
       name: user.name,
       email: user.email,
       ...(!existingUser.exists()
-        ? { role: isAdmin ? "admin" : user.role === "teacher" ? "student" : user.role || "student" }
+        ? { role: isAdminAccount ? "admin" : "student" }
         : {}),
       lastLoginAt: new Date().toISOString(),
       ...(user.picture ? { picture: user.picture } : {}),
@@ -99,7 +97,7 @@ export async function upsertStudentRecord(user: RosterUserInput): Promise<void> 
   }
 
   // Only apply default is_teacher: false if user is NOT a teacher and NOT an admin
-  if (!isTeacher && !isAdmin) {
+  if (!isTeacher && !isAdminAccount) {
     try {
       await setDoc(doc(db, STUDENTS_COLLECTION, user.id), ROSTER_FIELD_DEFAULTS, { merge: true });
     } catch {

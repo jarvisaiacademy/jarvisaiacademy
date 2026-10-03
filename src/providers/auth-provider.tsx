@@ -1,6 +1,13 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+} from "react";
 import {
   signInWithPopup,
   signOut as firebaseSignOut,
@@ -12,6 +19,9 @@ import { auth, googleProvider, isFirebaseConfigured, db } from "@/lib/firebase";
 import { doc, getDoc, collection, query, where, getDocs, setDoc } from "firebase/firestore";
 import { upsertStudentRecord } from "@/services/students-service";
 import { publishReferralCode } from "@/services/referral-service";
+import { checkIsAdmin } from "@/lib/admin-access";
+
+export { checkIsAdmin, ADMIN_EMAILS } from "@/lib/admin-access";
 
 export interface User {
   id: string;
@@ -92,18 +102,17 @@ function describeAuthError(error: { code?: string; message?: string }): string {
   }
 }
 
-import { checkIsAdmin, ADMIN_EMAILS } from "@/lib/admin-access";
-export { checkIsAdmin, ADMIN_EMAILS };
-
 async function resolveAdminStatus(uid: string, email?: string | null): Promise<boolean> {
   if (!db) return false;
 
-  // 1. Allowlist check: if verified admin email, auto-heal role in Firestore
-  if (email && checkIsAdmin(email)) {
+  const allowlisted = email ? checkIsAdmin(email) : false;
+
+  if (allowlisted) {
     try {
       const userRef = doc(db, "users", uid);
       const userDoc = await getDoc(userRef);
-      if (!userDoc.exists() || (userDoc.data()?.role || "").toLowerCase().trim() !== "admin") {
+      const storedRole = (userDoc.data()?.role || "").toLowerCase().trim();
+      if (!userDoc.exists() || storedRole !== "admin") {
         await setDoc(userRef, { role: "admin" }, { merge: true });
       }
     } catch (err) {
@@ -112,14 +121,10 @@ async function resolveAdminStatus(uid: string, email?: string | null): Promise<b
     return true;
   }
 
-  // 2. Direct user document check
   try {
     const userDoc = await getDoc(doc(db, "users", uid));
-    if (userDoc.exists()) {
-      const role = (userDoc.data()?.role || "").toLowerCase().trim();
-      return role === "admin";
-    }
-    return false;
+    if (!userDoc.exists()) return false;
+    return (userDoc.data()?.role || "").toLowerCase().trim() === "admin";
   } catch {
     return false;
   }
@@ -269,10 +274,19 @@ function markSessionActive() {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // Synchronous immediate initialization from localStorage prevents refresh flicker
-  const [user, setUser] = useState<User | null>(getInitialUser);
+  // SSR and the client's first render must agree (no localStorage on the server). Cached
+  // session is restored in useLayoutEffect before paint to limit refresh flicker.
+  const [user, setUser] = useState<User | null>(null);
   const [sessionReady, setSessionReady] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+
+  useLayoutEffect(() => {
+    const cached = getInitialUser();
+    if (cached) {
+      setUser(cached);
+      saveUserSession(cached);
+    }
+  }, []);
 
   // Sync Firebase Auth state — Firestore reads/writes require a live Auth session, not
   // only a cached jarvis_auth_user entry in storage.
