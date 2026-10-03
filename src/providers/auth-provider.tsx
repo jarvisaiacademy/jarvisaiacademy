@@ -1,6 +1,13 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+} from "react";
 import {
   signInWithPopup,
   signOut as firebaseSignOut,
@@ -12,6 +19,9 @@ import { auth, googleProvider, isFirebaseConfigured, db } from "@/lib/firebase";
 import { doc, getDoc, collection, query, where, getDocs, setDoc } from "firebase/firestore";
 import { upsertStudentRecord } from "@/services/students-service";
 import { publishReferralCode } from "@/services/referral-service";
+import { checkIsAdmin } from "@/lib/admin-access";
+
+export { checkIsAdmin, ADMIN_EMAILS } from "@/lib/admin-access";
 
 export interface User {
   id: string;
@@ -50,6 +60,8 @@ interface AuthContextType {
   isLoggedIn: boolean;
   isAdmin: boolean;
   isTeacher: boolean;
+  /** False until Firebase Auth has finished its first persistence restore. */
+  sessionReady: boolean;
   authError: string | null;
   loginWithGoogle: () => Promise<GoogleLoginResult>;
   logout: () => Promise<void>;
@@ -90,16 +102,34 @@ function describeAuthError(error: { code?: string; message?: string }): string {
   }
 }
 
-async function resolveAdminStatus(uid: string): Promise<boolean> {
+async function resolveAdminStatus(uid: string, email?: string | null): Promise<boolean> {
   if (!db) return false;
+
+  const allowlisted = email ? checkIsAdmin(email) : false;
+
+  if (allowlisted) {
+    try {
+      const userRef = doc(db, "users", uid);
+      const userDoc = await getDoc(userRef);
+      const storedRole = (userDoc.data()?.role || "").toLowerCase().trim();
+      if (!userDoc.exists() || storedRole !== "admin") {
+        await setDoc(userRef, { role: "admin" }, { merge: true });
+      }
+    } catch (err) {
+      console.warn("[Auth] Could not sync admin role to Firestore document:", err);
+    }
+    return true;
+  }
 
   try {
     const userDoc = await getDoc(doc(db, "users", uid));
-    return userDoc.exists() && userDoc.data().role === "admin";
+    if (!userDoc.exists()) return false;
+    return (userDoc.data()?.role || "").toLowerCase().trim() === "admin";
   } catch {
     return false;
   }
 }
+
 
 // Cache auth session in localStorage and sessionStorage so that page reloads
 // and multi-tab workflows maintain session state seamlessly per GEMINI.md.
@@ -143,7 +173,7 @@ function getInitialUser(): User | null {
       sessionStorage.getItem("jarvis_auth_user");
     if (stored && stored !== "null") {
       const parsed = JSON.parse(stored);
-      parsed.isAdmin = parsed.role === "admin";
+      parsed.isAdmin = parsed.role === "admin" || checkIsAdmin(parsed.email);
       parsed.isTeacher =
         !parsed.isAdmin &&
         (localStorage.getItem("jarvis_is_teacher") === "true" ||
@@ -225,54 +255,98 @@ export async function checkTeacherStatus(uid: string, email?: string | null): Pr
   return false;
 }
 
+function clearActiveSessionFlags() {
+  try {
+    sessionStorage.removeItem("jarvis_session_active");
+    localStorage.removeItem("jarvis_session_active");
+  } catch {
+    // ignore
+  }
+}
+
+function markSessionActive() {
+  try {
+    sessionStorage.setItem("jarvis_session_active", "true");
+    localStorage.setItem("jarvis_session_active", "true");
+  } catch {
+    // ignore
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // Synchronous immediate initialization from localStorage prevents refresh flicker
-  const [user, setUser] = useState<User | null>(getInitialUser);
+  // SSR and the client's first render must agree (no localStorage on the server). Cached
+  // session is restored in useLayoutEffect before paint to limit refresh flicker.
+  const [user, setUser] = useState<User | null>(null);
+  const [sessionReady, setSessionReady] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // Sync Firebase Auth state in the background
-  useEffect(() => {
-    // Ensure state is hydrated immediately on client mount
+  useLayoutEffect(() => {
     const cached = getInitialUser();
-    if (cached && !user) {
+    if (cached) {
       setUser(cached);
+      saveUserSession(cached);
+    }
+  }, []);
+
+  // Sync Firebase Auth state — Firestore reads/writes require a live Auth session, not
+  // only a cached jarvis_auth_user entry in storage.
+  useEffect(() => {
+    if (!isFirebaseConfigured || !auth) {
+      setSessionReady(true);
+      return;
     }
 
-    if (isFirebaseConfigured && auth) {
-      // Listen for authenticated user updates without wiping local session on initial tick
-      const unsubscribe = onAuthStateChanged(auth, async (fbUser: FirebaseUser | null) => {
-        if (fbUser) {
-          const isAdmin = await resolveAdminStatus(fbUser.uid);
-          let isTeacher = false;
-          if (!isAdmin && fbUser.email) {
-            isTeacher = await checkTeacherStatus(fbUser.uid, fbUser.email);
-          }
-          const role: "admin" | "teacher" | "student" = isAdmin
-            ? "admin"
-            : isTeacher
+    let unsubscribe: (() => void) | undefined;
+
+    void (async () => {
+      try {
+        if (typeof auth.authStateReady === "function") {
+          await auth.authStateReady();
+        }
+      } catch (err) {
+        console.warn("[Auth] authStateReady error:", err);
+      }
+
+      unsubscribe = onAuthStateChanged(auth, async (fbUser: FirebaseUser | null) => {
+        if (!fbUser) {
+          setUser(null);
+          saveUserSession(null);
+          clearActiveSessionFlags();
+          setSessionReady(true);
+          return;
+        }
+
+        const isAdmin = await resolveAdminStatus(fbUser.uid, fbUser.email);
+        let isTeacher = false;
+        if (!isAdmin && fbUser.email) {
+          isTeacher = await checkTeacherStatus(fbUser.uid, fbUser.email);
+        }
+        const role: "admin" | "teacher" | "student" = isAdmin
+          ? "admin"
+          : isTeacher
             ? "teacher"
             : "student";
 
-          const mappedUser: User = {
-            id: fbUser.uid,
-            name: fbUser.displayName || fbUser.email?.split("@")[0] || "Learner",
-            email: fbUser.email || "",
-            picture: fbUser.photoURL || undefined,
-            isAdmin,
-            isTeacher,
-            role,
-            emailVerified: fbUser.emailVerified,
-            signInProvider: fbUser.providerData[0]?.providerId,
-            // Null for a session restored from persistence rather than a fresh sign-in, and
-            // the type says so — an absent field must not overwrite a good stored value.
-            createdAt: fbUser.metadata.creationTime ?? undefined,
-          };
-          setUser(mappedUser);
-          saveUserSession(mappedUser);
-        }
+        const mappedUser: User = {
+          id: fbUser.uid,
+          name: fbUser.displayName || fbUser.email?.split("@")[0] || "Learner",
+          email: fbUser.email || "",
+          picture: fbUser.photoURL || undefined,
+          isAdmin,
+          isTeacher,
+          role,
+          emailVerified: fbUser.emailVerified,
+          signInProvider: fbUser.providerData[0]?.providerId,
+          createdAt: fbUser.metadata.creationTime ?? undefined,
+        };
+        setUser(mappedUser);
+        saveUserSession(mappedUser);
+        markSessionActive();
+        setSessionReady(true);
       });
-      return () => unsubscribe();
-    }
+    })();
+
+    return () => unsubscribe?.();
   }, []);
 
   // Best-effort roster sync so admins can assign courses to real accounts.
@@ -309,7 +383,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const fbUser = result.user;
-      const isAdmin = await resolveAdminStatus(fbUser.uid);
+      const isAdmin = await resolveAdminStatus(fbUser.uid, fbUser.email);
       let isTeacher = false;
       if (!isAdmin && fbUser.email) {
         isTeacher = await checkTeacherStatus(fbUser.uid, fbUser.email);
@@ -331,9 +405,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
       setUser(mappedUser);
       saveUserSession(mappedUser);
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("jarvis_session_active", "true");
-      }
+      markSessionActive();
       // Null when the provider gives no such detail; treated as a returning account, since
       // asking a long-standing learner to re-enter a code is the worse of the two mistakes.
       const isNewUser = getAdditionalUserInfo(result)?.isNewUser ?? false;
@@ -363,6 +435,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setUser(null);
     saveUserSession(null);
+    clearActiveSessionFlags();
   }, []);
 
   const isAdmin = !!user?.isAdmin;
@@ -375,6 +448,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoggedIn: !!user,
         isAdmin,
         isTeacher,
+        sessionReady,
         authError,
         loginWithGoogle,
         logout,

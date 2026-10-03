@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { collection, query, where, onSnapshot, orderBy } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { useAuth } from "@/providers/auth-provider";
 
 export interface EnrollmentRecord {
   id?: string;
@@ -77,46 +78,70 @@ export function useStudentEnrollments(email?: string | null): EnrollmentRecord[]
  * Attaches a real-time listener on the 'enrollments' collection.
  */
 export function useAllEnrollments(): { enrollments: EnrollmentRecord[]; loading: boolean } {
+  const { isAdmin, sessionReady, user } = useAuth();
   const [enrollments, setEnrollments] = useState<EnrollmentRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!db) {
+    if (!db || !sessionReady || !isAdmin || !user?.id) {
       setEnrollments([]);
       setLoading(false);
       return;
     }
 
-    const q = query(collection(db, ENROLLMENTS_COLLECTION));
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const fetched = snapshot.docs.map(
-          (doc) =>
-            ({
-              id: doc.id,
-              ...doc.data(),
-            } as EnrollmentRecord)
-        );
+    let isMounted = true;
+    let unsubscribe: (() => void) | null = null;
 
-        fetched.sort((a, b) => {
-          const tA = new Date(a.timestamp).getTime() || 0;
-          const tB = new Date(b.timestamp).getTime() || 0;
-          return tB - tA;
-        });
-
-        setEnrollments(fetched);
-        setLoading(false);
-      },
-      (error) => {
-        console.error("[useAllEnrollments] Error fetching all enrollments:", error);
-        setEnrollments([]);
-        setLoading(false);
+    const setup = async () => {
+      if (auth && typeof auth.authStateReady === "function") {
+        await auth.authStateReady();
       }
-    );
+      if (!isMounted || !db || !auth?.currentUser || auth.currentUser.uid !== user.id) {
+        if (isMounted) {
+          setEnrollments([]);
+          setLoading(false);
+        }
+        return;
+      }
 
-    return () => unsubscribe();
-  }, []);
+      const q = query(collection(db, ENROLLMENTS_COLLECTION));
+      unsubscribe = onSnapshot(
+        q,
+        (snapshot) => {
+          if (!isMounted) return;
+          const fetched = snapshot.docs.map(
+            (doc) =>
+              ({
+                id: doc.id,
+                ...doc.data(),
+              } as EnrollmentRecord)
+          );
+
+          fetched.sort((a, b) => {
+            const tA = new Date(a.timestamp).getTime() || 0;
+            const tB = new Date(b.timestamp).getTime() || 0;
+            return tB - tA;
+          });
+
+          setEnrollments(fetched);
+          setLoading(false);
+        },
+        (error) => {
+          if (!isMounted) return;
+          console.warn("[useAllEnrollments] Error fetching all enrollments:", error);
+          setEnrollments([]);
+          setLoading(false);
+        }
+      );
+    };
+
+    void setup();
+
+    return () => {
+      isMounted = false;
+      if (unsubscribe) unsubscribe();
+    };
+  }, [isAdmin, sessionReady, user?.id]);
 
   return { enrollments, loading };
 }

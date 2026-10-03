@@ -15,7 +15,7 @@ import {
 import { db, auth } from "@/lib/firebase";
 import { StudentRecord } from "@/data/students";
 import type { CourseItem } from "@/data/courses";
-import { requireAdmin } from "@/lib/admin-access";
+import { checkIsAdmin, requireAdmin } from "@/lib/admin-access";
 
 export const STUDENTS_COLLECTION = "users";
 
@@ -64,14 +64,22 @@ export async function upsertStudentRecord(user: RosterUserInput): Promise<void> 
 
   const isTeacher = user.isTeacher === true || user.role === "teacher";
   const userRef = doc(db, STUDENTS_COLLECTION, user.id);
+  let isAdminAccount =
+    user.role === "admin" || (user.email ? checkIsAdmin(user.email) : false);
 
   try {
     const existingUser = await getDoc(userRef);
+    const existingRole = (existingUser.data()?.role || "").toLowerCase().trim();
+    isAdminAccount =
+      isAdminAccount || existingRole === "admin";
+
     const payload: Record<string, unknown> = {
       id: user.id,
       name: user.name,
       email: user.email,
-      ...(!existingUser.exists() ? { role: "student" } : {}),
+      ...(!existingUser.exists()
+        ? { role: isAdminAccount ? "admin" : "student" }
+        : {}),
       lastLoginAt: new Date().toISOString(),
       ...(user.picture ? { picture: user.picture } : {}),
       ...(user.emailVerified === undefined ? {} : { emailVerified: user.emailVerified }),
@@ -88,8 +96,8 @@ export async function upsertStudentRecord(user: RosterUserInput): Promise<void> 
     console.warn("[StudentsService] Could not upsert student record:", err);
   }
 
-  // Only apply default is_teacher: false if user is NOT a teacher
-  if (!isTeacher) {
+  // Only apply default is_teacher: false if user is NOT a teacher and NOT an admin
+  if (!isTeacher && !isAdminAccount) {
     try {
       await setDoc(doc(db, STUDENTS_COLLECTION, user.id), ROSTER_FIELD_DEFAULTS, { merge: true });
     } catch {
@@ -629,9 +637,13 @@ export async function getStudentsFromFirestore(): Promise<StudentRecord[] | null
     return null;
   }
 
+  if (auth && typeof auth.authStateReady === "function") {
+    await auth.authStateReady();
+  }
+
   try {
     const snapshot = await getDocs(query(collection(db, STUDENTS_COLLECTION)));
-    if (snapshot.empty) return null;
+    if (snapshot.empty) return [];
 
     const students: StudentRecord[] = [];
     snapshot.forEach((docSnap) => {
@@ -644,7 +656,7 @@ export async function getStudentsFromFirestore(): Promise<StudentRecord[] | null
     return students.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
   } catch (err) {
     console.error("[StudentsService] Error fetching students:", err);
-    return null;
+    throw err;
   }
 }
 
@@ -662,7 +674,7 @@ export function subscribeStudentsFromFirestore(
       query(collection(db, STUDENTS_COLLECTION)),
       (snapshot) => {
         if (snapshot.empty) {
-          onUpdate(null);
+          onUpdate([]);
           return;
         }
 

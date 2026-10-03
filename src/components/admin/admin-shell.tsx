@@ -68,7 +68,7 @@ interface AdminShellProps {
  */
 export function AdminShell({ defaultTab, restoreTab = true, children }: AdminShellProps) {
   const { isOpen, toggle, isMobile } = useSidebar(true);
-  const { user, isLoggedIn, logout } = useAuth();
+  const { user, isLoggedIn, logout, sessionReady } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
@@ -83,6 +83,7 @@ export function AdminShell({ defaultTab, restoreTab = true, children }: AdminShe
   }, [restoreTab]);
 
   const isAuthorized =
+    sessionReady &&
     !!user?.isAdmin &&
     (typeof window !== "undefined" && sessionStorage.getItem("jarvis_session_active") === "true");
 
