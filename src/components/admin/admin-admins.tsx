@@ -44,7 +44,7 @@ function formatSignIn(iso?: string): string {
 }
 
 export function AdminAdmins({ onHome }: AdminAdminsProps) {
-  const { students, loading: studentsLoading, refreshStudents } = useStudents();
+  const { students, loading: studentsLoading, error: studentsError, refreshStudents } = useStudents();
   const { user } = useAuth();
   const { showToast } = useToast();
 
@@ -443,7 +443,14 @@ export function AdminAdmins({ onHome }: AdminAdminsProps) {
               ) : (
                 <tr>
                   <td colSpan={5} className="text-center py-10 text-neutral-400">
-                    {adminList.length === 0 ? (
+                    {studentsError ? (
+                      <div className="flex flex-col items-center gap-2 text-amber-600 dark:text-amber-400 py-4">
+                        <p className="text-xs font-semibold">Permission error loading admin accounts</p>
+                        <p className="text-[11px] text-neutral-500 max-w-md text-center">
+                          Firestore denied read access. Please verify that your account has <code className="font-mono bg-black/5 dark:bg-white/10 px-1 py-0.5 rounded">role: &quot;admin&quot;</code> in the <code className="font-mono bg-black/5 dark:bg-white/10 px-1 py-0.5 rounded">users</code> collection in Firebase Console.
+                        </p>
+                      </div>
+                    ) : adminList.length === 0 ? (
                       <div className="flex flex-col items-center gap-3">
                         <ShieldCheck className="w-8 h-8 text-neutral-300 dark:text-neutral-600" />
                         <p className="text-xs">No admins registered yet.</p>

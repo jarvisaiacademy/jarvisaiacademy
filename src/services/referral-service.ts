@@ -30,8 +30,12 @@ export async function publishReferralCode(uid: string): Promise<void> {
     // Use VIP code if assigned, otherwise auto-generate
     const code = storedCode || referralCodeFor(uid);
 
-    await setDoc(doc(db, USERS_COLLECTION, uid), { referralCode: code }, { merge: true });
-    await setDoc(doc(db, REFERRALS_COLLECTION, code), { uid }, { merge: true });
+    if (storedCode !== code) {
+      await setDoc(doc(db, USERS_COLLECTION, uid), { referralCode: code }, { merge: true });
+    }
+    if (code.match(/^JAR-[A-Z0-9]{8}$/)) {
+      await setDoc(doc(db, REFERRALS_COLLECTION, code), { uid }, { merge: true });
+    }
   } catch (err) {
     console.warn("[ReferralService] Could not publish referral code:", err);
   }

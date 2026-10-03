@@ -68,9 +68,13 @@ export type AccountRole = "student" | "teacher" | "admin";
  * Admin outranks faculty, so an account is listed once, under the strongest role it holds.
  */
 export function accountRoleOf(user: {
-  role: "admin" | "student";
+  role?: string;
   is_teacher?: boolean;
+  isTeacher?: boolean;
 }): AccountRole {
-  if (user.role === "admin") return "admin";
-  return user.is_teacher ? "teacher" : "student";
+  const role = (user.role || "").toLowerCase().trim();
+  if (role === "admin") return "admin";
+  if (role === "teacher" || user.is_teacher === true || user.isTeacher === true) return "teacher";
+  return "student";
 }
+

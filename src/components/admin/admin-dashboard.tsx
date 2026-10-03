@@ -121,7 +121,7 @@ export function AdminDashboard({
   onToggleSidebar,
 }: AdminDashboardProps) {
   const { showToast } = useToast();
-  const { user } = useAuth();
+  const { user, isAdmin, sessionReady } = useAuth();
   const {
     students,
     loading: studentsLoading,
@@ -183,7 +183,7 @@ export function AdminDashboard({
     : null;
 
   const rosterPage = usePagedQuery<StudentRecord>({
-    enabled: rosterRole !== null,
+    enabled: false,
     // The search box is deliberately absent from this key: it narrows the page already loaded,
     // so folding it in would re-run the query on every keystroke for the same rows.
     filterKey: `${rosterRole}|${rosterStatus}`,
@@ -268,31 +268,54 @@ export function AdminDashboard({
   // the chat writes. A hardcoded set of demo students used to be merged in here, which
   // showed fabricated registrations as though they were real ones.
   useEffect(() => {
-    // Dynamic import to avoid SSR issues if this component gets SSR'd
-    import("firebase/firestore").then(({ collection, onSnapshot, query }) => {
-      import("@/lib/firebase").then(({ db }) => {
-        if (!db) return;
-        const q = query(collection(db, "enrollments"));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-          const fetched = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          } as unknown as EnrollmentRecord));
-          
+    if (!sessionReady || !isAdmin || !user?.id) {
+      setRecords([]);
+      return;
+    }
+
+    let unsubscribe: (() => void) | undefined;
+    let cancelled = false;
+
+    void (async () => {
+      const { collection, onSnapshot, query } = await import("firebase/firestore");
+      const { auth, db } = await import("@/lib/firebase");
+      if (!db || cancelled) return;
+      if (auth && typeof auth.authStateReady === "function") {
+        await auth.authStateReady();
+      }
+      if (cancelled || !auth?.currentUser || auth.currentUser.uid !== user.id) return;
+
+      const q = query(collection(db, "enrollments"));
+      unsubscribe = onSnapshot(
+        q,
+        (snapshot) => {
+          const fetched = snapshot.docs.map(
+            (doc) =>
+              ({
+                id: doc.id,
+                ...doc.data(),
+              }) as unknown as EnrollmentRecord
+          );
+
           fetched.sort((a, b) => {
             const tA = new Date(a.timestamp).getTime() || 0;
             const tB = new Date(b.timestamp).getTime() || 0;
             return tB - tA;
           });
-          
+
           setRecords(fetched);
-        });
-        
-        // Cannot easily return unsubscribe from a dynamic import effect without more complex state
-        // This is a minimal refactor.
-      });
-    });
-  }, []);
+        },
+        (err) => {
+          console.warn("[AdminDashboard] Enrollments subscription:", err);
+        }
+      );
+    })();
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [sessionReady, isAdmin, user?.id]);
 
   // Only live while the dashboard is mounted, so these never fight the shortcuts
   // on the chat view.
@@ -640,6 +663,33 @@ export function AdminDashboard({
 
       {/* Main Container */}
       <main className="flex-1 w-full mx-auto py-6 sm:py-8 px-3 sm:px-6 flex flex-col gap-6 sm:gap-8 max-w-none">
+        {studentsError && (
+          <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-start gap-2.5">
+              <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div className="flex flex-col gap-1">
+                <span className="font-semibold text-sm">
+                  Firestore Permission Required for Roster Data
+                </span>
+                <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                  Your signed-in account ({user?.email || "unknown"}) with UID{" "}
+                  <code className="px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 font-mono select-all">
+                    {user?.id || "unknown"}
+                  </code>{" "}
+                  requires <code className="font-mono">role: &quot;admin&quot;</code> in the Firestore database. In the Firebase Console, go to <strong>Firestore Database</strong> &rarr; <strong>users</strong> &rarr; document <code className="font-mono">{user?.id}</code> &rarr; set field <code className="font-mono">role</code> to <code className="font-mono">&quot;admin&quot;</code>.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold whitespace-nowrap cursor-pointer shrink-0"
+            >
+              Reload Page
+            </button>
+          </div>
+        )}
+
         {/* HOME: the counts */}
         {activeTab === "home" && renderHome()}
 

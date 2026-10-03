@@ -47,7 +47,7 @@ function formatSignIn(iso?: string): string {
 }
 
 export function AdminStudents({ onHome }: AdminStudentsProps) {
-  const { students, loading: studentsLoading, refreshStudents } = useStudents();
+  const { students, loading: studentsLoading, error: studentsError, refreshStudents } = useStudents();
   const { firestoreCourses: courses, loading: coursesLoading } = useCourses();
   const { enrollments, loading: enrollmentsLoading } = useAllEnrollments();
   const { user } = useAuth();
@@ -498,7 +498,14 @@ export function AdminStudents({ onHome }: AdminStudentsProps) {
               ) : (
                 <tr>
                   <td colSpan={5} className="text-center py-10 text-neutral-400">
-                    {studentList.length === 0 ? (
+                    {studentsError ? (
+                      <div className="flex flex-col items-center gap-2 text-amber-600 dark:text-amber-400 py-4">
+                        <p className="text-xs font-semibold">Permission error loading student accounts</p>
+                        <p className="text-[11px] text-neutral-500 max-w-md text-center">
+                          Firestore denied read access. Please verify that your account has <code className="font-mono bg-black/5 dark:bg-white/10 px-1 py-0.5 rounded">role: &quot;admin&quot;</code> in the <code className="font-mono bg-black/5 dark:bg-white/10 px-1 py-0.5 rounded">users</code> collection in Firebase Console.
+                        </p>
+                      </div>
+                    ) : studentList.length === 0 ? (
                       <div className="flex flex-col items-center gap-3">
                         <GraduationCap className="w-8 h-8 text-neutral-300 dark:text-neutral-600" />
                         <p className="text-xs">No students registered yet.</p>

@@ -50,6 +50,8 @@ interface AuthContextType {
   isLoggedIn: boolean;
   isAdmin: boolean;
   isTeacher: boolean;
+  /** False until Firebase Auth has finished its first persistence restore. */
+  sessionReady: boolean;
   authError: string | null;
   loginWithGoogle: () => Promise<GoogleLoginResult>;
   logout: () => Promise<void>;
@@ -90,16 +92,39 @@ function describeAuthError(error: { code?: string; message?: string }): string {
   }
 }
 
-async function resolveAdminStatus(uid: string): Promise<boolean> {
+import { checkIsAdmin, ADMIN_EMAILS } from "@/lib/admin-access";
+export { checkIsAdmin, ADMIN_EMAILS };
+
+async function resolveAdminStatus(uid: string, email?: string | null): Promise<boolean> {
   if (!db) return false;
 
+  // 1. Allowlist check: if verified admin email, auto-heal role in Firestore
+  if (email && checkIsAdmin(email)) {
+    try {
+      const userRef = doc(db, "users", uid);
+      const userDoc = await getDoc(userRef);
+      if (!userDoc.exists() || (userDoc.data()?.role || "").toLowerCase().trim() !== "admin") {
+        await setDoc(userRef, { role: "admin" }, { merge: true });
+      }
+    } catch (err) {
+      console.warn("[Auth] Could not sync admin role to Firestore document:", err);
+    }
+    return true;
+  }
+
+  // 2. Direct user document check
   try {
     const userDoc = await getDoc(doc(db, "users", uid));
-    return userDoc.exists() && userDoc.data().role === "admin";
+    if (userDoc.exists()) {
+      const role = (userDoc.data()?.role || "").toLowerCase().trim();
+      return role === "admin";
+    }
+    return false;
   } catch {
     return false;
   }
 }
+
 
 // Cache auth session in localStorage and sessionStorage so that page reloads
 // and multi-tab workflows maintain session state seamlessly per GEMINI.md.
@@ -143,7 +168,7 @@ function getInitialUser(): User | null {
       sessionStorage.getItem("jarvis_auth_user");
     if (stored && stored !== "null") {
       const parsed = JSON.parse(stored);
-      parsed.isAdmin = parsed.role === "admin";
+      parsed.isAdmin = parsed.role === "admin" || checkIsAdmin(parsed.email);
       parsed.isTeacher =
         !parsed.isAdmin &&
         (localStorage.getItem("jarvis_is_teacher") === "true" ||
@@ -225,54 +250,89 @@ export async function checkTeacherStatus(uid: string, email?: string | null): Pr
   return false;
 }
 
+function clearActiveSessionFlags() {
+  try {
+    sessionStorage.removeItem("jarvis_session_active");
+    localStorage.removeItem("jarvis_session_active");
+  } catch {
+    // ignore
+  }
+}
+
+function markSessionActive() {
+  try {
+    sessionStorage.setItem("jarvis_session_active", "true");
+    localStorage.setItem("jarvis_session_active", "true");
+  } catch {
+    // ignore
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Synchronous immediate initialization from localStorage prevents refresh flicker
   const [user, setUser] = useState<User | null>(getInitialUser);
+  const [sessionReady, setSessionReady] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // Sync Firebase Auth state in the background
+  // Sync Firebase Auth state — Firestore reads/writes require a live Auth session, not
+  // only a cached jarvis_auth_user entry in storage.
   useEffect(() => {
-    // Ensure state is hydrated immediately on client mount
-    const cached = getInitialUser();
-    if (cached && !user) {
-      setUser(cached);
+    if (!isFirebaseConfigured || !auth) {
+      setSessionReady(true);
+      return;
     }
 
-    if (isFirebaseConfigured && auth) {
-      // Listen for authenticated user updates without wiping local session on initial tick
-      const unsubscribe = onAuthStateChanged(auth, async (fbUser: FirebaseUser | null) => {
-        if (fbUser) {
-          const isAdmin = await resolveAdminStatus(fbUser.uid);
-          let isTeacher = false;
-          if (!isAdmin && fbUser.email) {
-            isTeacher = await checkTeacherStatus(fbUser.uid, fbUser.email);
-          }
-          const role: "admin" | "teacher" | "student" = isAdmin
-            ? "admin"
-            : isTeacher
+    let unsubscribe: (() => void) | undefined;
+
+    void (async () => {
+      try {
+        if (typeof auth.authStateReady === "function") {
+          await auth.authStateReady();
+        }
+      } catch (err) {
+        console.warn("[Auth] authStateReady error:", err);
+      }
+
+      unsubscribe = onAuthStateChanged(auth, async (fbUser: FirebaseUser | null) => {
+        if (!fbUser) {
+          setUser(null);
+          saveUserSession(null);
+          clearActiveSessionFlags();
+          setSessionReady(true);
+          return;
+        }
+
+        const isAdmin = await resolveAdminStatus(fbUser.uid, fbUser.email);
+        let isTeacher = false;
+        if (!isAdmin && fbUser.email) {
+          isTeacher = await checkTeacherStatus(fbUser.uid, fbUser.email);
+        }
+        const role: "admin" | "teacher" | "student" = isAdmin
+          ? "admin"
+          : isTeacher
             ? "teacher"
             : "student";
 
-          const mappedUser: User = {
-            id: fbUser.uid,
-            name: fbUser.displayName || fbUser.email?.split("@")[0] || "Learner",
-            email: fbUser.email || "",
-            picture: fbUser.photoURL || undefined,
-            isAdmin,
-            isTeacher,
-            role,
-            emailVerified: fbUser.emailVerified,
-            signInProvider: fbUser.providerData[0]?.providerId,
-            // Null for a session restored from persistence rather than a fresh sign-in, and
-            // the type says so — an absent field must not overwrite a good stored value.
-            createdAt: fbUser.metadata.creationTime ?? undefined,
-          };
-          setUser(mappedUser);
-          saveUserSession(mappedUser);
-        }
+        const mappedUser: User = {
+          id: fbUser.uid,
+          name: fbUser.displayName || fbUser.email?.split("@")[0] || "Learner",
+          email: fbUser.email || "",
+          picture: fbUser.photoURL || undefined,
+          isAdmin,
+          isTeacher,
+          role,
+          emailVerified: fbUser.emailVerified,
+          signInProvider: fbUser.providerData[0]?.providerId,
+          createdAt: fbUser.metadata.creationTime ?? undefined,
+        };
+        setUser(mappedUser);
+        saveUserSession(mappedUser);
+        markSessionActive();
+        setSessionReady(true);
       });
-      return () => unsubscribe();
-    }
+    })();
+
+    return () => unsubscribe?.();
   }, []);
 
   // Best-effort roster sync so admins can assign courses to real accounts.
@@ -309,7 +369,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const fbUser = result.user;
-      const isAdmin = await resolveAdminStatus(fbUser.uid);
+      const isAdmin = await resolveAdminStatus(fbUser.uid, fbUser.email);
       let isTeacher = false;
       if (!isAdmin && fbUser.email) {
         isTeacher = await checkTeacherStatus(fbUser.uid, fbUser.email);
@@ -331,9 +391,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
       setUser(mappedUser);
       saveUserSession(mappedUser);
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("jarvis_session_active", "true");
-      }
+      markSessionActive();
       // Null when the provider gives no such detail; treated as a returning account, since
       // asking a long-standing learner to re-enter a code is the worse of the two mistakes.
       const isNewUser = getAdditionalUserInfo(result)?.isNewUser ?? false;
@@ -363,6 +421,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setUser(null);
     saveUserSession(null);
+    clearActiveSessionFlags();
   }, []);
 
   const isAdmin = !!user?.isAdmin;
@@ -375,6 +434,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoggedIn: !!user,
         isAdmin,
         isTeacher,
+        sessionReady,
         authError,
         loginWithGoogle,
         logout,
