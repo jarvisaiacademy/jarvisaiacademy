@@ -9,10 +9,19 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Keep the email list in sync with NEXT_PUBLIC_ADMIN_EMAILS in `.env.local`.
     function isAdmin() {
-      return request.auth != null
-        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'admin';
+      return request.auth != null && (
+        (
+          exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '').lower() == 'admin'
+        )
+        || (request.auth.token.email != null && request.auth.token.email.lower() in [
+          'sugatraj.2106@gmail.com',
+          'hivirajkadam@gmail.com',
+          'lalitspatil03@gmail.com'
+        ])
+      );
     }
 
     function isSelf(uid) {

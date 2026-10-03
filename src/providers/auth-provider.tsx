@@ -12,6 +12,9 @@ import { auth, googleProvider, isFirebaseConfigured, db } from "@/lib/firebase";
 import { doc, getDoc, collection, query, where, getDocs, setDoc } from "firebase/firestore";
 import { upsertStudentRecord } from "@/services/students-service";
 import { publishReferralCode } from "@/services/referral-service";
+import { checkIsAdmin } from "@/lib/admin-access";
+
+export { checkIsAdmin, ADMIN_EMAILS } from "@/lib/admin-access";
 
 export interface User {
   id: string;
@@ -90,12 +93,29 @@ function describeAuthError(error: { code?: string; message?: string }): string {
   }
 }
 
-async function resolveAdminStatus(uid: string): Promise<boolean> {
+async function resolveAdminStatus(uid: string, email?: string | null): Promise<boolean> {
   if (!db) return false;
+
+  const allowlisted = email ? checkIsAdmin(email) : false;
+
+  if (allowlisted) {
+    try {
+      const userRef = doc(db, "users", uid);
+      const userDoc = await getDoc(userRef);
+      const storedRole = (userDoc.data()?.role || "").toLowerCase().trim();
+      if (!userDoc.exists() || storedRole !== "admin") {
+        await setDoc(userRef, { role: "admin" }, { merge: true });
+      }
+    } catch (err) {
+      console.warn("[Auth] Could not sync admin role to Firestore document:", err);
+    }
+    return true;
+  }
 
   try {
     const userDoc = await getDoc(doc(db, "users", uid));
-    return userDoc.exists() && userDoc.data().role === "admin";
+    if (!userDoc.exists()) return false;
+    return (userDoc.data()?.role || "").toLowerCase().trim() === "admin";
   } catch {
     return false;
   }
@@ -143,7 +163,7 @@ function getInitialUser(): User | null {
       sessionStorage.getItem("jarvis_auth_user");
     if (stored && stored !== "null") {
       const parsed = JSON.parse(stored);
-      parsed.isAdmin = parsed.role === "admin";
+      parsed.isAdmin = parsed.role === "admin" || checkIsAdmin(parsed.email);
       parsed.isTeacher =
         !parsed.isAdmin &&
         (localStorage.getItem("jarvis_is_teacher") === "true" ||
@@ -242,7 +262,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Listen for authenticated user updates without wiping local session on initial tick
       const unsubscribe = onAuthStateChanged(auth, async (fbUser: FirebaseUser | null) => {
         if (fbUser) {
-          const isAdmin = await resolveAdminStatus(fbUser.uid);
+          const isAdmin = await resolveAdminStatus(fbUser.uid, fbUser.email);
           let isTeacher = false;
           if (!isAdmin && fbUser.email) {
             isTeacher = await checkTeacherStatus(fbUser.uid, fbUser.email);
@@ -309,7 +329,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const fbUser = result.user;
-      const isAdmin = await resolveAdminStatus(fbUser.uid);
+      const isAdmin = await resolveAdminStatus(fbUser.uid, fbUser.email);
       let isTeacher = false;
       if (!isAdmin && fbUser.email) {
         isTeacher = await checkTeacherStatus(fbUser.uid, fbUser.email);
