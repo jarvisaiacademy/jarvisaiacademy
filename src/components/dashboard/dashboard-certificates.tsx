@@ -7,6 +7,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useStudentEnrollments } from "@/hooks/use-student-enrollments";
 import { CertificateRecord } from "@/hooks/use-student-certificates";
 import { CertificateTemplate } from "@/components/dashboard/certificate-template";
+import { formatDate } from "@/lib/date-format";
 
 export function DashboardCertificates() {
   const { user } = useAuth();
@@ -21,9 +22,7 @@ export function DashboardCertificates() {
       courseName: e.courseName,
       studentName: e.studentName,
       studentEmail: e.studentEmail,
-      issuedAt: new Date(e.timestamp || "2026-09-22T00:00:00Z").toLocaleDateString("en-IN", {
-        day: "numeric", month: "short", year: "numeric"
-      })
+      issuedAt: formatDate(e.timestamp || "2026-09-22T00:00:00Z"),
     }));
 
   const certRefs = useRef<Record<string, HTMLDivElement | null>>({});

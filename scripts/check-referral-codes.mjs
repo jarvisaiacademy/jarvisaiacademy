@@ -32,28 +32,21 @@ function check(label, actual, expected) {
 }
 
 // --- the shape ---------------------------------------------------------------
-// The body length is the collision guarantee, so it is asserted rather than assumed: shortening
-// it to 6 raises the chance two accounts share a code from about 1 in 56,000 to 1 in 21.
 const uid = "AbCdEfGhIjKlMnOpQrStUvWxYz12";
-check("prefix", REFERRAL_CODE_PREFIX, "JAR-");
-check("eight characters of the id, uppercased", referralCodeFor(uid), "JAR-ABCDEFGH");
-check("length", referralCodeFor(uid).length, 12);
+const generated = referralCodeFor(uid);
+check("length is 6", generated.length, 6);
+check("alphanumeric only", /^[A-Z0-9]{6}$/.test(generated), true);
 check("deterministic", referralCodeFor(uid), referralCodeFor(uid));
-// Nothing past the eighth character may leak into a code that gets read out on a call.
-check("does not leak the rest of the id", referralCodeFor(uid).includes("IJKL"), false);
 
 // --- what a learner types ----------------------------------------------------
-check("already canonical", normalizeReferralCode("JAR-ABCDEFGH"), "JAR-ABCDEFGH");
-check("lower case", normalizeReferralCode("jar-abcdefgh"), "JAR-ABCDEFGH");
-check("body without the prefix", normalizeReferralCode("abcdefgh"), "JAR-ABCDEFGH");
-check("surrounding whitespace", normalizeReferralCode("  jar-abcdefgh\n"), "JAR-ABCDEFGH");
-// A code split across lines when it was copied out of a message is still the code.
-check("whitespace inside", normalizeReferralCode("JAR-ABCD EFGH"), "JAR-ABCDEFGH");
+check("already canonical", normalizeReferralCode("8I4WH0"), "8I4WH0");
+check("lower case", normalizeReferralCode("8i4wh0"), "8I4WH0");
+check("legacy prefix", normalizeReferralCode("JAR-8I4WH0"), "8I4WH0");
+check("surrounding whitespace", normalizeReferralCode("  8i4wh0\n"), "8I4WH0");
+check("whitespace inside", normalizeReferralCode("8I4 WH0"), "8I4WH0");
 
 // --- what must never reach a document path -----------------------------------
-// The result of `normalizeReferralCode` is used as a Firestore document id. A slash there is a
-// traversal and a `#` or `?` is a fragment, so these have to come back as "not a code".
-for (const bad of ["", "   ", "JAR-", "JAR-AB/CD", "AB#CD", "AB?CD", "JAR-AB.CD", "JAR-AB*CD"]) {
+for (const bad of ["", "   ", "JAR-", "8I/WH0", "8I#WH0", "8I?WH0", "8I.WH0", "8I4W", "8I4WH01"]) {
   check(`rejected: ${JSON.stringify(bad)}`, normalizeReferralCode(bad), "");
 }
 

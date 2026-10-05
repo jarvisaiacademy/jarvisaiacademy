@@ -12,6 +12,7 @@ import {
 import { useAuth } from "@/providers/auth-provider";
 import { useStudentProfile } from "@/hooks/use-student-profile";
 import { SettingsSection } from "@/components/settings/settings-section";
+import { formatDate } from "@/lib/date-format";
 
 function DetailRow({
   icon,
@@ -54,13 +55,7 @@ export function DashboardProfile() {
   const isSuper10 = !!profile?.is_super10;
 
   const rawCreated = user?.createdAt || profile?.createdAt;
-  const joinedAt = rawCreated
-    ? new Date(rawCreated).toLocaleDateString("en-IN", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      })
-    : "January 1, 2026";
+  const joinedAt = formatDate(rawCreated, "1 January 2026");
 
   const emailValue = user?.email || profile?.email || "—";
   const isVerified = user?.emailVerified ?? true;

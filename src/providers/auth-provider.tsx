@@ -19,6 +19,7 @@ import { auth, googleProvider, isFirebaseConfigured, db } from "@/lib/firebase";
 import { doc, getDoc, collection, query, where, getDocs, setDoc } from "firebase/firestore";
 import { upsertStudentRecord } from "@/services/students-service";
 import { publishReferralCode } from "@/services/referral-service";
+import { referralCodeFor } from "@/data/referrals";
 import { checkIsAdmin } from "@/lib/admin-access";
 
 export { checkIsAdmin, ADMIN_EMAILS } from "@/lib/admin-access";
@@ -179,6 +180,12 @@ function getInitialUser(): User | null {
         (localStorage.getItem("jarvis_is_teacher") === "true" ||
           sessionStorage.getItem("jarvis_is_teacher") === "true");
       parsed.role = parsed.isAdmin ? "admin" : parsed.isTeacher ? "teacher" : "student";
+      if (parsed.id) {
+        parsed.referralCode =
+          parsed.referralCode && /^[A-Z0-9]{6}$/.test(parsed.referralCode)
+            ? parsed.referralCode
+            : referralCodeFor(parsed.id);
+      }
       return parsed;
     }
   } catch {
@@ -327,6 +334,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             ? "teacher"
             : "student";
 
+        let referralCode = referralCodeFor(fbUser.uid);
+        let createdAt = fbUser.metadata.creationTime ?? undefined;
+        if (db) {
+          try {
+            const userDoc = await getDoc(doc(db, "users", fbUser.uid));
+            const stored = userDoc.data()?.referralCode;
+            if (stored && typeof stored === "string" && /^[A-Z0-9]{6}$/.test(stored)) {
+              referralCode = stored;
+            }
+            const storedCreated = userDoc.data()?.createdAt;
+            if (storedCreated && typeof storedCreated === "string") {
+              createdAt = storedCreated;
+            }
+          } catch {
+            // ignore
+          }
+        }
+
         const mappedUser: User = {
           id: fbUser.uid,
           name: fbUser.displayName || fbUser.email?.split("@")[0] || "Learner",
@@ -337,7 +362,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           role,
           emailVerified: fbUser.emailVerified,
           signInProvider: fbUser.providerData[0]?.providerId,
-          createdAt: fbUser.metadata.creationTime ?? undefined,
+          createdAt,
+          referralCode,
         };
         setUser(mappedUser);
         saveUserSession(mappedUser);
@@ -394,6 +420,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ? "teacher"
         : "student";
 
+      let referralCode = referralCodeFor(fbUser.uid);
+      let createdAt = fbUser.metadata.creationTime ?? undefined;
+      if (db) {
+        try {
+          const userDoc = await getDoc(doc(db, "users", fbUser.uid));
+          const stored = userDoc.data()?.referralCode;
+          if (stored && typeof stored === "string" && /^[A-Z0-9]{6}$/.test(stored)) {
+            referralCode = stored;
+          }
+          const storedCreated = userDoc.data()?.createdAt;
+          if (storedCreated && typeof storedCreated === "string") {
+            createdAt = storedCreated;
+          }
+        } catch {
+          // ignore
+        }
+      }
+
       const mappedUser: User = {
         id: fbUser.uid,
         name: fbUser.displayName || fbUser.email?.split("@")[0] || "Learner",
@@ -402,6 +446,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAdmin,
         isTeacher,
         role,
+        createdAt,
+        referralCode,
       };
       setUser(mappedUser);
       saveUserSession(mappedUser);

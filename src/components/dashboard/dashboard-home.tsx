@@ -7,6 +7,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useCourses } from "@/providers/courses-provider";
 import { useStudentEnrollments } from "@/hooks/use-student-enrollments";
 import { referralCodeFor } from "@/data/referrals";
+import { formatDate } from "@/lib/date-format";
 import { type StudentTab } from "@/components/dashboard/student-shell";
 
 interface DashboardHomeProps {
@@ -43,14 +44,7 @@ function StatCard({
 
 function formatEnrolledDate(timestamp?: string | number): string {
   if (!timestamp) return "Recently";
-  const date = new Date(timestamp);
-  return Number.isNaN(date.getTime())
-    ? "Recently"
-    : date.toLocaleDateString("en-IN", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      });
+  return formatDate(timestamp, "Recently");
 }
 
 export function DashboardHome({ onSelectTab }: DashboardHomeProps) {
@@ -60,10 +54,13 @@ export function DashboardHome({ onSelectTab }: DashboardHomeProps) {
   const [copied, setCopied] = useState(false);
 
   const firstName = user?.name?.split(" ")[0] || "there";
-  const referralCode = user?.referralCode || (user?.id ? referralCodeFor(user.id) : "JAR-04BPH3SW");
-  const joinedYear = user?.createdAt
-    ? new Date(user.createdAt).getFullYear()
-    : new Date().getFullYear();
+  const referralCode =
+    user?.referralCode && /^[A-Z0-9]{6}$/.test(user.referralCode)
+      ? user.referralCode
+      : user?.id
+      ? referralCodeFor(user.id)
+      : "JARVIS";
+  const joinedDate = formatDate(user?.createdAt, formatDate(new Date()));
 
   const certificatesCount = enrollments.filter((e) => e.action === "paid").length;
 
@@ -112,7 +109,7 @@ export function DashboardHome({ onSelectTab }: DashboardHomeProps) {
             Good {greetingTime}, {firstName}
           </h2>
           <p className="text-sm text-muted-foreground">
-            Member since {joinedYear} · Jarvis AI Academy
+            Member since {joinedDate} · Jarvis AI Academy
           </p>
         </div>
       </div>

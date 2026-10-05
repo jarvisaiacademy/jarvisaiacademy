@@ -99,7 +99,7 @@ export default async function CoursesIndexPage() {
       </p>
       <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
         Not sure which track fits?{" "}
-        <Link href="/" className="font-medium text-[#9d5932] dark:text-[#ea580c] hover:underline">
+        <Link href="/cources" className="font-medium text-[#9d5932] dark:text-[#ea580c] hover:underline">
           Ask the admissions assistant
         </Link>
         .

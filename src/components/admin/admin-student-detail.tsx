@@ -15,6 +15,7 @@ import { AdminPage } from "@/components/admin/admin-page";
 import { accountRoleOf, type CandidateStatus } from "@/data/students";
 import { deleteStudentInFirestore } from "@/services/students-service";
 import type { AdminShellState } from "@/components/admin/admin-shell";
+import { formatDateTime } from "@/lib/date-format";
 
 interface AdminStudentDetailProps {
   studentId: string;
@@ -23,16 +24,7 @@ interface AdminStudentDetailProps {
 
 /** Format ISO timestamp into Indian English locale */
 function formatWhen(iso?: string) {
-  if (!iso) return "—";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return formatDateTime(iso);
 }
 
 export function AdminStudentDetail({ studentId, shell }: AdminStudentDetailProps) {
@@ -319,17 +311,7 @@ export function AdminStudentDetail({ studentId, shell }: AdminStudentDetailProps
                 </span>
               </div>
 
-              {/* 3. Target Track / Goal */}
-              <div className="flex flex-col min-w-0">
-                <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
-                  {student.title || "Learner"}
-                </span>
-                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                  Target Track / Goal
-                </span>
-              </div>
-
-              {/* 4. Phone Number */}
+              {/* Phone Number */}
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
                   {student.phone || "—"}
@@ -339,15 +321,29 @@ export function AdminStudentDetail({ studentId, shell }: AdminStudentDetailProps
                 </span>
               </div>
 
-              {/* 5. Specialization & Interests (spans 2 columns on lg) */}
-              <div className="flex flex-col min-w-0 col-span-1 sm:col-span-2 lg:col-span-2">
-                <span className="text-sm font-semibold text-neutral-900 dark:text-white">
-                  {student.specialization || "—"}
-                </span>
-                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                  Specialization & Interests
-                </span>
-              </div>
+              {/* Target Track (if legacy record carries it) */}
+              {student.title && (
+                <div className="flex flex-col min-w-0">
+                  <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
+                    {student.title}
+                  </span>
+                  <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    Target Track
+                  </span>
+                </div>
+              )}
+
+              {/* Specialization & Interests (if legacy record carries it) */}
+              {student.specialization && (
+                <div className="flex flex-col min-w-0 col-span-1 sm:col-span-2 lg:col-span-2">
+                  <span className="text-sm font-semibold text-neutral-900 dark:text-white">
+                    {student.specialization}
+                  </span>
+                  <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    Specialization & Interests
+                  </span>
+                </div>
+              )}
 
               {/* 6. Account Status (spans 1 column on lg) */}
               <div className="flex flex-col min-w-0 col-span-1 sm:col-span-1 lg:col-span-1">

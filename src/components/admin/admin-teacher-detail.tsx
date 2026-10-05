@@ -15,6 +15,7 @@ import { accountRoleOf, type CandidateStatus } from "@/data/students";
 import { deleteTeacherInFirestore } from "@/services/students-service";
 import { removeTeacherFromAllCourses } from "@/services/courses-service";
 import type { AdminShellState } from "@/components/admin/admin-shell";
+import { formatDateTime } from "@/lib/date-format";
 
 interface AdminTeacherDetailProps {
   teacherId: string;
@@ -23,16 +24,7 @@ interface AdminTeacherDetailProps {
 
 /** Format ISO timestamp into Indian English locale */
 function formatWhen(iso?: string) {
-  if (!iso) return "—";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return formatDateTime(iso);
 }
 
 export function AdminTeacherDetail({ teacherId, shell }: AdminTeacherDetailProps) {

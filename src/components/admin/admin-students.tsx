@@ -28,22 +28,14 @@ import {
 } from "@/services/students-service";
 import { useAllEnrollments } from "@/hooks/use-student-enrollments";
 import { accountRoleOf, type CandidateStatus, type StudentRecord } from "@/data/students";
+import { formatDateTime } from "@/lib/date-format";
 
 interface AdminStudentsProps {
   onHome: () => void;
 }
 
 function formatSignIn(iso?: string): string {
-  if (!iso) return "—";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return formatDateTime(iso);
 }
 
 export function AdminStudents({ onHome }: AdminStudentsProps) {
@@ -369,7 +361,7 @@ export function AdminStudents({ onHome }: AdminStudentsProps) {
                       <td className="py-3.5 px-4 sm:px-6">
                         <div className="flex flex-col gap-1 max-w-xs">
                           <span className="font-medium text-neutral-900 dark:text-neutral-200">
-                            {student.title || "Learner"}
+                            {student.title || "Student"}
                           </span>
                           {enrolled.length > 0 ? (
                             <div className="flex flex-wrap gap-1">

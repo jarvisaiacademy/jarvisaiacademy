@@ -3,7 +3,6 @@
 import React from "react";
 import {
   BookOpen,
-  Users,
   TrendingUp,
   ArrowLeft,
   ShieldCheck,
@@ -23,7 +22,6 @@ export type DashboardTab =
   | "students"
   | "courses"
   | "knowledge"
-  | "users"
   | "analytics";
 
 interface DashboardSidebarNavProps {
@@ -183,16 +181,6 @@ export function DashboardSidebarNav({
           onSelect={handleSelect}
         />
 
-        {/* Admissions: who has paid, as distinct from who has an account. */}
-        <NavButton
-          tab="users"
-          label="Users & Admissions"
-          icon={Users}
-          iconActive="text-emerald-400 dark:text-emerald-600"
-          badge="Ledger"
-          activeTab={activeTab}
-          onSelect={handleSelect}
-        />
 
         <NavButton
           tab="analytics"

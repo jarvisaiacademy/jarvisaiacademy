@@ -27,13 +27,28 @@ export async function publishReferralCode(uid: string): Promise<void> {
     const userDoc = await getDoc(doc(db, USERS_COLLECTION, uid));
     const storedCode = userDoc.exists() ? userDoc.data()?.referralCode : undefined;
 
-    // Use VIP code if assigned, otherwise auto-generate
-    const code = storedCode || referralCodeFor(uid);
+    // Use stored code if already a valid 6-char alphanumeric code, otherwise generate unique code
+    let code =
+      storedCode && typeof storedCode === "string" && /^[A-Z0-9]{6}$/.test(storedCode)
+        ? storedCode
+        : referralCodeFor(uid);
+
+    // If newly generated code happens to collide with an existing index owned by another user, salt it
+    if (!storedCode || storedCode !== code) {
+      try {
+        const refDoc = await getDoc(doc(db, REFERRALS_COLLECTION, code));
+        if (refDoc.exists() && refDoc.data()?.uid && refDoc.data()?.uid !== uid) {
+          code = referralCodeFor(`${uid}:${Date.now()}`);
+        }
+      } catch {
+        // best-effort index collision check
+      }
+    }
 
     if (storedCode !== code) {
       await setDoc(doc(db, USERS_COLLECTION, uid), { referralCode: code }, { merge: true });
     }
-    if (code.match(/^JAR-[A-Z0-9]{8}$/)) {
+    if (code.match(/^(?:JAR-[A-Z0-9]{8}|[A-Z0-9]{6})$/)) {
       await setDoc(doc(db, REFERRALS_COLLECTION, code), { uid }, { merge: true });
     }
   } catch (err) {
