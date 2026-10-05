@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   SquarePen,
   BookOpen,
@@ -291,16 +292,19 @@ export function SidebarNav({
       className="flex flex-col gap-1 px-2 py-1 relative"
     >
       {/* New chat button */}
-      <button
-        type="button"
-        onClick={onNewChat}
+      <Link
+        href="/"
+        onClick={(e) => {
+          e.preventDefault();
+          onNewChat?.();
+        }}
         onMouseEnter={(e) => handleMouseEnter("new_chat", e)}
         onMouseLeave={handleMouseLeave}
         className={`group flex items-center gap-2.5 w-full px-3 py-2 text-sm rounded-lg transition-colors text-left cursor-pointer ${navStateClass(false)}`}
       >
         <NavIcon icon={SquarePen} />
         <span>New chat</span>
-      </button>
+      </Link>
 
       {/* Admin Dashboard Navigation (only for authenticated admins) */}
       {mounted && user?.isAdmin && (
@@ -373,9 +377,12 @@ export function SidebarNav({
       )}
 
       {/* Courses */}
-      <button
-        type="button"
-        onClick={() => onSelectSection?.("courses")}
+      <Link
+        href="/cources"
+        onClick={(e) => {
+          e.preventDefault();
+          onSelectSection?.("courses");
+        }}
         onMouseEnter={(e) => handleMouseEnter("courses", e)}
         onMouseLeave={handleMouseLeave}
         aria-haspopup="dialog"
@@ -385,12 +392,15 @@ export function SidebarNav({
       >
         <NavIcon icon={BookOpen} />
         <span>Courses</span>
-      </button>
+      </Link>
 
       {/* Super10 */}
-      <button
-        type="button"
-        onClick={() => onSelectSection?.("super10")}
+      <Link
+        href="/super10"
+        onClick={(e) => {
+          e.preventDefault();
+          onSelectSection?.("super10");
+        }}
         onMouseEnter={(e) => handleMouseEnter("super10", e)}
         onMouseLeave={handleMouseLeave}
         aria-haspopup="dialog"
@@ -405,12 +415,15 @@ export function SidebarNav({
         <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-neutral-200/80 dark:bg-white/10 text-neutral-600 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
           Elite
         </span>
-      </button>
+      </Link>
 
       {/* Refer & Earn */}
-      <button
-        type="button"
-        onClick={() => onSelectSection?.("referral")}
+      <Link
+        href="/referral"
+        onClick={(e) => {
+          e.preventDefault();
+          onSelectSection?.("referral");
+        }}
         onMouseEnter={(e) => handleMouseEnter("referral", e)}
         onMouseLeave={handleMouseLeave}
         aria-haspopup="dialog"
@@ -425,12 +438,15 @@ export function SidebarNav({
         <span className="text-[10px] font-medium tracking-wide px-2 py-0.5 rounded-full bg-neutral-200/80 dark:bg-white/10 text-neutral-600 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
           ₹3,000
         </span>
-      </button>
+      </Link>
 
       {/* Testimonials */}
-      <button
-        type="button"
-        onClick={() => onSelectSection?.("testimonials")}
+      <Link
+        href="/testimonials"
+        onClick={(e) => {
+          e.preventDefault();
+          onSelectSection?.("testimonials");
+        }}
         onMouseEnter={(e) => handleMouseEnter("testimonials", e)}
         onMouseLeave={handleMouseLeave}
         aria-haspopup="dialog"
@@ -440,12 +456,15 @@ export function SidebarNav({
       >
         <NavIcon icon={MessageSquareQuote} />
         <span>Testimonials</span>
-      </button>
+      </Link>
 
       {/* Certificate */}
-      <button
-        type="button"
-        onClick={() => onSelectSection?.("certificate")}
+      <Link
+        href="/certificate"
+        onClick={(e) => {
+          e.preventDefault();
+          onSelectSection?.("certificate");
+        }}
         onMouseEnter={(e) => handleMouseEnter("certificate", e)}
         onMouseLeave={handleMouseLeave}
         aria-haspopup="dialog"
@@ -455,12 +474,15 @@ export function SidebarNav({
       >
         <NavIcon icon={Award} />
         <span>Certificate</span>
-      </button>
+      </Link>
 
       {/* Enquiry */}
-      <button
-        type="button"
-        onClick={() => onSelectSection?.("enquiry")}
+      <Link
+        href="/enquiry"
+        onClick={(e) => {
+          e.preventDefault();
+          onSelectSection?.("enquiry");
+        }}
         onMouseEnter={(e) => handleMouseEnter("enquiry", e)}
         onMouseLeave={handleMouseLeave}
         aria-haspopup="dialog"
@@ -470,7 +492,7 @@ export function SidebarNav({
       >
         <NavIcon icon={HelpCircle} />
         <span>Enquiry</span>
-      </button>
+      </Link>
 
       {/* Every 60-day programme, so one can be opened without going through the
           catalogue. Clicks go to the chat, which answers with that programme. */}
@@ -488,10 +510,13 @@ export function SidebarNav({
             COURSE_GLYPHS[course.id]?.color ?? "text-neutral-500 dark:text-neutral-400";
 
           return (
-            <button
+            <Link
               key={course.id}
-              type="button"
-              onClick={() => onSelectSection?.(course.id)}
+              href={`/cource/${course.id}`}
+              onClick={(e) => {
+                e.preventDefault();
+                onSelectSection?.(course.id);
+              }}
               onMouseEnter={(e) => handleMouseEnter(course.id, e)}
               onMouseLeave={handleMouseLeave}
               aria-haspopup="dialog"
@@ -501,7 +526,7 @@ export function SidebarNav({
             >
               <Icon className={`w-4 h-4 shrink-0 ${color} transition-transform group-hover:scale-110`} />
               <span className="truncate">{course.bannerTitle}</span>
-            </button>
+            </Link>
           );
         })}
       </SidebarSection>

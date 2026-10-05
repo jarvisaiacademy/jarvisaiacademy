@@ -43,6 +43,8 @@ export interface StudentRecord {
   referredBy?: string;
   /** ISO timestamp of when the claim was made. Cosmetic; nothing is decided from it. */
   referredAt?: string;
+  /** The stage in the referral pipeline */
+  referralStatus?: ReferralCandidateStatus;
   /** Professional title / designation e.g. "Senior Full-Stack Instructor" */
   title?: string;
   /** Primary tech stack or domain expertise e.g. "React, Node.js, AI Systems" */
@@ -56,6 +58,13 @@ export interface StudentRecord {
 }
 
 export type CandidateStatus = "active" | "inactive" | "banned";
+
+/** The 4 referral pipeline stages for referred candidates */
+export type ReferralCandidateStatus =
+  | "Enquery"
+  | "Admission Completed"
+  | "Course Ongoing"
+  | "Course Completed";
 
 /** The three roles a person can hold on this site. */
 export type AccountRole = "student" | "teacher" | "admin";

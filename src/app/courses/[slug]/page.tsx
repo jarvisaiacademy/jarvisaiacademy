@@ -134,7 +134,7 @@ export default async function CoursePage({
           Reserve my seat
         </Link>
         <Link
-          href={`/?topic=${course.id}`}
+          href={`/cource/${course.id}`}
           className="inline-flex items-center justify-center rounded-full border border-neutral-300 dark:border-white/15 px-5 py-2.5 text-sm font-semibold text-neutral-800 dark:text-neutral-100 transition-colors hover:bg-neutral-100 dark:hover:bg-white/5"
         >
           Continue in chat

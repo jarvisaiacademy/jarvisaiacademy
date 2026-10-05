@@ -21,7 +21,12 @@ import { APP_SETTINGS } from "@/data/app-settings";
 export function ReferralCodeSetting() {
   const { user } = useAuth();
   const [copied, setCopied] = useState(false);
-  const code = user ? referralCodeFor(user.id) : "";
+  const code =
+    user?.referralCode && /^[A-Z0-9]{6}$/.test(user.referralCode)
+      ? user.referralCode
+      : user?.id
+      ? referralCodeFor(user.id)
+      : "";
 
   if (!user) return null;
 

@@ -16,6 +16,7 @@ import { useToast } from "@/components/ui/toast";
 import { useCourses } from "@/providers/courses-provider";
 import { APP_SETTINGS } from "@/data/app-settings";
 import { siteConfig } from "@/config/site";
+import { formatDate } from "@/lib/date-format";
 
 export interface EnrollmentData {
   courseId: "fullstack" | "super10";
@@ -200,7 +201,7 @@ export function EnrollmentCard({
   // Generate and download or print official Tax Invoice & Receipt
   const handleDownloadReceipt = (mode: "download" | "print" = "download") => {
     const invoiceNumber = `INV-${transactionId.replace("TXN-", "")}`;
-    const invoiceDate = paidAt || new Date().toLocaleDateString("en-IN");
+    const invoiceDate = formatDate(paidAt || new Date());
 
     const receiptHtml = `<!DOCTYPE html>
 <html lang="en">

@@ -336,6 +336,9 @@ export function ChatMessages({
                     <CourseCatalogResponse
                       onActionPrompt={onActionPrompt}
                       onSelectCourse={(courseId) => {
+                        if (typeof window !== "undefined") {
+                          window.history.pushState(null, "", `/cource/${courseId}`);
+                        }
                         const course = courses.find((c) => c.id === courseId);
                         if (course) {
                           onActionPrompt?.(course.actionPrompt);

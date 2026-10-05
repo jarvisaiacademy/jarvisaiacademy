@@ -84,7 +84,9 @@ export async function upsertStudentRecord(user: RosterUserInput): Promise<void> 
       ...(user.picture ? { picture: user.picture } : {}),
       ...(user.emailVerified === undefined ? {} : { emailVerified: user.emailVerified }),
       ...(user.signInProvider ? { signInProvider: user.signInProvider } : {}),
-      ...(user.createdAt ? { createdAt: user.createdAt } : {}),
+      createdAt: existingUser.exists()
+        ? existingUser.data()?.createdAt || user.createdAt || new Date().toISOString()
+        : user.createdAt || new Date().toISOString(),
     };
 
     if (isTeacher) {

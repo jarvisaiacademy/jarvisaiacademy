@@ -27,22 +27,14 @@ import {
 } from "@/services/students-service";
 import { removeTeacherFromAllCourses } from "@/services/courses-service";
 import { accountRoleOf, type CandidateStatus, type StudentRecord } from "@/data/students";
+import { formatDateTime } from "@/lib/date-format";
 
 interface AdminTeachersProps {
   onHome: () => void;
 }
 
 function formatSignIn(iso?: string): string {
-  if (!iso) return "—";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return formatDateTime(iso);
 }
 
 export function AdminTeachers({ onHome }: AdminTeachersProps) {

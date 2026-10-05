@@ -14,6 +14,7 @@ import { isPublic } from "@/lib/courses-server";
 import { stackDisplay } from "@/data/courses";
 import { useAuth } from "@/providers/auth-provider";
 import type { AdminShellState } from "@/components/admin/admin-shell";
+import { formatDateTime } from "@/lib/date-format";
 
 interface AdminCourseDetailProps {
   courseId: string;
@@ -23,17 +24,7 @@ interface AdminCourseDetailProps {
 
 /** Format ISO timestamp into Indian English locale */
 function formatWhen(iso?: string) {
-  if (!iso) return "—";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
+  return formatDateTime(iso);
 }
 
 export function AdminCourseDetail({ courseId, shell }: AdminCourseDetailProps) {
