@@ -220,7 +220,8 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
                   type="text"
                   value={codeInput}
                   onChange={(e) => setCodeInput(e.target.value)}
-                  placeholder="JAR-XXXXXXXX"
+                  placeholder="e.g. 8I4WH0"
+                  maxLength={12}
                   autoCapitalize="characters"
                   autoComplete="off"
                   autoCorrect="off"

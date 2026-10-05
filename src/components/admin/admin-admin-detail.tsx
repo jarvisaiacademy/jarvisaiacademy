@@ -13,6 +13,7 @@ import { AdminPage } from "@/components/admin/admin-page";
 import { accountRoleOf, type CandidateStatus } from "@/data/students";
 import { deleteAdminInFirestore } from "@/services/students-service";
 import type { AdminShellState } from "@/components/admin/admin-shell";
+import { formatDateTime } from "@/lib/date-format";
 
 interface AdminAdminDetailProps {
   adminId: string;
@@ -21,16 +22,7 @@ interface AdminAdminDetailProps {
 
 /** Format ISO timestamp into Indian English locale */
 function formatWhen(iso?: string) {
-  if (!iso) return "—";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return formatDateTime(iso);
 }
 
 export function AdminAdminDetail({ adminId, shell }: AdminAdminDetailProps) {

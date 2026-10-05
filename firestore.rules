@@ -116,7 +116,7 @@ service cloud.firestore {
              )
           && (
                request.resource.data.get('referralCode', '') == resource.data.get('referralCode', '') ||
-               request.resource.data.get('referralCode', '').matches('^JAR-[A-Z0-9]{8}$')
+               request.resource.data.get('referralCode', '').matches('^(?:JAR-[A-Z0-9]{8}|[A-Z0-9]{6})$')
              )
           && referralUpdateIsHonest());
 
@@ -147,13 +147,13 @@ service cloud.firestore {
       // well, or anyone could claim an entry by overwriting it with their own uid.
       allow create: if isAdmin()
         || (request.auth != null
-          && code.matches('^JAR-[A-Z0-9]{8}$')
+          && (code.matches('^[A-Z0-9]{6}$') || code.matches('^JAR-[A-Z0-9]{8}$'))
           && request.resource.data.keys().hasOnly(['uid'])
           && request.resource.data.uid == request.auth.uid);
 
       allow update: if isAdmin()
         || (request.auth != null
-          && code.matches('^JAR-[A-Z0-9]{8}$')
+          && (code.matches('^[A-Z0-9]{6}$') || code.matches('^JAR-[A-Z0-9]{8}$'))
           && resource.data.uid == request.auth.uid
           && request.resource.data.keys().hasOnly(['uid'])
           && request.resource.data.uid == request.auth.uid);

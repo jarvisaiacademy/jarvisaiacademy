@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   GraduationCap, 
-  BookOpen, 
   ChevronRight, 
   ArrowLeft,
   Calendar,
@@ -19,6 +18,7 @@ import {
 import { useAuth } from "@/providers/auth-provider";
 import { useCourses } from "@/providers/courses-provider";
 import { useStudentEnrollments, type EnrollmentRecord } from "@/hooks/use-student-enrollments";
+import { formatDate } from "@/lib/date-format";
 import { SettingsSection } from "@/components/settings/settings-section";
 
 const STATUS_STYLES: Record<
@@ -57,8 +57,8 @@ export function DashboardCourses() {
       title: record.courseName,
       status: record.action === "paid" ? "In Progress" : "Awaiting Payment",
       duration: courseObj?.duration || "12 Weeks",
-      startDate: startDateObj.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
-      endDate: endDateObj.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
+      startDate: formatDate(startDateObj),
+      endDate: formatDate(endDateObj),
       progress: record.action === "paid" ? mockProgress : 0,
       description: courseObj?.description || "Master the fundamentals and advanced concepts in this comprehensive Jarvis AI Academy programme.",
       level: courseObj?.level || "All Levels",
@@ -158,27 +158,6 @@ export function DashboardCourses() {
                 </div>
               )}
             </SettingsSection>
-
-            {/* Catalogue Preview */}
-            {courses.length > 0 && (
-              <SettingsSection title={enrollments.length === 0 ? "All Programmes" : "Explore Programmes"}>
-                {(enrollments.length === 0 ? courses : courses.slice(0, 3)).map((course) => (
-                  <div key={course.id} className="flex items-start gap-4 px-5 sm:px-8 py-4 sm:py-5 hover:bg-muted/20 transition-colors">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-muted/50 text-foreground/60 shrink-0 mt-0.5">
-                      <BookOpen className="w-4 h-4" />
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-sm sm:text-base font-medium text-foreground leading-snug">{course.title}</span>
-                      {course.description && (
-                        <span className="text-xs sm:text-sm text-muted-foreground leading-normal mt-0.5 line-clamp-2">
-                          {course.description}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </SettingsSection>
-            )}
           </motion.div>
         ) : (
           <motion.div

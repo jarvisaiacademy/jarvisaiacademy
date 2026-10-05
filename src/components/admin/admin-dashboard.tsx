@@ -23,6 +23,7 @@ import { useCourses } from "@/providers/courses-provider";
 import { useStudents } from "@/providers/students-provider";
 import { useAuth } from "@/providers/auth-provider";
 import { updateCandidateInFirestore } from "@/services/students-service";
+import { formatDateTime } from "@/lib/date-format";
 import { accountRoleOf, CandidateStatus, StudentRecord, type AccountRole } from "@/data/students";
 import { APP_SETTINGS } from "@/data/app-settings";
 import { academyKnowledge } from "@/data/academy-knowledge";
@@ -46,7 +47,6 @@ import { AdminAdmins } from "@/components/admin/admin-admins";
 import { AdminStudents } from "@/components/admin/admin-students";
 import { AdminTeachers } from "@/components/admin/admin-teachers";
 import { AdminCourses } from "@/components/admin/admin-courses";
-import { AdminUsers } from "@/components/admin/admin-users";
 import { ROLE_BADGE } from "@/components/admin/role-badge";
 import { Select } from "@/components/ui/select";
 import { PageHeader } from "@/components/ui/page-header";
@@ -76,15 +76,7 @@ interface EnrollmentRecord {
 
 /** Roster rows carry the ISO string written at sign-in; show it like the ledger's dates. */
 function formatSignIn(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return formatDateTime(iso);
 }
 
 /**
@@ -220,19 +212,19 @@ export function AdminDashboard({
   };
 
   const handleUpdateReferralCode = async (uid: string, current: string | undefined) => {
-    const next = window.prompt("Enter a 4-letter VIP referral code (or leave blank to remove and use auto-generated):", current || "");
+    const next = window.prompt("Enter a 6-digit alphanumeric referral code (or leave blank to remove and use auto-generated):", current || "");
     if (next === null) return; // cancelled
     
-    const cleaned = next.trim().toUpperCase().replace(/[^A-Z]/g, "");
-    if (next.trim() !== "" && cleaned.length !== 4) {
-      showToast("VIP Code must be exactly 4 letters.", "error");
+    const cleaned = next.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (next.trim() !== "" && cleaned.length !== 6) {
+      showToast("Referral code must be exactly 6 alphanumeric characters.", "error");
       return;
     }
 
     setBusyCandidateId(uid);
     try {
       await updateCandidateInFirestore(uid, { referralCode: next.trim() === "" ? "" : cleaned }, user?.email);
-      showToast(cleaned ? "VIP Code assigned" : "VIP Code removed", "success");
+      showToast(cleaned ? "Referral code assigned" : "Referral code removed", "success");
     } catch (err: unknown) {
       showToast(err instanceof Error ? err.message : "Failed to update candidate", "error");
     } finally {
@@ -482,7 +474,7 @@ export function AdminDashboard({
                         onClick={() => handleUpdateReferralCode(student.id, student.referralCode)}
                         className="px-2 py-1 rounded-md text-[10px] font-semibold border transition-colors disabled:opacity-50 text-neutral-600 dark:text-neutral-300 bg-white dark:bg-white/5 border-neutral-200 dark:border-white/10 hover:bg-neutral-100 dark:hover:bg-white/10"
                       >
-                        {student.referralCode ? student.referralCode : "Assign VIP"}
+                        {student.referralCode ? student.referralCode : "Assign Code"}
                       </button>
                     </td>
 
@@ -698,13 +690,6 @@ export function AdminDashboard({
           <AdminCourses onHome={() => setActiveTab("home")} />
         )}
 
-        {/* TAB 2: USERS & ADMISSIONS */}
-        {activeTab === "users" && (
-          <AdminUsers
-            records={records}
-            onHome={() => setActiveTab("home")}
-          />
-        )}
 
         {/* ONE PAGE PER ROLE. The three together list every account exactly once, because
             `accountRoleOf` gives each account the strongest role it holds. */}

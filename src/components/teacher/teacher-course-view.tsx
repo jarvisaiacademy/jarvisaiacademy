@@ -4,6 +4,7 @@ import React from "react";
 import { ArrowLeft, Users, Mail, Phone, Calendar } from "lucide-react";
 import type { CourseItem } from "@/data/courses";
 import type { EnrollmentRecord } from "@/hooks/use-student-enrollments";
+import { formatDate } from "@/lib/date-format";
 
 interface TeacherCourseViewProps {
   course: CourseItem;
@@ -107,7 +108,7 @@ export function TeacherCourseView({ course, enrollments, onBack }: TeacherCourse
                       {enrollment.studentEmail}
                     </td>
                     <td className="px-4 py-3 text-neutral-500">
-                      {new Date(enrollment.timestamp).toLocaleDateString()}
+                      {formatDate(enrollment.timestamp)}
                     </td>
                     <td className="px-4 py-3">
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400">

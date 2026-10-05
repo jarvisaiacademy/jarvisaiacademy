@@ -465,12 +465,12 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                 <div className="p-4 rounded-xl bg-sky-50/50 dark:bg-sky-500/5 border border-sky-200 dark:border-sky-500/20 flex flex-col gap-2.5">
                   <div className="flex items-center gap-2 text-sky-800 dark:text-sky-300 text-xs font-semibold">
                     <Briefcase className="w-4 h-4" />
-                    <span>Select Learner Account to Promote to Faculty</span>
+                    <span>Select Student Account to Promote to Teacher</span>
                   </div>
 
                   {nonTeacherStudents.length === 0 ? (
                     <p className="text-xs text-neutral-500">
-                      No non-faculty student accounts available to promote. Use &quot;New Profile&quot; instead.
+                      No student accounts available to promote. Use &quot;New Profile&quot; instead.
                     </p>
                   ) : (
                     <Select
@@ -571,8 +571,8 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                     value={role}
                     onValueChange={(val) => setRole(val as "teacher" | "student")}
                     options={[
-                      { value: "teacher", label: "Teacher / Faculty" },
-                      { value: "student", label: "Student / Learner" },
+                      { value: "teacher", label: "Teacher" },
+                      { value: "student", label: "Student" },
                     ]}
                     className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
                   />
@@ -589,7 +589,7 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                       value={status}
                       onValueChange={(val) => setStatus(val as CandidateStatus)}
                       options={[
-                        { value: "active", label: role === "teacher" ? "Active Faculty" : "Active Student" },
+                        { value: "active", label: role === "teacher" ? "Active Teacher" : "Active Student" },
                         { value: "inactive", label: role === "teacher" ? "Inactive / On Leave" : "Inactive / Paused" },
                       ]}
                       className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"

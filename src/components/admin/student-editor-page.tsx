@@ -427,21 +427,7 @@ function StudentForm({ student, shell, coursesLoading }: StudentFormProps) {
                   />
                 </div>
 
-                {/* 3. Target Track / Goal */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Target Track / Designation
-                  </label>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. Aspiring Full-Stack Developer"
-                    className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
-                  />
-                </div>
-
-                {/* 4. Phone Number */}
+                {/* 3. Phone Number */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Phone Number
@@ -455,21 +441,7 @@ function StudentForm({ student, shell, coursesLoading }: StudentFormProps) {
                   />
                 </div>
 
-                {/* 5. Specialization & Interests (1 col on lg) */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
-                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Specialization & Domain Interests
-                  </label>
-                  <input
-                    type="text"
-                    value={specialization}
-                    onChange={(e) => setSpecialization(e.target.value)}
-                    placeholder="e.g. Next.js, TypeScript, AI"
-                    className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
-                  />
-                </div>
-
-                {/* 6. Account Role Dropdown */}
+                {/* 4. Account Role Dropdown */}
                 <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Account Role
@@ -479,16 +451,16 @@ function StudentForm({ student, shell, coursesLoading }: StudentFormProps) {
                     value={role}
                     onValueChange={(val) => setRole(val as "student" | "teacher")}
                     options={[
-                      { value: "student", label: "Student / Learner" },
-                      { value: "teacher", label: "Teacher / Faculty" },
+                      { value: "student", label: "Student" },
+                      { value: "teacher", label: "Teacher" },
                     ]}
                     className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
                   />
                 </div>
 
-                {/* 7. Account Status (Only shown when editing existing student) */}
+                {/* 5. Account Status (Only shown when editing existing student) */}
                 {student && (
-                  <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
+                  <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-2">
                     <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                       Account Status
                     </label>
@@ -497,7 +469,7 @@ function StudentForm({ student, shell, coursesLoading }: StudentFormProps) {
                       value={status}
                       onValueChange={(val) => setStatus(val as CandidateStatus)}
                       options={[
-                        { value: "active", label: role === "teacher" ? "Active Faculty" : "Active Student" },
+                        { value: "active", label: role === "teacher" ? "Active Teacher" : "Active Student" },
                         { value: "inactive", label: role === "teacher" ? "Inactive / On Leave" : "Inactive / Paused" },
                       ]}
                       className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
@@ -505,8 +477,8 @@ function StudentForm({ student, shell, coursesLoading }: StudentFormProps) {
                   </div>
                 )}
 
-                {/* 8. Enrolled Courses (spans 1 column on lg) */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
+                {/* 6. Enrolled Courses */}
+                <div className={`flex flex-col gap-1.5 col-span-1 sm:col-span-1 ${student ? "lg:col-span-2" : "lg:col-span-4"}`}>
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     {role === "teacher" ? "Assigned Courses" : "Enrolled Courses"}
                   </label>
@@ -557,7 +529,7 @@ function StudentForm({ student, shell, coursesLoading }: StudentFormProps) {
                   </div>
                 )}
 
-                {/* 8. Super10 Scholar Cohort (spans 2 columns on lg) */}
+                {/* 7. Super10 Scholar Cohort (spans 2 columns on lg) */}
                 <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-2">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Super10 Scholar Cohort
@@ -574,16 +546,17 @@ function StudentForm({ student, shell, coursesLoading }: StudentFormProps) {
                   />
                 </div>
 
-                {/* 9. Referral Code (spans 2 columns on lg) */}
+                {/* 8. Referral Code (spans 2 columns on lg) */}
                 <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-2">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    VIP Referral Code
+                    Referral Code
                   </label>
                   <input
                     type="text"
                     value={referralCode}
-                    onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                    placeholder="e.g. JAR-VIP001"
+                    onChange={(e) => setReferralCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6))}
+                    placeholder="e.g. 6-digit code"
+                    maxLength={6}
                     className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 font-mono"
                   />
                 </div>
