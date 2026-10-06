@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { Search, Info } from "lucide-react";
-import { academyKnowledge, replyPages } from "@/data/academy-knowledge";
+import { academyKnowledge } from "@/data/academy-knowledge";
 import { MarkdownRenderer } from "@/components/chat/markdown-renderer";
 import { PageHeader } from "@/components/ui/page-header";
 
@@ -44,8 +44,6 @@ export function AdminKnowledge({ onHome }: AdminKnowledgeProps) {
 
   const entry = academyKnowledge[selected];
 
-  // Which public page renders this topic, if any. Inverse of the map the course pages read.
-  const pages = replyPages(selected);
 
   return (
     <div className="flex flex-col gap-4">
@@ -115,14 +113,6 @@ export function AdminKnowledge({ onHome }: AdminKnowledgeProps) {
               <code className="px-2 py-0.5 rounded-lg bg-neutral-100 dark:bg-white/10 text-[11px] font-semibold text-neutral-700 dark:text-neutral-200">
                 {selected}
               </code>
-              {pages.map((page) => (
-                <span
-                  key={page}
-                  className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30"
-                >
-                  shown on {page}
-                </span>
-              ))}
             </div>
             {entry?.suggestions?.length ? (
               <span className="text-[11px] text-neutral-500">

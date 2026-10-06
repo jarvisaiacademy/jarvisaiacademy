@@ -313,25 +313,57 @@ export function ChatCanvas({
         : academyKnowledge.super10;
     } else if (lower.includes("referral") || lower.includes("refer & earn") || lower.includes("3,000") || lower.includes("3000")) {
       return academyKnowledge.referral;
-    } else if (lower.includes("frontend") || lower.includes("reactjs") || lower.includes("tailwind")) {
-      return academyKnowledge.frontend;
-    } else if (lower.includes("backend") || lower.includes("fastapi") || lower.includes("django")) {
-      return academyKnowledge.backend;
-    } else if (lower.includes("devops") || lower.includes("aws") || lower.includes("docker") || lower.includes("kubernetes")) {
-      return academyKnowledge.devops;
-    } else if (lower.includes("database admin") || lower.includes("oracle") || lower.includes("pl/sql") || lower.includes("plsql") || lower.includes("mongodb")) {
-      return academyKnowledge.database;
-    } else if (lower.includes("data analyst") || lower.includes("data science")) {
-      return academyKnowledge.data_analyst;
-    } else if (lower.includes("business analyst") || lower.includes("brd") || lower.includes("jira")) {
-      return academyKnowledge.business_analyst;
-    } else if (lower.includes("genai") || lower.includes("generative ai") || lower.includes("rag") || lower.includes("agentic")) {
-      return academyKnowledge.genai;
-    } else if (lower.includes("laravel") || lower.includes("php")) {
-      return academyKnowledge.laravel;
-    } else if (lower.includes("application support") || (lower.includes("support") && lower.includes("linux"))) {
-      return academyKnowledge.app_support;
-    } else if (
+
+    }
+
+    // Dynamic course matching from Firestore database (active courses only)
+    const activeCourses = courses.filter((c) => (c.status ?? "active") !== "inactive");
+    const matchedCourse = activeCourses.find((c) => {
+      if (c.id === "frontend-react" && lower.includes("frontend")) return true;
+      if (c.id === "backend-python" && lower.includes("backend")) return true;
+      if (c.id === "devops-aws" && lower.includes("devops")) return true;
+      if (c.id === "database-admin" && lower.includes("database")) return true;
+      if (c.id === "genai" && lower.includes("genai")) return true;
+      if (c.id === "data-analyst" && lower.includes("data analyst")) return true;
+      if (c.id === "business-analyst" && lower.includes("business analyst")) return true;
+      if (c.id === "web-laravel" && (lower.includes("laravel") || lower.includes("php"))) return true;
+      if (c.id === "app-support" && (lower.includes("support") || lower.includes("linux"))) return true;
+      if (c.id === "super10" && lower.includes("super10")) return true;
+
+      const idMatch = lower.includes(c.id.toLowerCase());
+      const titleMatch = lower.includes(c.title.toLowerCase());
+      const numberMatch = c.number && lower.includes(c.number.toLowerCase());
+      return idMatch || titleMatch || numberMatch;
+    });
+
+    if (matchedCourse) {
+
+
+      // Use custom chatResponse template from backend
+      const template = (matchedCourse.chatResponse || "").trim() || `### 🎓 **{title}**\n*_{bannerSubtitle}_*\n\n* **Track**: {categoryLabel}\n* **Level**: **{level}**\n* **Duration**: **{duration}**\n* **Tuition Fee**: **{fee}**\n* **Curriculum Overview**: {description}\n\n**Key Modules**:\n{topics}\n\n**Tech Stack**: {techStack}\n\nWould you like to enroll in **{title}** or ask about the syllabus?`;
+
+      const resolved = template
+        .replace(/{title}/g, matchedCourse.title)
+        .replace(/{level}/g, matchedCourse.level || "Beginner to Advanced")
+        .replace(/{duration}/g, matchedCourse.duration)
+        .replace(/{fee}/g, matchedCourse.fee)
+        .replace(/{description}/g, matchedCourse.description)
+        .replace(/{categoryLabel}/g, matchedCourse.categoryLabel || matchedCourse.category)
+        .replace(/{techStack}/g, matchedCourse.techStack?.join(", ") || "")
+        .replace(/{topics}/g, matchedCourse.topics?.map((t: string) => `* ${t}`).join("\n") || "")
+        .replace(/{bannerSubtitle}/g, matchedCourse.bannerSubtitle || matchedCourse.description);
+      
+      return {
+        text: resolved,
+        suggestions: [
+          `I want to enroll in ${matchedCourse.title}`,
+          "What is the fee structure & payment options?",
+          "Tell me about the Super10 Elite Batch with 100% placement assurance",
+        ],
+      };
+    }
+
+    if (
       lower.includes("course") ||
       lower.includes("courses") ||
       lower.includes("program") ||
@@ -386,37 +418,6 @@ export function ChatCanvas({
       lower.includes("support")
     ) {
       return academyKnowledge.enquiry;
-    }
-
-    // Dynamic course matching from Firestore database (active courses only)
-    const activeCourses = courses.filter((c) => (c.status ?? "active") !== "inactive");
-    const matchedCourse = activeCourses.find((c) => {
-      const idMatch = lower.includes(c.id.toLowerCase());
-      const titleMatch = lower.includes(c.title.toLowerCase());
-      const numberMatch = c.number && lower.includes(c.number.toLowerCase());
-      return idMatch || titleMatch || numberMatch;
-    });
-
-    if (matchedCourse) {
-      if (academyKnowledge[matchedCourse.id]) {
-        return academyKnowledge[matchedCourse.id];
-      }
-      return {
-        text: `### 🎓 **${matchedCourse.title}**\n\n` +
-          `* **Track**: ${matchedCourse.categoryLabel || matchedCourse.category}\n` +
-          `* **Duration**: **${matchedCourse.duration}**\n` +
-          `* **Tuition Fee**: **${matchedCourse.fee}**\n` +
-          `* **Curriculum Overview**: ${matchedCourse.description}\n\n` +
-          (matchedCourse.topics?.length ? `**Key Modules**:\n${matchedCourse.topics.map((t: string) => `* ${t}`).join("\n")}\n\n` : "") +
-          (matchedCourse.techStack?.length ? `**Tech Stack**: ${matchedCourse.techStack.join(", ")}\n\n` : "") +
-          `> "${matchedCourse.bannerSubtitle || matchedCourse.description}"\n\n` +
-          `Would you like to enroll in **${matchedCourse.title}** or ask about the syllabus?`,
-        suggestions: [
-          `I want to enroll in ${matchedCourse.title}`,
-          "What is the fee structure & payment options?",
-          "Tell me about the Super10 Elite Batch with 100% placement assurance",
-        ],
-      };
     }
 
     return {
