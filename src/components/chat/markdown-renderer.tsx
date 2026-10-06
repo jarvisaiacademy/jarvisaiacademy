@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Copy, Check, ExternalLink } from "lucide-react";
 import { DevIcon, iconKeyFor } from "@/components/ui/dev-icon";
+import { SOCIAL_PLATFORMS } from "@/components/common/social-links";
 
 interface MarkdownRendererProps {
   content: string;
@@ -113,6 +114,22 @@ export function MarkdownRenderer({ content, onPromptClick }: MarkdownRendererPro
                 </li>
               );
             }
+
+            // Detect Social Links
+            const socialMatch = /^\s*(LinkedIn|Instagram|YouTube|Facebook|X \(Twitter\))\s*:/i.exec(text);
+            if (socialMatch) {
+              const platformName = socialMatch[1];
+              const platform = SOCIAL_PLATFORMS.find(p => p.name.toLowerCase() === platformName.toLowerCase());
+              if (platform) {
+                return (
+                  <li className="leading-relaxed pl-1 flex items-start gap-2 mb-1.5">
+                    <span className={`mt-0.5 shrink-0 ${platform.color}`}>{platform.svg}</span>
+                    <span className="flex-1">{children}</span>
+                  </li>
+                );
+              }
+            }
+
             return <li className="leading-relaxed pl-1">{children}</li>;
           },
           strong: ({ children }) => <strong className="font-semibold text-neutral-900 dark:text-white">{children}</strong>,
