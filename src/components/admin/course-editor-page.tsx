@@ -178,6 +178,8 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
       ? (course.topics || []).join("\n")
       : "Module 1: Architecture\nModule 2: Real-time APIs\nModule 3: Cloud Deployment"
   );
+  const defaultChatTemplate = `### 🎓 **{title}**\n*_{bannerSubtitle}_*\n\n* **Track**: {categoryLabel}\n* **Level**: **{level}**\n* **Duration**: **{duration}**\n* **Tuition Fee**: **{fee}**\n* **Curriculum Overview**: {description}\n\n**Key Modules**:\n{topics}\n\n**Tech Stack**: {techStack}\n\nWould you like to enroll in **{title}** or ask about the syllabus?`;
+  const [formChatResponse, setFormChatResponse] = useState(() => course?.chatResponse || defaultChatTemplate);
 
   const actionPrompt =
     course?.actionPrompt || (course ? `Tell me about the ${course.title} course` : "");
@@ -247,6 +249,7 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
           topics: topicsArr,
           actionPrompt:
             actionPrompt.trim() || `Tell me about the ${formTitle.trim()} course`,
+          chatResponse: formChatResponse.trim(),
           status: formStatus,
           teacherIds: formTeacherIds,
         });
@@ -269,6 +272,7 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
           topics: topicsArr,
           actionPrompt:
             actionPrompt.trim() || `Tell me about the ${formTitle.trim()} course`,
+          chatResponse: formChatResponse.trim(),
           status: "active",
           teacherIds: formTeacherIds,
         });
@@ -598,6 +602,33 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
                     placeholder={"Next.js 15 Server Components & Actions\nFastAPI Async Microservices\nPostgreSQL & Schema Optimization"}
                     className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 font-mono text-[11px] resize-y"
                   />
+                </div>
+
+                {/* 15. Chat Response Template (spans all 4 columns) */}
+                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-2 lg:col-span-4">
+                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    Chat Response Template{" "}
+                    <span className="text-neutral-400 font-normal">(optional)</span>
+                  </label>
+                  <textarea
+                    rows={8}
+                    value={formChatResponse}
+                    onChange={(e) => setFormChatResponse(e.target.value)}
+                    placeholder={`### 🎓 **{title}**\n*_{bannerSubtitle}_*\n\n* **Track**: {categoryLabel}\n* **Level**: **{level}**\n* **Duration**: **{duration}**\n* **Tuition Fee**: **{fee}**\n* **Curriculum Overview**: {description}\n\n**Key Modules**:\n{topics}\n\n**Tech Stack**: {techStack}\n\nWould you like to enroll in **{title}** or ask about the syllabus?`}
+                    className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 font-mono text-[11px] resize-y"
+                  />
+                  <span className="text-[10px] text-neutral-400">
+                    Available variables:{" "}
+                    <code className="font-mono">{"{title}"}</code>{" "}
+                    <code className="font-mono">{"{bannerSubtitle}"}</code>{" "}
+                    <code className="font-mono">{"{level}"}</code>{" "}
+                    <code className="font-mono">{"{duration}"}</code>{" "}
+                    <code className="font-mono">{"{fee}"}</code>{" "}
+                    <code className="font-mono">{"{description}"}</code>{" "}
+                    <code className="font-mono">{"{categoryLabel}"}</code>{" "}
+                    <code className="font-mono">{"{techStack}"}</code>{" "}
+                    <code className="font-mono">{"{topics}"}</code>
+                  </span>
                 </div>
               </div>
             </div>

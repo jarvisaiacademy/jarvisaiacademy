@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPublicCourses } from "@/lib/courses-server";
-import { COURSE_KB_KEY, academyKnowledge } from "@/data/academy-knowledge";
+import { academyKnowledge } from "@/data/academy-knowledge";
 import { courseStructuredData } from "@/config/seo";
 import { siteConfig } from "@/config/site";
 import { MarkdownRenderer } from "@/components/chat/markdown-renderer";
@@ -72,9 +72,31 @@ export default async function CoursePage({
   const course = courses.find((c) => c.id === slug);
   if (!course) notFound();
 
-  const kbKey = COURSE_KB_KEY[course.id];
-  const answer = kbKey ? academyKnowledge[kbKey] : undefined;
-
+  let answer: { text: string; showCourseCatalog?: boolean } | undefined = undefined;
+  if (course.chatResponse) {
+    const text = course.chatResponse
+      .replace(/{title}/g, course.title)
+      .replace(/{duration}/g, course.duration)
+      .replace(/{fee}/g, course.fee)
+      .replace(/{description}/g, course.description)
+      .replace(/{categoryLabel}/g, course.categoryLabel || course.category)
+      .replace(/{techStack}/g, course.techStack?.join(", ") || "")
+      .replace(/{topics}/g, course.topics?.map((t: string) => `* ${t}`).join("\\n") || "");
+    answer = { text };
+  } else if (academyKnowledge[course.id]) {
+    answer = academyKnowledge[course.id];
+  } else {
+    answer = {
+      text: `### 🎓 **${course.title}**\n\n` +
+          `* **Track**: ${course.categoryLabel || course.category}\n` +
+          `* **Duration**: **${course.duration}**\n` +
+          `* **Tuition Fee**: **${course.fee}**\n` +
+          `* **Curriculum Overview**: ${course.description}\n\n` +
+          (course.topics?.length ? `**Key Modules**:\n${course.topics.map((t: string) => `* ${t}`).join("\n")}\n\n` : "") +
+          (course.techStack?.length ? `**Tech Stack**: ${course.techStack.join(", ")}\n\n` : "") +
+          `> "${course.bannerSubtitle || course.description}"\n\n`
+    };
+  }
   // The referral entry is a reward scheme, not a course — describing it as one in
   // structured data would be a claim the page does not make anywhere else.
   const structuredData =
