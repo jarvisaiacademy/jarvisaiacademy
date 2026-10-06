@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   Briefcase,
   ChevronRight,
-  Plus,
   RotateCcw,
   Search,
   Eye,
@@ -174,6 +173,9 @@ export function AdminTeachers({ onHome }: AdminTeachersProps) {
     }
   };
 
+  const isDataLoading =
+    (studentsLoading || coursesLoading) && teachers.length === 0;
+
   return (
     <div className="flex flex-col gap-4">
       {/* Breadcrumb at the top left side outside the list card (no back button outside) */}
@@ -195,9 +197,9 @@ export function AdminTeachers({ onHome }: AdminTeachersProps) {
       <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden flex flex-col">
         {/* Inside Card Header Bar */}
         <div className="p-4 sm:p-5 flex flex-col gap-5 border-b border-neutral-200 dark:border-white/10">
-          <div className="flex items-center justify-between gap-3">
+          <div className="relative flex items-center justify-between gap-3 min-h-[38px]">
             {/* Back button inside the card */}
-            <div className="flex items-center">
+            <div className="flex items-center z-10">
               <button
                 type="button"
                 onClick={onHome}
@@ -210,33 +212,27 @@ export function AdminTeachers({ onHome }: AdminTeachersProps) {
             </div>
 
             {/* In the Center: Teachers Heading with Refresh icon at its side */}
-            <div className="flex items-center justify-center gap-2">
-              <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
-                Teachers
-              </h2>
-              <button
-                type="button"
-                disabled={isRefreshing || studentsLoading}
-                onClick={handleRefresh}
-                className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors cursor-pointer disabled:opacity-50"
-                title="Refresh Faculty Directory"
-              >
-                <RotateCcw
-                  className={`w-4 h-4 ${isRefreshing || studentsLoading ? "animate-spin" : ""}`}
-                />
-              </button>
+            <div className="w-full sm:w-auto sm:absolute sm:inset-0 flex items-center justify-center pointer-events-none">
+              <div className="flex items-center gap-2 pointer-events-auto">
+                <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
+                  Teachers
+                </h2>
+                <button
+                  type="button"
+                  disabled={isRefreshing}
+                  onClick={handleRefresh}
+                  className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors cursor-pointer disabled:opacity-50"
+                  title="Refresh Faculty Directory"
+                >
+                  <RotateCcw
+                    className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
+                  />
+                </button>
+              </div>
             </div>
 
-            {/* Right: Green Pill Add Teacher button */}
-            <div className="flex items-center">
-              <Link
-                href="/admin/teachers/new"
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-colors cursor-pointer whitespace-nowrap"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Teacher</span>
-              </Link>
-            </div>
+            {/* Right placeholder to balance back button */}
+            <div className="w-[72px] invisible hidden sm:block" aria-hidden="true" />
           </div>
 
           {/* Search bar at right side & data above label at left side */}
@@ -293,7 +289,7 @@ export function AdminTeachers({ onHome }: AdminTeachersProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-200 dark:divide-white/5">
-              {studentsLoading || coursesLoading ? (
+              {isDataLoading ? (
                 <tr>
                   <td colSpan={5} className="text-center py-10 text-neutral-400 animate-pulse">
                     Loading faculty records...
@@ -392,7 +388,7 @@ export function AdminTeachers({ onHome }: AdminTeachersProps) {
                           <Link
                             href={`/admin/teachers/${teacher.id}/edit`}
                             className="p-1.5 rounded-lg text-white bg-orange-500 hover:bg-orange-600 shadow-xs transition-colors cursor-pointer inline-flex items-center justify-center"
-                            title="Edit Teacher"
+                            title="Edit"
                           >
                             <Pencil className="w-4 h-4" />
                           </Link>
@@ -456,12 +452,6 @@ export function AdminTeachers({ onHome }: AdminTeachersProps) {
                       <div className="flex flex-col items-center gap-3">
                         <Briefcase className="w-8 h-8 text-neutral-300 dark:text-neutral-600" />
                         <p className="text-xs">No teachers registered yet.</p>
-                        <Link
-                          href="/admin/teachers/new"
-                          className="px-4 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-xs"
-                        >
-                          Add Your First Teacher
-                        </Link>
                       </div>
                     ) : searchQuery.trim() ? (
                       "No teachers match your search query."

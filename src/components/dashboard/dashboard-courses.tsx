@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   GraduationCap, 
-  ChevronRight, 
   ArrowLeft,
   Calendar,
   Clock,
@@ -13,42 +12,131 @@ import {
   Code,
   ListChecks,
   Target,
-  Award
 } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { useCourses } from "@/providers/courses-provider";
 import { useStudentEnrollments, type EnrollmentRecord } from "@/hooks/use-student-enrollments";
+import { useStudentProfile } from "@/hooks/use-student-profile";
 import { formatDate } from "@/lib/date-format";
-import { SettingsSection } from "@/components/settings/settings-section";
+import { ContactUsButton } from "@/components/chat/contact-us-button";
+import { CourseItem } from "@/data/courses";
 
-const STATUS_STYLES: Record<
-  EnrollmentRecord["action"],
-  { label: string; className: string }
-> = {
-  paid: {
-    label: "Enrolled",
-    className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  },
-  initiated: {
-    label: "Pending",
-    className: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  },
-  not_paid: { label: "Not paid", className: "bg-muted text-muted-foreground" },
-};
+function parseDurationDays(durationStr?: string): number {
+  if (!durationStr) return 60;
+  const matchDays = durationStr.match(/(\d+)\s*days?/i);
+  if (matchDays) return parseInt(matchDays[1], 10);
+  const matchWeeks = durationStr.match(/(\d+)\s*weeks?/i);
+  if (matchWeeks) return parseInt(matchWeeks[1], 10) * 7;
+  const matchMonths = durationStr.match(/(\d+)\s*months?/i);
+  if (matchMonths) return parseInt(matchMonths[1], 10) * 30;
+  return 60;
+}
+
+function getCourseDates(
+  course: CourseItem,
+  enrollment?: EnrollmentRecord | null,
+  profileCreatedAt?: string
+) {
+  const durationDays = parseDurationDays(course.duration);
+  const rawStart = enrollment?.timestamp || profileCreatedAt || "2026-09-01T00:00:00Z";
+  const startObj = new Date(rawStart);
+  const endObj = new Date(startObj.getTime() + durationDays * 24 * 60 * 60 * 1000);
+
+  return {
+    startDate: formatDate(startObj),
+    endDate: formatDate(endObj),
+  };
+}
 
 export function DashboardCourses() {
   const { user } = useAuth();
   const { courses } = useCourses();
+  const { profile } = useStudentProfile(user?.id);
   const enrollments = useStudentEnrollments(user?.email);
 
   const [selectedEnrollment, setSelectedEnrollment] = useState<EnrollmentRecord | null>(null);
+
+  // Map only the courses assigned/enrolled for this student
+  const enrolledCourses = useMemo(() => {
+    const active = courses.filter((c) => c.status !== "inactive");
+    const directIds = new Set<string>(profile?.enrolledCourseIds || []);
+    const userEmail = (user?.email || "").toLowerCase().trim();
+
+    const list: Array<{
+      course: CourseItem;
+      enrollment: EnrollmentRecord | null;
+    }> = [];
+
+    // Check each active course in the catalogue
+    for (const c of active) {
+      const match = enrollments.find((e) => {
+        const matchesEmail = !userEmail || (e.studentEmail || "").toLowerCase().trim() === userEmail;
+        const matchesCourse =
+          e.courseId === c.id ||
+          (c.enrollmentId && e.courseId === c.enrollmentId) ||
+          e.courseName.toLowerCase().trim() === c.title.toLowerCase().trim();
+        return matchesEmail && matchesCourse && e.action === "paid";
+      });
+
+      const isDirectlyAssigned =
+        directIds.has(c.id) || (c.enrollmentId && directIds.has(c.enrollmentId));
+
+      if (match || isDirectlyAssigned) {
+        list.push({
+          course: c,
+          enrollment: match || null,
+        });
+      }
+    }
+
+    // Also include any paid enrollment record whose course wasn't in active catalogue
+    for (const e of enrollments) {
+      if (e.action === "paid") {
+        const alreadyAdded = list.some(
+          (item) =>
+            item.course.id === e.courseId ||
+            item.course.enrollmentId === e.courseId ||
+            item.course.title.toLowerCase().trim() === e.courseName.toLowerCase().trim()
+        );
+        if (!alreadyAdded) {
+          const syntheticCourse: CourseItem = {
+            id: e.courseId,
+            number: "00",
+            title: e.courseName,
+            bannerTitle: e.courseName,
+            bannerSubtitle: "Enrolled Programme",
+            description: "Enrolled Jarvis AI Academy programme.",
+            category: "all",
+            categoryLabel: "Enrolled Programme",
+            duration: "12 Weeks",
+            level: "All Levels",
+            fee: e.amount ? `₹${e.amount.toLocaleString("en-IN")}` : "—",
+            amount: e.amount || 0,
+            gradient: "from-blue-600 to-indigo-600",
+            accentColor: "#3b82f6",
+            techStack: ["AI", "Full Stack"],
+            techIcons: [],
+            topics: ["Core Concepts", "Advanced Concepts"],
+            actionPrompt: "Access Course",
+          };
+          list.push({
+            course: syntheticCourse,
+            enrollment: e,
+          });
+        }
+      }
+    }
+
+    return list;
+  }, [courses, enrollments, profile?.enrolledCourseIds, user?.email]);
 
   // Derive mock data for the selected enrollment
   const getCourseDetails = (record: EnrollmentRecord) => {
     const courseObj = courses.find((c) => c.enrollmentId === record.courseId || c.id === record.courseId);
     
     const startDateObj = new Date(record.timestamp || "2026-09-01T00:00:00Z");
-    const endDateObj = new Date(startDateObj.getTime() + 12 * 7 * 24 * 60 * 60 * 1000); // +12 weeks
+    const durationDays = parseDurationDays(courseObj?.duration);
+    const endDateObj = new Date(startDateObj.getTime() + durationDays * 24 * 60 * 60 * 1000);
     
     // Deterministic mock progress between 15% and 85% based on length of course name
     const mockProgress = Math.min(85, Math.max(15, record.courseName.length * 3));
@@ -86,78 +174,137 @@ export function DashboardCourses() {
           >
             {/* Header */}
             <div className="flex flex-col gap-1">
-              <h2 className="text-xl sm:text-2xl font-semibold text-foreground">My Learning</h2>
+              <h2 className="text-xl sm:text-2xl font-semibold text-foreground">My Courses</h2>
               <p className="text-sm text-muted-foreground">
                 Manage your enrolments and track your progress across active programmes.
               </p>
             </div>
 
-            {/* Enrolments List */}
-            <SettingsSection
-              title={
-                enrollments.length > 0
-                  ? `Active Enrolments (${enrollments.length})`
-                  : "Active Enrolments"
-              }
-            >
-              {enrollments.length > 0 ? (
-                enrollments.map((record) => {
-                  const status = STATUS_STYLES[record.action] ?? STATUS_STYLES.not_paid;
-                  const courseObj = courses.find((c) => c.enrollmentId === record.courseId || c.id === record.courseId);
-                  const description = courseObj?.description || "A comprehensive Jarvis AI Academy programme.";
-
-                  return (
-                    <button
-                      key={`${record.transactionId}-${record.timestamp}`}
-                      onClick={() => setSelectedEnrollment(record)}
-                      className="w-full flex items-start justify-between gap-4 px-5 sm:px-8 py-4 sm:py-5 hover:bg-muted/40 transition-colors text-left group"
-                    >
-                      <div className="flex items-start gap-4 min-w-0">
-                        <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-muted text-foreground/80 shrink-0 group-hover:bg-background group-hover:shadow-sm transition-all border border-transparent group-hover:border-border mt-0.5">
-                          <GraduationCap className="w-5 h-5" />
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-sm sm:text-base font-medium text-foreground leading-snug truncate">
-                            {record.courseName}
-                          </span>
-                          <span className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-1 line-clamp-2 pr-4">
-                            {description}
-                          </span>
-                          <div className="flex items-center gap-2 mt-2">
-                            {courseObj?.duration && (
-                              <span className="text-[10px] font-medium text-muted-foreground bg-muted/50 px-2.5 py-0.5 rounded-md">
-                                {courseObj.duration}
-                              </span>
-                            )}
-                            {courseObj?.level && (
-                              <span className="text-[10px] font-medium text-muted-foreground bg-muted/50 px-2.5 py-0.5 rounded-md">
-                                {courseObj.level}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end gap-2 shrink-0 pt-1">
-                        <span
-                          className={`text-[10px] font-semibold tracking-wide uppercase px-2.5 py-1 rounded-full ${status.className}`}
-                        >
-                          {status.label}
-                        </span>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-foreground transition-colors mt-auto" />
-                      </div>
-                    </button>
-                  );
-                })
-              ) : (
-                <div className="flex flex-col items-center gap-3 px-6 py-12 text-center border border-dashed border-border rounded-xl bg-muted/10 m-4 sm:m-6">
-                  <GraduationCap className="w-8 h-8 text-muted-foreground/50" />
-                  <p className="text-sm font-medium text-foreground">No active enrolments</p>
-                  <p className="text-xs text-muted-foreground max-w-sm">
-                    Programmes you enrol in via the Jarvis AI chat will appear here.
+            {/* If no course is assigned, show only Contact Us button with no list/table */}
+            {enrolledCourses.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-5 p-8 sm:p-14 text-center rounded-2xl border border-dashed border-border bg-card/40 max-w-xl mx-auto my-6">
+                <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-muted text-foreground/70 border border-border/60 shadow-xs">
+                  <GraduationCap className="w-8 h-8" />
+                </div>
+                <div className="flex flex-col gap-1.5 max-w-md">
+                  <h3 className="text-lg sm:text-xl font-semibold text-foreground">
+                    No Courses Assigned
+                  </h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                    You currently do not have any assigned courses. Get in touch with our admissions team to enroll in an academy programme.
                   </p>
                 </div>
-              )}
-            </SettingsSection>
+                <div className="pt-2">
+                  <ContactUsButton
+                    text="CONTACT US"
+                    className="py-2.5 pl-5 pr-2 text-sm shadow-md"
+                  />
+                </div>
+              </div>
+            ) : (
+              /* Enrolled Courses Table */
+              <div className="w-full overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/40 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        <th className="py-3.5 px-4 sm:px-6">Course Name</th>
+                        <th className="py-3.5 px-4 sm:px-6 whitespace-nowrap">Start Date</th>
+                        <th className="py-3.5 px-4 sm:px-6 whitespace-nowrap">End Date</th>
+                        <th className="py-3.5 px-4 sm:px-6 whitespace-nowrap">Fees</th>
+                        <th className="py-3.5 px-4 sm:px-6 text-right whitespace-nowrap">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/60 text-sm">
+                      {enrolledCourses.map(({ course, enrollment }) => {
+                        const dates = getCourseDates(course, enrollment, profile?.createdAt);
+                        const displayFee = course.fee || (course.amount ? `₹${course.amount.toLocaleString("en-IN")}` : "—");
+
+                        return (
+                          <tr
+                            key={course.id}
+                            className="hover:bg-muted/30 transition-colors group"
+                          >
+                            {/* Course Name */}
+                            <td className="py-4 px-4 sm:px-6">
+                              <div className="flex items-center gap-3.5 min-w-[220px]">
+                                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-muted text-foreground/80 shrink-0 border border-border/50">
+                                  <GraduationCap className="w-5 h-5" />
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                  <span className="font-semibold text-foreground leading-snug">
+                                    {course.title}
+                                  </span>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    {course.duration && (
+                                      <span className="text-[11px] text-muted-foreground">
+                                        {course.duration}
+                                      </span>
+                                    )}
+                                    {course.level && (
+                                      <>
+                                        <span className="text-muted-foreground/40 text-[10px]">·</span>
+                                        <span className="text-[11px] text-muted-foreground">
+                                          {course.level}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Start Date */}
+                            <td className="py-4 px-4 sm:px-6 whitespace-nowrap font-medium text-foreground/90">
+                              {dates.startDate}
+                            </td>
+
+                            {/* End Date */}
+                            <td className="py-4 px-4 sm:px-6 whitespace-nowrap font-medium text-foreground/90">
+                              {dates.endDate}
+                            </td>
+
+                            {/* Fees */}
+                            <td className="py-4 px-4 sm:px-6 whitespace-nowrap font-bold text-foreground">
+                              {displayFee}
+                            </td>
+
+                            {/* Action */}
+                            <td className="py-4 px-4 sm:px-6 text-right whitespace-nowrap">
+                              <div className="inline-flex items-center justify-end gap-2.5">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-2xs">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                  Enrolled
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const activeRecord = enrollment || {
+                                      action: "paid" as const,
+                                      courseId: course.enrollmentId || course.id,
+                                      courseName: course.title,
+                                      amount: course.amount || 0,
+                                      transactionId: `TXN-${course.id.toUpperCase()}`,
+                                      studentName: user?.name || "Learner",
+                                      studentEmail: user?.email || "",
+                                      timestamp: profile?.createdAt || "2026-09-01T00:00:00Z",
+                                    };
+                                    setSelectedEnrollment(activeRecord);
+                                  }}
+                                  className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors cursor-pointer px-2.5 py-1 rounded-md hover:bg-primary/5"
+                                >
+                                  View
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </motion.div>
         ) : (
           <motion.div
@@ -171,10 +318,10 @@ export function DashboardCourses() {
             {/* Back Button */}
             <button 
               onClick={() => setSelectedEnrollment(null)}
-              className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors w-fit group"
+              className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors w-fit group cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
-              Back to Learning
+              Back to My Courses
             </button>
             
             {/* Detail Content */}

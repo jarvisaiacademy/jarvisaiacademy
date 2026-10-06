@@ -55,12 +55,16 @@ export interface StudentRecord {
   phone?: string;
   /** Enrolled course IDs */
   enrolledCourseIds?: string[];
+  /** Admission status: 'enrolled' or 'not_enrolled' */
+  admission_status?: "enrolled" | "not_enrolled";
+  admissionStatus?: "enrolled" | "not_enrolled";
 }
 
 export type CandidateStatus = "active" | "inactive" | "banned";
 
 /** The 4 referral pipeline stages for referred candidates */
 export type ReferralCandidateStatus =
+  | "Enquiry"
   | "Enquery"
   | "Admission Completed"
   | "Course Ongoing"

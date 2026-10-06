@@ -2,125 +2,72 @@
 
 import React, { useState, useMemo } from "react";
 import { motion } from "motion/react";
-import { Users, Copy, CheckCircle2, Sparkles, Filter } from "lucide-react";
+import {
+  Users,
+  Copy,
+  CheckCircle2,
+} from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
+import { useStudentProfile } from "@/hooks/use-student-profile";
 import { SettingsSection } from "@/components/settings/settings-section";
-import { referralCodeFor } from "@/data/referrals";
+import { referralCodeFor, resolvedReferralCode } from "@/data/referrals";
+import {
+  useStudentReferrals,
+  type ReferralCandidateStatus,
+  type ReferredCandidate,
+  ALL_REFERRAL_STATUSES,
+  STATUS_CONFIG,
+} from "@/hooks/use-student-referrals";
 
-export type ReferralCandidateStatus =
-  | "Enquery"
-  | "Admission Completed"
-  | "Course Ongoing"
-  | "Course Completed";
-
-export interface ReferredCandidate {
-  id: string;
-  name: string;
-  course: string;
-  date: string;
-  status: ReferralCandidateStatus;
-}
-
-const STATUS_CONFIG: Record<
-  ReferralCandidateStatus,
-  {
-    step: number;
-    badgeClass: string;
-    dotClass: string;
-    description: string;
-  }
-> = {
-  "Enquery": {
-    step: 1,
-    badgeClass:
-      "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30",
-    dotClass: "bg-amber-500",
-    description: "Initial lead / enquiry",
-  },
-  "Admission Completed": {
-    step: 2,
-    badgeClass:
-      "bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/30",
-    dotClass: "bg-blue-500",
-    description: "Admitted & tuition confirmed",
-  },
-  "Course Ongoing": {
-    step: 3,
-    badgeClass:
-      "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-500/30",
-    dotClass: "bg-indigo-500",
-    description: "Active coursework in progress",
-  },
-  "Course Completed": {
-    step: 4,
-    badgeClass:
-      "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30",
-    dotClass: "bg-emerald-500",
-    description: "Graduated & reward unlocked",
-  },
-};
-
-const ALL_STATUSES: ReferralCandidateStatus[] = [
-  "Enquery",
-  "Admission Completed",
-  "Course Ongoing",
-  "Course Completed",
-];
-
-// Candidates representing the 4 referral pipeline stages
-const MOCK_REFERRED_USERS: ReferredCandidate[] = [
-  {
-    id: "1",
-    name: "Alice Sharma",
-    course: "AI Mastery & LLMs Track",
-    date: "4 October 2026",
-    status: "Admission Completed",
-  },
-  {
-    id: "2",
-    name: "Rahul Gupta",
-    course: "Full Stack AI Developer",
-    date: "5 October 2026",
-    status: "Enquery",
-  },
-  {
-    id: "3",
-    name: "Priya Desai",
-    course: "Super10 AI Elite Track",
-    date: "28 September 2026",
-    status: "Course Ongoing",
-  },
-  {
-    id: "4",
-    name: "Vikram Malhotra",
-    course: "Agentic AI Specialist",
-    date: "15 September 2026",
-    status: "Course Completed",
-  },
-];
+export type { ReferralCandidateStatus, ReferredCandidate };
 
 export function DashboardReferrals() {
   const { user } = useAuth();
-  const [copied, setCopied] = useState(false);
+  const { profile } = useStudentProfile(user?.id);
+  const [copiedCode, setCopiedCode] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string>("All");
 
   const referralCode =
-    user?.referralCode && /^[A-Z0-9]{6}$/.test(user.referralCode)
-      ? user.referralCode
-      : user?.id
-      ? referralCodeFor(user.id)
-      : "JARVIS";
+    resolvedReferralCode(user?.id, profile?.referralCode || user?.referralCode) || "JARVIS";
 
-  const handleCopy = () => {
+  // Dynamic referrals hook connected to Firestore and persistent storage
+  const { candidates, loading, updateCandidateStatus } = useStudentReferrals(
+    user?.id,
+    referralCode
+  );
+
+  const handleCopyCode = () => {
     navigator.clipboard.writeText(referralCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2000);
   };
 
+  // Dynamic counts
+  const totalCount = candidates.length;
+  const enquiryCount = candidates.filter((u) => u.status === "Enquiry").length;
+  const admissionCount = candidates.filter((u) => u.status === "Admission Completed").length;
+  const ongoingCount = candidates.filter((u) => u.status === "Course Ongoing").length;
+  const completedCount = candidates.filter((u) => u.status === "Course Completed").length;
+
   const filteredUsers = useMemo(() => {
-    if (selectedFilter === "All") return MOCK_REFERRED_USERS;
-    return MOCK_REFERRED_USERS.filter((u) => u.status === selectedFilter);
-  }, [selectedFilter]);
+    if (selectedFilter === "All") return candidates;
+    return candidates.filter((u) => u.status === selectedFilter);
+  }, [selectedFilter, candidates]);
+
+  const getStatusCount = (status: ReferralCandidateStatus) => {
+    switch (status) {
+      case "Enquiry":
+        return enquiryCount;
+      case "Admission Completed":
+        return admissionCount;
+      case "Course Ongoing":
+        return ongoingCount;
+      case "Course Completed":
+        return completedCount;
+      default:
+        return 0;
+    }
+  };
 
   return (
     <div className="flex-1 w-full px-3 sm:px-6 lg:px-8 py-6 overflow-x-hidden">
@@ -132,47 +79,57 @@ export function DashboardReferrals() {
       >
         {/* Header */}
         <div className="flex flex-col gap-1">
-          <h2 className="text-xl sm:text-2xl font-semibold text-foreground">My Referral</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl sm:text-2xl font-semibold text-foreground">My Referral</h2>
+            {loading && (
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground animate-pulse">
+                Syncing...
+              </span>
+            )}
+          </div>
           <p className="text-sm text-muted-foreground">
-            Share your unique 6-digit code to invite candidates and monitor their referral status.
+            Share your unique referral code to invite candidates and monitor their status in real-time.
           </p>
         </div>
 
         {/* Code Display Section */}
         <SettingsSection title="Your Referral Code" className="w-full">
-          <div className="flex items-center justify-between px-6 sm:px-8 py-5 sm:py-6 border border-border bg-card/50 rounded-2xl w-full shadow-xs">
-            <div className="flex flex-col gap-1.5">
-              <span className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 p-5 sm:p-6 border border-border bg-card/50 rounded-2xl w-full shadow-xs">
+            <div className="flex flex-col gap-1">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Assigned Code
               </span>
               <span className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-widest text-foreground font-mono">
                 {referralCode}
               </span>
             </div>
-            <button
-              type="button"
-              onClick={handleCopy}
-              className="flex items-center gap-2 px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl bg-foreground text-background text-sm font-semibold hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xs shrink-0"
-            >
-              {copied ? (
-                <>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  <span>Copied</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4" />
-                  <span>Copy Code</span>
-                </>
-              )}
-            </button>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleCopyCode}
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-foreground text-background text-xs sm:text-sm font-semibold hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xs"
+              >
+                {copiedCode ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    <span>Copied Code</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    <span>Copy Code</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </SettingsSection>
 
         {/* Referral Pipeline Stages */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
-          {ALL_STATUSES.map((status) => {
-            const count = MOCK_REFERRED_USERS.filter((u) => u.status === status).length;
+          {ALL_REFERRAL_STATUSES.map((status) => {
+            const count = getStatusCount(status);
             const cfg = STATUS_CONFIG[status];
             const isSelected = selectedFilter === status;
             return (
@@ -210,7 +167,7 @@ export function DashboardReferrals() {
 
         {/* Referred Candidates List */}
         <SettingsSection
-          title={`Referred Candidates (${filteredUsers.length}${selectedFilter !== "All" ? ` of ${MOCK_REFERRED_USERS.length}` : ""})`}
+          title={`Referred Candidates (${filteredUsers.length}${selectedFilter !== "All" ? ` of ${totalCount}` : ""})`}
           className="w-full"
         >
           {/* Status Filter Tabs */}
@@ -224,10 +181,10 @@ export function DashboardReferrals() {
                   : "bg-muted text-muted-foreground hover:text-foreground"
               }`}
             >
-              All ({MOCK_REFERRED_USERS.length})
+              All ({totalCount})
             </button>
-            {ALL_STATUSES.map((status) => {
-              const count = MOCK_REFERRED_USERS.filter((u) => u.status === status).length;
+            {ALL_REFERRAL_STATUSES.map((status) => {
+              const count = getStatusCount(status);
               const isSelected = selectedFilter === status;
               return (
                 <button
@@ -256,7 +213,6 @@ export function DashboardReferrals() {
           {filteredUsers.length > 0 ? (
             <div className="flex flex-col">
               {filteredUsers.map((person, index) => {
-                const config = STATUS_CONFIG[person.status];
                 const initials = person.name
                   .split(" ")
                   .map((n) => n[0])
@@ -267,32 +223,67 @@ export function DashboardReferrals() {
                 return (
                   <div
                     key={person.id}
-                    className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-6 sm:px-8 py-4 sm:py-4.5 hover:bg-muted/40 transition-colors ${
+                    className={`flex flex-col lg:flex-row lg:items-center justify-between gap-3 px-6 sm:px-8 py-4 sm:py-4.5 hover:bg-muted/30 transition-colors ${
                       index !== filteredUsers.length - 1 ? "border-b border-border/50" : ""
                     }`}
                   >
+                    {/* Left: Avatar + Candidate Info */}
                     <div className="flex items-center gap-3.5 min-w-0">
                       <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted text-foreground font-semibold text-xs shrink-0 ring-1 ring-border">
                         {initials}
                       </div>
                       <div className="flex flex-col min-w-0">
-                        <span className="text-sm sm:text-base font-semibold text-foreground truncate">
-                          {person.name}
-                        </span>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm sm:text-base font-semibold text-foreground truncate">
+                            {person.name}
+                          </span>
+                          <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground shrink-0 hidden sm:inline-block">
+                            {person.course}
+                          </span>
+                        </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                          <span>{person.course}</span>
-                          <span>·</span>
-                          <span>{person.date}</span>
+                          <span className="sm:hidden truncate">{person.course} · </span>
+                          <span>Referred on {person.date}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto pl-13 sm:pl-0">
-                      <span
-                        className={`text-[10px] sm:text-xs font-semibold tracking-wide uppercase px-3 py-1 rounded-full ${config.badgeClass}`}
-                      >
-                        {person.status}
-                      </span>
+                    {/* Right: The 4 Statuses in a Horizontal Line at the side of the name */}
+                    <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar py-0.5 shrink-0 pl-13.5 lg:pl-0">
+                      {ALL_REFERRAL_STATUSES.map((status, sIdx) => {
+                        const isActive = person.status === status;
+                        const cfg = STATUS_CONFIG[status];
+                        return (
+                          <React.Fragment key={status}>
+                            <button
+                              type="button"
+                              onClick={() => updateCandidateStatus(person.id, status)}
+                              title={`Set status to "${status}"`}
+                              className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs whitespace-nowrap transition-all cursor-pointer ${
+                                isActive
+                                  ? `${cfg.badgeClass} ring-1 font-semibold shadow-xs`
+                                  : "bg-neutral-100 dark:bg-white/[0.04] text-neutral-400 dark:text-neutral-500 border border-neutral-200/60 dark:border-white/5 hover:text-neutral-600 dark:hover:text-neutral-400"
+                              }`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full shrink-0 transition-colors ${
+                                  isActive
+                                    ? cfg.dotClass
+                                    : "bg-neutral-300 dark:bg-neutral-600"
+                                }`}
+                              />
+                              <span>{status}</span>
+                            </button>
+
+                            {sIdx < ALL_REFERRAL_STATUSES.length - 1 && (
+                              <div
+                                className="h-0.5 w-2 sm:w-3 shrink-0 rounded-full bg-neutral-200 dark:bg-neutral-800"
+                                aria-hidden="true"
+                              />
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
                     </div>
                   </div>
                 );

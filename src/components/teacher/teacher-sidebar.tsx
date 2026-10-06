@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, ArrowLeft, Home, UserRound, BookOpen, Users } from "lucide-react";
+import { ArrowLeft, Home, UserRound, BookOpen } from "lucide-react";
 import { SidebarHeader } from "@/components/layout/sidebar-header";
 import { UserProfile } from "@/components/layout/user-profile";
 import { SocialLinks } from "@/components/common/social-links";
+import { ContactUsButton } from "@/components/chat/contact-us-button";
 import { useAuth } from "@/providers/auth-provider";
 import { motion } from "motion/react";
 
@@ -94,12 +95,6 @@ export function TeacherSidebar({
           icon={BookOpen}
           iconActive="text-emerald-500 dark:text-emerald-400"
         />
-        <NavButton
-          href="/teacher/referrals"
-          label="My Referral"
-          icon={Users}
-          iconActive="text-pink-500 dark:text-pink-400"
-        />
       </div>
     </div>
   );
@@ -131,6 +126,9 @@ export function TeacherSidebar({
           </div>
           <div suppressHydrationWarning className="flex flex-col border-t border-neutral-200 dark:border-white/5">
             {footer}
+            <div className="px-3 pt-2 pb-1 flex justify-center">
+              <ContactUsButton className="w-full justify-between" />
+            </div>
             <div className="flex items-center justify-center pt-2 pb-3">
               <SocialLinks />
             </div>
@@ -156,6 +154,9 @@ export function TeacherSidebar({
       </div>
       <div suppressHydrationWarning className="w-[260px] flex flex-col border-t border-neutral-200 dark:border-white/5">
         {footer}
+        <div className="px-3 pt-2 pb-1 flex justify-center">
+          <ContactUsButton className="w-full justify-between" />
+        </div>
         <div className="flex items-center justify-center pt-2 pb-3.5">
           <SocialLinks />
         </div>

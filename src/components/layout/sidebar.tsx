@@ -6,6 +6,7 @@ import { SidebarNav } from "./sidebar-nav";
 import { UserProfile } from "./user-profile";
 import { SidebarLoginCTA } from "./sidebar-login-cta";
 import { SocialLinks } from "@/components/common/social-links";
+import { ContactUsButton } from "@/components/chat/contact-us-button";
 
 import { User } from "@/providers/auth-provider";
 import { DashboardSidebarNav, DashboardTab } from "./dashboard-sidebar-nav";
@@ -129,6 +130,9 @@ export function Sidebar({
                 <SidebarLoginCTA onLoginClick={onOpenLogin} />
               </div>
             )}
+            <div className="px-3 pt-2 pb-1 flex justify-center">
+              <ContactUsButton className="w-full justify-between" />
+            </div>
             <div className="flex items-center justify-center pt-2 pb-3">
               <SocialLinks />
             </div>
@@ -186,6 +190,9 @@ export function Sidebar({
             <SidebarLoginCTA onLoginClick={onOpenLogin} />
           </div>
         )}
+        <div className="px-3 pt-2 pb-1 flex justify-center">
+          <ContactUsButton className="w-full justify-between" />
+        </div>
         <div className="flex items-center justify-center pt-2 pb-3.5">
           <SocialLinks />
         </div>

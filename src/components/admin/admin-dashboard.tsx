@@ -18,6 +18,8 @@ import {
   Layers,
   AlertCircle,
   Star,
+  ChevronRight,
+  RotateCcw,
 } from "lucide-react";
 import { useCourses } from "@/providers/courses-provider";
 import { useStudents } from "@/providers/students-provider";
@@ -26,6 +28,7 @@ import { updateCandidateInFirestore } from "@/services/students-service";
 import { formatDateTime } from "@/lib/date-format";
 import { accountRoleOf, CandidateStatus, StudentRecord, type AccountRole } from "@/data/students";
 import { APP_SETTINGS } from "@/data/app-settings";
+import { resolvedReferralCode } from "@/data/referrals";
 import { academyKnowledge } from "@/data/academy-knowledge";
 import { isPublic } from "@/lib/courses-server";
 import {
@@ -118,6 +121,7 @@ export function AdminDashboard({
     students,
     loading: studentsLoading,
     error: studentsError,
+    refreshStudents,
   } = useStudents();
   // `firestoreCourses`, not `courses`: this tab lists what is in the database. With the
   // COURSES_DATA fallback in front of it the twelve built-in courses appeared here as if they
@@ -127,6 +131,7 @@ export function AdminDashboard({
     loading: coursesLoading,
     editCourse,
     removeCourse,
+    refreshCourses,
   } = useCourses();
 
   // Firestore has no joins, so the courses table assembles its own. A course's `teacherIds` are
@@ -141,6 +146,24 @@ export function AdminDashboard({
   const setActiveTab = (tab: DashboardTab) => {
     setLocalTab(tab);
     onChangeTab?.(tab);
+  };
+
+  const [isRefreshingAnalytics, setIsRefreshingAnalytics] = useState(false);
+
+  const handleRefreshAnalytics = async () => {
+    setIsRefreshingAnalytics(true);
+    try {
+      await Promise.allSettled([
+        refreshStudents(),
+        refreshCourses(),
+      ]);
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      showToast("Revenue & Analytics refreshed", "success");
+    } catch {
+      showToast("Failed to refresh analytics", "error");
+    } finally {
+      setIsRefreshingAnalytics(false);
+    }
   };
 
   // Admissions state
@@ -211,27 +234,6 @@ export function AdminDashboard({
     }
   };
 
-  const handleUpdateReferralCode = async (uid: string, current: string | undefined) => {
-    const next = window.prompt("Enter a 6-digit alphanumeric referral code (or leave blank to remove and use auto-generated):", current || "");
-    if (next === null) return; // cancelled
-    
-    const cleaned = next.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
-    if (next.trim() !== "" && cleaned.length !== 6) {
-      showToast("Referral code must be exactly 6 alphanumeric characters.", "error");
-      return;
-    }
-
-    setBusyCandidateId(uid);
-    try {
-      await updateCandidateInFirestore(uid, { referralCode: next.trim() === "" ? "" : cleaned }, user?.email);
-      showToast(cleaned ? "Referral code assigned" : "Referral code removed", "success");
-    } catch (err: unknown) {
-      showToast(err instanceof Error ? err.message : "Failed to update candidate", "error");
-    } finally {
-      setBusyCandidateId(null);
-    }
-  };
-
   // Fills the roster defaults onto rows that predate the sign-in writing them. Those rows are
   // invisible to the Students page, whose filter is `is_teacher == false` — a `==` never matches
   // an absent field, so the sidebar counts them and the table cannot list them.
@@ -245,9 +247,13 @@ export function AdminDashboard({
     healedRoster.current = true;
 
     for (const candidate of students) {
-      const patch: { is_teacher?: boolean; status?: CandidateStatus } = {};
+      const patch: { is_teacher?: boolean; status?: CandidateStatus; referralCode?: string } = {};
       if (candidate.is_teacher === undefined) patch.is_teacher = false;
       if (candidate.status === undefined) patch.status = "active";
+      const canonicalCode = resolvedReferralCode(candidate.id, candidate.referralCode);
+      if (canonicalCode && candidate.referralCode !== canonicalCode) {
+        patch.referralCode = canonicalCode;
+      }
       if (Object.keys(patch).length === 0) continue;
 
       updateCandidateInFirestore(candidate.id, patch, user?.email).catch((err) => {
@@ -414,7 +420,6 @@ export function AdminDashboard({
                 <th className="py-3 px-4 sm:px-6">Account</th>
                 <th className="py-3 px-4 sm:px-6">Status</th>
                 <th className="py-3 px-4 sm:px-6">Super10</th>
-                <th className="py-3 px-4 sm:px-6">Referral Code</th>
                 <th className="py-3 px-4 sm:px-6">Last Sign-in</th>
               </tr>
             </thead>
@@ -465,17 +470,6 @@ export function AdminDashboard({
                         offLabel="Not Super10"
                         label={`Super10 status for ${student.name || student.email}`}
                       />
-                    </td>
-
-                    <td className="py-3.5 px-4 sm:px-6">
-                      <button
-                        type="button"
-                        disabled={busyCandidateId === student.id}
-                        onClick={() => handleUpdateReferralCode(student.id, student.referralCode)}
-                        className="px-2 py-1 rounded-md text-[10px] font-semibold border transition-colors disabled:opacity-50 text-neutral-600 dark:text-neutral-300 bg-white dark:bg-white/5 border-neutral-200 dark:border-white/10 hover:bg-neutral-100 dark:hover:bg-white/10"
-                      >
-                        {student.referralCode ? student.referralCode : "Assign Code"}
-                      </button>
                     </td>
 
                     <td className="py-3.5 px-4 sm:px-6 text-neutral-500 text-[11px]">
@@ -711,146 +705,202 @@ export function AdminDashboard({
         {/* REVENUE & ANALYTICS */}
         {activeTab === "analytics" && (
           <div className="flex flex-col gap-4">
-            <PageHeader
-              crumbs={[
-                { label: "Home", onSelect: () => setActiveTab("home") },
-                { label: "Revenue & Analytics" },
-              ]}
-                />
+            {/* Breadcrumb at the top left side outside the card */}
+            <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs">
+              <button
+                type="button"
+                onClick={() => setActiveTab("home")}
+                className="text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors cursor-pointer"
+              >
+                Home
+              </button>
+              <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
+              <span className="font-semibold text-neutral-900 dark:text-white">
+                Revenue & Analytics
+              </span>
+            </nav>
 
-            {/* 4 KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
-                    Gross Admissions Revenue
-                  </span>
-                  <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                    <IndianRupee className="w-4 h-4" />
+            {/* Big Revenue & Analytics Card */}
+            <div className="rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden flex flex-col">
+              {/* Inside Card Header Bar */}
+              <div className="p-4 sm:p-5 border-b border-neutral-200 dark:border-white/10">
+                <div className="relative flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 min-h-[38px]">
+                  {/* Back button inside the card */}
+                  <div className="flex items-center z-10">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("home")}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 border border-neutral-200 dark:border-white/10 transition-colors cursor-pointer"
+                      title="Back to Home"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5" />
+                      <span>Back</span>
+                    </button>
                   </div>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    ₹{totalPaidRevenue.toLocaleString("en-IN")}
-                  </span>
-                  {/* No growth figure here. There is no prior period stored to compare
-                      against, and the "+100%" that used to sit in this slot was typed into
-                      the JSX — it read the same whether revenue rose or fell to zero. */}
-                </div>
-                <span className="text-[11px] text-neutral-500">
-                  Incl. {APP_SETTINGS.gstRatePercent}% statutory GST
-                </span>
-              </div>
 
-              <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
-                    Confirmed Learners
-                  </span>
-                  <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-                    <GraduationCap className="w-4 h-4" />
+                  {/* In the Center: Revenue & Analytics Heading with Refresh icon at its side */}
+                  <div className="w-full sm:w-auto sm:absolute sm:inset-0 flex items-center justify-center gap-2 pointer-events-none order-first sm:order-none">
+                    <div className="flex items-center justify-center gap-2 pointer-events-auto">
+                      <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
+                        Revenue & Analytics
+                      </h2>
+                      <button
+                        type="button"
+                        disabled={isRefreshingAnalytics}
+                        onClick={handleRefreshAnalytics}
+                        className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors cursor-pointer disabled:opacity-50"
+                        title="Refresh Revenue & Analytics"
+                      >
+                        <RotateCcw
+                          className={`w-4 h-4 ${isRefreshingAnalytics ? "animate-spin" : ""}`}
+                        />
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {totalPaidStudents}
-                  </span>
-                  <span className="text-xs text-neutral-500">Active enrollments</span>
-                </div>
-                <span className="text-[11px] text-neutral-500">Across Full-Stack &amp; Super10</span>
-              </div>
 
-              <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
-                    Super10 Seats Filled
-                  </span>
-                  <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-                    <Award className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {super10Count} / {super10Seats}
-                  </span>
-                  <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
-                    {Math.max(super10Seats - super10Count, 0)} seats left
-                  </span>
-                </div>
-                <span className="text-[11px] text-neutral-500">Placement assurance track</span>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
-                    Referral Payout Pool
-                  </span>
-                  <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
-                    <Users className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    ₹{(totalPaidStudents * referralReward).toLocaleString("en-IN")}
-                  </span>
-                  <span className="text-xs text-purple-600 dark:text-purple-400">
-                    ₹{referralReward / 1000}K / student
-                  </span>
-                </div>
-                <span className="text-[11px] text-neutral-500">Upon 60-day completion</span>
-              </div>
-            </div>
-
-            {/* Financial Breakdown Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-3">
-                <h4 className="text-sm font-semibold text-neutral-900 dark:text-white">
-                  Statutory Tax Breakdown
-                </h4>
-                <div className="flex flex-col gap-2 text-xs">
-                  <div className="flex justify-between py-1 border-b border-neutral-100 dark:border-white/5">
-                    <span className="text-neutral-500">Gross Invoiced:</span>
-                    <span className="font-semibold">₹{totalPaidRevenue.toLocaleString("en-IN")}</span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-neutral-100 dark:border-white/5">
-                    <span className="text-neutral-500">Net Academy Revenue (excl. GST):</span>
-                    <span className="font-semibold">
-                      ₹{Math.round(totalPaidRevenue / gstDivisor).toLocaleString("en-IN")}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-1">
-                    <span className="text-neutral-500">
-                      {APP_SETTINGS.gstRatePercent}% Statutory GST:
-                    </span>
-                    <span className="font-semibold text-blue-600 dark:text-blue-400">
-                      ₹{Math.round(totalPaidRevenue - totalPaidRevenue / gstDivisor).toLocaleString("en-IN")}
+                  {/* Right: Confirmed admissions count badge */}
+                  <div className="flex items-center z-10 ml-auto sm:ml-0">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 border border-neutral-200 dark:border-white/10">
+                      {totalPaidStudents} admissions
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="p-5 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs flex flex-col gap-3">
-                <h4 className="text-sm font-semibold text-neutral-900 dark:text-white">
-                  Program Metrics
-                </h4>
-                <div className="flex flex-col gap-2 text-xs">
-                  <div className="flex justify-between py-1 border-b border-neutral-100 dark:border-white/5">
-                    <span className="text-neutral-500">Full-Stack AI Engineering Program:</span>
-                    <span className="font-semibold">
-                      {records.filter((r) => r.courseId === "fullstack" && r.action === "paid").length} Students
+              {/* Card Body */}
+              <div className="p-4 sm:p-5 flex flex-col gap-6">
+                {/* 4 KPI Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="p-5 rounded-2xl bg-neutral-50/50 dark:bg-[#151515] border border-neutral-200 dark:border-white/10 shadow-2xs flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                        Gross Admissions Revenue
+                      </span>
+                      <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                        <IndianRupee className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-bold text-neutral-900 dark:text-white">
+                        ₹{totalPaidRevenue.toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-neutral-500">
+                      Incl. {APP_SETTINGS.gstRatePercent}% statutory GST
                     </span>
                   </div>
-                  <div className="flex justify-between py-1 border-b border-neutral-100 dark:border-white/5">
-                    <span className="text-neutral-500">Super10 Placement Assurance Batch:</span>
-                    <span className="font-semibold text-amber-600 dark:text-amber-400">
-                      {super10Count} of {super10Seats} seats
-                    </span>
+
+                  <div className="p-5 rounded-2xl bg-neutral-50/50 dark:bg-[#151515] border border-neutral-200 dark:border-white/10 shadow-2xs flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                        Confirmed Learners
+                      </span>
+                      <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                        <GraduationCap className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-bold text-neutral-900 dark:text-white">
+                        {totalPaidStudents}
+                      </span>
+                      <span className="text-xs text-neutral-500">Active enrollments</span>
+                    </div>
+                    <span className="text-[11px] text-neutral-500">Across Full-Stack &amp; Super10</span>
                   </div>
-                  <div className="flex justify-between py-1">
-                    <span className="text-neutral-500">Avg Invoiced Ticket:</span>
-                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                      ₹{totalPaidStudents > 0 ? Math.round(totalPaidRevenue / totalPaidStudents).toLocaleString("en-IN") : "0"}
-                    </span>
+
+                  <div className="p-5 rounded-2xl bg-neutral-50/50 dark:bg-[#151515] border border-neutral-200 dark:border-white/10 shadow-2xs flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                        Super10 Seats Filled
+                      </span>
+                      <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                        <Award className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-bold text-neutral-900 dark:text-white">
+                        {super10Count} / {super10Seats}
+                      </span>
+                      <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+                        {Math.max(super10Seats - super10Count, 0)} seats left
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-neutral-500">Placement assurance track</span>
+                  </div>
+
+                  <div className="p-5 rounded-2xl bg-neutral-50/50 dark:bg-[#151515] border border-neutral-200 dark:border-white/10 shadow-2xs flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                        Referral Payout Pool
+                      </span>
+                      <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                        <Users className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-bold text-neutral-900 dark:text-white">
+                        ₹{(totalPaidStudents * referralReward).toLocaleString("en-IN")}
+                      </span>
+                      <span className="text-xs text-purple-600 dark:text-purple-400">
+                        ₹{referralReward / 1000}K / student
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-neutral-500">Upon 60-day completion</span>
+                  </div>
+                </div>
+
+                {/* Financial Breakdown Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-5 rounded-2xl bg-neutral-50/50 dark:bg-[#151515] border border-neutral-200 dark:border-white/10 shadow-2xs flex flex-col gap-3">
+                    <h4 className="text-sm font-semibold text-neutral-900 dark:text-white">
+                      Statutory Tax Breakdown
+                    </h4>
+                    <div className="flex flex-col gap-2 text-xs">
+                      <div className="flex justify-between py-1 border-b border-neutral-200/60 dark:border-white/5">
+                        <span className="text-neutral-500">Gross Invoiced:</span>
+                        <span className="font-semibold">₹{totalPaidRevenue.toLocaleString("en-IN")}</span>
+                      </div>
+                      <div className="flex justify-between py-1 border-b border-neutral-200/60 dark:border-white/5">
+                        <span className="text-neutral-500">Net Academy Revenue (excl. GST):</span>
+                        <span className="font-semibold">
+                          ₹{Math.round(totalPaidRevenue / gstDivisor).toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-1">
+                        <span className="text-neutral-500">
+                          {APP_SETTINGS.gstRatePercent}% Statutory GST:
+                        </span>
+                        <span className="font-semibold text-blue-600 dark:text-blue-400">
+                          ₹{Math.round(totalPaidRevenue - totalPaidRevenue / gstDivisor).toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-5 rounded-2xl bg-neutral-50/50 dark:bg-[#151515] border border-neutral-200 dark:border-white/10 shadow-2xs flex flex-col gap-3">
+                    <h4 className="text-sm font-semibold text-neutral-900 dark:text-white">
+                      Program Metrics
+                    </h4>
+                    <div className="flex flex-col gap-2 text-xs">
+                      <div className="flex justify-between py-1 border-b border-neutral-200/60 dark:border-white/5">
+                        <span className="text-neutral-500">Full-Stack AI Engineering Program:</span>
+                        <span className="font-semibold">
+                          {records.filter((r) => r.courseId === "fullstack" && r.action === "paid").length} Students
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-1 border-b border-neutral-200/60 dark:border-white/5">
+                        <span className="text-neutral-500">Super10 Placement Assurance Batch:</span>
+                        <span className="font-semibold text-amber-600 dark:text-amber-400">
+                          {super10Count} of {super10Seats} seats
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-1">
+                        <span className="text-neutral-500">Avg Invoiced Ticket:</span>
+                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                          ₹{totalPaidStudents > 0 ? Math.round(totalPaidRevenue / totalPaidStudents).toLocaleString("en-IN") : "0"}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

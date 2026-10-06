@@ -6,7 +6,6 @@ import {
   ArrowRight,
   CalendarClock,
   GraduationCap,
-  Phone,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
@@ -20,7 +19,7 @@ import {
   useAdmissionCardEffect,
   type AdmissionCardEffect,
 } from "@/lib/admission-card-effect";
-import { siteConfig } from "@/config/site";
+import { ContactUsButton } from "./contact-us-button";
 
 /** The prompt that opens the admissions & enrollment checkout in this chat. */
 const ENROLL_PROMPT =
@@ -277,13 +276,7 @@ export function AdmissionCtaCard({ onActionPrompt }: AdmissionCtaCardProps) {
             <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover/reserve:translate-x-0.5" />
           </button>
 
-          <a
-            href={`tel:${siteConfig.contact.phone.replace(/\s+/g, "")}`}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-neutral-900 px-3.5 py-2 text-xs font-medium text-white shadow-xs transition-colors hover:bg-neutral-800 active:scale-98 dark:bg-white dark:text-black dark:hover:bg-neutral-200 sm:text-[13px]"
-          >
-            <Phone className="h-3.5 w-3.5" />
-            <span>Talk to admissions</span>
-          </a>
+          <ContactUsButton />
         </div>
       </div>
     </section>

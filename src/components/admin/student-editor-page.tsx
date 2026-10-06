@@ -27,8 +27,9 @@ import {
   syncTeacherCourseAssignments,
   removeTeacherFromAllCourses,
 } from "@/services/courses-service";
+import { referralCodeFor } from "@/data/referrals";
 import type { AdminShellState } from "@/components/admin/admin-shell";
-import type { CandidateStatus, StudentRecord } from "@/data/students";
+import type { StudentRecord } from "@/data/students";
 
 interface StudentEditorPageProps {
   shell: AdminShellState;
@@ -171,18 +172,11 @@ function StudentForm({ student, shell, coursesLoading }: StudentFormProps) {
 
   const [name, setName] = useState(() => student?.name ?? "");
   const [email, setEmail] = useState(() => student?.email ?? "");
-  const [title, setTitle] = useState(() => student?.title ?? "");
-  const [specialization, setSpecialization] = useState(() => student?.specialization ?? "");
   const [phone, setPhone] = useState(() => student?.phone ?? "");
-  const [bio, setBio] = useState(() => student?.bio ?? "");
-  const [status, setStatus] = useState<CandidateStatus>(() =>
-    student?.status === "inactive" || student?.status === "banned" ? "inactive" : "active"
-  );
   const [role, setRole] = useState<"student" | "teacher">(() =>
     student?.is_teacher ? "teacher" : "student"
   );
   const [isSuper10, setIsSuper10] = useState<boolean>(() => student?.is_super10 ?? false);
-  const [referralCode, setReferralCode] = useState(() => student?.referralCode ?? "");
   const [assignedCourseIds, setAssignedCourseIds] = useState<string[]>(initialCourseIds);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -221,13 +215,13 @@ function StudentForm({ student, shell, coursesLoading }: StudentFormProps) {
           {
             name: cleanName,
             email: cleanEmail,
-            title: title.trim() || undefined,
-            specialization: specialization.trim() || undefined,
-            bio: bio.trim() || undefined,
+            title: student.title,
+            specialization: student.specialization,
+            bio: student.bio,
             phone: phone.trim() || undefined,
-            status,
+            status: student.status ?? "active",
             is_super10: isSuper10,
-            referralCode: referralCode.trim() || undefined,
+            referralCode: student.referralCode || referralCodeFor(student.id),
             enrolledCourseIds: assignedCourseIds,
             is_teacher: newIsTeacher,
           },
@@ -241,9 +235,6 @@ function StudentForm({ student, shell, coursesLoading }: StudentFormProps) {
             {
               name: cleanName,
               email: cleanEmail,
-              title: title.trim() || undefined,
-              specialization: specialization.trim() || undefined,
-              bio: bio.trim() || undefined,
               phone: phone.trim() || undefined,
               status: "active",
             },
@@ -255,13 +246,9 @@ function StudentForm({ student, shell, coursesLoading }: StudentFormProps) {
             {
               name: cleanName,
               email: cleanEmail,
-              title: title.trim() || undefined,
-              specialization: specialization.trim() || undefined,
-              bio: bio.trim() || undefined,
               phone: phone.trim() || undefined,
               status: "active",
               is_super10: isSuper10,
-              referralCode: referralCode.trim() || undefined,
               enrolledCourseIds: assignedCourseIds,
             },
             user?.email,
@@ -398,7 +385,7 @@ function StudentForm({ student, shell, coursesLoading }: StudentFormProps) {
               {/* 4-GRID */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
                 {/* 1. Full Name */}
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 col-span-1">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Full Name <span className="text-red-500">*</span>
                   </label>
@@ -413,7 +400,7 @@ function StudentForm({ student, shell, coursesLoading }: StudentFormProps) {
                 </div>
 
                 {/* 2. Email Address */}
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 col-span-1">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Email Address <span className="text-red-500">*</span>
                   </label>
@@ -428,7 +415,7 @@ function StudentForm({ student, shell, coursesLoading }: StudentFormProps) {
                 </div>
 
                 {/* 3. Phone Number */}
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 col-span-1">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Phone Number
                   </label>
@@ -442,7 +429,7 @@ function StudentForm({ student, shell, coursesLoading }: StudentFormProps) {
                 </div>
 
                 {/* 4. Account Role Dropdown */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
+                <div className="flex flex-col gap-1.5 col-span-1">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Account Role
                   </label>
@@ -458,27 +445,25 @@ function StudentForm({ student, shell, coursesLoading }: StudentFormProps) {
                   />
                 </div>
 
-                {/* 5. Account Status (Only shown when editing existing student) */}
-                {student && (
-                  <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-2">
-                    <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                      Account Status
-                    </label>
-                    <Select
-                      label="Account Status"
-                      value={status}
-                      onValueChange={(val) => setStatus(val as CandidateStatus)}
-                      options={[
-                        { value: "active", label: role === "teacher" ? "Active Teacher" : "Active Student" },
-                        { value: "inactive", label: role === "teacher" ? "Inactive / On Leave" : "Inactive / Paused" },
-                      ]}
-                      className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
-                    />
-                  </div>
-                )}
+                {/* 5. Super10 Scholar Cohort */}
+                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-2 lg:col-span-2">
+                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    Super10 Scholar Cohort
+                  </label>
+                  <Select
+                    label="Super10 Status"
+                    value={isSuper10 ? "yes" : "no"}
+                    onValueChange={(val) => setIsSuper10(val === "yes")}
+                    options={[
+                      { value: "no", label: "Standard Student" },
+                      { value: "yes", label: "Super10 Elite Scholar" },
+                    ]}
+                    className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
+                  />
+                </div>
 
-                {/* 6. Enrolled Courses */}
-                <div className={`flex flex-col gap-1.5 col-span-1 sm:col-span-1 ${student ? "lg:col-span-2" : "lg:col-span-4"}`}>
+                {/* 7. Enrolled Courses */}
+                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-2 lg:col-span-2">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     {role === "teacher" ? "Assigned Courses" : "Enrolled Courses"}
                   </label>
@@ -509,72 +494,26 @@ function StudentForm({ student, shell, coursesLoading }: StudentFormProps) {
                     />
                   )}
                 </div>
-
-                {/* Badges for assigned courses if any */}
-                {assignedCourseIds.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 col-span-1 sm:col-span-2 lg:col-span-4 -mt-1">
-                    {assignedCourseIds.map((cid) => {
-                      const c = courses.find((item) => item.id === cid);
-                      if (!c) return null;
-                      return (
-                        <span
-                          key={cid}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-neutral-100 dark:bg-white/10 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-white/10"
-                        >
-                          <span className="font-bold opacity-60">#{c.number}</span>
-                          <span>{c.title}</span>
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* 7. Super10 Scholar Cohort (spans 2 columns on lg) */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-2">
-                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Super10 Scholar Cohort
-                  </label>
-                  <Select
-                    label="Super10 Status"
-                    value={isSuper10 ? "yes" : "no"}
-                    onValueChange={(val) => setIsSuper10(val === "yes")}
-                    options={[
-                      { value: "no", label: "Standard Student" },
-                      { value: "yes", label: "Super10 Elite Scholar" },
-                    ]}
-                    className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
-                  />
-                </div>
-
-                {/* 8. Referral Code (spans 2 columns on lg) */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-2">
-                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Referral Code
-                  </label>
-                  <input
-                    type="text"
-                    value={referralCode}
-                    onChange={(e) => setReferralCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6))}
-                    placeholder="e.g. 6-digit code"
-                    maxLength={6}
-                    className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 font-mono"
-                  />
-                </div>
-
-                {/* 10. Biography & Student Notes (spans all 4 columns) */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-2 lg:col-span-4">
-                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Biography & Learning Goals / Notes
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    placeholder="Enter academic background, project aspirations, mentor notes, or career goals..."
-                    className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 resize-y"
-                  />
-                </div>
               </div>
+
+              {/* Badges for assigned courses if any */}
+              {assignedCourseIds.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {assignedCourseIds.map((cid) => {
+                    const c = courses.find((item) => item.id === cid);
+                    if (!c) return null;
+                    return (
+                      <span
+                        key={cid}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-neutral-100 dark:bg-white/10 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-white/10"
+                      >
+                        <span className="font-bold opacity-60">#{c.number}</span>
+                        <span>{c.title}</span>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Bottom Bar: Cancel on left with cancel icon, Add / Save Student pill button on right */}

@@ -16,7 +16,7 @@ export default function TeacherProfileRoute() {
         onToggleSidebar={onToggleSidebar}
       />
       <div className="flex-1 overflow-y-auto min-h-0">
-        <DashboardProfile />
+        <DashboardProfile role="teacher" showReferralCode={false} />
       </div>
     </div>
   );
