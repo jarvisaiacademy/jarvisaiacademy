@@ -9,7 +9,7 @@ import { siteConfig } from "@/config/site";
 export const revalidate = 300;
 
 const bullet = (c: CourseItem) =>
-  `- **${c.title}** — ${c.fee}, ${c.duration}, ${c.level}. ${c.description} Tech stack: ${c.techStack.join(", ")}.`;
+  `- **${c.title}** — ${c.fee}, ${c.duration}. ${c.description} Tech stack: ${c.techStack.join(", ")}.`;
 
 const isReferral = (c: CourseItem) => c.id === "referral";
 

@@ -61,7 +61,6 @@ export function DashboardCourses() {
       endDate: endDateObj.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
       progress: record.action === "paid" ? mockProgress : 0,
       description: courseObj?.description || "Master the fundamentals and advanced concepts in this comprehensive Jarvis AI Academy programme.",
-      level: courseObj?.level || "All Levels",
       category: courseObj?.categoryLabel || "Professional Programme",
       techStack: courseObj?.techStack || ["React", "Node.js", "Firebase", "AI"],
       topics: courseObj?.topics || [
@@ -129,11 +128,7 @@ export function DashboardCourses() {
                                 {courseObj.duration}
                               </span>
                             )}
-                            {courseObj?.level && (
-                              <span className="text-[10px] font-medium text-muted-foreground bg-muted/50 px-2.5 py-0.5 rounded-md">
-                                {courseObj.level}
-                              </span>
-                            )}
+                            
                           </div>
                         </div>
                       </div>
@@ -284,13 +279,7 @@ export function DashboardCourses() {
                       <span className="text-sm font-medium text-foreground">{details.duration}</span>
                     </div>
                     
-                    <div className="flex flex-col gap-1.5 p-4 rounded-xl border border-border bg-card/50">
-                      <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                        <Target className="w-4 h-4" />
-                        <span className="text-[10px] font-semibold uppercase tracking-wider">Level</span>
-                      </div>
-                      <span className="text-sm font-medium text-foreground">{details.level}</span>
-                    </div>
+                    
                   </div>
 
                   {/* Tech Stack */}

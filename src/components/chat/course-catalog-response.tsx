@@ -446,9 +446,6 @@ export function CourseCatalogResponse({
                   <h4 className="text-base sm:text-[17px] font-bold text-white tracking-tight leading-tight drop-shadow-xs">
                     {course.bannerTitle}
                   </h4>
-                  <p className="text-[11px] text-white/80 font-medium tracking-wide mt-0.5 drop-shadow-xs line-clamp-1">
-                    {course.bannerSubtitle}
-                  </p>
                 </div>
               </div>
 
@@ -517,16 +514,12 @@ export function CourseCatalogResponse({
                   </div>
                 )}
 
-                {/* Card Meta Row (Duration, Level, Fee & Action CTA) */}
+                {/* Card Meta Row (Duration, Fee & Action CTA) */}
                 <div className="flex items-center justify-between pt-3 border-t border-neutral-200/70 dark:border-white/5 text-[11px] text-neutral-500 dark:text-neutral-400">
                   <div className="flex items-center gap-3">
                     <span className="flex items-center gap-1 font-medium">
                       <Clock className="w-3.5 h-3.5 text-neutral-400" />
                       <span>{course.duration}</span>
-                    </span>
-                    <span className="hidden xs:flex items-center gap-1">
-                      <GraduationCap className="w-3.5 h-3.5 text-neutral-400" />
-                      <span>{course.level}</span>
                     </span>
                   </div>
 

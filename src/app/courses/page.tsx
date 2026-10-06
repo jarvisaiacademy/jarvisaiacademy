@@ -128,7 +128,6 @@ export default async function CoursesIndexPage() {
               <h2 className="text-base font-semibold leading-snug text-white">
                 {course.bannerTitle}
               </h2>
-              <p className="text-xs leading-snug text-white/85">{course.bannerSubtitle}</p>
             </div>
 
             <div className="flex flex-1 flex-col gap-3 p-4">
@@ -137,7 +136,6 @@ export default async function CoursesIndexPage() {
               </p>
               <div className="mt-auto flex flex-wrap gap-1.5 text-[11px]">
                 <FactPill>{course.duration}</FactPill>
-                <FactPill>{course.level}</FactPill>
                 <FactPill strong>{course.fee}</FactPill>
               </div>
             </div>

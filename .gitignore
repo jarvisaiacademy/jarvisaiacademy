@@ -50,4 +50,5 @@ firestore-debug.log
 *.tsbuildinfo
 next-env.d.ts
 service-account.json
-\n# Local one-off scripts\nlocal-scripts/
+# Local one-off scripts
+local-scripts/

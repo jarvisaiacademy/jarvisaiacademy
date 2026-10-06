@@ -294,15 +294,6 @@ export function AdminCourseDetail({ courseId, shell }: AdminCourseDetailProps) {
                 </span>
               </div>
 
-              {/* 3. Banner Subtitle */}
-              <div className="flex flex-col min-w-0 col-span-1 sm:col-span-2 lg:col-span-2">
-                <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
-                  {course.bannerSubtitle || "—"}
-                </span>
-                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                  Banner Subtitle
-                </span>
-              </div>
 
               {/* 4. Category */}
               <div className="flex flex-col min-w-0">
