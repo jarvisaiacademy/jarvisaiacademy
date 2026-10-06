@@ -49,3 +49,6 @@ firestore-debug.log
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+service-account.json
+# Local one-off scripts
+local-scripts/

@@ -39,7 +39,6 @@ function CourseHeroObject({ course }: { course: CourseItem }) {
       </div>
 
       <span className="text-[9px] font-medium text-white/85 leading-snug line-clamp-2">
-        {course.bannerSubtitle}
       </span>
 
       <div className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-full bg-white/95 text-neutral-900 shadow-md text-[10px] font-bold flex items-center gap-1 border border-white/60">

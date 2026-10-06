@@ -112,15 +112,10 @@ export default async function CoursePage({
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
           {course.title}
         </h1>
-        <p className="text-sm text-white/85">{course.bannerSubtitle}</p>
         <div className="mt-1 flex flex-wrap gap-x-5 gap-y-1 text-sm text-white">
           <span>
             <span className="text-white/70">Duration: </span>
             {course.duration}
-          </span>
-          <span>
-            <span className="text-white/70">Level: </span>
-            {course.level}
           </span>
           <span className="font-semibold">Tuition: {course.fee}</span>
         </div>

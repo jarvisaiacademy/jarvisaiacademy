@@ -409,7 +409,7 @@ export function ChatCanvas({
           `* **Curriculum Overview**: ${matchedCourse.description}\n\n` +
           (matchedCourse.topics?.length ? `**Key Modules**:\n${matchedCourse.topics.map((t: string) => `* ${t}`).join("\n")}\n\n` : "") +
           (matchedCourse.techStack?.length ? `**Tech Stack**: ${matchedCourse.techStack.join(", ")}\n\n` : "") +
-          `> "${matchedCourse.bannerSubtitle || matchedCourse.description}"\n\n` +
+          `> "${matchedCourse.description}"\n\n` +
           `Would you like to enroll in **${matchedCourse.title}** or ask about the syllabus?`,
         suggestions: [
           `I want to enroll in ${matchedCourse.title}`,

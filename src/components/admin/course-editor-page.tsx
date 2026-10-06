@@ -153,9 +153,6 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
   }, [course]);
 
   const [formTitle, setFormTitle] = useState(() => course?.title ?? "");
-  const [formBannerSubtitle, setFormBannerSubtitle] = useState(
-    () => course?.bannerSubtitle || ""
-  );
   const [formDescription, setFormDescription] = useState(() => course?.description || "");
   const [formCategory, setFormCategory] = useState<CourseItem["category"]>(
     () => course?.category ?? "web"
@@ -166,7 +163,6 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
   const [formDuration, setFormDuration] = useState(
     () => course?.duration || (course ? "60 Days" : "60 Days (2 Months)")
   );
-  const [formLevel, setFormLevel] = useState(() => course?.level || "Beginner to Adv");
   const [formFee, setFormFee] = useState(() => course?.fee || "₹30,000");
   const [formTechStack, setFormTechStack] = useState<string[]>(() =>
     course
@@ -232,14 +228,12 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
             course.bannerTitle && course.bannerTitle !== course.title
               ? course.bannerTitle
               : formTitle.trim(),
-          bannerSubtitle: formBannerSubtitle.trim(),
           description: formDescription.trim(),
           category: formCategory,
           categoryLabel: formCategoryLabel.trim(),
           badge: course.badge || undefined,
           badgeType: course.badgeType || undefined,
           duration: formDuration.trim(),
-          level: formLevel.trim(),
           fee: formFee.trim(),
           amount,
           techStack: techStackArr,
@@ -256,12 +250,10 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
         const created = await addCourse({
           title: formTitle.trim(),
           bannerTitle: formTitle.trim(),
-          bannerSubtitle: formBannerSubtitle.trim(),
           description: formDescription.trim(),
           category: formCategory,
           categoryLabel: formCategoryLabel.trim(),
           duration: formDuration.trim(),
-          level: formLevel.trim(),
           fee: formFee.trim(),
           amount,
           techStack: techStackArr,
@@ -373,19 +365,6 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
                   />
                 </div>
 
-                {/* 2. Banner Subtitle (spans 2 cols on lg) */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-2 lg:col-span-2">
-                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Banner Subtitle
-                  </label>
-                  <input
-                    type="text"
-                    value={formBannerSubtitle}
-                    onChange={(e) => setFormBannerSubtitle(e.target.value)}
-                    placeholder="e.g. Multi-Agent Systems · RAG · Python"
-                    className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
-                  />
-                </div>
 
                 {/* 3. Category */}
                 <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
@@ -430,20 +409,6 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
                   />
                 </div>
 
-                {/* 5. Level */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
-                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Level
-                  </label>
-                  <Combobox
-                    label="Level"
-                    options={COURSE_LEVELS}
-                    value={formLevel}
-                    onValueChange={setFormLevel}
-                    placeholder="Beginner to Adv"
-                    className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
-                  />
-                </div>
 
                 {/* 6. Fee */}
                 <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
