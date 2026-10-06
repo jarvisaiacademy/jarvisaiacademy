@@ -27,7 +27,7 @@ function loadEnv() {
 }
 loadEnv();
 
-let appOptions: AppOptions = { credential: applicationDefault() };
+let appOptions: AppOptions = { credential: applicationDefault(), projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID };
 if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
   const serviceAccount = JSON.parse(
     Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_KEY, "base64").toString("utf-8")
@@ -69,7 +69,7 @@ async function run() {
       chatResponse = seedCourse.chatResponse;
     } else {
       // Otherwise use the default fully dynamic template!
-      chatResponse = `### 🎓 **{title}**\n\n* **Track**: {categoryLabel}\n* **Duration**: **{duration}**\n* **Tuition Fee**: **{fee}**\n* **Overview**: {description}\n\nWould you like to enroll?`;
+      chatResponse = `### 🎓 **{title}**\n\n* **Track**: {categoryLabel}\n* **Duration**: **{duration}**\n* **Tuition Fee**: **{fee}**\n* **Curriculum Overview**: {description}\n\n**Key Modules**:\n{topics}\n\n**Tech Stack**: {techStack}\n\n> "{bannerSubtitle}"\n\nWould you like to enroll in **{title}** or ask about the syllabus?`;
     }
     
     writer.update(doc.ref, { chatResponse });

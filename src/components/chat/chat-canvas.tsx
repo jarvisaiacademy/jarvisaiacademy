@@ -340,7 +340,7 @@ export function ChatCanvas({
 
 
       // Use custom chatResponse template from backend
-      const template = (matchedCourse.chatResponse || "").trim() || `### 🎓 **{title}**\n\n* **Track**: {categoryLabel}\n* **Duration**: **{duration}**\n* **Tuition Fee**: **{fee}**\n* **Overview**: {description}\n\nWould you like to enroll?`;
+      const template = (matchedCourse.chatResponse || "").trim() || `### 🎓 **{title}**\n\n* **Track**: {categoryLabel}\n* **Duration**: **{duration}**\n* **Tuition Fee**: **{fee}**\n* **Curriculum Overview**: {description}\n\n**Key Modules**:\n{topics}\n\n**Tech Stack**: {techStack}\n\n> "{bannerSubtitle}"\n\nWould you like to enroll in **{title}** or ask about the syllabus?`;
 
       const resolved = template
         .replace(/{title}/g, matchedCourse.title)
@@ -349,7 +349,8 @@ export function ChatCanvas({
         .replace(/{description}/g, matchedCourse.description)
         .replace(/{categoryLabel}/g, matchedCourse.categoryLabel || matchedCourse.category)
         .replace(/{techStack}/g, matchedCourse.techStack?.join(", ") || "")
-        .replace(/{topics}/g, matchedCourse.topics?.map((t: string) => `* ${t}`).join("\n") || "");
+        .replace(/{topics}/g, matchedCourse.topics?.map((t: string) => `* ${t}`).join("\n") || "")
+        .replace(/{bannerSubtitle}/g, matchedCourse.bannerSubtitle || matchedCourse.description);
       
       return {
         text: resolved,
