@@ -448,6 +448,19 @@ export function AdminCourseDetail({ courseId, shell }: AdminCourseDetailProps) {
                   AI Chat Inquiry Prompt
                 </span>
               </div>
+
+              {/* 17. Ansbook / Chat Response Template */}
+              <div className="flex flex-col min-w-0 col-span-1 sm:col-span-2 lg:col-span-4 mt-2">
+                <hr className="border-neutral-200 dark:border-white/10 mb-4" />
+                <span className="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-2">Chat Response Template (Ansbook)</span>
+                {course.chatResponse ? (
+                  <pre className="text-xs text-neutral-800 dark:text-neutral-200 whitespace-pre-wrap leading-relaxed font-mono bg-neutral-50 dark:bg-white/5 rounded-xl p-4 border border-neutral-200 dark:border-white/10">
+                    {course.chatResponse}
+                  </pre>
+                ) : (
+                  <span className="text-sm text-neutral-400 italic">No custom chat response set. The default dynamic template will be used.</span>
+                )}
+              </div>
             </div>
           </div>
 

@@ -20,6 +20,10 @@ export interface CourseItem {
   techIcons: string[];
   topics: string[];
   actionPrompt: string;
+  /** Admin-editable Markdown template for the chat bot reply. Supports {title}, {duration},
+   *  {fee}, {description}, {categoryLabel}, {techStack}, {topics} interpolation. When absent,
+   *  the chat falls back to the auto-generated template. */
+  chatResponse?: string;
   // Absent means active, so the twelve seeded entries and any doc already in Firestore
   // need no migration — a course only carries this once an admin has retired it.
   status?: CourseStatus;

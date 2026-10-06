@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Copy, Check, ExternalLink } from "lucide-react";
+import { DevIcon, iconKeyFor } from "@/components/ui/dev-icon";
 
 interface MarkdownRendererProps {
   content: string;
@@ -14,6 +15,21 @@ interface MarkdownRendererProps {
 /** Prefix for in-message links that send a prompt instead of navigating.
  *  Relative, so react-markdown's url transform leaves it intact. */
 const ASK_PREFIX = "#ask:";
+
+/**
+ * Recursively extract the plain-text content from a React child tree so the li
+ * renderer can detect "**Tech Stack**: …" items regardless of how ReactMarkdown
+ * wraps the strong/text nodes.
+ */
+function childrenToText(node: React.ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(childrenToText).join("");
+  if (React.isValidElement(node)) {
+    const el = node as React.ReactElement<{ children?: React.ReactNode }>;
+    return childrenToText(el.props.children);
+  }
+  return "";
+}
 
 export function MarkdownRenderer({ content, onPromptClick }: MarkdownRendererProps) {
   return (
@@ -43,7 +59,35 @@ export function MarkdownRenderer({ content, onPromptClick }: MarkdownRendererPro
               {children}
             </ol>
           ),
-          li: ({ children }) => <li className="leading-relaxed pl-1">{children}</li>,
+          li: ({ children }) => {
+            const text = childrenToText(children);
+            // Detect "Tech Stack: item1, item2" list items and render icon chips
+            const techMatch = /^\s*Tech Stack\s*:\s*(.+)$/i.exec(text);
+            if (techMatch) {
+              const techs = techMatch[1].split(",").map((t) => t.trim()).filter(Boolean);
+              return (
+                <li className="leading-relaxed pl-1">
+                  <span className="font-semibold text-neutral-900 dark:text-white">Tech Stack</span>
+                  <span className="text-neutral-700 dark:text-neutral-300">: </span>
+                  <span className="inline-flex flex-wrap items-center gap-1.5 ml-1">
+                    {techs.map((tech) => {
+                      const key = iconKeyFor(tech);
+                      return (
+                        <span
+                          key={tech}
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[11px] bg-neutral-100 dark:bg-white/10 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-white/10"
+                        >
+                          {key && <DevIcon name={key} size={12} />}
+                          <span>{tech}</span>
+                        </span>
+                      );
+                    })}
+                  </span>
+                </li>
+              );
+            }
+            return <li className="leading-relaxed pl-1">{children}</li>;
+          },
           strong: ({ children }) => <strong className="font-semibold text-neutral-900 dark:text-white">{children}</strong>,
           em: ({ children }) => <em className="italic text-neutral-800 dark:text-neutral-200">{children}</em>,
           blockquote: ({ children }) => (

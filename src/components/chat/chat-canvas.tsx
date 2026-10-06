@@ -401,6 +401,27 @@ export function ChatCanvas({
       if (academyKnowledge[matchedCourse.id]) {
         return academyKnowledge[matchedCourse.id];
       }
+
+      // Check custom chatResponse template first (editable by admin)
+      if (matchedCourse.chatResponse && matchedCourse.chatResponse.trim()) {
+        const resolved = matchedCourse.chatResponse
+          .replace(/{title}/g, matchedCourse.title)
+          .replace(/{duration}/g, matchedCourse.duration)
+          .replace(/{fee}/g, matchedCourse.fee)
+          .replace(/{description}/g, matchedCourse.description)
+          .replace(/{categoryLabel}/g, matchedCourse.categoryLabel || matchedCourse.category)
+          .replace(/{techStack}/g, matchedCourse.techStack?.join(", ") || "")
+          .replace(/{topics}/g, matchedCourse.topics?.map((t: string) => `* ${t}`).join("\n") || "");
+        return {
+          text: resolved,
+          suggestions: [
+            `I want to enroll in ${matchedCourse.title}`,
+            "What is the fee structure & payment options?",
+            "Tell me about the Super10 Elite Batch with 100% placement assurance",
+          ],
+        };
+      }
+
       return {
         text: `### 🎓 **${matchedCourse.title}**\n\n` +
           `* **Track**: ${matchedCourse.categoryLabel || matchedCourse.category}\n` +
