@@ -190,6 +190,7 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
       techIcons: course.techIcons || [],
       topics: course.topics || [],
       actionPrompt: course.actionPrompt || `Tell me about the ${course.title} course`,
+      chatResponse: course.chatResponse || "",
       status: course.status ?? "active",
       teacherIds: course.teacherIds ?? [],
       createdBy: course.createdBy || author,
