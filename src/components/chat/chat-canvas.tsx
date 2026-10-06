@@ -313,24 +313,7 @@ export function ChatCanvas({
         : academyKnowledge.super10;
     } else if (lower.includes("referral") || lower.includes("refer & earn") || lower.includes("3,000") || lower.includes("3000")) {
       return academyKnowledge.referral;
-    } else if (lower.includes("frontend") || lower.includes("reactjs") || lower.includes("tailwind")) {
-      return academyKnowledge.frontend;
-    } else if (lower.includes("backend") || lower.includes("fastapi") || lower.includes("django")) {
-      return academyKnowledge.backend;
-    } else if (lower.includes("devops") || lower.includes("aws") || lower.includes("docker") || lower.includes("kubernetes")) {
-      return academyKnowledge.devops;
-    } else if (lower.includes("database admin") || lower.includes("oracle") || lower.includes("pl/sql") || lower.includes("plsql") || lower.includes("mongodb")) {
-      return academyKnowledge.database;
-    } else if (lower.includes("data analyst") || lower.includes("data science")) {
-      return academyKnowledge.data_analyst;
-    } else if (lower.includes("business analyst") || lower.includes("brd") || lower.includes("jira")) {
-      return academyKnowledge.business_analyst;
-    } else if (lower.includes("genai") || lower.includes("generative ai") || lower.includes("rag") || lower.includes("agentic")) {
-      return academyKnowledge.genai;
-    } else if (lower.includes("laravel") || lower.includes("php")) {
-      return academyKnowledge.laravel;
-    } else if (lower.includes("application support") || (lower.includes("support") && lower.includes("linux"))) {
-      return academyKnowledge.app_support;
+
     } else if (
       lower.includes("course") ||
       lower.includes("courses") ||
@@ -398,9 +381,7 @@ export function ChatCanvas({
     });
 
     if (matchedCourse) {
-      if (academyKnowledge[matchedCourse.id]) {
-        return academyKnowledge[matchedCourse.id];
-      }
+
 
       // Check custom chatResponse template first (editable by admin)
       if (matchedCourse.chatResponse && matchedCourse.chatResponse.trim()) {

@@ -268,6 +268,20 @@ export const COURSES_DATA: CourseItem[] = [
       "Routing, API Fetching & Vite",
     ],
     actionPrompt: "Tell me about the Frontend Engineering course with React and Tailwind CSS",
+    chatResponse: `### ⚛️ Frontend Engineering (ReactJS + Tailwind CSS)
+    
+* **Duration**: **60 Days (8 Weeks)** hands-on training.
+* **Tuition**: **₹30,000** all-inclusive.
+* **Tech Stack**: React 19, Tailwind CSS, TypeScript, modern ES6+ JavaScript, HTML5 & CSS3.
+
+#### Core Modules:
+1. **Semantic HTML5 & Responsive CSS3**: Modern layout patterns, Flexbox, Grid, CSS animations.
+2. **Modern JavaScript (ES6+) & TypeScript**: Closures, async/await, DOM APIs, strict typing.
+3. **ReactJS Architecture**: Component hierarchy, Props, custom Hooks, Context API.
+4. **Tailwind CSS Utility Design**: Rapid UI styling, dark mode configuration, mobile-first design.
+5. **Production Capstone**: Build a high-performance responsive web dashboard with live API integration.
+
+* **🎁 Refer & Earn**: Refer a friend to this course and earn **₹3,000** once they complete!`,
   },
   {
     id: "backend-python",
@@ -297,6 +311,20 @@ export const COURSES_DATA: CourseItem[] = [
       "Automated Testing & Deployment",
     ],
     actionPrompt: "Tell me about the Backend Engineering course with Python, FastAPI, and Django",
+    chatResponse: `### 🐍 Backend Engineering (Python + FastAPI + Django)
+
+* **Duration**: **60 Days (10 Weeks)** intensive API engineering.
+* **Tuition**: **₹30,000** all-inclusive.
+* **Tech Stack**: Python, FastAPI, Django, PostgreSQL, REST APIs, JWT Auth.
+
+#### Core Modules:
+1. **Advanced Python**: OOP, decorators, generators, async concurrency.
+2. **FastAPI Asynchronous APIs**: Pydantic models, OpenAPI documentation, async endpoints.
+3. **Django Framework**: ORM relations, admin dashboard, auth middleware.
+4. **PostgreSQL Database**: Indexing, migrations, query optimization.
+5. **Live Capstone**: Architect a scalable microservice with real-time authentication and payment processing.
+
+* **🎁 Refer & Earn**: Refer a student and receive **₹3,000** upon course completion!`,
   },
   {
     id: "genai",
@@ -326,6 +354,18 @@ export const COURSES_DATA: CourseItem[] = [
       "Production Evaluation & Guardrails",
     ],
     actionPrompt: "Tell me more about Generative AI, RAG & Agentic Systems",
+    chatResponse: `### 🤖 Generative AI, RAG & Agentic Systems
+
+* **Duration**: **60 Days (2 Months)** cutting-edge AI engineering.
+* **Tuition**: **₹30,000** all-inclusive.
+* **Tech Stack**: Python, OpenAI API, Gemini SDK, LangChain, Pinecone / Chroma Vector DBs, FastAPI.
+
+#### Core Modules:
+1. **Prompt Engineering & Structured Outputs**: Few-shot prompting, JSON schemas, function calling.
+2. **RAG Architecture**: Document chunking, vector embeddings, hybrid semantic search.
+3. **Autonomous Agent Workflows**: Tool execution, multi-step reasoning, LangGraph state machines.
+4. **Production LLMOps**: Latency optimization, prompt caching, evaluation guardrails.
+5. **Capstone Project**: Deploy an end-to-end multi-agent coding assistant with live web browsing.`,
   },
   {
     id: "data-analyst",
@@ -355,6 +395,18 @@ export const COURSES_DATA: CourseItem[] = [
       "Predictive Analytics & KPI Reports",
     ],
     actionPrompt: "Tell me about the Data Analyst course with PowerBI, SQL, and Python",
+    chatResponse: `### 📊 Data Analyst (PowerBI + SQL + SAP + Python)
+
+* **Duration**: **60 Days (12 Weeks)** business intelligence & analytics.
+* **Tuition**: **₹30,000** all-inclusive.
+* **Tech Stack**: Microsoft PowerBI, MySQL, Python (Pandas/NumPy), SAP BI.
+
+#### Core Modules:
+1. **PowerBI Visual Reporting**: Interactive dashboards, slicers, mobile layouts.
+2. **DAX & Data Modeling**: Calculated columns, measures, relationship topologies.
+3. **Advanced SQL**: Window functions, subqueries, aggregations, schema joins.
+4. **Python Data Wrangling**: Pandas, NumPy, statistical distribution analysis.
+5. **Enterprise Capstone**: Build an executive revenue intelligence dashboard for board presentation.`,
   },
   {
     id: "business-analyst",
@@ -382,6 +434,18 @@ export const COURSES_DATA: CourseItem[] = [
       "Stakeholder Communication & Use Cases",
     ],
     actionPrompt: "Tell me about the Business Analyst program with PowerBI, MySQL, and BRD",
+    chatResponse: `### 📋 Business Analyst (PowerBI + MySQL + BRD + Jira)
+
+* **Duration**: **60 Days (8 Weeks)** strategy and requirements engineering.
+* **Tuition**: **₹30,000** all-inclusive.
+* **Tech Stack**: PowerBI, MySQL, Jira Agile Boards, BRD/PRD Documentation.
+
+#### Core Modules:
+1. **Business Analysis Methodologies**: Requirements gathering, gap analysis, stakeholder mapping.
+2. **BRD & PRD Documentation**: Writing industry-standard Functional Specifications and User Stories.
+3. **Agile & Jira Sprint Tracking**: Managing backlogs, sprint ceremonies, burndown charts.
+4. **SQL for Analysts**: Querying operational databases without developer dependencies.
+5. **PowerBI Executive Dashboards**: Visualizing KPIs, conversion funnels, and churn metrics.`,
   },
   {
     id: "devops-aws",
@@ -411,6 +475,20 @@ export const COURSES_DATA: CourseItem[] = [
       "Production Monitoring & Log Systems",
     ],
     actionPrompt: "Tell me about the DevOps Engineering course with AWS and Docker",
+    chatResponse: `### ☁️ DevOps & Cloud Engineering (AWS + Docker + CI/CD)
+
+* **Duration**: **60 Days (10 Weeks)** cloud automation.
+* **Tuition**: **₹30,000** all-inclusive.
+* **Tech Stack**: AWS (EC2, S3, IAM, VPC), Docker, Kubernetes, Linux, GitHub Actions CI/CD.
+
+#### Core Modules:
+1. **Linux Systems & Shell Scripting**: Server management, permissions, automated bash scripts.
+2. **Docker Containers**: Containerizing full-stack apps, multi-stage Dockerfiles, Docker Compose.
+3. **AWS Core Architecture**: Deploying on AWS EC2, S3 asset delivery, IAM security.
+4. **Kubernetes Basics**: Pods, services, deployments, and cluster management.
+5. **CI/CD Pipelines**: Automated GitHub Actions testing and zero-downtime releases.
+
+* **🎁 Refer & Earn**: Earn **₹3,000** cash reward for every referral who completes the course!`,
   },
   {
     id: "database-admin",
@@ -438,6 +516,18 @@ export const COURSES_DATA: CourseItem[] = [
       "Database Security & Access Control",
     ],
     actionPrompt: "Tell me about the Database Administration course with Oracle, PL/SQL, and MongoDB",
+    chatResponse: `### 🗄️ Database Administration (Oracle + PL/SQL + MongoDB)
+
+* **Duration**: **60 Days (8 Weeks)** enterprise database administration.
+* **Tuition**: **₹30,000** all-inclusive.
+* **Tech Stack**: Oracle Database, PL/SQL, MongoDB, MySQL.
+
+#### Core Modules:
+1. **Relational Database Design**: Normalization, schemas, referential integrity.
+2. **PL/SQL Mastery**: Stored procedures, functions, packages, triggers, cursors.
+3. **NoSQL with MongoDB**: Collections, document modeling, aggregation pipelines.
+4. **Performance Tuning**: Index optimization, query execution plans, memory buffers.
+5. **Disaster Recovery**: Backups, replication, point-in-time recovery strategies.`,
   },
   {
     id: "app-support",
@@ -465,6 +555,18 @@ export const COURSES_DATA: CourseItem[] = [
       "Support Documentation & SLAs",
     ],
     actionPrompt: "Tell me about the Application Support course with Linux and MySQL",
+    chatResponse: `### 🛠️ Application Support & Cloud Ops (Linux + MySQL)
+
+* **Duration**: **60 Days (8 Weeks)** technical support & cloud operations.
+* **Tuition**: **₹30,000** all-inclusive.
+* **Tech Stack**: Linux, MySQL, Shell Scripting, Ubuntu, Git.
+
+#### Core Modules:
+1. **Linux Administration**: Command-line utilities, file permissions, daemon management.
+2. **Bash Scripting**: Automated health checks, disk monitoring, log rotating.
+3. **MySQL Troubleshooting**: Slow query log analysis, indexing, data restoration.
+4. **Production Incident Management**: Debugging crash logs, triaging alerts, SLA compliance.
+5. **Support Runbooks**: Writing escalation procedures and technical documentation.`,
   },
   {
     id: "web-laravel",
@@ -492,6 +594,18 @@ export const COURSES_DATA: CourseItem[] = [
       "Responsive Bootstrap UI Layouts",
     ],
     actionPrompt: "Tell me about the Web Development course with Laravel, PHP, and MySQL",
+    chatResponse: `### 🚀 Full-Stack Web Development (Laravel + PHP + MySQL)
+
+* **Duration**: **60 Days (10 Weeks)** enterprise PHP web development.
+* **Tuition**: **₹30,000** all-inclusive.
+* **Tech Stack**: PHP, Laravel, MySQL, Bootstrap, JavaScript.
+
+#### Core Modules:
+1. **Modern PHP**: OOP patterns, namespace resolution, Composer package management.
+2. **Laravel MVC Architecture**: Blade templating, routing, Eloquent ORM relationships.
+3. **Authentication & Roles**: Multi-guard auth, middleware security, password resets.
+4. **REST APIs & AJAX**: Building JSON APIs for frontends and mobile consumers.
+5. **Deployment & Maintenance**: Server setup, cron jobs, database backups.`,
   },
   {
     id: "referral",
