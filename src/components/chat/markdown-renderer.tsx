@@ -37,7 +37,34 @@ export function MarkdownRenderer({ content, onPromptClick }: MarkdownRendererPro
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-          p: ({ children }) => <p className="mb-3 last:mb-0 leading-7">{children}</p>,
+          p: ({ children }) => {
+            const text = childrenToText(children);
+            const techMatch = /^\s*Tech Stack\s*:\s*(.+)$/i.exec(text);
+            if (techMatch) {
+              const techs = techMatch[1].split(",").map((t) => t.trim()).filter(Boolean);
+              return (
+                <p className="mb-3 last:mb-0 leading-7">
+                  <strong className="font-semibold text-neutral-900 dark:text-white">Tech Stack</strong>
+                  <span className="text-neutral-700 dark:text-neutral-300">: </span>
+                  <span className="inline-flex flex-wrap items-center gap-1.5 ml-1 align-middle">
+                    {techs.map((tech) => {
+                      const key = iconKeyFor(tech);
+                      return (
+                        <span
+                          key={tech}
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[11px] bg-neutral-100 dark:bg-white/10 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-white/10 leading-none h-6"
+                        >
+                          {key && <DevIcon name={key} size={12} />}
+                          <span>{tech}</span>
+                        </span>
+                      );
+                    })}
+                  </span>
+                </p>
+              );
+            }
+            return <p className="mb-3 last:mb-0 leading-7">{children}</p>;
+          },
           h1: ({ children }) => (
             <h1 className="text-xl font-semibold text-neutral-900 dark:text-white mt-4 mb-2 first:mt-0">{children}</h1>
           ),
