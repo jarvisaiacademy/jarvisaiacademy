@@ -76,7 +76,7 @@ const ICON_MAP: Record<string, string> = {
 
 /**
  * The map's key for a display name, so a course's icons can follow the tech stack an admin
- * already types instead of being kept by hand beside it. "Next.js 15" and "React 19" carry
+ * already types instead of being kept by hand beside it. "Next.js" and "React" carry
  * versions the keys do not, so a trailing number is dropped before the second look.
  *
  * Returns null for a name with no key — a stack entry like "RAG" has no icon and should show

@@ -510,7 +510,7 @@ export function EnrollmentCard({
             >
               <span className="text-xs font-semibold">Full-Stack AI &amp; Web</span>
               <span className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
-                60 Days (2 Months) · Next.js 15 &amp; Python GenAI
+                60 Days (2 Months) · Next.js &amp; Python GenAI
               </span>
               <span className="text-sm font-bold text-neutral-900 dark:text-white mt-2">
                 {fullstackItem?.fee ?? "—"}{" "}

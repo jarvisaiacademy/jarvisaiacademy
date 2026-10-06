@@ -93,7 +93,7 @@ Ready to refer someone? Share their details with our admissions desk or have the
     
 * **Duration**: **60 Days (8 Weeks)** hands-on training.
 * **Tuition**: **₹30,000** all-inclusive.
-* **Tech Stack**: React 19, Tailwind CSS, TypeScript, modern ES6+ JavaScript, HTML5 & CSS3.
+* **Tech Stack**: React, Tailwind CSS, TypeScript, modern ES6+ JavaScript, HTML5 & CSS3.
 
 #### Core Modules:
 1. **Semantic HTML5 & Responsive CSS3**: Modern layout patterns, Flexbox, Grid, CSS animations.
