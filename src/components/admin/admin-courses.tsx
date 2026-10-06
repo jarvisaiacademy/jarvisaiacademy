@@ -225,7 +225,27 @@ export function AdminCourses({ onHome }: AdminCoursesProps) {
             </div>
 
             {/* Right: Green Pill Add Course button */}
-            <div className="flex items-center">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={async () => {
+                  if (!confirm("Update all courses to use the full dynamic chat template?")) return;
+                  try {
+                    for (const c of firestoreCourses) {
+                      const template = `### 🎓 **{title}**\n\n* **Track**: {categoryLabel}\n* **Duration**: **{duration}**\n* **Tuition Fee**: **{fee}**\n* **Curriculum Overview**: {description}\n\n**Key Modules**:\n{topics}\n\n**Tech Stack**: {techStack}\n\n> "{bannerSubtitle}"\n\nWould you like to enroll in **{title}** or ask about the syllabus?`;
+                      if (!c.chatResponse || c.chatResponse.includes("{title}")) {
+                        await editCourse(c.id, { chatResponse: template });
+                      }
+                    }
+                    showToast("Migration Complete: All courses updated.");
+                  } catch (e) {
+                    showToast("Error: " + (e as Error).message);
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-xs transition-colors cursor-pointer whitespace-nowrap"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Migrate Templates</span>
+              </button>
               <Link
                 href="/admin/courses/new"
                 className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-colors cursor-pointer whitespace-nowrap"
