@@ -595,7 +595,7 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
                     rows={4}
                     value={formTopics}
                     onChange={(e) => setFormTopics(e.target.value)}
-                    placeholder={"Next.js 15 Server Components & Actions\nFastAPI Async Microservices\nPostgreSQL & Schema Optimization"}
+                    placeholder={"Next.js Server Components & Actions\nFastAPI Async Microservices\nPostgreSQL & Schema Optimization"}
                     className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 font-mono text-[11px] resize-y"
                   />
                 </div>

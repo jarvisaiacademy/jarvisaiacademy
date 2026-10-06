@@ -99,7 +99,7 @@ function CourseBannerGraphic({
             <div className="h-1 w-10 bg-white/40 rounded-full" />
           </div>
           <div className="flex items-center justify-between pt-0.5">
-            <span className="text-[8px] font-semibold text-white/90">React 19 + UI</span>
+            <span className="text-[8px] font-semibold text-white/90">React + UI</span>
             <span className="w-1.5 h-1.5 rounded-full bg-purple-300 animate-pulse" />
           </div>
         </div>
