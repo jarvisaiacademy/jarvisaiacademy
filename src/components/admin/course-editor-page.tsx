@@ -178,7 +178,8 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
       ? (course.topics || []).join("\n")
       : "Module 1: Architecture\nModule 2: Real-time APIs\nModule 3: Cloud Deployment"
   );
-  const [formChatResponse, setFormChatResponse] = useState(() => course?.chatResponse || "");
+  const defaultChatTemplate = `### 🎓 **{title}**\n\n* **Track**: {categoryLabel}\n* **Duration**: **{duration}**\n* **Tuition Fee**: **{fee}**\n* **Overview**: {description}\n\nWould you like to enroll?`;
+  const [formChatResponse, setFormChatResponse] = useState(() => course?.chatResponse || defaultChatTemplate);
 
   const actionPrompt =
     course?.actionPrompt || (course ? `Tell me about the ${course.title} course` : "");

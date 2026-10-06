@@ -383,36 +383,20 @@ export function ChatCanvas({
     if (matchedCourse) {
 
 
-      // Check custom chatResponse template first (editable by admin)
-      if (matchedCourse.chatResponse && matchedCourse.chatResponse.trim()) {
-        const resolved = matchedCourse.chatResponse
-          .replace(/{title}/g, matchedCourse.title)
-          .replace(/{duration}/g, matchedCourse.duration)
-          .replace(/{fee}/g, matchedCourse.fee)
-          .replace(/{description}/g, matchedCourse.description)
-          .replace(/{categoryLabel}/g, matchedCourse.categoryLabel || matchedCourse.category)
-          .replace(/{techStack}/g, matchedCourse.techStack?.join(", ") || "")
-          .replace(/{topics}/g, matchedCourse.topics?.map((t: string) => `* ${t}`).join("\n") || "");
-        return {
-          text: resolved,
-          suggestions: [
-            `I want to enroll in ${matchedCourse.title}`,
-            "What is the fee structure & payment options?",
-            "Tell me about the Super10 Elite Batch with 100% placement assurance",
-          ],
-        };
-      }
+      // Use custom chatResponse template from backend
+      const template = (matchedCourse.chatResponse || "").trim() || `### 🎓 **{title}**\n\n* **Track**: {categoryLabel}\n* **Duration**: **{duration}**\n* **Tuition Fee**: **{fee}**\n* **Overview**: {description}\n\nWould you like to enroll?`;
 
+      const resolved = template
+        .replace(/{title}/g, matchedCourse.title)
+        .replace(/{duration}/g, matchedCourse.duration)
+        .replace(/{fee}/g, matchedCourse.fee)
+        .replace(/{description}/g, matchedCourse.description)
+        .replace(/{categoryLabel}/g, matchedCourse.categoryLabel || matchedCourse.category)
+        .replace(/{techStack}/g, matchedCourse.techStack?.join(", ") || "")
+        .replace(/{topics}/g, matchedCourse.topics?.map((t: string) => `* ${t}`).join("\n") || "");
+      
       return {
-        text: `### 🎓 **${matchedCourse.title}**\n\n` +
-          `* **Track**: ${matchedCourse.categoryLabel || matchedCourse.category}\n` +
-          `* **Duration**: **${matchedCourse.duration}**\n` +
-          `* **Tuition Fee**: **${matchedCourse.fee}**\n` +
-          `* **Curriculum Overview**: ${matchedCourse.description}\n\n` +
-          (matchedCourse.topics?.length ? `**Key Modules**:\n${matchedCourse.topics.map((t: string) => `* ${t}`).join("\n")}\n\n` : "") +
-          (matchedCourse.techStack?.length ? `**Tech Stack**: ${matchedCourse.techStack.join(", ")}\n\n` : "") +
-          `> "${matchedCourse.bannerSubtitle || matchedCourse.description}"\n\n` +
-          `Would you like to enroll in **${matchedCourse.title}** or ask about the syllabus?`,
+        text: resolved,
         suggestions: [
           `I want to enroll in ${matchedCourse.title}`,
           "What is the fee structure & payment options?",
