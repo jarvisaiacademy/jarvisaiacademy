@@ -8,6 +8,7 @@ import {
   RotateCcw,
   ThumbsUp,
   ThumbsDown,
+  CornerDownRight,
 } from "lucide-react";
 import { MarkdownRenderer } from "./markdown-renderer";
 import { EnrollmentCard, EnrollmentData } from "./enrollment-card";
@@ -359,9 +360,10 @@ export function ChatMessages({
                         onClick={() => onActionPrompt?.(suggestion)}
                         className="group/sug inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-normal text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white bg-neutral-100 dark:bg-white/[0.06] hover:bg-neutral-200/80 dark:hover:bg-white/10 border border-neutral-200 dark:border-white/10 transition-all cursor-pointer text-left active:scale-98"
                       >
-                        <span className="text-neutral-400 dark:text-neutral-500 group-hover/sug:text-neutral-600 dark:group-hover/sug:text-neutral-300 transition-colors text-xs select-none">
-                          ↳
-                        </span>
+                        <CornerDownRight 
+                          strokeWidth={2} 
+                          className="w-3.5 h-3.5 shrink-0 text-neutral-400 dark:text-neutral-500 group-hover/sug:text-neutral-600 dark:group-hover/sug:text-neutral-300 transition-colors select-none" 
+                        />
                         <span>{suggestion}</span>
                       </button>
                     ))}
