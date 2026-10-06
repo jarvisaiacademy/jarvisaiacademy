@@ -231,7 +231,7 @@ export function AdminCourses({ onHome }: AdminCoursesProps) {
                   if (!confirm("Update all courses to use the full dynamic chat template?")) return;
                   try {
                     for (const c of firestoreCourses) {
-                      const template = `### 🎓 **{title}**\n\n* **Track**: {categoryLabel}\n* **Duration**: **{duration}**\n* **Tuition Fee**: **{fee}**\n* **Curriculum Overview**: {description}\n\n**Key Modules**:\n{topics}\n\n**Tech Stack**: {techStack}\n\n> "{bannerSubtitle}"\n\nWould you like to enroll in **{title}** or ask about the syllabus?`;
+                      const template = `### 🎓 **{title}**\n*_{bannerSubtitle}_*\n\n* **Track**: {categoryLabel}\n* **Level**: **{level}**\n* **Duration**: **{duration}**\n* **Tuition Fee**: **{fee}**\n* **Curriculum Overview**: {description}\n\n**Key Modules**:\n{topics}\n\n**Tech Stack**: {techStack}\n\nWould you like to enroll in **{title}** or ask about the syllabus?`;
                       if (!c.chatResponse || c.chatResponse.includes("{title}")) {
                         await editCourse(c.id, { chatResponse: template });
                       }

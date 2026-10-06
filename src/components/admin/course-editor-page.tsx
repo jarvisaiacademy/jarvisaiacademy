@@ -178,7 +178,7 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
       ? (course.topics || []).join("\n")
       : "Module 1: Architecture\nModule 2: Real-time APIs\nModule 3: Cloud Deployment"
   );
-  const defaultChatTemplate = `### 🎓 **{title}**\n\n* **Track**: {categoryLabel}\n* **Duration**: **{duration}**\n* **Tuition Fee**: **{fee}**\n* **Curriculum Overview**: {description}\n\n**Key Modules**:\n{topics}\n\n**Tech Stack**: {techStack}\n\n> "{bannerSubtitle}"\n\nWould you like to enroll in **{title}** or ask about the syllabus?`;
+  const defaultChatTemplate = `### 🎓 **{title}**\n*_{bannerSubtitle}_*\n\n* **Track**: {categoryLabel}\n* **Level**: **{level}**\n* **Duration**: **{duration}**\n* **Tuition Fee**: **{fee}**\n* **Curriculum Overview**: {description}\n\n**Key Modules**:\n{topics}\n\n**Tech Stack**: {techStack}\n\nWould you like to enroll in **{title}** or ask about the syllabus?`;
   const [formChatResponse, setFormChatResponse] = useState(() => course?.chatResponse || defaultChatTemplate);
 
   const actionPrompt =
@@ -614,12 +614,14 @@ function CourseForm({ course, shell }: { course: CourseItem | null; shell: Admin
                     rows={8}
                     value={formChatResponse}
                     onChange={(e) => setFormChatResponse(e.target.value)}
-                    placeholder={`### 🎓 **{title}**\n\n* **Track**: {categoryLabel}\n* **Duration**: **{duration}**\n* **Tuition Fee**: **{fee}**\n* **Curriculum Overview**: {description}\n\n**Key Modules**:\n{topics}\n\n**Tech Stack**: {techStack}\n\n> "{bannerSubtitle}"\n\nWould you like to enroll in **{title}** or ask about the syllabus?`}
+                    placeholder={`### 🎓 **{title}**\n*_{bannerSubtitle}_*\n\n* **Track**: {categoryLabel}\n* **Level**: **{level}**\n* **Duration**: **{duration}**\n* **Tuition Fee**: **{fee}**\n* **Curriculum Overview**: {description}\n\n**Key Modules**:\n{topics}\n\n**Tech Stack**: {techStack}\n\nWould you like to enroll in **{title}** or ask about the syllabus?`}
                     className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 font-mono text-[11px] resize-y"
                   />
                   <span className="text-[10px] text-neutral-400">
                     Available variables:{" "}
                     <code className="font-mono">{"{title}"}</code>{" "}
+                    <code className="font-mono">{"{bannerSubtitle}"}</code>{" "}
+                    <code className="font-mono">{"{level}"}</code>{" "}
                     <code className="font-mono">{"{duration}"}</code>{" "}
                     <code className="font-mono">{"{fee}"}</code>{" "}
                     <code className="font-mono">{"{description}"}</code>{" "}

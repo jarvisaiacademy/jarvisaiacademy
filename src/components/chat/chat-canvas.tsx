@@ -340,10 +340,11 @@ export function ChatCanvas({
 
 
       // Use custom chatResponse template from backend
-      const template = (matchedCourse.chatResponse || "").trim() || `### 🎓 **{title}**\n\n* **Track**: {categoryLabel}\n* **Duration**: **{duration}**\n* **Tuition Fee**: **{fee}**\n* **Curriculum Overview**: {description}\n\n**Key Modules**:\n{topics}\n\n**Tech Stack**: {techStack}\n\n> "{bannerSubtitle}"\n\nWould you like to enroll in **{title}** or ask about the syllabus?`;
+      const template = (matchedCourse.chatResponse || "").trim() || `### 🎓 **{title}**\n*_{bannerSubtitle}_*\n\n* **Track**: {categoryLabel}\n* **Level**: **{level}**\n* **Duration**: **{duration}**\n* **Tuition Fee**: **{fee}**\n* **Curriculum Overview**: {description}\n\n**Key Modules**:\n{topics}\n\n**Tech Stack**: {techStack}\n\nWould you like to enroll in **{title}** or ask about the syllabus?`;
 
       const resolved = template
         .replace(/{title}/g, matchedCourse.title)
+        .replace(/{level}/g, matchedCourse.level || "Beginner to Advanced")
         .replace(/{duration}/g, matchedCourse.duration)
         .replace(/{fee}/g, matchedCourse.fee)
         .replace(/{description}/g, matchedCourse.description)
