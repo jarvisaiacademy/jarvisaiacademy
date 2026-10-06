@@ -314,7 +314,54 @@ export function ChatCanvas({
     } else if (lower.includes("referral") || lower.includes("refer & earn") || lower.includes("3,000") || lower.includes("3000")) {
       return academyKnowledge.referral;
 
-    } else if (
+    }
+
+    // Dynamic course matching from Firestore database (active courses only)
+    const activeCourses = courses.filter((c) => (c.status ?? "active") !== "inactive");
+    const matchedCourse = activeCourses.find((c) => {
+      if (c.id === "frontend-react" && lower.includes("frontend")) return true;
+      if (c.id === "backend-python" && lower.includes("backend")) return true;
+      if (c.id === "devops-aws" && lower.includes("devops")) return true;
+      if (c.id === "database-admin" && lower.includes("database")) return true;
+      if (c.id === "genai" && lower.includes("genai")) return true;
+      if (c.id === "data-analyst" && lower.includes("data analyst")) return true;
+      if (c.id === "business-analyst" && lower.includes("business analyst")) return true;
+      if (c.id === "web-laravel" && (lower.includes("laravel") || lower.includes("php"))) return true;
+      if (c.id === "app-support" && (lower.includes("support") || lower.includes("linux"))) return true;
+      if (c.id === "super10" && lower.includes("super10")) return true;
+
+      const idMatch = lower.includes(c.id.toLowerCase());
+      const titleMatch = lower.includes(c.title.toLowerCase());
+      const numberMatch = c.number && lower.includes(c.number.toLowerCase());
+      return idMatch || titleMatch || numberMatch;
+    });
+
+    if (matchedCourse) {
+
+
+      // Use custom chatResponse template from backend
+      const template = (matchedCourse.chatResponse || "").trim() || `### 🎓 **{title}**\n\n* **Track**: {categoryLabel}\n* **Duration**: **{duration}**\n* **Tuition Fee**: **{fee}**\n* **Overview**: {description}\n\nWould you like to enroll?`;
+
+      const resolved = template
+        .replace(/{title}/g, matchedCourse.title)
+        .replace(/{duration}/g, matchedCourse.duration)
+        .replace(/{fee}/g, matchedCourse.fee)
+        .replace(/{description}/g, matchedCourse.description)
+        .replace(/{categoryLabel}/g, matchedCourse.categoryLabel || matchedCourse.category)
+        .replace(/{techStack}/g, matchedCourse.techStack?.join(", ") || "")
+        .replace(/{topics}/g, matchedCourse.topics?.map((t: string) => `* ${t}`).join("\n") || "");
+      
+      return {
+        text: resolved,
+        suggestions: [
+          `I want to enroll in ${matchedCourse.title}`,
+          "What is the fee structure & payment options?",
+          "Tell me about the Super10 Elite Batch with 100% placement assurance",
+        ],
+      };
+    }
+
+    if (
       lower.includes("course") ||
       lower.includes("courses") ||
       lower.includes("program") ||
@@ -369,51 +416,6 @@ export function ChatCanvas({
       lower.includes("support")
     ) {
       return academyKnowledge.enquiry;
-    }
-
-    // Dynamic course matching from Firestore database (active courses only)
-    const activeCourses = courses.filter((c) => (c.status ?? "active") !== "inactive");
-    const matchedCourse = activeCourses.find((c) => {
-      if (c.id === "frontend-react" && lower.includes("frontend")) return true;
-      if (c.id === "backend-python" && lower.includes("backend")) return true;
-      if (c.id === "devops-aws" && lower.includes("devops")) return true;
-      if (c.id === "database-admin" && lower.includes("database")) return true;
-      if (c.id === "genai" && lower.includes("genai")) return true;
-      if (c.id === "data-analyst" && lower.includes("data analyst")) return true;
-      if (c.id === "business-analyst" && lower.includes("business analyst")) return true;
-      if (c.id === "web-laravel" && (lower.includes("laravel") || lower.includes("php"))) return true;
-      if (c.id === "app-support" && (lower.includes("support") || lower.includes("linux"))) return true;
-      if (c.id === "super10" && lower.includes("super10")) return true;
-
-      const idMatch = lower.includes(c.id.toLowerCase());
-      const titleMatch = lower.includes(c.title.toLowerCase());
-      const numberMatch = c.number && lower.includes(c.number.toLowerCase());
-      return idMatch || titleMatch || numberMatch;
-    });
-
-    if (matchedCourse) {
-
-
-      // Use custom chatResponse template from backend
-      const template = (matchedCourse.chatResponse || "").trim() || `### 🎓 **{title}**\n\n* **Track**: {categoryLabel}\n* **Duration**: **{duration}**\n* **Tuition Fee**: **{fee}**\n* **Overview**: {description}\n\nWould you like to enroll?`;
-
-      const resolved = template
-        .replace(/{title}/g, matchedCourse.title)
-        .replace(/{duration}/g, matchedCourse.duration)
-        .replace(/{fee}/g, matchedCourse.fee)
-        .replace(/{description}/g, matchedCourse.description)
-        .replace(/{categoryLabel}/g, matchedCourse.categoryLabel || matchedCourse.category)
-        .replace(/{techStack}/g, matchedCourse.techStack?.join(", ") || "")
-        .replace(/{topics}/g, matchedCourse.topics?.map((t: string) => `* ${t}`).join("\n") || "");
-      
-      return {
-        text: resolved,
-        suggestions: [
-          `I want to enroll in ${matchedCourse.title}`,
-          "What is the fee structure & payment options?",
-          "Tell me about the Super10 Elite Batch with 100% placement assurance",
-        ],
-      };
     }
 
     return {
