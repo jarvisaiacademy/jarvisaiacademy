@@ -7,6 +7,7 @@ import { siteConfig } from "@/config/site";
 import { ThemeSwitcher } from "./theme-switcher";
 import { UserProfile } from "./user-profile";
 import { SocialLinks } from "@/components/common/social-links";
+import { ContactUsButton } from "@/components/chat/contact-us-button";
 import { User } from "@/providers/auth-provider";
 
 interface GuestHeaderProps {
@@ -84,8 +85,9 @@ export function GuestHeader({
           a long title truncates instead of sliding under the icons. Desktop only —
           below md the row already carries the sidebar toggle, the title, the theme
           switcher and the log-in CTA, and the sidebar footer has the same links. */}
-      <div className="hidden md:flex flex-1 items-center justify-center min-w-0">
+      <div className="hidden md:flex flex-1 items-center justify-center gap-3.5 min-w-0">
         <SocialLinks className="shrink-0" />
+        <ContactUsButton className="shrink-0" />
       </div>
 
       {/* Right controls: theme, then the signed-in identity chip or one log-in CTA.

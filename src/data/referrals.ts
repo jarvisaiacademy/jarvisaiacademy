@@ -39,6 +39,29 @@ export function referralCodeFor(uid: string): string {
   return res;
 }
 
+/** Stored code on the user row when it is a valid 6-character alphanumeric code; otherwise derived from uid. */
+export function resolvedReferralCode(
+  uid: string | undefined | null,
+  stored?: string | null
+): string {
+  if (stored && typeof stored === "string") {
+    const trimmed = stored.trim().toUpperCase();
+    if (trimmed !== "JARVIS") {
+      if (CODE_ALPHABET.test(trimmed)) {
+        return trimmed;
+      }
+      const normalized = normalizeReferralCode(trimmed);
+      if (normalized && normalized !== "JARVIS") {
+        return normalized;
+      }
+    }
+  }
+
+  if (!uid) return "";
+
+  return referralCodeFor(uid);
+}
+
 export function normalizeReferralCode(input: string): string {
   if (typeof input !== "string") return "";
 

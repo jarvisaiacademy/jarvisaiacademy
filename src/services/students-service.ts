@@ -16,6 +16,7 @@ import { db, auth } from "@/lib/firebase";
 import { StudentRecord } from "@/data/students";
 import type { CourseItem } from "@/data/courses";
 import { checkIsAdmin, requireAdmin } from "@/lib/admin-access";
+import { referralCodeFor, resolvedReferralCode, normalizeReferralCode } from "@/data/referrals";
 
 export const STUDENTS_COLLECTION = "users";
 
@@ -73,6 +74,23 @@ export async function upsertStudentRecord(user: RosterUserInput): Promise<void> 
     isAdminAccount =
       isAdminAccount || existingRole === "admin";
 
+    // If new user document, check if a student record with this email was pre-created with another doc ID
+    let preCreatedData: Record<string, unknown> | null = null;
+    let preDocIdToDelete: string | null = null;
+    if (!existingUser.exists() && user.email) {
+      try {
+        const q = query(collection(db, STUDENTS_COLLECTION), where("email", "==", user.email.toLowerCase()));
+        const snap = await getDocs(q);
+        const match = snap.docs.find((d) => d.id !== user.id);
+        if (match) {
+          preCreatedData = match.data();
+          preDocIdToDelete = match.id;
+        }
+      } catch {
+        // best-effort lookup
+      }
+    }
+
     const payload: Record<string, unknown> = {
       id: user.id,
       name: user.name,
@@ -86,14 +104,50 @@ export async function upsertStudentRecord(user: RosterUserInput): Promise<void> 
       ...(user.signInProvider ? { signInProvider: user.signInProvider } : {}),
       createdAt: existingUser.exists()
         ? existingUser.data()?.createdAt || user.createdAt || new Date().toISOString()
-        : user.createdAt || new Date().toISOString(),
+        : preCreatedData?.createdAt || user.createdAt || new Date().toISOString(),
     };
+
+    if (preCreatedData) {
+      if (preCreatedData.enrolledCourseIds) payload.enrolledCourseIds = preCreatedData.enrolledCourseIds;
+      if (preCreatedData.is_super10 !== undefined) payload.is_super10 = preCreatedData.is_super10;
+      if (preCreatedData.phone) payload.phone = preCreatedData.phone;
+      if (preCreatedData.bio) payload.bio = preCreatedData.bio;
+      if (preCreatedData.title) payload.title = preCreatedData.title;
+      if (preCreatedData.specialization) payload.specialization = preCreatedData.specialization;
+      if (preCreatedData.status) payload.status = preCreatedData.status;
+      if (preCreatedData.referralCode) payload.referralCode = preCreatedData.referralCode;
+    }
+
+    // Ensure deterministic 6-digit alphanumeric referralCode exists on the record
+    const finalReferralCode =
+      (payload.referralCode as string) ||
+      (existingUser.data()?.referralCode as string) ||
+      referralCodeFor(user.id);
+    payload.referralCode = finalReferralCode;
 
     if (isTeacher) {
       payload.is_teacher = true;
     }
 
     await setDoc(userRef, payload, { merge: true });
+
+    // Ensure referral code is indexed
+    if (finalReferralCode) {
+      try {
+        await setDoc(doc(db, "referrals", finalReferralCode), { uid: user.id }, { merge: true });
+      } catch {
+        // best-effort index
+      }
+    }
+
+    // Clean up pre-created duplicate document if found
+    if (preDocIdToDelete) {
+      try {
+        await deleteDoc(doc(db, STUDENTS_COLLECTION, preDocIdToDelete));
+      } catch {
+        // best-effort cleanup
+      }
+    }
   } catch (err) {
     console.warn("[StudentsService] Could not upsert student record:", err);
   }
@@ -477,6 +531,7 @@ export async function createStudentInFirestore(
     throw new Error("Firestore is not initialized.");
   }
 
+  const firestore = db;
   const currentUser = auth?.currentUser;
   if (!currentUser) {
     throw new Error(
@@ -484,8 +539,23 @@ export async function createStudentInFirestore(
     );
   }
 
-  const firestore = db;
-  const studentId = doc(collection(firestore, STUDENTS_COLLECTION)).id;
+  const cleanEmail = input.email.trim().toLowerCase();
+  let studentId: string | undefined;
+
+  try {
+    const q = query(collection(firestore, STUDENTS_COLLECTION), where("email", "==", cleanEmail));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      studentId = snap.docs[0].id;
+    }
+  } catch (err) {
+    console.warn("[StudentsService] Could not query existing user by email:", err);
+  }
+
+  if (!studentId) {
+    studentId = doc(collection(firestore, STUDENTS_COLLECTION)).id;
+  }
+
   const now = new Date().toISOString();
   const author =
     (userName && userName !== "Learner" ? userName.trim() : null) ||
@@ -497,14 +567,19 @@ export async function createStudentInFirestore(
       : null) ||
     "Admin";
 
+  const codeToSave = input.referralCode?.trim()
+    ? (normalizeReferralCode(input.referralCode.trim()) || input.referralCode.trim().toUpperCase())
+    : referralCodeFor(studentId);
+
   const studentRecord: Partial<StudentRecord> = {
     id: studentId,
     name: input.name.trim(),
-    email: input.email.trim().toLowerCase(),
+    email: cleanEmail,
     is_teacher: false,
     role: "student",
     status: input.status || "active",
     is_super10: !!input.is_super10,
+    referralCode: codeToSave,
     lastLoginAt: now,
     createdAt: now,
     createdBy: author,
@@ -516,17 +591,14 @@ export async function createStudentInFirestore(
   if (input.specialization?.trim()) studentRecord.specialization = input.specialization.trim();
   if (input.bio?.trim()) studentRecord.bio = input.bio.trim();
   if (input.phone?.trim()) studentRecord.phone = input.phone.trim();
-  if (input.referralCode?.trim()) studentRecord.referralCode = input.referralCode.trim();
   if (input.enrolledCourseIds) studentRecord.enrolledCourseIds = input.enrolledCourseIds;
 
   await setDoc(doc(firestore, STUDENTS_COLLECTION, studentId), studentRecord, { merge: true });
 
-  if (input.referralCode?.trim()) {
-    try {
-      await setDoc(doc(firestore, "referrals", input.referralCode.trim()), { uid: studentId }, { merge: true });
-    } catch (err) {
-      console.warn("[StudentsService] Could not write referral code doc:", err);
-    }
+  try {
+    await setDoc(doc(firestore, "referrals", codeToSave), { uid: studentId }, { merge: true });
+  } catch (err) {
+    console.warn("[StudentsService] Could not write referral code doc:", err);
   }
 
   return studentId;

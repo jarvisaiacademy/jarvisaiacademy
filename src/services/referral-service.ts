@@ -1,6 +1,6 @@
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { referralCodeFor } from "@/data/referrals";
+import { referralCodeFor, resolvedReferralCode } from "@/data/referrals";
 
 export const REFERRALS_COLLECTION = "referrals";
 
@@ -20,18 +20,15 @@ const USERS_COLLECTION = "users";
  * and must not be able to break auth. It is idempotent, so the repeated call each visit is
  * harmless — and free on the row itself, since that write already happens on every visit.
  */
-export async function publishReferralCode(uid: string): Promise<void> {
+export async function publishReferralCode(uid: string): Promise<string | undefined> {
   if (!db) return;
 
   try {
     const userDoc = await getDoc(doc(db, USERS_COLLECTION, uid));
     const storedCode = userDoc.exists() ? userDoc.data()?.referralCode : undefined;
 
-    // Use stored code if already a valid 6-char alphanumeric code, otherwise generate unique code
-    let code =
-      storedCode && typeof storedCode === "string" && /^[A-Z0-9]{6}$/.test(storedCode)
-        ? storedCode
-        : referralCodeFor(uid);
+    // Use stored code if already valid, otherwise deterministically derive from uid
+    let code = resolvedReferralCode(uid, storedCode) || referralCodeFor(uid);
 
     // If newly generated code happens to collide with an existing index owned by another user, salt it
     if (!storedCode || storedCode !== code) {
@@ -47,10 +44,18 @@ export async function publishReferralCode(uid: string): Promise<void> {
 
     if (storedCode !== code) {
       await setDoc(doc(db, USERS_COLLECTION, uid), { referralCode: code }, { merge: true });
+      if (storedCode && typeof storedCode === "string" && storedCode.startsWith("JAR-")) {
+        try {
+          await deleteDoc(doc(db, REFERRALS_COLLECTION, storedCode));
+        } catch {
+          // best-effort cleanup of legacy index
+        }
+      }
     }
-    if (code.match(/^(?:JAR-[A-Z0-9]{8}|[A-Z0-9]{6})$/)) {
+    if (code.match(/^[A-Z0-9]{6}$/)) {
       await setDoc(doc(db, REFERRALS_COLLECTION, code), { uid }, { merge: true });
     }
+    return code;
   } catch (err) {
     console.warn("[ReferralService] Could not publish referral code:", err);
   }

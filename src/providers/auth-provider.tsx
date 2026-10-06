@@ -19,7 +19,7 @@ import { auth, googleProvider, isFirebaseConfigured, db } from "@/lib/firebase";
 import { doc, getDoc, collection, query, where, getDocs, setDoc } from "firebase/firestore";
 import { upsertStudentRecord } from "@/services/students-service";
 import { publishReferralCode } from "@/services/referral-service";
-import { referralCodeFor } from "@/data/referrals";
+import { referralCodeFor, resolvedReferralCode } from "@/data/referrals";
 import { checkIsAdmin } from "@/lib/admin-access";
 
 export { checkIsAdmin, ADMIN_EMAILS } from "@/lib/admin-access";
@@ -181,10 +181,7 @@ function getInitialUser(): User | null {
           sessionStorage.getItem("jarvis_is_teacher") === "true");
       parsed.role = parsed.isAdmin ? "admin" : parsed.isTeacher ? "teacher" : "student";
       if (parsed.id) {
-        parsed.referralCode =
-          parsed.referralCode && /^[A-Z0-9]{6}$/.test(parsed.referralCode)
-            ? parsed.referralCode
-            : referralCodeFor(parsed.id);
+        parsed.referralCode = resolvedReferralCode(parsed.id, parsed.referralCode);
       }
       return parsed;
     }
@@ -340,9 +337,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           try {
             const userDoc = await getDoc(doc(db, "users", fbUser.uid));
             const stored = userDoc.data()?.referralCode;
-            if (stored && typeof stored === "string" && /^[A-Z0-9]{6}$/.test(stored)) {
-              referralCode = stored;
-            }
+            referralCode = resolvedReferralCode(fbUser.uid, stored);
             const storedCreated = userDoc.data()?.createdAt;
             if (storedCreated && typeof storedCreated === "string") {
               createdAt = storedCreated;
@@ -393,8 +388,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // them. Idempotent, and it belongs on this effect rather than beside the referral prompt:
     // the prompt only ever runs for a new account, and a code has to exist for every account,
     // including the ones that predate the feature and the ones that skip the prompt.
-    void publishReferralCode(user.id);
-  }, [user]);
+    void publishReferralCode(user.id).then((publishedCode) => {
+      if (publishedCode && publishedCode !== user.referralCode) {
+        setUser((prev) => {
+          if (!prev) return null;
+          const updated = { ...prev, referralCode: publishedCode };
+          saveUserSession(updated);
+          return updated;
+        });
+      }
+    });
+  }, [user?.id]);
 
   const loginWithGoogle = useCallback(async (): Promise<GoogleLoginResult> => {
     setAuthError(null);
@@ -426,9 +430,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           const userDoc = await getDoc(doc(db, "users", fbUser.uid));
           const stored = userDoc.data()?.referralCode;
-          if (stored && typeof stored === "string" && /^[A-Z0-9]{6}$/.test(stored)) {
-            referralCode = stored;
-          }
+          referralCode = resolvedReferralCode(fbUser.uid, stored);
           const storedCreated = userDoc.data()?.createdAt;
           if (storedCreated && typeof storedCreated === "string") {
             createdAt = storedCreated;

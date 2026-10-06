@@ -31,6 +31,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useCourses } from "@/providers/courses-provider";
 import { useStudentEnrollments } from "@/hooks/use-student-enrollments";
 import type { CourseItem } from "@/data/courses";
+import { ContactUsButton } from "@/components/chat/contact-us-button";
 
 /**
  * The two catalogue entries that already have a nav row of their own — Super10
@@ -493,6 +494,11 @@ export function SidebarNav({
         <NavIcon icon={HelpCircle} />
         <span>Enquiry</span>
       </Link>
+
+      {/* Contact Us CTA Button */}
+      <div className="pt-1.5 pb-1 px-1">
+        <ContactUsButton className="w-full justify-between" />
+      </div>
 
       {/* Every 60-day programme, so one can be opened without going through the
           catalogue. Clicks go to the chat, which answers with that programme. */}

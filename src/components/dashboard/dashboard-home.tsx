@@ -6,7 +6,8 @@ import { BookOpen, Award, ArrowRight, Copy, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { useCourses } from "@/providers/courses-provider";
 import { useStudentEnrollments } from "@/hooks/use-student-enrollments";
-import { referralCodeFor } from "@/data/referrals";
+import { useStudentProfile } from "@/hooks/use-student-profile";
+import { referralCodeFor, resolvedReferralCode } from "@/data/referrals";
 import { formatDate } from "@/lib/date-format";
 import { type StudentTab } from "@/components/dashboard/student-shell";
 
@@ -49,17 +50,14 @@ function formatEnrolledDate(timestamp?: string | number): string {
 
 export function DashboardHome({ onSelectTab }: DashboardHomeProps) {
   const { user } = useAuth();
+  const { profile } = useStudentProfile(user?.id);
   const { courses } = useCourses();
   const enrollments = useStudentEnrollments(user?.email);
   const [copied, setCopied] = useState(false);
 
   const firstName = user?.name?.split(" ")[0] || "there";
   const referralCode =
-    user?.referralCode && /^[A-Z0-9]{6}$/.test(user.referralCode)
-      ? user.referralCode
-      : user?.id
-      ? referralCodeFor(user.id)
-      : "JARVIS";
+    resolvedReferralCode(user?.id, profile?.referralCode || user?.referralCode) || "JARVIS";
   const joinedDate = formatDate(user?.createdAt, formatDate(new Date()));
 
   const certificatesCount = enrollments.filter((e) => e.action === "paid").length;
