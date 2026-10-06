@@ -314,56 +314,7 @@ export function ChatCanvas({
     } else if (lower.includes("referral") || lower.includes("refer & earn") || lower.includes("3,000") || lower.includes("3000")) {
       return academyKnowledge.referral;
 
-    }
-
-    // Dynamic course matching from Firestore database (active courses only)
-    const activeCourses = courses.filter((c) => (c.status ?? "active") !== "inactive");
-    const matchedCourse = activeCourses.find((c) => {
-      if (c.id === "frontend-react" && lower.includes("frontend")) return true;
-      if (c.id === "backend-python" && lower.includes("backend")) return true;
-      if (c.id === "devops-aws" && lower.includes("devops")) return true;
-      if (c.id === "database-admin" && lower.includes("database")) return true;
-      if (c.id === "genai" && lower.includes("genai")) return true;
-      if (c.id === "data-analyst" && lower.includes("data analyst")) return true;
-      if (c.id === "business-analyst" && lower.includes("business analyst")) return true;
-      if (c.id === "web-laravel" && (lower.includes("laravel") || lower.includes("php"))) return true;
-      if (c.id === "app-support" && (lower.includes("support") || lower.includes("linux"))) return true;
-      if (c.id === "super10" && lower.includes("super10")) return true;
-
-      const idMatch = lower.includes(c.id.toLowerCase());
-      const titleMatch = lower.includes(c.title.toLowerCase());
-      const numberMatch = c.number && lower.includes(c.number.toLowerCase());
-      return idMatch || titleMatch || numberMatch;
-    });
-
-    if (matchedCourse) {
-
-
-      // Use custom chatResponse template from backend
-      const template = (matchedCourse.chatResponse || "").trim() || `### 🎓 **{title}**\n*_{bannerSubtitle}_*\n\n* **Track**: {categoryLabel}\n* **Level**: **{level}**\n* **Duration**: **{duration}**\n* **Tuition Fee**: **{fee}**\n* **Curriculum Overview**: {description}\n\n**Key Modules**:\n{topics}\n\n**Tech Stack**: {techStack}\n\nWould you like to enroll in **{title}** or ask about the syllabus?`;
-
-      const resolved = template
-        .replace(/{title}/g, matchedCourse.title)
-        .replace(/{level}/g, matchedCourse.level || "Beginner to Advanced")
-        .replace(/{duration}/g, matchedCourse.duration)
-        .replace(/{fee}/g, matchedCourse.fee)
-        .replace(/{description}/g, matchedCourse.description)
-        .replace(/{categoryLabel}/g, matchedCourse.categoryLabel || matchedCourse.category)
-        .replace(/{techStack}/g, matchedCourse.techStack?.join(", ") || "")
-        .replace(/{topics}/g, matchedCourse.topics?.map((t: string) => `* ${t}`).join("\n") || "")
-        .replace(/{bannerSubtitle}/g, matchedCourse.bannerSubtitle || matchedCourse.description);
-      
-      return {
-        text: resolved,
-        suggestions: [
-          `I want to enroll in ${matchedCourse.title}`,
-          "What is the fee structure & payment options?",
-          "Tell me about the Super10 Elite Batch with 100% placement assurance",
-        ],
-      };
-    }
-
-    if (
+    } else if (
       lower.includes("course") ||
       lower.includes("courses") ||
       lower.includes("program") ||
@@ -420,8 +371,42 @@ export function ChatCanvas({
       return academyKnowledge.enquiry;
     }
 
+    // Dynamic course matching from Firestore database (active courses only)
+    const activeCourses = courses.filter((c) => (c.status ?? "active") !== "inactive");
+    const matchedCourse = activeCourses.find((c) => {
+      const idMatch = lower.includes(c.id.toLowerCase());
+      const titleMatch = lower.includes(c.title.toLowerCase());
+      const numberMatch = c.number && lower.includes(c.number.toLowerCase());
+      return idMatch || titleMatch || numberMatch;
+    });
+
+    if (matchedCourse) {
+
+
+      // Use custom chatResponse template from backend
+      const template = (matchedCourse.chatResponse || "").trim() || `### 🎓 **{title}**\n\n* **Track**: {categoryLabel}\n* **Duration**: **{duration}**\n* **Tuition Fee**: **{fee}**\n* **Overview**: {description}\n\nWould you like to enroll?`;
+
+      const resolved = template
+        .replace(/{title}/g, matchedCourse.title)
+        .replace(/{duration}/g, matchedCourse.duration)
+        .replace(/{fee}/g, matchedCourse.fee)
+        .replace(/{description}/g, matchedCourse.description)
+        .replace(/{categoryLabel}/g, matchedCourse.categoryLabel || matchedCourse.category)
+        .replace(/{techStack}/g, matchedCourse.techStack?.join(", ") || "")
+        .replace(/{topics}/g, matchedCourse.topics?.map((t: string) => `* ${t}`).join("\n") || "");
+      
+      return {
+        text: resolved,
+        suggestions: [
+          `I want to enroll in ${matchedCourse.title}`,
+          "What is the fee structure & payment options?",
+          "Tell me about the Super10 Elite Batch with 100% placement assurance",
+        ],
+      };
+    }
+
     return {
-      text: `Thank you for your question about **"${prompt}"**!\n\nAt **Jarvis AI Academy**, our programs feature:\n* **Duration**: Fast-track **60 Days (2 Months)** build-first training.\n* **Tuition**: **₹30,000** all-inclusive — the Super10 Elite track is fully sponsored at **₹0**.\n* **🎁 Refer & Earn**: Refer a student and receive **₹3,000** cash reward once they complete the full 60-day course!\n\n🌐 **Connect With Us Online**:\n* **LinkedIn**: [@jarvisaiacademy](https://www.linkedin.com/company/jarvisaiacademy/)\n* **Instagram**: [@jarvisaiacademy](https://www.instagram.com/jarvisaiacademy/)\n* **YouTube**: [@JarvisAIAcademy](https://www.youtube.com/@JarvisAIAcademy)\n* **X (Twitter)**: [@jarvisaiacademy](https://x.com/jarvisaiacademy)\n* **Facebook**: [@jarvisaiacademy](https://www.facebook.com/jarvisaiacademy/)\n\nWould you like to explore our course syllabus, the **Super10** batch, or start enrollment?`,
+      text: `Thank you for your question about **"${prompt}"**!\n\nAt **Jarvis AI Academy**, our programs feature:\n* **Duration**: Fast-track **60 Days (2 Months)** build-first training.\n* **Tuition**: **₹30,000** all-inclusive — the Super10 Elite track is fully sponsored at **₹0**.\n* **🎁 Refer & Earn**: Refer a student and receive **₹3,000** cash reward once they complete the full 60-day course!\n\n🌐 **Connect With Us Online**:\n* 💼 **LinkedIn**: [@jarvisaiacademy](https://www.linkedin.com/company/jarvisaiacademy/)\n* 📸 **Instagram**: [@jarvisaiacademy](https://www.instagram.com/jarvisaiacademy/)\n* 🎥 **YouTube**: [@JarvisAIAcademy](https://www.youtube.com/@JarvisAIAcademy)\n* 𝕏 **X (Twitter)**: [@jarvisaiacademy](https://x.com/jarvisaiacademy)\n* 📘 **Facebook**: [@jarvisaiacademy](https://www.facebook.com/jarvisaiacademy/)\n\nWould you like to explore our course syllabus, the **Super10** batch, or start enrollment?`,
       suggestions: [
         "What is the fee structure for the 60-day courses?",
         "Tell me about the Super10 Elite Program with 100% placement assurance",
