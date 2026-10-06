@@ -120,11 +120,11 @@ Ready to accelerate your tech career? Our admissions counselors and mentors are 
 ---
 
 ### 🌐 Official Social Channels
-* 💼 **LinkedIn**: [@jarvisaiacademy](https://www.linkedin.com/company/jarvisaiacademy/)
-* 📸 **Instagram**: [@jarvisaiacademy](https://www.instagram.com/jarvisaiacademy/)
-* 🎥 **YouTube**: [@JarvisAIAcademy](https://www.youtube.com/@JarvisAIAcademy)
-* 📘 **Facebook**: [@jarvisaiacademy](https://www.facebook.com/jarvisaiacademy/)
-* 𝕏 **X (Twitter)**: [@jarvisaiacademy](https://x.com/jarvisaiacademy)
+* **LinkedIn**: [@jarvisaiacademy](https://www.linkedin.com/company/jarvisaiacademy/)
+* **Instagram**: [@jarvisaiacademy](https://www.instagram.com/jarvisaiacademy/)
+* **YouTube**: [@JarvisAIAcademy](https://www.youtube.com/@JarvisAIAcademy)
+* **Facebook**: [@jarvisaiacademy](https://www.facebook.com/jarvisaiacademy/)
+* **X (Twitter)**: [@jarvisaiacademy](https://x.com/jarvisaiacademy)
 
 Drop your contact number or question here and an engineering advisor will get in touch with you directly!`,
     suggestions: [
@@ -138,11 +138,11 @@ Drop your contact number or question here and an engineering advisor will get in
 
 Connect with our community across all official channels for code walkthroughs, tech deep-dives, student success stories, and program announcements:
 
-* 💼 **LinkedIn**: [@jarvisaiacademy](https://www.linkedin.com/company/jarvisaiacademy/) — *Alumni updates, hiring partner connections & official credentials*
-* 📸 **Instagram**: [@jarvisaiacademy](https://www.instagram.com/jarvisaiacademy/) — *Campus life, project showcases & bite-sized software engineering tips*
-* 🎥 **YouTube**: [@JarvisAIAcademy](https://www.youtube.com/@JarvisAIAcademy) — *In-depth code walkthroughs, full-stack architectural builds & tutorials*
-* 📘 **Facebook**: [@jarvisaiacademy](https://www.facebook.com/jarvisaiacademy/) — *Community announcements, admissions webinars & news*
-* 𝕏 **X (Twitter)**: [@jarvisaiacademy](https://x.com/jarvisaiacademy) — *AI news, tech discussions & founder updates*
+* **LinkedIn**: [@jarvisaiacademy](https://www.linkedin.com/company/jarvisaiacademy/) — *Alumni updates, hiring partner connections & official credentials*
+* **Instagram**: [@jarvisaiacademy](https://www.instagram.com/jarvisaiacademy/) — *Campus life, project showcases & bite-sized software engineering tips*
+* **YouTube**: [@JarvisAIAcademy](https://www.youtube.com/@JarvisAIAcademy) — *In-depth code walkthroughs, full-stack architectural builds & tutorials*
+* **Facebook**: [@jarvisaiacademy](https://www.facebook.com/jarvisaiacademy/) — *Community announcements, admissions webinars & news*
+* **X (Twitter)**: [@jarvisaiacademy](https://x.com/jarvisaiacademy) — *AI news, tech discussions & founder updates*
 
 * 🌐 **Official Website**: [jarvisaiacademy.com](https://jarvisaiacademy.com)  
 * 📞 **Admissions Desk**: +91 91729 11988 | [admissions@jarvisaiacademy.com](mailto:admissions@jarvisaiacademy.com)`,
