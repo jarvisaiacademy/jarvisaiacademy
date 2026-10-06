@@ -374,6 +374,17 @@ export function ChatCanvas({
     // Dynamic course matching from Firestore database (active courses only)
     const activeCourses = courses.filter((c) => (c.status ?? "active") !== "inactive");
     const matchedCourse = activeCourses.find((c) => {
+      if (c.id === "frontend-react" && lower.includes("frontend")) return true;
+      if (c.id === "backend-python" && lower.includes("backend")) return true;
+      if (c.id === "devops-aws" && lower.includes("devops")) return true;
+      if (c.id === "database-admin" && lower.includes("database")) return true;
+      if (c.id === "genai" && lower.includes("genai")) return true;
+      if (c.id === "data-analyst" && lower.includes("data analyst")) return true;
+      if (c.id === "business-analyst" && lower.includes("business analyst")) return true;
+      if (c.id === "web-laravel" && (lower.includes("laravel") || lower.includes("php"))) return true;
+      if (c.id === "app-support" && (lower.includes("support") || lower.includes("linux"))) return true;
+      if (c.id === "super10" && lower.includes("super10")) return true;
+
       const idMatch = lower.includes(c.id.toLowerCase());
       const titleMatch = lower.includes(c.title.toLowerCase());
       const numberMatch = c.number && lower.includes(c.number.toLowerCase());
