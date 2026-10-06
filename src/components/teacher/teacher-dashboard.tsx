@@ -1,14 +1,13 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
-import { Users, GraduationCap, LayoutDashboard, ChevronRight, Copy, CheckCircle2 } from "lucide-react";
+import { Users, LayoutDashboard, ChevronRight } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { useCourses } from "@/providers/courses-provider";
 import { db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import type { EnrollmentRecord } from "@/hooks/use-student-enrollments";
 import type { CourseItem } from "@/data/courses";
-import { referralCodeFor } from "@/data/referrals";
 import { formatDate } from "@/lib/date-format";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { TeacherCourseView } from "./teacher-course-view";
@@ -24,23 +23,8 @@ export function TeacherDashboard({ sidebarOpen, onToggleSidebar }: TeacherDashbo
   
   const [enrollments, setEnrollments] = useState<EnrollmentRecord[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
 
-  const referralCode =
-    user?.referralCode && /^[A-Z0-9]{6}$/.test(user.referralCode)
-      ? user.referralCode
-      : user?.id
-      ? referralCodeFor(user.id)
-      : "JARVIS";
   const joinedDate = formatDate(user?.createdAt, formatDate(new Date()));
-
-  const handleCopyReferral = () => {
-    if (typeof navigator !== "undefined") {
-      navigator.clipboard.writeText(referralCode).catch(() => {});
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
 
   // Restore selected course from sessionStorage on mount
   useEffect(() => {
@@ -203,38 +187,6 @@ export function TeacherDashboard({ sidebarOpen, onToggleSidebar }: TeacherDashbo
                   <span className="text-sm text-neutral-500">Across {teacherCourses.length} courses</span>
                 </div>
               </div>
-            </div>
-
-            {/* Referral Code Card — Unique to each teacher */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 shadow-xs">
-              <div className="flex flex-col gap-1">
-                <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                  Your Teacher Referral Code
-                </span>
-                <span className="text-xl sm:text-2xl font-mono font-bold text-neutral-900 dark:text-white tracking-widest">
-                  {referralCode}
-                </span>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                  Share your unique 6-digit code with learners and track their enrollment.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={handleCopyReferral}
-                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-semibold hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xs shrink-0"
-              >
-                {copied ? (
-                  <>
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                    <span>Copied!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>Copy Code</span>
-                  </>
-                )}
-              </button>
             </div>
       </main>
     </div>

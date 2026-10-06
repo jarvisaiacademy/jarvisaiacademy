@@ -15,7 +15,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const { REFERRAL_CODE_PREFIX, referralCodeFor, normalizeReferralCode } = await import(
+const { REFERRAL_CODE_PREFIX, referralCodeFor, normalizeReferralCode, resolvedReferralCode } = await import(
   pathToFileURL(path.join(ROOT, "src/data/referrals.ts")).href
 );
 
@@ -44,6 +44,15 @@ check("lower case", normalizeReferralCode("8i4wh0"), "8I4WH0");
 check("legacy prefix", normalizeReferralCode("JAR-8I4WH0"), "8I4WH0");
 check("surrounding whitespace", normalizeReferralCode("  8i4wh0\n"), "8I4WH0");
 check("whitespace inside", normalizeReferralCode("8I4 WH0"), "8I4WH0");
+
+// --- resolved referral code (strictly 6 chars, legacy rejected) --------------
+check("resolved: keeps valid 6-char", resolvedReferralCode(uid, "8I4WH0"), "8I4WH0");
+check("resolved: strips JAR- to 6-char", resolvedReferralCode(uid, "JAR-8I4WH0"), "8I4WH0");
+check("resolved: rejects legacy JAR-8-char", resolvedReferralCode(uid, "JAR-OLDCODE8"), generated);
+check("resolved: rejects JARVIS placeholder", resolvedReferralCode(uid, "JARVIS"), generated);
+check("resolved: fallback when undefined", resolvedReferralCode(uid, undefined), generated);
+check("resolved: fallback when null", resolvedReferralCode(uid, null), generated);
+check("resolved: fallback when empty", resolvedReferralCode(uid, ""), generated);
 
 // --- what must never reach a document path -----------------------------------
 for (const bad of ["", "   ", "JAR-", "8I/WH0", "8I#WH0", "8I?WH0", "8I.WH0", "8I4W", "8I4WH01"]) {

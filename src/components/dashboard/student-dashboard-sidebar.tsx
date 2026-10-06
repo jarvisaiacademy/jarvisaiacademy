@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { SidebarHeader } from "@/components/layout/sidebar-header";
 import { UserProfile } from "@/components/layout/user-profile";
 import { SocialLinks } from "@/components/common/social-links";
+import { ContactUsButton } from "@/components/chat/contact-us-button";
 import { useAuth } from "@/providers/auth-provider";
 import { StudentSidebarNav } from "./student-sidebar-nav";
 import { type StudentTab } from "./student-shell";
@@ -73,6 +74,9 @@ export function StudentDashboardSidebar({
           </div>
           <div suppressHydrationWarning className="flex flex-col border-t border-neutral-200 dark:border-white/5">
             {footer}
+            <div className="px-3 pt-2 pb-1 flex justify-center">
+              <ContactUsButton className="w-full justify-between" />
+            </div>
             <div className="flex items-center justify-center pt-2 pb-3">
               <SocialLinks />
             </div>
@@ -98,6 +102,9 @@ export function StudentDashboardSidebar({
       </div>
       <div suppressHydrationWarning className="w-[260px] flex flex-col border-t border-neutral-200 dark:border-white/5">
         {footer}
+        <div className="px-3 pt-2 pb-1 flex justify-center">
+          <ContactUsButton className="w-full justify-between" />
+        </div>
         <div className="flex items-center justify-center pt-2 pb-3.5">
           <SocialLinks />
         </div>

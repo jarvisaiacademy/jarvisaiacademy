@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 import { Gift, Copy, Check } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
-import { referralCodeFor } from "@/data/referrals";
+import { useStudentProfile } from "@/hooks/use-student-profile";
+import { referralCodeFor, resolvedReferralCode } from "@/data/referrals";
 import { APP_SETTINGS } from "@/data/app-settings";
 
 /**
@@ -20,13 +21,10 @@ import { APP_SETTINGS } from "@/data/app-settings";
  */
 export function ReferralCodeSetting() {
   const { user } = useAuth();
+  const { profile } = useStudentProfile(user?.id);
   const [copied, setCopied] = useState(false);
   const code =
-    user?.referralCode && /^[A-Z0-9]{6}$/.test(user.referralCode)
-      ? user.referralCode
-      : user?.id
-      ? referralCodeFor(user.id)
-      : "";
+    resolvedReferralCode(user?.id, profile?.referralCode || user?.referralCode);
 
   if (!user) return null;
 

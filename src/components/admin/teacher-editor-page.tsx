@@ -29,7 +29,7 @@ import {
   removeTeacherFromAllCourses,
 } from "@/services/courses-service";
 import type { AdminShellState } from "@/components/admin/admin-shell";
-import type { CandidateStatus, StudentRecord } from "@/data/students";
+import type { StudentRecord } from "@/data/students";
 
 interface TeacherEditorPageProps {
   shell: AdminShellState;
@@ -177,10 +177,6 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
   const [title, setTitle] = useState(() => teacher?.title ?? "");
   const [specialization, setSpecialization] = useState(() => teacher?.specialization ?? "");
   const [phone, setPhone] = useState(() => teacher?.phone ?? "");
-  const [bio, setBio] = useState(() => teacher?.bio ?? "");
-  const [status, setStatus] = useState<CandidateStatus>(() =>
-    teacher?.status === "inactive" || teacher?.status === "banned" ? "inactive" : "active"
-  );
   const [role, setRole] = useState<"teacher" | "student">(() =>
     teacher ? (teacher.is_teacher ? "teacher" : "student") : "teacher"
   );
@@ -235,9 +231,9 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
             email: cleanEmail,
             title: title.trim() || undefined,
             specialization: specialization.trim() || undefined,
-            bio: bio.trim() || undefined,
+            bio: teacher.bio,
             phone: phone.trim() || undefined,
-            status,
+            status: teacher.status ?? "active",
             is_teacher: newIsTeacher,
           },
           user?.email,
@@ -261,7 +257,6 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
               email: cleanEmail,
               title: title.trim() || undefined,
               specialization: specialization.trim() || undefined,
-              bio: bio.trim() || undefined,
               phone: phone.trim() || undefined,
               status: "active",
               existingUserId: targetExistingId,
@@ -276,7 +271,6 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
               email: cleanEmail,
               title: title.trim() || undefined,
               specialization: specialization.trim() || undefined,
-              bio: bio.trim() || undefined,
               phone: phone.trim() || undefined,
               status: "active",
               enrolledCourseIds: assignedCourseIds,
@@ -490,7 +484,7 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
               {/* 4-GRID at the Add Page */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
                 {/* 1. Full Name */}
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 col-span-1">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Full Name <span className="text-red-500">*</span>
                   </label>
@@ -505,7 +499,7 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                 </div>
 
                 {/* 2. Email Address */}
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 col-span-1">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Email Address <span className="text-red-500">*</span>
                   </label>
@@ -520,7 +514,7 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                 </div>
 
                 {/* 3. Title / Designation */}
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 col-span-1">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Title / Designation
                   </label>
@@ -534,7 +528,7 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                 </div>
 
                 {/* 4. Phone Number */}
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 col-span-1">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Phone Number
                   </label>
@@ -548,7 +542,7 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                 </div>
 
                 {/* 5. Specialization & Expertise */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
+                <div className="flex flex-col gap-1.5 col-span-1">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Specialization & Expertise
                   </label>
@@ -562,7 +556,7 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                 </div>
 
                 {/* 6. Account Role Dropdown */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
+                <div className="flex flex-col gap-1.5 col-span-1">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Account Role
                   </label>
@@ -578,27 +572,8 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                   />
                 </div>
 
-                {/* 7. Account Status (Only shown when editing existing teacher) */}
-                {teacher && (
-                  <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
-                    <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                      Account Status
-                    </label>
-                    <Select
-                      label="Account Status"
-                      value={status}
-                      onValueChange={(val) => setStatus(val as CandidateStatus)}
-                      options={[
-                        { value: "active", label: role === "teacher" ? "Active Teacher" : "Active Student" },
-                        { value: "inactive", label: role === "teacher" ? "Inactive / On Leave" : "Inactive / Paused" },
-                      ]}
-                      className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white text-xs"
-                    />
-                  </div>
-                )}
-
-                {/* 8. Assigned Courses (spans 1 column on lg) */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-1 lg:col-span-1">
+                {/* 7. Assigned Courses */}
+                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-2 lg:col-span-2">
                   <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     {role === "teacher" ? "Assigned Courses" : "Enrolled Courses"}
                   </label>
@@ -629,40 +604,26 @@ function TeacherForm({ teacher, shell, coursesLoading }: TeacherFormProps) {
                     />
                   )}
                 </div>
-
-                {/* Badges for assigned courses if any */}
-                {assignedCourseIds.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 col-span-1 sm:col-span-2 lg:col-span-4 -mt-1">
-                    {assignedCourseIds.map((cid) => {
-                      const c = courses.find((item) => item.id === cid);
-                      if (!c) return null;
-                      return (
-                        <span
-                          key={cid}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-neutral-100 dark:bg-white/10 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-white/10"
-                        >
-                          <span className="font-bold opacity-60">#{c.number}</span>
-                          <span>{c.title}</span>
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* 8. Biography & Teaching Experience (spans all 4 columns) */}
-                <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-2 lg:col-span-4">
-                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Biography & Teaching Experience
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    placeholder="Provide a brief summary of industry background, past projects, or teaching philosophy..."
-                    className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 resize-y"
-                  />
-                </div>
               </div>
+
+              {/* Badges for assigned courses if any */}
+              {assignedCourseIds.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {assignedCourseIds.map((cid) => {
+                    const c = courses.find((item) => item.id === cid);
+                    if (!c) return null;
+                    return (
+                      <span
+                        key={cid}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-neutral-100 dark:bg-white/10 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-white/10"
+                      >
+                        <span className="font-bold opacity-60">#{c.number}</span>
+                        <span>{c.title}</span>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Bottom Bar: Cancel on left with cancel icon, Add Teacher pill button on right */}

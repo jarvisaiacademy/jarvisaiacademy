@@ -3,6 +3,7 @@
 import React from "react";
 import {
   BookOpen,
+  BookMarked,
   TrendingUp,
   ArrowLeft,
   ShieldCheck,
@@ -174,7 +175,7 @@ export function DashboardSidebarNav({
         <NavButton
           tab="knowledge"
           label="Answer Book"
-          icon={BookOpen}
+          icon={BookMarked}
           iconActive="text-indigo-400 dark:text-indigo-600"
           badge={Object.keys(academyKnowledge).length}
           activeTab={activeTab}

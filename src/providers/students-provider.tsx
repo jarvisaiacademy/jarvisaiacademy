@@ -86,7 +86,6 @@ export function StudentsProvider({ children }: { children: ReactNode }) {
   }, [isAdmin, sessionReady, user?.id]);
 
   const refreshStudents = async () => {
-    setLoading(true);
     try {
       if (auth && typeof auth.authStateReady === "function") {
         await auth.authStateReady();
@@ -98,8 +97,6 @@ export function StudentsProvider({ children }: { children: ReactNode }) {
       const msg = err instanceof Error ? err.message : "Failed to refresh students";
       setError(msg);
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
