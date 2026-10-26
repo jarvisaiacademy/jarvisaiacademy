@@ -11,6 +11,8 @@ export const siteConfig = {
     email: "admissions@jarvisaiacademy.com",
     financeEmail: "finance@jarvisaiacademy.com",
     phone: "+91 91729 11988",
+    whatsapp: "+91 88064 31723",
+    whatsappNumber: "918806431723",
   },
   links: {
     facebook: "https://www.facebook.com/jarvisaiacademy/",
