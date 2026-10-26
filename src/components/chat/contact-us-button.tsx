@@ -12,6 +12,32 @@ export const DEFAULT_CONTACT_PHONE = siteConfig.contact.phone;
 export const DEFAULT_CONTACT_CALL_LINK = `tel:${DEFAULT_CONTACT_PHONE.replace(/\s+/g, "")}`;
 
 /**
+ * Default WhatsApp contact phone, prefilled message and link.
+ */
+export const DEFAULT_WHATSAPP_PHONE = siteConfig.contact.whatsappNumber;
+export const DEFAULT_WHATSAPP_MESSAGE =
+  "Hello Jarvis AI Academy, I am interested in your courses and would like to make an inquiry.";
+
+/**
+ * Helper to construct a WhatsApp click-to-chat URL with a prefilled message.
+ * Formats a 10-digit Indian phone number to international format (prefixed with 91).
+ */
+export function createWhatsAppLink(
+  phone: string = DEFAULT_WHATSAPP_PHONE,
+  message: string = DEFAULT_WHATSAPP_MESSAGE
+): string {
+  const digits = phone.replace(/\D/g, "");
+  const fullPhone = digits.length === 10 ? `91${digits}` : digits;
+  const encodedText = encodeURIComponent(message);
+  return `https://wa.me/${fullPhone}?text=${encodedText}`;
+}
+
+export const DEFAULT_WHATSAPP_LINK = createWhatsAppLink(
+  DEFAULT_WHATSAPP_PHONE,
+  DEFAULT_WHATSAPP_MESSAGE
+);
+
+/**
  * Official Font Awesome 6 Solid Headset Icon (`fa-headset`).
  * Path data extracted from `@fortawesome/free-solid-svg-icons/faHeadset` (viewBox: 0 0 448 512).
  */
@@ -35,15 +61,18 @@ export function FontAwesomeHeadsetIcon({
 
 export interface ContactUsButtonProps {
   /**
-   * The destination link. If provided, overrides `phoneNumber` and `DEFAULT_CONTACT_CALL_LINK`.
-   * Examples: "tel:+919172911988", "https://wa.me/919172911988", "/contact", etc.
+   * The destination link. If provided, overrides `phoneNumber` and `DEFAULT_WHATSAPP_LINK`.
+   * Examples: "https://wa.me/918806431723", "tel:+918806431723", "/contact", etc.
    */
   href?: string;
   /**
-   * Custom phone number to call. Automatically formatted as a tel: link.
-   * Defaults to `siteConfig.contact.phone`.
+   * Custom phone number for WhatsApp. Formatted into a WhatsApp link with `message`.
    */
   phoneNumber?: string;
+  /**
+   * Pre-filled message for WhatsApp inquiry. Defaults to `DEFAULT_WHATSAPP_MESSAGE`.
+   */
+  message?: string;
   /**
    * Button text displayed on the left side of the pill.
    * Defaults to "CONTACT US".
@@ -58,15 +87,15 @@ export interface ContactUsButtonProps {
    */
   onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
   /**
-   * Link target (e.g. "_blank").
+   * Link target (e.g. "_blank"). Defaults to "_blank" for external links.
    */
   target?: string;
   /**
-   * Rel attribute for security (e.g. "noopener noreferrer").
+   * Rel attribute for security (e.g. "noopener noreferrer"). Defaults to "noopener noreferrer" for external links.
    */
   rel?: string;
   /**
-   * Accessible aria-label. Defaults to "Contact Us".
+   * Accessible aria-label. Defaults to "Contact Us on WhatsApp".
    */
   ariaLabel?: string;
 }
@@ -78,26 +107,37 @@ export interface ContactUsButtonProps {
 export function ContactUsButton({
   href,
   phoneNumber,
+  message,
   text = "CONTACT US",
   className = "",
   onClick,
   target,
   rel,
-  ariaLabel = "Contact Us",
+  ariaLabel = "Contact Us on WhatsApp",
 }: ContactUsButtonProps) {
-  // Determine target link
+  // Determine target link: WhatsApp link with prefilled message by default
   const targetHref =
     href ??
     (phoneNumber
-      ? `tel:${phoneNumber.replace(/\s+/g, "")}`
-      : DEFAULT_CONTACT_CALL_LINK);
+      ? createWhatsAppLink(phoneNumber, message ?? DEFAULT_WHATSAPP_MESSAGE)
+      : message
+        ? createWhatsAppLink(DEFAULT_WHATSAPP_PHONE, message)
+        : DEFAULT_WHATSAPP_LINK);
+
+  const isExternal =
+    targetHref.startsWith("http://") ||
+    targetHref.startsWith("https://") ||
+    targetHref.startsWith("//");
+
+  const resolvedTarget = target ?? (isExternal ? "_blank" : undefined);
+  const resolvedRel = rel ?? (isExternal ? "noopener noreferrer" : undefined);
 
   return (
     <a
       href={targetHref}
       onClick={onClick}
-      target={target}
-      rel={rel}
+      target={resolvedTarget}
+      rel={resolvedRel}
       aria-label={ariaLabel}
       className={`group/contact inline-flex cursor-pointer items-center justify-between gap-2.5 rounded-full bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-500 pl-4 pr-1.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-purple-500/20 transition-all duration-300 hover:brightness-105 hover:shadow-lg hover:shadow-pink-500/30 active:scale-98 sm:text-[13px] ${className}`}
     >
