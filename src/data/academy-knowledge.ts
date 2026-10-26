@@ -111,7 +111,8 @@ Every graduate from **Jarvis AI Academy** earns an industry-recognized, cryptogr
 
 Ready to accelerate your tech career? Our admissions counselors and mentors are available for guidance:
 
-* **Phone / WhatsApp**: +91 91729 11988
+* **WhatsApp**: [+91 88064 31723](https://wa.me/918806431723?text=Hello%20Jarvis%20AI%20Academy%2C%20I%20am%20interested%20in%20your%20courses%20and%20would%20like%20to%20make%20an%20inquiry.)
+* **Phone**: +91 91729 11988
 * **Office & Lab**: Pune, Maharashtra, India
 * **Email**: [admissions@jarvisaiacademy.com](mailto:admissions@jarvisaiacademy.com)
 * **Official Website**: [jarvisaiacademy.com](https://jarvisaiacademy.com)
